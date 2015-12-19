@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/DataParcel.iml" filepath="$PROJECT_DIR$/DataParcel.iml" />
+      <module fileurl="file://$PROJECT_DIR$/dataparcel-annotations/dataparcel-annotations.iml" filepath="$PROJECT_DIR$/dataparcel-annotations/dataparcel-annotations.iml" />
+      <module fileurl="file://$PROJECT_DIR$/dataparcel-compiler/dataparcel-compiler.iml" filepath="$PROJECT_DIR$/dataparcel-compiler/dataparcel-compiler.iml" />
+    </modules>
+  </component>
+</project>

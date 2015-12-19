@@ -1,0 +1,2 @@
+include ':dataparcel-annotations', 'dataparcel-compiler'
+
