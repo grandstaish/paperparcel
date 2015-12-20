@@ -88,7 +88,7 @@ public class PropertyCreator {
     } else if (SHORT.box().equals(type)) {
       return new ShortProperty(isNullable, name, variableElement);
     } else if (MAP.equals(type)) {
-
+      return new MapProperty(types, isNullable, name, variableElement);
     } else if (LIST.equals(type)) {
       return new ListProperty(types, isNullable, name, variableElement);
     }  else if (BOOLEAN_ARRAY.equals(type)) {

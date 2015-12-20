@@ -415,4 +415,70 @@ public class DataParcelProcessorTests {
 //        .and()
 //        .generatesSources(expectedSource);
 //  }
+//
+//  @Test public void mapOfValidTypesTest() throws Exception {
+//    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+//        "package test;",
+//        "import android.support.annotation.NonNull;",
+//        "import android.support.annotation.Nullable;",
+//        "import nz.bradcampbell.dataparcel.DataParcel;",
+//        "import java.util.Map;",
+//        "@DataParcel",
+//        "public final class Test {",
+//        "private final Map<Object, Object> testMap;",
+//        "public Test(Map<Object, Object> testMap) {",
+//        "this.testMap = testMap;",
+//        "}",
+//        "@NonNull public Map<Object, Object> component1() {",
+//        "return this.testMap;",
+//        "}",
+//        "}"
+//    ));
+//
+//    JavaFileObject expectedSource = JavaFileObjects.forSourceString("test/TestParcel",
+//        Joiner.on('\n').join(
+//            "package test;",
+//            "import android.os.Parcel;",
+//            "import android.os.Parcelable;",
+//            "import java.lang.Integer;",
+//            "import java.lang.Override;",
+//            "import java.util.List;",
+//            "public class TestParcel implements Parcelable {",
+//            "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
+//            "@Override public TestParcel createFromParcel(Parcel in) {",
+//            "return new TestParcel(in);",
+//            "}",
+//            "@Override public TestParcel[] newArray(int size) {",
+//            "return new TestParcel[size];",
+//            "}",
+//            "};",
+//            "private final Test data;",
+//            "private TestParcel(Test data) {",
+//            "this.data = data;",
+//            "}",
+//            "private TestParcel(Parcel in) {",
+//            "List<Integer> component1 = (List<Integer>) in.readArrayList(getClass().getClassLoader());",
+//            "this.data = new Test(component1);",
+//            "}",
+//            "public static final TestParcel wrap(Test data) {",
+//            "return new TestParcel(data);",
+//            "}",
+//            "public Test getContents() {",
+//            "return data;",
+//            "}",
+//            "@Override public int describeContents() {",
+//            "return 0;",
+//            "}",
+//            "@Override public void writeToParcel(Parcel dest, int flags) {",
+//            "dest.writeList(data.component1());",
+//            "}",
+//            "}"
+//        ));
+//
+//    assertAbout(javaSource()).that(source)
+//        .processedWith(new DataParcelProcessor())
+//        .compilesWithoutError()
+//        .and()
+//        .generatesSources(expectedSource);
+//  }
 }

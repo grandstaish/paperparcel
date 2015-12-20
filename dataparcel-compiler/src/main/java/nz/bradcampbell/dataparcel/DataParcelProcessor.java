@@ -70,9 +70,9 @@ public class DataParcelProcessor extends AbstractProcessor {
   }
 
   private void createParcel(TypeElement typeElement) {
+    if (parcels.containsKey(typeElement.getQualifiedName().toString())) return;
     String classPackage = getPackageName(typeElement);
     String className = ClassName.get(typeElement).simpleName() + "Parcel";
-    if (parcels.containsKey(typeElement.getQualifiedName().toString())) return;
     List<Property> properties = new ArrayList<Property>();
     List<VariableElement> variableElements = getFields(typeElement);
     for (int i = 0; i < variableElements.size(); i++) {
@@ -81,16 +81,10 @@ public class DataParcelProcessor extends AbstractProcessor {
       properties.add(createProperty(typeUtil, isNullable, "component" + (i + 1), variableElement));
     }
     parcels.put(typeElement.getQualifiedName().toString(), new Parcel(properties, classPackage, className, typeElement));
+    // Build property dependencies
     for (Property property : properties) {
-      createClassModelsIfNeeded(property.requiredParcels());
-    }
-  }
-
-  private void createClassModelsIfNeeded(List<TypeElement> typeElements) {
-    if (typeElements == null) return;
-    for (TypeElement typeElement : typeElements) {
-      if (!parcels.containsKey(typeElement.getQualifiedName().toString())) {
-        createParcel(typeElement);
+      for (TypeElement requiredParcel : property.requiredParcels()) {
+        createParcel(requiredParcel);
       }
     }
   }
