@@ -1,8 +1,6 @@
 package nz.bradcampbell.dataparcel.internal.properties;
 
-import com.google.common.base.Joiner;
 import com.squareup.javapoet.*;
-import nz.bradcampbell.dataparcel.internal.ClassNameUtils;
 import nz.bradcampbell.dataparcel.internal.Property;
 
 import javax.lang.model.element.TypeElement;

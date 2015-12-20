@@ -55,48 +55,6 @@ public class PropertyCreator {
 
     if (STRING.equals(type)) {
       return new StringProperty(isNullable, name, variableElement);
-    } else if (MAP.equals(type)) {
-
-    } else if (LIST.equals(type)) {
-      return new ListProperty(types, isNullable, name, variableElement);
-    }  else if (BOOLEAN_ARRAY.equals(type)) {
-
-    } else if (BYTE_ARRAY.equals(type)) {
-
-    } else if (INT_ARRAY.equals(type)) {
-
-    } else if (LONG_ARRAY.equals(type)) {
-
-    } else if (STRING_ARRAY.equals(type)) {
-
-    } else if (SPARSE_ARRAY.equals(type)) {
-
-    } else if (SPARSE_BOOLEAN_ARRAY.equals(type)) {
-
-    } else if (BUNDLE.equals(type)) {
-
-    } else if (PARCELABLE.equals(type)) {
-
-    } else if (PARCELABLE_ARRAY.equals(type)) {
-
-    } else if (CHAR_SEQUENCE.equals(type)) {
-
-    } else if (CHAR_SEQUENCE_ARRAY.equals(type)) {
-
-    } else if (IBINDER.equals(type)) {
-
-    } else if (OBJECT_ARRAY.equals(type)) {
-
-    } else if (SERIALIZABLE.equals(type)) {
-
-    } else if (PERSISTABLE_BUNDLE.equals(type)) {
-
-    } else if (SIZE.equals(type)) {
-
-    } else if (SIZEF.equals(type)) {
-
-    } else if (ENUM.equals(type)) {
-      return new EnumProperty(isNullable, name, variableElement);
     } else if (INT.equals(type)) {
       return new IntProperty(isNullable, name, variableElement);
     } else if (INT.box().equals(type)) {
@@ -106,29 +64,71 @@ public class PropertyCreator {
     } else if (LONG.box().equals(type)) {
       return new LongProperty(isNullable, name, variableElement);
     } else if (BYTE.equals(type)) {
-
+      return new ByteProperty(isNullable, name, variableElement);
     } else if (BYTE.box().equals(type)) {
-
+      return new ByteProperty(isNullable, name, variableElement);
     } else if (BOOLEAN.equals(type)) {
       return new BooleanProperty(isNullable, name, variableElement);
     } else if (BOOLEAN.box().equals(type)) {
       return new BooleanProperty(isNullable, name, variableElement);
     } else if (FLOAT.equals(type)) {
-
+      return new FloatProperty(isNullable, name, variableElement);
     } else if (FLOAT.box().equals(type)) {
-
+      return new FloatProperty(isNullable, name, variableElement);
     } else if (CHAR.equals(type)) {
       return new CharProperty(isNullable, name, variableElement);
     } else if (CHAR.box().equals(type)) {
       return new CharProperty(isNullable, name, variableElement);
     } else if (DOUBLE.equals(type)) {
-
+      return new DoubleProperty(isNullable, name, variableElement);
     } else if (DOUBLE.box().equals(type)) {
-
+      return new DoubleProperty(isNullable, name, variableElement);
     } else if (SHORT.equals(type)) {
-
+      return new ShortProperty(isNullable, name, variableElement);
     } else if (SHORT.box().equals(type)) {
+      return new ShortProperty(isNullable, name, variableElement);
+    } else if (MAP.equals(type)) {
 
+    } else if (LIST.equals(type)) {
+      return new ListProperty(types, isNullable, name, variableElement);
+    }  else if (BOOLEAN_ARRAY.equals(type)) {
+      return new BooleanArrayProperty(isNullable, name, variableElement);
+    } else if (BYTE_ARRAY.equals(type)) {
+      return new ByteArrayProperty(isNullable, name, variableElement);
+    } else if (INT_ARRAY.equals(type)) {
+      return new IntArrayProperty(isNullable, name, variableElement);
+    } else if (LONG_ARRAY.equals(type)) {
+      return new LongArrayProperty(isNullable, name, variableElement);
+    } else if (STRING_ARRAY.equals(type)) {
+      return new StringArrayProperty(isNullable, name, variableElement);
+    } else if (SPARSE_ARRAY.equals(type)) {
+
+    } else if (SPARSE_BOOLEAN_ARRAY.equals(type)) {
+      return new SparseBooleanArray(isNullable, name, variableElement);
+    } else if (BUNDLE.equals(type)) {
+      return new BundleProperty(isNullable, name, variableElement);
+    } else if (PARCELABLE.equals(type)) {
+      return new ParcelableProperty(isNullable, name, variableElement);
+    } else if (PARCELABLE_ARRAY.equals(type)) {
+      return new ParcelableArrayProperty(isNullable, name, variableElement);
+    } else if (CHAR_SEQUENCE.equals(type)) {
+      return new CharSequenceProperty(isNullable, name, variableElement);
+    } else if (CHAR_SEQUENCE_ARRAY.equals(type)) {
+      return new CharSequenceArrayProperty(isNullable, name, variableElement);
+    } else if (IBINDER.equals(type)) {
+      return new IBinderProperty(isNullable, name, variableElement);
+    } else if (OBJECT_ARRAY.equals(type)) {
+      return new ObjectArrayProperty(isNullable, name, variableElement);
+    } else if (SERIALIZABLE.equals(type)) {
+      return new SerializableProperty(isNullable, name, variableElement);
+    } else if (PERSISTABLE_BUNDLE.equals(type)) {
+      return new PersistableBundleProperty(isNullable, name, variableElement);
+    } else if (SIZE.equals(type)) {
+      return new SizeProperty(isNullable, name, variableElement);
+    } else if (SIZEF.equals(type)) {
+      return new SizeFProperty(isNullable, name, variableElement);
+    } else if (ENUM.equals(type)) {
+      return new EnumProperty(isNullable, name, variableElement);
     } else {
       return new NonParcelableProperty(types, isNullable, name, variableElement);
     }
