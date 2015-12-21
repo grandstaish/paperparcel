@@ -31,7 +31,7 @@ Unwrap the bundled data object
 
 ```
 // e.g. read from bundle
-val parcel = someBundle.readParcelable(getClass().getClassLoader())
+val parcel = someBundle.getParcelable<ExampleParcel>("example")
 
 val example = parcel.getContents()
 ```
