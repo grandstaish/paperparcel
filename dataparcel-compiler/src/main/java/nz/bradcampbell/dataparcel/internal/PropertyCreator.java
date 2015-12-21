@@ -102,7 +102,7 @@ public class PropertyCreator {
     } else if (STRING_ARRAY.equals(type)) {
       return new StringArrayProperty(isNullable, name, variableElement);
     } else if (SPARSE_ARRAY.equals(type)) {
-
+      return new SparseArrayProperty(types, isNullable, name, variableElement);
     } else if (SPARSE_BOOLEAN_ARRAY.equals(type)) {
       return new SparseBooleanArray(isNullable, name, variableElement);
     } else if (BUNDLE.equals(type)) {
@@ -132,8 +132,6 @@ public class PropertyCreator {
     } else {
       return new NonParcelableProperty(types, isNullable, name, variableElement);
     }
-
-    throw new RuntimeException("Unknown type: " + type);
   }
 
   private static TypeName getParcelableType(Types types, TypeMirror typeMirror) {
