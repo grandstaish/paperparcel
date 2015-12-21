@@ -4,7 +4,7 @@ Do not use this. It is incomplete.
 
 ## Overview
 
-An annotation to automatically generate Parcelable wrappers for Kotlin [Data Classes](https://kotlinlang.org/docs/reference/data-classes.html).
+An annotation processor to automatically generate Parcelable wrappers for Kotlin [Data Classes](https://kotlinlang.org/docs/reference/data-classes.html).
 
 ## Usage
 
@@ -14,8 +14,6 @@ Annotate your data class with @DataParcel
 @DataParcel
 data class Example(var test: Int)
 ```
-
-Build app
 
 Use generated class to wrap the data object. The generated class is always {ClassName}Parcel. In this example, it is ExampleParcel.
 
@@ -49,7 +47,7 @@ data class ExampleChild(var someValue: Int)
 
 ## Limitations
 
-Currently this class can _only_ be used with Kotlin data objects. These data objects must only hold either more data objects, or objects that can already be parceled by Android. 
+Currently this annotation can _only_ be used with Kotlin data objects. These data objects must only hold either more data objects, or objects that can already be parceled by Android. 
 
 Please file a bug for anything you see is missing or not handled correctly.
 
