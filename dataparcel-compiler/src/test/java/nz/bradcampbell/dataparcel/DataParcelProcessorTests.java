@@ -506,6 +506,137 @@ public class DataParcelProcessorTests {
         .generatesSources(rootParcel, childParcel);
   }
 
+  @Test public void listOfListOfDataTypesTest() throws Exception {
+    JavaFileObject dataClassRoot = JavaFileObjects.forSourceString("test.Root", Joiner.on('\n').join(
+        "package test;",
+        "import nz.bradcampbell.dataparcel.DataParcel;",
+        "import java.util.List;",
+        "@DataParcel",
+        "public final class Root {",
+        "private final List<List<Child>> child;",
+        "public Root(List<List<Child>> child) {",
+        "this.child = child;",
+        "}",
+        "public List<List<Child>> component1() {",
+        "return this.child;",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject dataClassChild = JavaFileObjects.forSourceString("test.Child", Joiner.on('\n').join(
+        "package test;",
+        "public final class Child {",
+        "private final Integer test;",
+        "public Child(Integer test) {",
+        "this.test = test;",
+        "}",
+        "public Integer component1() {",
+        "return this.test;",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject rootParcel = JavaFileObjects.forSourceString("test/RootParcel", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
+        "import java.lang.Override;",
+        "import java.util.ArrayList;",
+        "import java.util.List;",
+        "public class RootParcel implements Parcelable {",
+        "public static final Parcelable.Creator<RootParcel> CREATOR = new Parcelable.Creator<RootParcel>() {",
+        "@Override public RootParcel createFromParcel(Parcel in) {",
+        "return new RootParcel(in);",
+        "}",
+        "@Override public RootParcel[] newArray(int size) {",
+        "return new RootParcel[size];",
+        "}",
+        "};",
+        "private final Root data;",
+        "private RootParcel(Root data) {",
+        "this.data = data;",
+        "}",
+        "private RootParcel(Parcel in) {",
+        "List<List<Child>> component1 = new ArrayList<List<Child>>();",
+        "List<List<ChildParcel>> component1Wrapped = in.readArrayList(getClass().getClassLoader());",
+        "for (List<ChildParcel> val : component1Wrapped) {",
+        "List<Child> items = new ArrayList<Child>();",
+        "for (ChildParcel val1 : val) {",
+        "items.add(val1);",
+        "}",
+        "component1.add(items);",
+        "}",
+        "this.data = new Root(component1);",
+        "}",
+        "public static final RootParcel wrap(Root data) {",
+        "return new RootParcel(data);",
+        "}",
+        "public Root getContents() {",
+        "return data;",
+        "}",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "List<List<Child>> component1 = data.component1();",
+        "List<List<ChildParcel>> component1Wrapped = new ArrayList<List<ChildParcel>>(component1.size());",
+        "for (List<Child> val : component1) {",
+        "List<ChildParcel> items = new ArrayList<ChildParcel>(val.size());",
+        "for (Child val1 : val) {",
+        "items.add(ChildParcel.wrap(val1));",
+        "}",
+        "component1Wrapped.add(items);",
+        "}",
+        "dest.writeList(component1Wrapped);",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject childParcel = JavaFileObjects.forSourceString("test/ChildParcel", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
+        "import java.lang.Integer;",
+        "import java.lang.Override;",
+        "public class ChildParcel implements Parcelable {",
+        "public static final Parcelable.Creator<ChildParcel> CREATOR = new Parcelable.Creator<ChildParcel>() {",
+        "@Override public ChildParcel createFromParcel(Parcel in) {",
+        "return new ChildParcel(in);",
+        "}",
+        "@Override public ChildParcel[] newArray(int size) {",
+        "return new ChildParcel[size];",
+        "}",
+        "};",
+        "private final Child data;",
+        "private ChildParcel(Child data) {",
+        "this.data = data;",
+        "}",
+        "private ChildParcel(Parcel in) {",
+        "Integer component1 = in.readInt();",
+        "this.data = new Child(component1);",
+        "}",
+        "public static final ChildParcel wrap(Child data) {",
+        "return new ChildParcel(data);",
+        "}",
+        "public Child getContents() {",
+        "return data;",
+        "}",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "dest.writeInt(data.component1());",
+        "}",
+        "}"
+    ));
+
+    assertAbout(javaSources()).that(asList(dataClassRoot, dataClassChild))
+        .processedWith(new DataParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(rootParcel, childParcel);
+  }
+
   @Test public void mapOfParcelableTypesTest() throws Exception {
     JavaFileObject dataClass = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
