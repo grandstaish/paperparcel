@@ -16,6 +16,6 @@ public class IntProperty extends Property {
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
-    block.add("$N.writeInt(data.$N())", dest, getName());
+    block.add("$N.writeInt(data.$N())", dest, getGetterMethodName());
   }
 }

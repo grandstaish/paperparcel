@@ -14,10 +14,10 @@ public class EnumProperty extends Property {
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    block.add("($T) $N.readSerializable()", getTypeName(), in);
+    block.add("($T) $N.readSerializable()", getVariableTypeName(), in);
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
-    block.add("$N.writeSerializable($N.$N())", dest, DATA_VARIABLE_NAME, getName());
+    block.add("$N.writeSerializable($N.$N())", dest, DATA_VARIABLE_NAME, getGetterMethodName());
   }
 }

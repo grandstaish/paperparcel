@@ -18,6 +18,6 @@ public class PersistableBundleProperty extends Property {
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
-    block.add("$N.writePersistableBundle($N.$N())", dest, DATA_VARIABLE_NAME, getName());
+    block.add("$N.writePersistableBundle($N.$N())", dest, DATA_VARIABLE_NAME, getGetterMethodName());
   }
 }

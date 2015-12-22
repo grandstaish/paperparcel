@@ -18,6 +18,6 @@ public class BundleProperty extends Property {
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
-    block.add("$N.writeBundle($N.$N())", dest, DATA_VARIABLE_NAME, getName());
+    block.add("$N.writeBundle($N.$N())", dest, DATA_VARIABLE_NAME, getGetterMethodName());
   }
 }

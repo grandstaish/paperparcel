@@ -16,6 +16,6 @@ public class LongProperty extends Property {
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
-    block.add("$N.writeLong(data.$N())", dest, getName());
+    block.add("$N.writeLong(data.$N())", dest, getGetterMethodName());
   }
 }

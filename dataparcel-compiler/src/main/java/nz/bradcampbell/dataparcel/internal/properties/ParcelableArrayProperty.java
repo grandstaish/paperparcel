@@ -14,10 +14,10 @@ public class ParcelableArrayProperty extends Property {
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    block.add("($T) $N.readParcelableArray(getClass().getClassLoader())", getTypeName(), in);
+    block.add("($T) $N.readParcelableArray(getClass().getClassLoader())", getVariableTypeName(), in);
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
-    block.add("$N.writeParcelableArray($N.$N())", dest, DATA_VARIABLE_NAME, getName());
+    block.add("$N.writeParcelableArray($N.$N())", dest, DATA_VARIABLE_NAME, getGetterMethodName());
   }
 }

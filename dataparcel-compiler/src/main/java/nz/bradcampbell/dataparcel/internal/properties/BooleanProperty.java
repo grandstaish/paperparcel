@@ -18,6 +18,6 @@ public class BooleanProperty extends Property {
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
-    block.add("$N.writeInt($N.$N() ? 1 : 0)", dest, DATA_VARIABLE_NAME, getName());
+    block.add("$N.writeInt($N.$N() ? 1 : 0)", dest, DATA_VARIABLE_NAME, getGetterMethodName());
   }
 }

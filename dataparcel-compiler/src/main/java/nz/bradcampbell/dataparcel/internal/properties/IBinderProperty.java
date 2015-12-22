@@ -14,10 +14,10 @@ public class IBinderProperty extends Property {
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    block.add("($T) $N.readStrongBinder()", getTypeName(), in);
+    block.add("($T) $N.readStrongBinder()", getVariableTypeName(), in);
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
-    block.add("$N.writeStrongBinder($N.$N())", dest, DATA_VARIABLE_NAME, getName());
+    block.add("$N.writeStrongBinder($N.$N())", dest, DATA_VARIABLE_NAME, getGetterMethodName());
   }
 }

@@ -64,21 +64,21 @@ public class MapProperty extends Property {
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
     if (isKeyTypeArgumentValid && isValueTypeArgumentValid) {
-      block.add("($T) $N.readHashMap(getClass().getClassLoader())", getTypeName(), in);
+      block.add("($T) $N.readHashMap(getClass().getClassLoader())", getVariableTypeName(), in);
     } else {
       TypeName mapTypeName = ClassName.get(Map.class);
       TypeName hashMapTypeName = ClassName.get(HashMap.class);
 
       if (isNullable()) {
         block.addStatement("$T<$N, $N> $N = null", mapTypeName, keyTypeArgumentName, valueTypeArgumentName,
-            getName());
+            getGetterMethodName());
         block.beginControlFlow("if ($N.readInt() == 0)", in);
-        block.add("$N = ", getName());
+        block.add("$N = ", getGetterMethodName());
       } else {
-        block.add("$T<$N, $N> $N = ", mapTypeName, keyTypeArgumentName, valueTypeArgumentName, getName());
+        block.add("$T<$N, $N> $N = ", mapTypeName, keyTypeArgumentName, valueTypeArgumentName, getGetterMethodName());
       }
 
-      String wrappedName = getName() + "Wrapped";
+      String wrappedName = getGetterMethodName() + "Wrapped";
 
       block.addStatement("new $T<$N, $N>()", hashMapTypeName, keyTypeArgumentName, valueTypeArgumentName);
 
@@ -90,7 +90,7 @@ public class MapProperty extends Property {
       String getKey = isKeyTypeArgumentValid ? "" : ".getContents()";
       String getValue = isValueTypeArgumentValid ? "" : ".getContents()";
       block.beginControlFlow("for ($N key : $N.keySet())", wrappedKey, wrappedName);
-      block.addStatement("$N.put(key$N, $N.get(key)$N)", getName(), getKey, wrappedName, getValue);
+      block.addStatement("$N.put(key$N, $N.get(key)$N)", getGetterMethodName(), getKey, wrappedName, getValue);
 
       block.endControlFlow();
 
@@ -102,25 +102,25 @@ public class MapProperty extends Property {
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
     if (isKeyTypeArgumentValid && isValueTypeArgumentValid) {
-      block.add("$N.writeMap($N.$N())", dest, DATA_VARIABLE_NAME, getName());
+      block.add("$N.writeMap($N.$N())", dest, DATA_VARIABLE_NAME, getGetterMethodName());
     } else {
-      String wrappedName = getName() + "Wrapped";
+      String wrappedName = getGetterMethodName() + "Wrapped";
       TypeName mapTypeName = ClassName.get(Map.class);
       TypeName hashMapTypeName = ClassName.get(HashMap.class);
 
       block.addStatement("$T<$N, $N> $N = $N.$N()", mapTypeName, keyTypeArgumentName,
-          valueTypeArgumentName, getName(), DATA_VARIABLE_NAME, getName());
+          valueTypeArgumentName, getGetterMethodName(), DATA_VARIABLE_NAME, getGetterMethodName());
 
       String wrappedKey = isKeyTypeArgumentValid ? keyTypeArgumentName : keyTypeArgumentParcel;
       String wrappedValue = isValueTypeArgumentValid ? valueTypeArgumentName : valueTypeArgumentParcel;
       block.addStatement("$T<$N, $N> $N = new $T<$N, $N>()", mapTypeName, wrappedKey, wrappedValue,
           wrappedName, hashMapTypeName, wrappedKey, wrappedValue);
 
-      block.beginControlFlow("for ($N key : $N.keySet())", keyTypeArgumentName, getName());
+      block.beginControlFlow("for ($N key : $N.keySet())", keyTypeArgumentName, getGetterMethodName());
 
       String putKey = isKeyTypeArgumentValid ? "key" : keyTypeArgumentParcel + ".wrap(key)";
-      String putVal = isValueTypeArgumentValid ? getName() + ".get(key)" :
-          valueTypeArgumentParcel + ".wrap(" + getName() + ".get(key))";
+      String putVal = isValueTypeArgumentValid ? getGetterMethodName() + ".get(key)" :
+          valueTypeArgumentParcel + ".wrap(" + getGetterMethodName() + ".get(key))";
       block.addStatement("$N.put($N, $N)", wrappedName, putKey, putVal);
 
       block.endControlFlow();

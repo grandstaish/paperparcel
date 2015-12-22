@@ -14,10 +14,10 @@ public class ShortProperty extends Property {
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    block.add("($T) $N.readInt()", getTypeName(), in);
+    block.add("($T) $N.readInt()", getVariableTypeName(), in);
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
-    block.add("$N.writeInt(((Short) $N.$N()).intValue())", dest, DATA_VARIABLE_NAME, getName());
+    block.add("$N.writeInt(((Short) $N.$N()).intValue())", dest, DATA_VARIABLE_NAME, getGetterMethodName());
   }
 }

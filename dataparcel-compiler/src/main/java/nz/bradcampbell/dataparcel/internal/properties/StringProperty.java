@@ -16,6 +16,6 @@ public class StringProperty extends Property {
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
-    block.add("$N.writeString(data.$N())", dest, getName());
+    block.add("$N.writeString(data.$N())", dest, getGetterMethodName());
   }
 }

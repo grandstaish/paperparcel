@@ -1,6 +1,7 @@
 package nz.bradcampbell.dataparcel.internal.properties;
 
 import com.squareup.javapoet.*;
+import nz.bradcampbell.dataparcel.internal.DataClass;
 import nz.bradcampbell.dataparcel.internal.Property;
 
 import javax.lang.model.element.TypeElement;
@@ -41,22 +42,22 @@ public class ListProperty extends Property {
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
     if (isValidArgument) {
-      block.add("($T) $N.readArrayList(getClass().getClassLoader())", getTypeName(), in);
+      block.add("($T) $N.readArrayList(getClass().getClassLoader())", getVariableTypeName(), in);
     } else {
       if (isNullable()) {
-        block.addStatement("$T<$N> $N = null", ClassName.get(List.class), typeArgumentName, getName());
+        block.addStatement("$T<$N> $N = null", ClassName.get(List.class), typeArgumentName, getGetterMethodName());
         block.beginControlFlow("if ($N.readInt() == 0)", in);
-        block.add("$N = ", getName());
+        block.add("$N = ", getGetterMethodName());
       } else {
-        block.add("$T<$N> $N = ", ClassName.get(List.class), typeArgumentName, getName());
+        block.add("$T<$N> $N = ", ClassName.get(List.class), typeArgumentName, getGetterMethodName());
       }
 
-      String wrappedName = getName() + "Wrapped";
+      String wrappedName = getGetterMethodName() + "Wrapped";
       block.addStatement("new $T<$N>()", ClassName.get(ArrayList.class), typeArgumentName);
       block.addStatement("$T<$N> $N = $N.readArrayList(getClass().getClassLoader())", ClassName.get(List.class),
           typeArgumentParcel, wrappedName, in);
       block.beginControlFlow("for ($N val : $N)", typeArgumentParcel, wrappedName);
-      block.addStatement("$N.add(val.getContents())", getName());
+      block.addStatement("$N.add(val.getContents())", getGetterMethodName());
       block.unindent();
       block.add("}");
 
@@ -69,14 +70,14 @@ public class ListProperty extends Property {
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
     if (isValidArgument) {
-      block.add("$N.writeList(data.$N())", dest, getName());
+      block.add("$N.writeList(data.$N())", dest, getGetterMethodName());
     } else {
-      String wrappedName = getName() + "Wrapped";
-      block.addStatement("$T<$N> $N = data.$N()", ClassName.get(List.class), typeArgumentName, getName(),
-          getName());
+      String wrappedName = getGetterMethodName() + "Wrapped";
+      block.addStatement("$T<$N> $N = data.$N()", ClassName.get(List.class), typeArgumentName, getGetterMethodName(),
+          getGetterMethodName());
       block.addStatement("$T<$N> $N = new $T<$N>($N.size())", ClassName.get(List.class),
-          typeArgumentParcel, wrappedName, ClassName.get(ArrayList.class), typeArgumentParcel, getName());
-      block.beginControlFlow("for ($N val : $N)", typeArgumentName, getName());
+          typeArgumentParcel, wrappedName, ClassName.get(ArrayList.class), typeArgumentParcel, getGetterMethodName());
+      block.beginControlFlow("for ($N val : $N)", typeArgumentName, getGetterMethodName());
       block.addStatement("$N.add($N.wrap(val))", wrappedName, typeArgumentParcel);
       block.endControlFlow();
       block.add("$N.writeList($N)", dest, wrappedName);

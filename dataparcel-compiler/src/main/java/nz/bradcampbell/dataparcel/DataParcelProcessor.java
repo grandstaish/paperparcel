@@ -4,7 +4,7 @@ import android.os.Parcelable;
 import com.google.auto.service.AutoService;
 import com.google.common.base.Joiner;
 import com.squareup.javapoet.*;
-import nz.bradcampbell.dataparcel.internal.Parcel;
+import nz.bradcampbell.dataparcel.internal.DataClass;
 import nz.bradcampbell.dataparcel.internal.Property;
 
 import javax.annotation.processing.*;
@@ -28,7 +28,7 @@ public class DataParcelProcessor extends AbstractProcessor {
   private Elements elementUtils;
   private Filer filer;
   private Types typeUtil;
-  private Map<String, Parcel> parcels = new HashMap<String, Parcel>();
+  private Map<String, DataClass> parcels = new HashMap<String, DataClass>();
 
   @Override public synchronized void init(ProcessingEnvironment env) {
     super.init(env);
@@ -59,7 +59,7 @@ public class DataParcelProcessor extends AbstractProcessor {
       TypeElement el = (TypeElement) element;
       createParcel(el);
     }
-    for (Parcel p : parcels.values()) {
+    for (DataClass p : parcels.values()) {
       try {
         generateJavaFileFor(p).writeTo(filer);
       } catch (IOException e) {
@@ -80,7 +80,7 @@ public class DataParcelProcessor extends AbstractProcessor {
       boolean isNullable = !isFieldRequired(variableElement);
       properties.add(createProperty(typeUtil, isNullable, "component" + (i + 1), variableElement));
     }
-    parcels.put(typeElement.getQualifiedName().toString(), new Parcel(properties, classPackage, className, typeElement));
+    parcels.put(typeElement.getQualifiedName().toString(), new DataClass(properties, classPackage, className, typeElement));
     // Build property dependencies
     for (Property property : properties) {
       for (TypeElement requiredParcel : property.requiredParcels()) {
@@ -122,24 +122,24 @@ public class DataParcelProcessor extends AbstractProcessor {
     return !hasAnnotationWithName(element, NULLABLE_ANNOTATION_NAME);
   }
 
-  private JavaFile generateJavaFileFor(Parcel parcel) {
-    TypeSpec.Builder o = TypeSpec.classBuilder(parcel.getName())
+  private JavaFile generateJavaFileFor(DataClass dataClass) {
+    TypeSpec.Builder o = TypeSpec.classBuilder(dataClass.getWrapperClassName().simpleName())
         .addModifiers(PUBLIC)
         .addSuperinterface(Parcelable.class)
-        .addField(generateCreator(parcel))
-        .addField(generateContentsField(parcel))
-        .addMethod(generateWrapMethod(parcel))
-        .addMethod(generateContentsConstructor(parcel))
-        .addMethod(generateParcelConstructor(parcel))
-        .addMethod(generateGetter(parcel))
+        .addField(generateCreator(dataClass))
+        .addField(generateContentsField(dataClass))
+        .addMethod(generateWrapMethod(dataClass))
+        .addMethod(generateContentsConstructor(dataClass))
+        .addMethod(generateParcelConstructor(dataClass))
+        .addMethod(generateGetter(dataClass))
         .addMethod(generateDescribeContents())
-        .addMethod(generateWriteToParcel(parcel));
-    return JavaFile.builder(parcel.getClassPackage(), o.build()).build();
+        .addMethod(generateWriteToParcel(dataClass));
+    return JavaFile.builder(dataClass.getClassPackage(), o.build()).build();
   }
 
-  private FieldSpec generateCreator(Parcel parcel) {
-    ClassName className = ClassName.bestGuess(parcel.getName());
-    ClassName creator = ClassName.bestGuess("android.os.Parcelable.Creator");
+  private FieldSpec generateCreator(DataClass dataClass) {
+    ClassName className = dataClass.getWrapperClassName();
+    ClassName creator = ClassName.get("android.os", "Parcelable", "Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, className);
     return FieldSpec
         .builder(creatorOfClass, "CREATOR", Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC)
@@ -158,29 +158,29 @@ public class DataParcelProcessor extends AbstractProcessor {
         .build();
   }
 
-  private FieldSpec generateContentsField(Parcel parcel) {
-    return FieldSpec.builder(parcel.getTypeName(), DATA_VARIABLE_NAME, PRIVATE, FINAL).build();
+  private FieldSpec generateContentsField(DataClass dataClass) {
+    return FieldSpec.builder(dataClass.getDataClassTypeName(), DATA_VARIABLE_NAME, PRIVATE, FINAL).build();
   }
 
-  private MethodSpec generateWrapMethod(Parcel parcel) {
-    ClassName className = ClassName.bestGuess(parcel.getName());
+  private MethodSpec generateWrapMethod(DataClass dataClass) {
+    ClassName className = dataClass.getWrapperClassName();
     return MethodSpec.methodBuilder("wrap")
         .addModifiers(PUBLIC, STATIC, FINAL)
-        .addParameter(parcel.getTypeName(), DATA_VARIABLE_NAME)
+        .addParameter(dataClass.getDataClassTypeName(), DATA_VARIABLE_NAME)
         .addStatement("return new $T($N)", className, DATA_VARIABLE_NAME)
         .returns(className)
         .build();
   }
 
-  private MethodSpec generateContentsConstructor(Parcel parcel) {
+  private MethodSpec generateContentsConstructor(DataClass dataClass) {
     return MethodSpec.constructorBuilder()
         .addModifiers(PRIVATE)
-        .addParameter(parcel.getTypeName(), DATA_VARIABLE_NAME)
+        .addParameter(dataClass.getDataClassTypeName(), DATA_VARIABLE_NAME)
         .addStatement("this.$N = $N", DATA_VARIABLE_NAME, DATA_VARIABLE_NAME)
         .build();
   }
 
-  private MethodSpec generateParcelConstructor(Parcel parcel) {
+  private MethodSpec generateParcelConstructor(DataClass dataClass) {
     ParameterSpec in = ParameterSpec
         .builder(ClassName.get("android.os", "Parcel"), "in")
         .build();
@@ -188,19 +188,19 @@ public class DataParcelProcessor extends AbstractProcessor {
         .addModifiers(PRIVATE)
         .addParameter(in);
     List<String> paramNames = new ArrayList<String>();
-    for (Property p : parcel.getProperties()) {
+    for (Property p : dataClass.getDataClassProperties()) {
       builder.addCode(p.readFromParcel(in));
-      paramNames.add(p.getName());
+      paramNames.add(p.getGetterMethodName());
     }
-    builder.addStatement("this.$N = new $T($N)", DATA_VARIABLE_NAME, parcel.getTypeName(),
+    builder.addStatement("this.$N = new $T($N)", DATA_VARIABLE_NAME, dataClass.getDataClassTypeName(),
         Joiner.on(", ").join(paramNames));
     return builder.build();
   }
 
-  private MethodSpec generateGetter(Parcel parcel) {
+  private MethodSpec generateGetter(DataClass dataClass) {
     return MethodSpec.methodBuilder("getContents")
         .addModifiers(PUBLIC)
-        .returns(parcel.getTypeName())
+        .returns(dataClass.getDataClassTypeName())
         .addStatement("return $N", DATA_VARIABLE_NAME)
         .build();
   }
@@ -214,7 +214,7 @@ public class DataParcelProcessor extends AbstractProcessor {
         .build();
   }
 
-  private MethodSpec generateWriteToParcel(Parcel parcel) {
+  private MethodSpec generateWriteToParcel(DataClass dataClass) {
     ParameterSpec dest = ParameterSpec
         .builder(ClassName.get("android.os", "Parcel"), "dest")
         .build();
@@ -223,7 +223,7 @@ public class DataParcelProcessor extends AbstractProcessor {
         .addModifiers(PUBLIC)
         .addParameter(dest)
         .addParameter(int.class, "flags");
-    for (Property p : parcel.getProperties()) {
+    for (Property p : dataClass.getDataClassProperties()) {
       builder.addCode(p.writeToParcel(dest));
     }
     return builder.build();

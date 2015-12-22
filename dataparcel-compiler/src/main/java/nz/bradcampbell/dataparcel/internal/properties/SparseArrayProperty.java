@@ -46,16 +46,16 @@ public class SparseArrayProperty extends Property {
     TypeName integerType = ClassName.get(Integer.class);
     TypeName mapTypeName = ClassName.get(Map.class);
 
-    String wrappedName = getName() + "Wrapped";
+    String wrappedName = getGetterMethodName() + "Wrapped";
 
-    block.addStatement("new $T()", getTypeName());
+    block.addStatement("new $T()", getVariableTypeName());
 
     block.addStatement("$T<$T, $N> $N = $N.readHashMap(getClass().getClassLoader())", mapTypeName,
         integerType, typeArgumentString, wrappedName, in);
 
     String getValue = isValidArgument ? "" : ".getContents()";
     block.beginControlFlow("for ($T key : $N.keySet())", integerType, wrappedName);
-    block.addStatement("$N.append(key, $N.get(key)$N)", getName(), wrappedName, getValue);
+    block.addStatement("$N.append(key, $N.get(key)$N)", getGetterMethodName(), wrappedName, getValue);
 
     block.unindent();
     block.add("}");
@@ -65,17 +65,17 @@ public class SparseArrayProperty extends Property {
     TypeName integerType = ClassName.get(Integer.class);
     TypeName mapTypeName = ClassName.get(Map.class);
     TypeName hashMapTypeName = ClassName.get(HashMap.class);
-    String wrappedName = getName() + "Wrapped";
+    String wrappedName = getGetterMethodName() + "Wrapped";
 
-    block.addStatement("$T $N = $N.$N()", getTypeName(), getName(), DATA_VARIABLE_NAME, getName());
+    block.addStatement("$T $N = $N.$N()", getVariableTypeName(), getGetterMethodName(), DATA_VARIABLE_NAME, getGetterMethodName());
     block.addStatement("$T<$T, $N> $N = new $T<$T, $N>()", mapTypeName, integerType, typeArgumentString,
         wrappedName, hashMapTypeName, integerType, typeArgumentString);
 
-    block.beginControlFlow("for (int i = 0; i < $N.size(); i++)", getName());
-    block.addStatement("int key = $N.keyAt(i)", getName());
+    block.beginControlFlow("for (int i = 0; i < $N.size(); i++)", getGetterMethodName());
+    block.addStatement("int key = $N.keyAt(i)", getGetterMethodName());
 
-    String putVal = isValidArgument ? getName() + ".get(key)" :
-        typeArgumentString + ".wrap(" + getName() + ".get(key))";
+    String putVal = isValidArgument ? getGetterMethodName() + ".get(key)" :
+        typeArgumentString + ".wrap(" + getGetterMethodName() + ".get(key))";
     block.addStatement("$N.put(key, $N)", wrappedName, putVal);
 
     block.endControlFlow();

@@ -34,7 +34,7 @@ public class NonParcelableProperty extends Property {
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
-    block.add("$N.writeParcelable($N.wrap($N.$N()), 0)", dest, parcelableTypeName, DATA_VARIABLE_NAME, getName());
+    block.add("$N.writeParcelable($N.wrap($N.$N()), 0)", dest, parcelableTypeName, DATA_VARIABLE_NAME, getGetterMethodName());
   }
 
   @Override public List<TypeElement> requiredParcels() {

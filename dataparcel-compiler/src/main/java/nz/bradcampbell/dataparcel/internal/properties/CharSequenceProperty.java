@@ -14,10 +14,10 @@ public class CharSequenceProperty extends Property {
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    block.add("($T) $N.readCharSequence()", getTypeName(), in);
+    block.add("($T) $N.readCharSequence()", getVariableTypeName(), in);
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
-    block.add("$N.writeCharSequence($N.$N())", dest, DATA_VARIABLE_NAME, getName());
+    block.add("$N.writeCharSequence($N.$N())", dest, DATA_VARIABLE_NAME, getGetterMethodName());
   }
 }

@@ -18,6 +18,6 @@ public class SizeFProperty extends Property {
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
-    block.add("$N.writeSizeF($N.$N())", dest, DATA_VARIABLE_NAME, getName());
+    block.add("$N.writeSizeF($N.$N())", dest, DATA_VARIABLE_NAME, getGetterMethodName());
   }
 }

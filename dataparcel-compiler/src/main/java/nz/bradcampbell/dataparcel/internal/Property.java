@@ -9,31 +9,31 @@ import java.util.List;
 
 public abstract class Property {
   private final boolean isNullable;
-  private final String name;
-  private final TypeName typeName;
-  private final VariableElement element;
+  private final String getterMethodName;
+  private final TypeName variableTypeName;
+  private final VariableElement variableElement;
 
-  public Property(boolean isNullable, String name, VariableElement element) {
+  public Property(boolean isNullable, String getterMethodName, VariableElement element) {
     this.isNullable = isNullable;
-    this.name = name;
-    this.typeName = ClassName.get(element.asType());
-    this.element = element;
+    this.getterMethodName = getterMethodName;
+    this.variableTypeName = ClassName.get(element.asType());
+    this.variableElement = element;
   }
 
   public boolean isNullable() {
     return isNullable;
   }
 
-  public String getName() {
-    return name;
+  public String getGetterMethodName() {
+    return getterMethodName;
   }
 
-  public TypeName getTypeName() {
-    return typeName;
+  public TypeName getVariableTypeName() {
+    return variableTypeName;
   }
 
-  public VariableElement getElement() {
-    return element;
+  public VariableElement getVariableElement() {
+    return variableElement;
   }
 
   public CodeBlock readFromParcel(ParameterSpec in) {
@@ -41,11 +41,11 @@ public abstract class Property {
 
     if (useReadTemplate()) {
       if (isNullable) {
-        block.addStatement("$T $N = null", typeName, name);
+        block.addStatement("$T $N = null", variableTypeName, getterMethodName);
         block.beginControlFlow("if ($N.readInt() == 0)", in);
-        block.add("$N = ", name);
+        block.add("$N = ", getterMethodName);
       } else {
-        block.add("$T $N = ", typeName, name);
+        block.add("$T $N = ", variableTypeName, getterMethodName);
       }
     }
 
@@ -68,7 +68,7 @@ public abstract class Property {
 
     if (useWriteTemplate()) {
       if (isNullable) {
-        block.beginControlFlow("if (data.$N() == null)", name);
+        block.beginControlFlow("if (data.$N() == null)", getterMethodName);
         block.addStatement("$N.writeInt(1)", dest);
         block.nextControlFlow("else");
         block.addStatement("$N.writeInt(0)", dest);
