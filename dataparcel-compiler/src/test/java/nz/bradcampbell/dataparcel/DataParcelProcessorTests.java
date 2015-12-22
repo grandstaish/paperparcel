@@ -64,6 +64,100 @@ public class DataParcelProcessorTests {
         .generatesSources(expectedSource);
   }
 
+  @Test public void twoEmptyDataObjectsTest() throws Exception {
+    JavaFileObject source1 = JavaFileObjects.forSourceString("test.Test1", Joiner.on('\n').join(
+        "package test;",
+        "import nz.bradcampbell.dataparcel.DataParcel;",
+        "@DataParcel",
+        "public final class Test1 {",
+        "}"
+    ));
+
+    JavaFileObject source2 = JavaFileObjects.forSourceString("test.Test2", Joiner.on('\n').join(
+        "package test;",
+        "import nz.bradcampbell.dataparcel.DataParcel;",
+        "@DataParcel",
+        "public final class Test2 {",
+        "}"
+    ));
+
+    JavaFileObject expectedSource1 = JavaFileObjects.forSourceString("test/Test1Parcel", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
+        "import java.lang.Override;",
+        "public class Test1Parcel implements Parcelable {",
+        "public static final Parcelable.Creator<Test1Parcel> CREATOR = new Parcelable.Creator<Test1Parcel>() {",
+        "@Override public Test1Parcel createFromParcel(Parcel in) {",
+        "return new Test1Parcel(in);",
+        "}",
+        "@Override public Test1Parcel[] newArray(int size) {",
+        "return new Test1Parcel[size];",
+        "}",
+        "};",
+        "private final Test1 data;",
+        "private Test1Parcel(Test1 data) {",
+        "this.data = data;",
+        "}",
+        "private Test1Parcel(Parcel in) {",
+        "this.data = new Test1();",
+        "}",
+        "public static final Test1Parcel wrap(Test1 data) {",
+        "return new Test1Parcel(data);",
+        "}",
+        "public Test1 getContents() {",
+        "return data;",
+        "}",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject expectedSource2 = JavaFileObjects.forSourceString("test/Test2Parcel", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
+        "import java.lang.Override;",
+        "public class Test2Parcel implements Parcelable {",
+        "public static final Parcelable.Creator<Test2Parcel> CREATOR = new Parcelable.Creator<Test2Parcel>() {",
+        "@Override public Test2Parcel createFromParcel(Parcel in) {",
+        "return new Test2Parcel(in);",
+        "}",
+        "@Override public Test2Parcel[] newArray(int size) {",
+        "return new Test2Parcel[size];",
+        "}",
+        "};",
+        "private final Test2 data;",
+        "private Test2Parcel(Test2 data) {",
+        "this.data = data;",
+        "}",
+        "private Test2Parcel(Parcel in) {",
+        "this.data = new Test2();",
+        "}",
+        "public static final Test2Parcel wrap(Test2 data) {",
+        "return new Test2Parcel(data);",
+        "}",
+        "public Test2 getContents() {",
+        "return data;",
+        "}",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "}",
+        "}"
+    ));
+
+    assertAbout(javaSources()).that(asList(source1, source2))
+        .processedWith(new DataParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expectedSource1, expectedSource2);
+  }
+
   @Test public void nullableTest() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
