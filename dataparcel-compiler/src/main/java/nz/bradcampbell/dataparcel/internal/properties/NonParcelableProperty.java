@@ -1,43 +1,36 @@
 package nz.bradcampbell.dataparcel.internal.properties;
 
-import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.TypeName;
 import nz.bradcampbell.dataparcel.internal.Property;
 
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.util.Types;
-
-import java.util.Collections;
-import java.util.List;
-
-import static nz.bradcampbell.dataparcel.DataParcelProcessor.DATA_VARIABLE_NAME;
+import javax.lang.model.type.TypeMirror;
 
 public class NonParcelableProperty extends Property {
-  private final String parcelableTypeName;
-  private final TypeElement requiredParcel;
-
-  public NonParcelableProperty(Types types, boolean isNullable, String name, VariableElement variableElement) {
-    super(isNullable, name, variableElement);
-    try {
-      String simpleName = ((ClassName)ClassName.get(types.erasure(variableElement.asType()))).simpleName();
-      parcelableTypeName = simpleName + "Parcel";
-      requiredParcel = (TypeElement) types.asElement(variableElement.asType());
-    } catch (Exception e) {
-      throw new RuntimeException(" beep bop"+ variableElement.asType() , e);
-    }
+  public NonParcelableProperty(TypeMirror typeMirror, boolean isNullable, String name, TypeName parcelableTypeName) {
+    super(typeMirror, isNullable, name, parcelableTypeName);
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    block.add("(($N) $N.readParcelable(getClass().getClassLoader())).getContents()", parcelableTypeName, in);
+    TypeName parcelableTypeName = getParcelableTypeName();
+    block.addStatement("$T $N = ($T) $N.readParcelable(getClass().getClassLoader())", parcelableTypeName,
+        getWrappedName(), parcelableTypeName, in);
+    unparcelVariable(block);
   }
 
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
-    block.add("$N.writeParcelable($N.wrap($N.$N()), 0)", dest, parcelableTypeName, DATA_VARIABLE_NAME, getGetterMethodName());
+  @Override public void unparcelVariable(CodeBlock.Builder block) {
+    block.addStatement("$N = $N.getContents()", getName(), getWrappedName());
   }
 
-  @Override public List<TypeElement> requiredParcels() {
-    return Collections.singletonList(requiredParcel);
+  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {
+    block.addStatement("$N.writeParcelable($N, 0)", dest, variableName);
+  }
+
+  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source) {
+    String variableName = getName();
+    TypeName parcelableTypeName = getParcelableTypeName();
+    block.addStatement("$T $N = $T.wrap($N)", parcelableTypeName, variableName, parcelableTypeName, source);
+    return variableName;
   }
 }

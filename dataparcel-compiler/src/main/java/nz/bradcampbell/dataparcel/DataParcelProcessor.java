@@ -6,10 +6,13 @@ import com.google.common.base.Joiner;
 import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.DataClass;
 import nz.bradcampbell.dataparcel.internal.Property;
+import nz.bradcampbell.dataparcel.internal.PropertyCreator;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
@@ -18,6 +21,7 @@ import java.util.*;
 
 import static javax.lang.model.element.Modifier.*;
 import static nz.bradcampbell.dataparcel.internal.PropertyCreator.createProperty;
+import static nz.bradcampbell.dataparcel.internal.PropertyCreator.isValidType;
 
 @AutoService(Processor.class)
 public class DataParcelProcessor extends AbstractProcessor {
@@ -35,6 +39,9 @@ public class DataParcelProcessor extends AbstractProcessor {
     elementUtils = env.getElementUtils();
     filer = env.getFiler();
     typeUtil = env.getTypeUtils();
+
+    // TODO: use DI instead of static instance
+    PropertyCreator.init(typeUtil);
   }
 
   @Override
@@ -75,18 +82,51 @@ public class DataParcelProcessor extends AbstractProcessor {
     String className = ClassName.get(typeElement).simpleName() + "Parcel";
     List<Property> properties = new ArrayList<Property>();
     List<VariableElement> variableElements = getFields(typeElement);
+    List<TypeElement> variableDataParcelDependencies = new ArrayList<TypeElement>();
     for (int i = 0; i < variableElements.size(); i++) {
       VariableElement variableElement = variableElements.get(i);
       boolean isNullable = !isFieldRequired(variableElement);
-      properties.add(createProperty(typeUtil, isNullable, "component" + (i + 1), variableElement));
+      TypeName parsedTypeName = parseParameterTypes(variableElement.asType(), variableDataParcelDependencies);
+      Property property = createProperty(variableElement.asType(), isNullable, "component" + (i + 1), parsedTypeName);
+      properties.add(property);
     }
     parcels.put(typeElement.getQualifiedName().toString(), new DataClass(properties, classPackage, className, typeElement));
-    // Build property dependencies
-    for (Property property : properties) {
-      for (TypeElement requiredParcel : property.requiredParcels()) {
-        createParcel(requiredParcel);
-      }
+    // Build parcel dependencies
+    for (TypeElement requiredParcel : variableDataParcelDependencies) {
+      createParcel(requiredParcel);
     }
+  }
+
+  private TypeName parseParameterTypes(TypeMirror type, List<TypeElement> variableDataParcelDependencies) {
+    ClassName typeName = (ClassName) ClassName.get(typeUtil.erasure(type));
+    boolean isParcelable = isValidType(typeUtil, type);
+    TypeName result;
+    if (isParcelable) {
+      if (type instanceof DeclaredType) {
+        DeclaredType declaredType = (DeclaredType) type;
+        List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
+        int numTypeArgs = typeArguments.size();
+        if (numTypeArgs > 0) {
+          TypeName[] args = new TypeName[numTypeArgs];
+          for (int i = 0; i < args.length; i++) {
+            args[i] = parseParameterTypes(typeArguments.get(i), variableDataParcelDependencies);
+          }
+          result = ParameterizedTypeName.get(typeName, args);
+        } else {
+          result = typeName;
+        }
+      } else {
+        result = typeName;
+      }
+    } else {
+      // This is (one of) the reason(s) it is not parcelable. Assume it contains a data object as a parameter
+      TypeElement requiredElement = (TypeElement) typeUtil.asElement(type);
+      variableDataParcelDependencies.add(requiredElement);
+      String packageName = elementUtils.getPackageOf(requiredElement).getQualifiedName().toString();
+      String className = requiredElement.getSimpleName().toString() + "Parcel";
+      result = ClassName.get(packageName, className);
+    }
+    return result;
   }
 
   private List<VariableElement> getFields(TypeElement el) {
@@ -190,7 +230,7 @@ public class DataParcelProcessor extends AbstractProcessor {
     List<String> paramNames = new ArrayList<String>();
     for (Property p : dataClass.getDataClassProperties()) {
       builder.addCode(p.readFromParcel(in));
-      paramNames.add(p.getGetterMethodName());
+      paramNames.add(p.getName());
     }
     builder.addStatement("this.$N = new $T($N)", DATA_VARIABLE_NAME, dataClass.getDataClassTypeName(),
         Joiner.on(", ").join(paramNames));

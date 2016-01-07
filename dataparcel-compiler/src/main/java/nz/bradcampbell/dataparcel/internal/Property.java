@@ -2,60 +2,70 @@ package nz.bradcampbell.dataparcel.internal;
 
 import com.squareup.javapoet.*;
 
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
-import java.util.Collections;
-import java.util.List;
+import javax.lang.model.type.TypeMirror;
+
+import static nz.bradcampbell.dataparcel.DataParcelProcessor.DATA_VARIABLE_NAME;
 
 public abstract class Property {
   private final boolean isNullable;
-  private final String getterMethodName;
-  private final TypeName variableTypeName;
-  private final VariableElement variableElement;
+  private final String name;
+  private final String wrappedName;
+  private final TypeMirror typeMirror;
+  private final TypeName originalTypeName;
+  private final TypeName parcelableTypeName;
+  private final boolean isParcelable;
 
-  public Property(boolean isNullable, String getterMethodName, VariableElement element) {
+  public Property(TypeMirror typeMirror, boolean isNullable, String name, TypeName parcelableTypeName) {
     this.isNullable = isNullable;
-    this.getterMethodName = getterMethodName;
-    this.variableTypeName = ClassName.get(element.asType());
-    this.variableElement = element;
+    this.name = name;
+    this.wrappedName = name + "Wrapped";
+    this.typeMirror = typeMirror;
+    this.originalTypeName = TypeName.get(typeMirror);
+    this.parcelableTypeName = parcelableTypeName;
+    this.isParcelable = this.originalTypeName.equals(parcelableTypeName);
   }
 
   public boolean isNullable() {
     return isNullable;
   }
 
-  public String getGetterMethodName() {
-    return getterMethodName;
+  public String getName() {
+    return name;
   }
 
-  public TypeName getVariableTypeName() {
-    return variableTypeName;
+  public String getWrappedName() {
+    return wrappedName;
   }
 
-  public VariableElement getVariableElement() {
-    return variableElement;
+  public TypeMirror getTypeMirror() {
+    return typeMirror;
+  }
+
+  public TypeName getOriginalTypeName() {
+    return originalTypeName;
+  }
+
+  public TypeName getParcelableTypeName() {
+    return parcelableTypeName;
+  }
+
+  public boolean isParcelable() {
+    return isParcelable;
   }
 
   public CodeBlock readFromParcel(ParameterSpec in) {
     CodeBlock.Builder block = CodeBlock.builder();
 
-    if (useReadTemplate()) {
-      if (isNullable) {
-        block.addStatement("$T $N = null", variableTypeName, getterMethodName);
-        block.beginControlFlow("if ($N.readInt() == 0)", in);
-        block.add("$N = ", getterMethodName);
-      } else {
-        block.add("$T $N = ", variableTypeName, getterMethodName);
-      }
+    block.addStatement("$T $N = null", getOriginalTypeName(), getName());
+
+    if (isNullable()) {
+      block.beginControlFlow("if ($N.readInt() == 0)", in);
     }
 
     readFromParcelInner(block, in);
 
-    if (useReadTemplate()) {
-      block.add(";\n");
-      if (isNullable) {
-        block.endControlFlow();
-      }
+    if (isNullable()) {
+      block.endControlFlow();
     }
 
     return block.build();
@@ -63,41 +73,38 @@ public abstract class Property {
 
   protected abstract void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in);
 
+  public void unparcelVariable(CodeBlock.Builder block) {
+    block.addStatement("$N = $N", getName(), getWrappedName());
+  }
+
   public CodeBlock writeToParcel(ParameterSpec dest) {
     CodeBlock.Builder block = CodeBlock.builder();
 
-    if (useWriteTemplate()) {
-      if (isNullable) {
-        block.beginControlFlow("if (data.$N() == null)", getterMethodName);
-        block.addStatement("$N.writeInt(1)", dest);
-        block.nextControlFlow("else");
-        block.addStatement("$N.writeInt(0)", dest);
-      }
+    String source = DATA_VARIABLE_NAME + "." + getName() + "()";
+
+    if (isNullable()) {
+      block.beginControlFlow("if ($N == null)", source);
+      block.addStatement("$N.writeInt(1)", dest);
+      block.nextControlFlow("else");
+      block.addStatement("$N.writeInt(0)", dest);
     }
 
-    writeToParcelInner(block, dest);
+    String variableName = generateParcelableVariable(block, source);
+    writeToParcelInner(block, dest, variableName);
 
-    if (useWriteTemplate()) {
-      block.add(";\n");
-      if (isNullable) {
-        block.endControlFlow();
-      }
+    if (isNullable()) {
+      block.endControlFlow();
     }
 
     return block.build();
   }
 
-  protected abstract void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest);
+  protected abstract void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName);
 
-  protected boolean useReadTemplate() {
-    return true;
-  }
-
-  protected boolean useWriteTemplate() {
-    return true;
-  }
-
-  public List<TypeElement> requiredParcels() {
-    return Collections.emptyList();
+  public String generateParcelableVariable(CodeBlock.Builder block, String source) {
+    String variableName = getName();
+    TypeName typeName = getParcelableTypeName();
+    block.addStatement("$T $N = $N", typeName, variableName, source);
+    return variableName;
   }
 }

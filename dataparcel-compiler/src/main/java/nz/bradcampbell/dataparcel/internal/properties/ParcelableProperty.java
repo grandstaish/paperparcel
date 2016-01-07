@@ -2,22 +2,21 @@ package nz.bradcampbell.dataparcel.internal.properties;
 
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.TypeName;
 import nz.bradcampbell.dataparcel.internal.Property;
 
-import javax.lang.model.element.VariableElement;
-
-import static nz.bradcampbell.dataparcel.DataParcelProcessor.DATA_VARIABLE_NAME;
+import javax.lang.model.type.TypeMirror;
 
 public class ParcelableProperty extends Property {
-  public ParcelableProperty(boolean isNullable, String name, VariableElement variableElement) {
-    super(isNullable, name, variableElement);
+  public ParcelableProperty(TypeMirror typeMirror, boolean isNullable, String name, TypeName parcelableTypeName) {
+    super(typeMirror, isNullable, name, parcelableTypeName);
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    block.add("($T) $N.readParcelable(getClass().getClassLoader())", getVariableTypeName(), in);
+    block.addStatement("$N = ($T) $N.readParcelable(getClass().getClassLoader())", getName(), getParcelableTypeName(), in);
   }
 
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
-    block.add("$N.writeParcelable($N.$N(), 0)", dest, DATA_VARIABLE_NAME, getGetterMethodName());
+  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {
+    block.addStatement("$N.writeParcelable($N, 0)", dest, variableName);
   }
 }

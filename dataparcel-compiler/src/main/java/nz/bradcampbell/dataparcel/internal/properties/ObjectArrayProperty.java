@@ -2,22 +2,21 @@ package nz.bradcampbell.dataparcel.internal.properties;
 
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.TypeName;
 import nz.bradcampbell.dataparcel.internal.Property;
 
-import javax.lang.model.element.VariableElement;
-
-import static nz.bradcampbell.dataparcel.DataParcelProcessor.DATA_VARIABLE_NAME;
+import javax.lang.model.type.TypeMirror;
 
 public class ObjectArrayProperty extends Property {
-  public ObjectArrayProperty(boolean isNullable, String name, VariableElement variableElement) {
-    super(isNullable, name, variableElement);
+  public ObjectArrayProperty(TypeMirror typeMirror, boolean isNullable, String name, TypeName parcelableTypeName) {
+    super(typeMirror, isNullable, name, parcelableTypeName);
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    block.add("$N.readArray(getClass().getClassLoader())", in);
+    block.addStatement("$N = $N.readArray(getClass().getClassLoader())", getName(), in);
   }
 
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
-    block.add("$N.writeArray($N.$N())", dest, DATA_VARIABLE_NAME, getGetterMethodName());
+  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {
+    block.addStatement("$N.writeArray($N)", dest, variableName);
   }
 }

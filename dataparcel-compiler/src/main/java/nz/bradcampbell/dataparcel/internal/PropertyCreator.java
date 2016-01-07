@@ -8,7 +8,6 @@ import com.squareup.javapoet.TypeName;
 import nz.bradcampbell.dataparcel.internal.properties.*;
 
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
@@ -49,88 +48,95 @@ public class PropertyCreator {
       BYTE.box(), BOOLEAN, BOOLEAN.box(), FLOAT, FLOAT.box(), CHAR, CHAR.box(), DOUBLE, DOUBLE.box(),
       SHORT, SHORT.box());
 
-  public static Property createProperty(Types types, boolean isNullable, String name, VariableElement variableElement) {
-    TypeName type = getParcelableType(types, variableElement.asType());
-    type = type == null ? ClassName.get(variableElement.asType()) : type;
+  private static Types sTypeUtil;
 
-    if (STRING.equals(type)) {
-      return new StringProperty(isNullable, name, variableElement);
-    } else if (INT.equals(type)) {
-      return new IntProperty(isNullable, name, variableElement);
-    } else if (INT.box().equals(type)) {
-      return new IntProperty(isNullable, name, variableElement);
-    } else if (LONG.equals(type)) {
-      return new LongProperty(isNullable, name, variableElement);
-    } else if (LONG.box().equals(type)) {
-      return new LongProperty(isNullable, name, variableElement);
-    } else if (BYTE.equals(type)) {
-      return new ByteProperty(isNullable, name, variableElement);
-    } else if (BYTE.box().equals(type)) {
-      return new ByteProperty(isNullable, name, variableElement);
-    } else if (BOOLEAN.equals(type)) {
-      return new BooleanProperty(isNullable, name, variableElement);
-    } else if (BOOLEAN.box().equals(type)) {
-      return new BooleanProperty(isNullable, name, variableElement);
-    } else if (FLOAT.equals(type)) {
-      return new FloatProperty(isNullable, name, variableElement);
-    } else if (FLOAT.box().equals(type)) {
-      return new FloatProperty(isNullable, name, variableElement);
-    } else if (CHAR.equals(type)) {
-      return new CharProperty(isNullable, name, variableElement);
-    } else if (CHAR.box().equals(type)) {
-      return new CharProperty(isNullable, name, variableElement);
-    } else if (DOUBLE.equals(type)) {
-      return new DoubleProperty(isNullable, name, variableElement);
-    } else if (DOUBLE.box().equals(type)) {
-      return new DoubleProperty(isNullable, name, variableElement);
-    } else if (SHORT.equals(type)) {
-      return new ShortProperty(isNullable, name, variableElement);
-    } else if (SHORT.box().equals(type)) {
-      return new ShortProperty(isNullable, name, variableElement);
-    } else if (MAP.equals(type)) {
-      return new MapProperty(types, isNullable, name, variableElement);
-    } else if (LIST.equals(type)) {
-      return new ListProperty(types, isNullable, name, variableElement);
-    }  else if (BOOLEAN_ARRAY.equals(type)) {
-      return new BooleanArrayProperty(isNullable, name, variableElement);
-    } else if (BYTE_ARRAY.equals(type)) {
-      return new ByteArrayProperty(isNullable, name, variableElement);
-    } else if (INT_ARRAY.equals(type)) {
-      return new IntArrayProperty(isNullable, name, variableElement);
-    } else if (LONG_ARRAY.equals(type)) {
-      return new LongArrayProperty(isNullable, name, variableElement);
-    } else if (STRING_ARRAY.equals(type)) {
-      return new StringArrayProperty(isNullable, name, variableElement);
-    } else if (SPARSE_ARRAY.equals(type)) {
-      return new SparseArrayProperty(types, isNullable, name, variableElement);
-    } else if (SPARSE_BOOLEAN_ARRAY.equals(type)) {
-      return new SparseBooleanArray(isNullable, name, variableElement);
-    } else if (BUNDLE.equals(type)) {
-      return new BundleProperty(isNullable, name, variableElement);
-    } else if (PARCELABLE.equals(type)) {
-      return new ParcelableProperty(isNullable, name, variableElement);
-    } else if (PARCELABLE_ARRAY.equals(type)) {
-      return new ParcelableArrayProperty(isNullable, name, variableElement);
-    } else if (CHAR_SEQUENCE.equals(type)) {
-      return new CharSequenceProperty(isNullable, name, variableElement);
-    } else if (CHAR_SEQUENCE_ARRAY.equals(type)) {
-      return new CharSequenceArrayProperty(isNullable, name, variableElement);
-    } else if (IBINDER.equals(type)) {
-      return new IBinderProperty(isNullable, name, variableElement);
-    } else if (OBJECT_ARRAY.equals(type)) {
-      return new ObjectArrayProperty(isNullable, name, variableElement);
-    } else if (SERIALIZABLE.equals(type)) {
-      return new SerializableProperty(isNullable, name, variableElement);
-    } else if (PERSISTABLE_BUNDLE.equals(type)) {
-      return new PersistableBundleProperty(isNullable, name, variableElement);
-    } else if (SIZE.equals(type)) {
-      return new SizeProperty(isNullable, name, variableElement);
-    } else if (SIZEF.equals(type)) {
-      return new SizeFProperty(isNullable, name, variableElement);
-    } else if (ENUM.equals(type)) {
-      return new EnumProperty(isNullable, name, variableElement);
+  public static void init(Types typeUtil) {
+    sTypeUtil = typeUtil;
+  }
+
+  public static Property createProperty(TypeMirror typeMirror, boolean isNullable, String name, TypeName parcelableTypeName) {
+
+    TypeName parcelableType = getParcelableType(sTypeUtil, typeMirror);
+    parcelableType = parcelableType == null ? ClassName.get(typeMirror) : parcelableType;
+
+    if (STRING.equals(parcelableType)) {
+      return new StringProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (INT.equals(parcelableType)) {
+      return new IntProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (INT.box().equals(parcelableType)) {
+      return new IntProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (LONG.equals(parcelableType)) {
+      return new LongProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (LONG.box().equals(parcelableType)) {
+      return new LongProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (BYTE.equals(parcelableType)) {
+      return new ByteProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (BYTE.box().equals(parcelableType)) {
+      return new ByteProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (BOOLEAN.equals(parcelableType)) {
+      return new BooleanProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (BOOLEAN.box().equals(parcelableType)) {
+      return new BooleanProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (FLOAT.equals(parcelableType)) {
+      return new FloatProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (FLOAT.box().equals(parcelableType)) {
+      return new FloatProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (CHAR.equals(parcelableType)) {
+      return new CharProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (CHAR.box().equals(parcelableType)) {
+      return new CharProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (DOUBLE.equals(parcelableType)) {
+      return new DoubleProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (DOUBLE.box().equals(parcelableType)) {
+      return new DoubleProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (SHORT.equals(parcelableType)) {
+      return new ShortProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (SHORT.box().equals(parcelableType)) {
+      return new ShortProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (MAP.equals(parcelableType)) {
+      return new MapProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (LIST.equals(parcelableType)) {
+      return new ListProperty(typeMirror, isNullable, name, parcelableTypeName);
+    }  else if (BOOLEAN_ARRAY.equals(parcelableType)) {
+      return new BooleanArrayProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (BYTE_ARRAY.equals(parcelableType)) {
+      return new ByteArrayProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (INT_ARRAY.equals(parcelableType)) {
+      return new IntArrayProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (LONG_ARRAY.equals(parcelableType)) {
+      return new LongArrayProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (STRING_ARRAY.equals(parcelableType)) {
+      return new StringArrayProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (SPARSE_ARRAY.equals(parcelableType)) {
+      return new SparseArrayProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (SPARSE_BOOLEAN_ARRAY.equals(parcelableType)) {
+      return new SparseBooleanArray(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (BUNDLE.equals(parcelableType)) {
+      return new BundleProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (PARCELABLE.equals(parcelableType)) {
+      return new ParcelableProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (PARCELABLE_ARRAY.equals(parcelableType)) {
+      return new ParcelableArrayProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (CHAR_SEQUENCE.equals(parcelableType)) {
+      return new CharSequenceProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (CHAR_SEQUENCE_ARRAY.equals(parcelableType)) {
+      return new CharSequenceArrayProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (IBINDER.equals(parcelableType)) {
+      return new IBinderProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (OBJECT_ARRAY.equals(parcelableType)) {
+      return new ObjectArrayProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (SERIALIZABLE.equals(parcelableType)) {
+      return new SerializableProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (PERSISTABLE_BUNDLE.equals(parcelableType)) {
+      return new PersistableBundleProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (SIZE.equals(parcelableType)) {
+      return new SizeProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (SIZEF.equals(parcelableType)) {
+      return new SizeFProperty(typeMirror, isNullable, name, parcelableTypeName);
+    } else if (ENUM.equals(parcelableType)) {
+      return new EnumProperty(typeMirror, isNullable, name, parcelableTypeName);
     } else {
-      return new NonParcelableProperty(types, isNullable, name, variableElement);
+      return new NonParcelableProperty(typeMirror, isNullable, name, parcelableTypeName);
     }
   }
 
@@ -162,7 +168,7 @@ public class PropertyCreator {
     return null;
   }
 
-  public static boolean isValidType(TypeName type) {
-    return VALID_TYPES.contains(type);
+  public static boolean isValidType(Types types, TypeMirror typeMirror) {
+    return getParcelableType(types, typeMirror) != null;
   }
 }

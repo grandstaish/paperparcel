@@ -1,94 +1,74 @@
 package nz.bradcampbell.dataparcel.internal.properties;
 
 import com.squareup.javapoet.*;
-import nz.bradcampbell.dataparcel.internal.DataClass;
 import nz.bradcampbell.dataparcel.internal.Property;
 
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Types;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
-import static nz.bradcampbell.dataparcel.internal.PropertyCreator.isValidType;
+import static nz.bradcampbell.dataparcel.internal.PropertyCreator.createProperty;
 
 public class ListProperty extends Property {
-  private final String typeArgumentName;
-  private final String typeArgumentParcel;
-  private final boolean isValidArgument;
-  private final TypeElement requiredParcel;
-
-  public ListProperty(Types types, boolean isNullable, String name, VariableElement variableElement) {
-    super(isNullable, name, variableElement);
-
-    List<? extends TypeMirror> typeArguments = ((DeclaredType) variableElement.asType()).getTypeArguments();
-    TypeMirror typeArgument = typeArguments != null ? typeArguments.get(0) : null;
-
-    TypeName typeName = null;
-    if (typeArgument != null) {
-      typeName = ClassName.get(types.erasure(typeArgument));
-    }
-
-    isValidArgument = typeName == null || isValidType(typeName);
-
-    String simpleName = typeName == null ? null : ((ClassName) typeName).simpleName();
-    typeArgumentName = simpleName;
-    typeArgumentParcel = simpleName == null ? null : simpleName + "Parcel";
-    requiredParcel = isValidArgument ? null : (TypeElement) types.asElement(typeArgument);
+  public ListProperty(TypeMirror typeMirror, boolean isNullable, String name, TypeName parcelableTypeName) {
+    super(typeMirror, isNullable, name, parcelableTypeName);
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    if (isValidArgument) {
-      block.add("($T) $N.readArrayList(getClass().getClassLoader())", getVariableTypeName(), in);
+    TypeName parcelableTypeName = getParcelableTypeName();
+    if (isParcelable()) {
+      block.addStatement("$N = ($T) $N.readArrayList(getClass().getClassLoader())", getName(), parcelableTypeName, in);
     } else {
-      if (isNullable()) {
-        block.addStatement("$T<$N> $N = null", ClassName.get(List.class), typeArgumentName, getGetterMethodName());
-        block.beginControlFlow("if ($N.readInt() == 0)", in);
-        block.add("$N = ", getGetterMethodName());
-      } else {
-        block.add("$T<$N> $N = ", ClassName.get(List.class), typeArgumentName, getGetterMethodName());
-      }
-
-      String wrappedName = getGetterMethodName() + "Wrapped";
-      block.addStatement("new $T<$N>()", ClassName.get(ArrayList.class), typeArgumentName);
-      block.addStatement("$T<$N> $N = $N.readArrayList(getClass().getClassLoader())", ClassName.get(List.class),
-          typeArgumentParcel, wrappedName, in);
-      block.beginControlFlow("for ($N val : $N)", typeArgumentParcel, wrappedName);
-      block.addStatement("$N.add(val.getContents())", getGetterMethodName());
-      block.unindent();
-      block.add("}");
-
-      block.add("\n");
-      if (isNullable()) {
-        block.endControlFlow();
-      }
+      block.addStatement("$T $N = ($T) $N.readArrayList(getClass().getClassLoader())", parcelableTypeName,
+          getWrappedName(), parcelableTypeName, in);
+      unparcelVariable(block);
     }
   }
 
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest) {
-    if (isValidArgument) {
-      block.add("$N.writeList(data.$N())", dest, getGetterMethodName());
+  @Override public void unparcelVariable(CodeBlock.Builder block) {
+    if (isParcelable()) {
+      super.unparcelVariable(block);
     } else {
-      String wrappedName = getGetterMethodName() + "Wrapped";
-      block.addStatement("$T<$N> $N = data.$N()", ClassName.get(List.class), typeArgumentName, getGetterMethodName(),
-          getGetterMethodName());
-      block.addStatement("$T<$N> $N = new $T<$N>($N.size())", ClassName.get(List.class),
-          typeArgumentParcel, wrappedName, ClassName.get(ArrayList.class), typeArgumentParcel, getGetterMethodName());
-      block.beginControlFlow("for ($N val : $N)", typeArgumentName, getGetterMethodName());
-      block.addStatement("$N.add($N.wrap(val))", wrappedName, typeArgumentParcel);
+      TypeName arrayListTypeName = TypeName.get(ArrayList.class);
+      block.addStatement("$N = new $T<>($N.size())", getName(), arrayListTypeName, getWrappedName());
+      TypeName parcelableTypeName = getParcelableTypeName();
+      TypeMirror parameterTypeMirror = ((DeclaredType) getTypeMirror()).getTypeArguments().get(0);
+      TypeName parameterType = ClassName.get(parameterTypeMirror);
+      TypeName parcelableParameterType = ((ParameterizedTypeName) parcelableTypeName).typeArguments.get(0);
+      String innerWrappedName = "_" + getWrappedName();
+      block.beginControlFlow("for ($T $N : $N)", parcelableParameterType, innerWrappedName, getWrappedName());
+      String innerName = "_" + getName();
+      block.addStatement("$T $N = null", parameterType, innerName);
+      createProperty(parameterTypeMirror, true, innerName, parcelableParameterType).unparcelVariable(block);
+      block.addStatement("$N.add($N)", getName(), innerName);
       block.endControlFlow();
-      block.add("$N.writeList($N)", dest, wrappedName);
     }
   }
 
-  @Override public List<TypeElement> requiredParcels() {
-    return requiredParcel == null ? super.requiredParcels() : Collections.singletonList(requiredParcel);
+  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {
+    block.addStatement("$N.writeList($N)", dest, variableName);
   }
 
-  @Override protected boolean useReadTemplate() {
-    return isValidArgument;
+  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source) {
+    String variableName = getName();
+    block.addStatement("$T $N = $N", getOriginalTypeName(), variableName, source);
+    if (!isParcelable()) {
+      String wrappedName = getWrappedName();
+      TypeName arrayListTypeName = TypeName.get(ArrayList.class);
+      TypeName parcelableTypeName = getParcelableTypeName();
+      block.addStatement("$T $N = new $T<>($N.size())", parcelableTypeName, wrappedName, arrayListTypeName, variableName);
+      TypeMirror parameterTypeMirror = ((DeclaredType) getTypeMirror()).getTypeArguments().get(0);
+      TypeName parameterType = ClassName.get(parameterTypeMirror);
+      TypeName parcelableParameterType = ((ParameterizedTypeName) parcelableTypeName).typeArguments.get(0);
+      String parameterItemName = variableName + "Item";
+      block.beginControlFlow("for ($T $N : $N)", parameterType, parameterItemName, variableName);
+      String innerName = "_" + variableName;
+      String innerVariableName = createProperty(parameterTypeMirror, true, innerName, parcelableParameterType)
+          .generateParcelableVariable(block, parameterItemName);
+      block.addStatement("$N.add($N)", wrappedName, innerVariableName);
+      block.endControlFlow();
+      return wrappedName;
+    }
+    return variableName;
   }
 }
