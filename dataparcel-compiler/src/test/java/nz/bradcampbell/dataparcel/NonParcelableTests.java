@@ -13,6 +13,131 @@ import static java.util.Arrays.asList;
 
 public class NonParcelableTests {
 
+  @Test public void nullableNestedDataTypeTest() {
+    JavaFileObject dataClassRoot = JavaFileObjects.forSourceString("test.Root", Joiner.on('\n').join(
+        "package test;",
+        "import android.support.annotation.Nullable;",
+        "import nz.bradcampbell.dataparcel.DataParcel;",
+        "import java.util.List;",
+        "@DataParcel",
+        "public final class Root {",
+        "@Nullable private final Child child;",
+        "public Root(@Nullable Child child) {",
+        "this.child = child;",
+        "}",
+        "@Nullable public Child component1() {",
+        "return this.child;",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject dataClassChild = JavaFileObjects.forSourceString("test.Child", Joiner.on('\n').join(
+        "package test;",
+        "public final class Child {",
+        "private final Integer test;",
+        "public Child(Integer test) {",
+        "this.test = test;",
+        "}",
+        "public Integer component1() {",
+        "return this.test;",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject rootParcel = JavaFileObjects.forSourceString("test/RootParcel", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
+        "import java.lang.Override;",
+        "public class RootParcel implements Parcelable {",
+        "public static final Parcelable.Creator<RootParcel> CREATOR = new Parcelable.Creator<RootParcel>() {",
+        "@Override public RootParcel createFromParcel(Parcel in) {",
+        "return new RootParcel(in);",
+        "}",
+        "@Override public RootParcel[] newArray(int size) {",
+        "return new RootParcel[size];",
+        "}",
+        "};",
+        "private final Root data;",
+        "private RootParcel(Root data) {",
+        "this.data = data;",
+        "}",
+        "private RootParcel(Parcel in) {",
+        "Child component1 = null;",
+        "if (in.readInt() == 0) {",
+        "ChildParcel component1Wrapped = (ChildParcel) in.readParcelable(getClass().getClassLoader());",
+        "component1 = component1Wrapped.getContents();",
+        "}",
+        "this.data = new Root(component1);",
+        "}",
+        "public static final RootParcel wrap(Root data) {",
+        "return new RootParcel(data);",
+        "}",
+        "public Root getContents() {",
+        "return data;",
+        "}",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "if (data.component1() == null) {",
+        "dest.writeInt(1);",
+        "} else {",
+        "dest.writeInt(0);",
+        "ChildParcel component1 = ChildParcel.wrap(data.component1());",
+        "dest.writeParcelable(component1, 0);",
+        "}",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject childParcel = JavaFileObjects.forSourceString("test/ChildParcel", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
+        "import java.lang.Integer;",
+        "import java.lang.Override;",
+        "public class ChildParcel implements Parcelable {",
+        "public static final Parcelable.Creator<ChildParcel> CREATOR = new Parcelable.Creator<ChildParcel>() {",
+        "@Override public ChildParcel createFromParcel(Parcel in) {",
+        "return new ChildParcel(in);",
+        "}",
+        "@Override public ChildParcel[] newArray(int size) {",
+        "return new ChildParcel[size];",
+        "}",
+        "};",
+        "private final Child data;",
+        "private ChildParcel(Child data) {",
+        "this.data = data;",
+        "}",
+        "private ChildParcel(Parcel in) {",
+        "Integer component1 = null;",
+        "component1 = in.readInt();",
+        "this.data = new Child(component1);",
+        "}",
+        "public static final ChildParcel wrap(Child data) {",
+        "return new ChildParcel(data);",
+        "}",
+        "public Child getContents() {",
+        "return data;",
+        "}",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "Integer component1 = data.component1();",
+        "dest.writeInt(component1);",
+        "}",
+        "}"
+    ));
+
+    assertAbout(javaSources()).that(asList(dataClassRoot, dataClassChild))
+        .processedWith(new DataParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(rootParcel, childParcel);
+  }
+
   @Test public void emptyDataTest() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",

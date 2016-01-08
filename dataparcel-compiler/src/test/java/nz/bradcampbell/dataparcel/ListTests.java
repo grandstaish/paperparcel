@@ -13,6 +13,216 @@ import static java.util.Arrays.asList;
 
 public class ListTests {
 
+  @Test public void nullableListOfParcelableTypesTest() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+        "package test;",
+        "import android.support.annotation.Nullable;",
+        "import nz.bradcampbell.dataparcel.DataParcel;",
+        "import java.util.List;",
+        "@DataParcel",
+        "public final class Test {",
+        "@Nullable private final List<Integer> testList;",
+        "public Test(@Nullable List<Integer> testList) {",
+        "this.testList = testList;",
+        "}",
+        "@Nullable public List<Integer> component1() {",
+        "return this.testList;",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject expectedSource = JavaFileObjects.forSourceString("test/TestParcel", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
+        "import java.lang.Integer;",
+        "import java.lang.Override;",
+        "import java.util.List;",
+        "public class TestParcel implements Parcelable {",
+        "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
+        "@Override public TestParcel createFromParcel(Parcel in) {",
+        "return new TestParcel(in);",
+        "}",
+        "@Override public TestParcel[] newArray(int size) {",
+        "return new TestParcel[size];",
+        "}",
+        "};",
+        "private final Test data;",
+        "private TestParcel(Test data) {",
+        "this.data = data;",
+        "}",
+        "private TestParcel(Parcel in) {",
+        "List<Integer> component1 = null;",
+        "if (in.readInt() == 0) {",
+        "component1 = (List<Integer>) in.readArrayList(getClass().getClassLoader());",
+        "}",
+        "this.data = new Test(component1);",
+        "}",
+        "public static final TestParcel wrap(Test data) {",
+        "return new TestParcel(data);",
+        "}",
+        "public Test getContents() {",
+        "return data;",
+        "}",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "if (data.component1() == null) {",
+        "dest.writeInt(1);",
+        "} else {",
+        "dest.writeInt(0);",
+        "List<Integer> component1 = data.component1();",
+        "dest.writeList(component1);",
+        "}",
+        "}",
+        "}"
+    ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new DataParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expectedSource);
+  }
+
+  @Test public void nullableListOfNonParcelableTypesTest() throws Exception {
+    JavaFileObject dataClassRoot = JavaFileObjects.forSourceString("test.Root", Joiner.on('\n').join(
+        "package test;",
+        "import android.support.annotation.Nullable;",
+        "import nz.bradcampbell.dataparcel.DataParcel;",
+        "import java.util.List;",
+        "@DataParcel",
+        "public final class Root {",
+        "@Nullable private final List<Child> child;",
+        "public Root(@Nullable List<Child> child) {",
+        "this.child = child;",
+        "}",
+        "@Nullable public List<Child> component1() {",
+        "return this.child;",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject dataClassChild = JavaFileObjects.forSourceString("test.Child", Joiner.on('\n').join(
+        "package test;",
+        "public final class Child {",
+        "private final Integer test;",
+        "public Child(Integer test) {",
+        "this.test = test;",
+        "}",
+        "public Integer component1() {",
+        "return this.test;",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject rootParcel = JavaFileObjects.forSourceString("test/RootParcel", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
+        "import java.lang.Override;",
+        "import java.util.ArrayList;",
+        "import java.util.List;",
+        "public class RootParcel implements Parcelable {",
+        "public static final Parcelable.Creator<RootParcel> CREATOR = new Parcelable.Creator<RootParcel>() {",
+        "@Override public RootParcel createFromParcel(Parcel in) {",
+        "return new RootParcel(in);",
+        "}",
+        "@Override public RootParcel[] newArray(int size) {",
+        "return new RootParcel[size];",
+        "}",
+        "};",
+        "private final Root data;",
+        "private RootParcel(Root data) {",
+        "this.data = data;",
+        "}",
+        "private RootParcel(Parcel in) {",
+        "List<Child> component1 = null;",
+        "if (in.readInt() == 0) {",
+        "List<ChildParcel> component1Wrapped = (List<ChildParcel>) in.readArrayList(getClass().getClassLoader());",
+        "component1 = new ArrayList<>(component1Wrapped.size());",
+        "for (ChildParcel _component1Wrapped : component1Wrapped) {",
+        "Child _component1 = null;",
+        "_component1 = _component1Wrapped.getContents();",
+        "component1.add(_component1);",
+        "}",
+        "}",
+        "this.data = new Root(component1);",
+        "}",
+        "public static final RootParcel wrap(Root data) {",
+        "return new RootParcel(data);",
+        "}",
+        "public Root getContents() {",
+        "return data;",
+        "}",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "if (data.component1() == null) {",
+        "dest.writeInt(1);",
+        "} else {",
+        "dest.writeInt(0);",
+        "List<Child> component1 = data.component1();",
+        "List<ChildParcel> component1Wrapped = new ArrayList<>(component1.size());",
+        "for (Child component1Item : component1) {",
+        "ChildParcel _component1 = ChildParcel.wrap(component1Item);",
+        "component1Wrapped.add(_component1);",
+        "}",
+        "dest.writeList(component1Wrapped);",
+        "}",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject childParcel = JavaFileObjects.forSourceString("test/ChildParcel", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
+        "import java.lang.Integer;",
+        "import java.lang.Override;",
+        "public class ChildParcel implements Parcelable {",
+        "public static final Parcelable.Creator<ChildParcel> CREATOR = new Parcelable.Creator<ChildParcel>() {",
+        "@Override public ChildParcel createFromParcel(Parcel in) {",
+        "return new ChildParcel(in);",
+        "}",
+        "@Override public ChildParcel[] newArray(int size) {",
+        "return new ChildParcel[size];",
+        "}",
+        "};",
+        "private final Child data;",
+        "private ChildParcel(Child data) {",
+        "this.data = data;",
+        "}",
+        "private ChildParcel(Parcel in) {",
+        "Integer component1 = null;",
+        "component1 = in.readInt();",
+        "this.data = new Child(component1);",
+        "}",
+        "public static final ChildParcel wrap(Child data) {",
+        "return new ChildParcel(data);",
+        "}",
+        "public Child getContents() {",
+        "return data;",
+        "}",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "Integer component1 = data.component1();",
+        "dest.writeInt(component1);",
+        "}",
+        "}"
+    ));
+
+    assertAbout(javaSources()).that(asList(dataClassRoot, dataClassChild))
+        .processedWith(new DataParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(rootParcel, childParcel);
+  }
+
   @Test public void listOfParcelableTypesTest() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",

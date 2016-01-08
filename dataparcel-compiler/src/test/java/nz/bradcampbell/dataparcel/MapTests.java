@@ -13,6 +13,79 @@ import static java.util.Arrays.asList;
 
 public class MapTests {
 
+  @Test public void nullableMapOfParcelableTypesTest() throws Exception {
+    JavaFileObject dataClass = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+        "package test;",
+        "import android.support.annotation.Nullable;",
+        "import nz.bradcampbell.dataparcel.DataParcel;",
+        "import java.util.Map;",
+        "@DataParcel",
+        "public final class Test {",
+        "@Nullable private final Map<Integer, Integer> child;",
+        "public Test(@Nullable Map<Integer, Integer> child) {",
+        "this.child = child;",
+        "}",
+        "@Nullable public Map<Integer, Integer> component1() {",
+        "return this.child;",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject testParcel = JavaFileObjects.forSourceString("test/TestParcel", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
+        "import java.lang.Integer;",
+        "import java.lang.Override;",
+        "import java.util.Map;",
+        "public class TestParcel implements Parcelable {",
+        "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
+        "@Override public TestParcel createFromParcel(Parcel in) {",
+        "return new TestParcel(in);",
+        "}",
+        "@Override public TestParcel[] newArray(int size) {",
+        "return new TestParcel[size];",
+        "}",
+        "};",
+        "private final Test data;",
+        "private TestParcel(Test data) {",
+        "this.data = data;",
+        "}",
+        "private TestParcel(Parcel in) {",
+        "Map<Integer, Integer> component1 = null;",
+        "if (in.readInt() == 0) {",
+        "component1 = (Map<Integer, Integer>) in.readHashMap(getClass().getClassLoader());",
+        "}",
+        "this.data = new Test(component1);",
+        "}",
+        "public static final TestParcel wrap(Test data) {",
+        "return new TestParcel(data);",
+        "}",
+        "public Test getContents() {",
+        "return data;",
+        "}",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "if (data.component1() == null) {",
+        "dest.writeInt(1);",
+        "} else {",
+        "dest.writeInt(0);",
+        "Map<Integer, Integer> component1 = data.component1();",
+        "dest.writeMap(component1);",
+        "}",
+        "}",
+        "}"
+    ));
+
+    assertAbout(javaSource()).that(dataClass)
+        .processedWith(new DataParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(testParcel);
+  }
+
   @Test public void mapOfParcelableTypesTest() throws Exception {
     JavaFileObject dataClass = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
