@@ -98,7 +98,7 @@ public class DataParcelProcessor extends AbstractProcessor {
   }
 
   private TypeName parseParameterTypes(TypeMirror type, List<TypeElement> variableDataParcelDependencies) {
-    ClassName typeName = (ClassName) ClassName.get(typeUtil.erasure(type));
+    TypeName typeName = ClassName.get(typeUtil.erasure(type));
     boolean isParcelable = isValidType(typeUtil, type);
     TypeName result;
     if (isParcelable) {
@@ -111,7 +111,7 @@ public class DataParcelProcessor extends AbstractProcessor {
           for (int i = 0; i < args.length; i++) {
             args[i] = parseParameterTypes(typeArguments.get(i), variableDataParcelDependencies);
           }
-          result = ParameterizedTypeName.get(typeName, args);
+          result = ParameterizedTypeName.get((ClassName) typeName, args);
         } else {
           result = typeName;
         }

@@ -153,6 +153,11 @@ public class PropertyCreator {
         return typeName;
       }
 
+      if (typeName instanceof ArrayTypeName) {
+        // TODO: handle non-parcelable arrays
+        return OBJECT_ARRAY;
+      }
+
       // then check if it implements valid interfaces
       for (TypeMirror iface : type.getInterfaces()) {
         TypeName ifaceName = get(iface);
