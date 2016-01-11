@@ -3,51 +3,54 @@ package nz.bradcampbell.dataparcel.internal.properties;
 import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.Property;
 
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeMirror;
 import java.util.HashMap;
 
 import static nz.bradcampbell.dataparcel.internal.PropertyCreator.createProperty;
 
 public class MapProperty extends Property {
-  public MapProperty(TypeMirror typeMirror, boolean isNullable, String name, TypeName parcelableTypeName) {
-    super(typeMirror, isNullable, name, parcelableTypeName);
+  public MapProperty(Property.Type propertyType, boolean isNullable, String name) {
+    super(propertyType, isNullable, name);
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    TypeName parcelableTypeName = getParcelableTypeName();
-    if (isParcelable()) {
-      block.addStatement("$N = ($T) $N.readHashMap(getClass().getClassLoader())", getName(), parcelableTypeName, in);
+    Property.Type propertyType = getPropertyType();
+    TypeName wrappedTypeName = propertyType.getFullWrappedTypeName();
+
+    if (propertyType.isParcelable()) {
+      block.addStatement("$N = ($T) $N.readHashMap(getClass().getClassLoader())", getName(), wrappedTypeName, in);
     } else {
-      block.addStatement("$T $N = ($T) $N.readHashMap(getClass().getClassLoader())", parcelableTypeName,
-          getWrappedName(), parcelableTypeName, in);
+      block.addStatement("$T $N = ($T) $N.readHashMap(getClass().getClassLoader())", wrappedTypeName,
+          getWrappedName(), wrappedTypeName, in);
       unparcelVariable(block);
     }
   }
 
   @Override public void unparcelVariable(CodeBlock.Builder block) {
-    if (isParcelable()) {
+    Property.Type propertyType = getPropertyType();
+    if (propertyType.isParcelable()) {
       super.unparcelVariable(block);
     } else {
       TypeName hashMapTypeName = TypeName.get(HashMap.class);
       block.addStatement("$N = new $T<>($N.size())", getName(), hashMapTypeName, getWrappedName());
-      TypeName parcelableTypeName = getParcelableTypeName();
-      TypeMirror keyParameterTypeMirror = ((DeclaredType) getTypeMirror()).getTypeArguments().get(0);
-      TypeName keyParameterType = ClassName.get(keyParameterTypeMirror);
-      TypeName keyParcelableParameterType = ((ParameterizedTypeName) parcelableTypeName).typeArguments.get(0);
+
+      Type keyParameterPropertyType = propertyType.getTypeArgumentAtIndex(0);
+      TypeName keyParameterType = keyParameterPropertyType.getFullTypeName();
+      TypeName keyWrappedParameterType = keyParameterPropertyType.getFullWrappedTypeName();
       String innerWrappedName = "_" + getWrappedName();
-      block.beginControlFlow("for ($T $N : $N.keySet())", keyParcelableParameterType, innerWrappedName, getWrappedName());
+      block.beginControlFlow("for ($T $N : $N.keySet())", keyWrappedParameterType, innerWrappedName, getWrappedName());
       String keyInnerName = "_" + getName();
       block.addStatement("$T $N = null", keyParameterType, keyInnerName);
-      createProperty(keyParameterTypeMirror, true, keyInnerName, keyParcelableParameterType).unparcelVariable(block);
-      TypeMirror valueParameterTypeMirror = ((DeclaredType) getTypeMirror()).getTypeArguments().get(1);
-      TypeName valueParameterType = ClassName.get(valueParameterTypeMirror);
-      TypeName valueParcelableParameterType = ((ParameterizedTypeName) parcelableTypeName).typeArguments.get(1);
+      createProperty(keyParameterPropertyType, true, keyInnerName).unparcelVariable(block);
+
+      Type valueParameterPropertyType = propertyType.getTypeArgumentAtIndex(1);
+      TypeName valueParameterType = valueParameterPropertyType.getFullTypeName();
+      TypeName valueWrappedParameterType = valueParameterPropertyType.getFullWrappedTypeName();
       String valueInnerName = "$" + getName();
       String valueInnerWrappedName = "$" + getWrappedName();
-      block.addStatement("$T $N = $N.get($N)", valueParcelableParameterType, valueInnerWrappedName, getWrappedName(), innerWrappedName);
+      block.addStatement("$T $N = $N.get($N)", valueWrappedParameterType, valueInnerWrappedName, getWrappedName(), innerWrappedName);
       block.addStatement("$T $N = null", valueParameterType, valueInnerName);
-      createProperty(valueParameterTypeMirror, true, valueInnerName, valueParcelableParameterType).unparcelVariable(block);
+      createProperty(valueParameterPropertyType, true, valueInnerName).unparcelVariable(block);
+
       block.addStatement("$N.put($N, $N)", getName(), keyInnerName, valueInnerName);
       block.endControlFlow();
     }
@@ -58,31 +61,37 @@ public class MapProperty extends Property {
   }
 
   @Override public String generateParcelableVariable(CodeBlock.Builder block, String source) {
+    Property.Type propertyType = getPropertyType();
+    TypeName typeName = propertyType.getFullTypeName();
     String variableName = getName();
-    block.addStatement("$T $N = $N", getOriginalTypeName(), variableName, source);
-    if (!isParcelable()) {
+
+    block.addStatement("$T $N = $N", typeName, variableName, source);
+
+    if (!propertyType.isParcelable()) {
       String wrappedName = getWrappedName();
       TypeName hashMapTypeName = TypeName.get(HashMap.class);
-      TypeName parcelableTypeName = getParcelableTypeName();
-      block.addStatement("$T $N = new $T<>($N.size())", parcelableTypeName, wrappedName, hashMapTypeName, variableName);
-      TypeMirror keyParameterTypeMirror = ((DeclaredType) getTypeMirror()).getTypeArguments().get(0);
-      TypeName keyParameterType = ClassName.get(keyParameterTypeMirror);
-      TypeName keyParcelableParameterType = ((ParameterizedTypeName) parcelableTypeName).typeArguments.get(0);
+      TypeName wrappedTypeName = propertyType.getFullWrappedTypeName();
+      block.addStatement("$T $N = new $T<>($N.size())", wrappedTypeName, wrappedName, hashMapTypeName, variableName);
+
+      Property.Type keyParameterPropertyType = propertyType.getTypeArgumentAtIndex(0);
+      TypeName keyParameterType = keyParameterPropertyType.getFullTypeName();
       String parameterItemName = variableName + "Item";
       block.beginControlFlow("for ($T $N : $N.keySet())", keyParameterType, parameterItemName, variableName);
       String keyInnerName = "_" + variableName;
-      String keyInnerVariableName = createProperty(keyParameterTypeMirror, true, keyInnerName, keyParcelableParameterType)
+      String keyInnerVariableName = createProperty(keyParameterPropertyType, true, keyInnerName)
           .generateParcelableVariable(block, parameterItemName);
-      TypeMirror valueParameterTypeMirror = ((DeclaredType) getTypeMirror()).getTypeArguments().get(1);
-      TypeName valueParcelableParameterType = ((ParameterizedTypeName) parcelableTypeName).typeArguments.get(1);
+
+      Type valueParameterPropertyType = propertyType.getTypeArgumentAtIndex(1);
       String valueInnerName = "$" + variableName;
       String valueSource = variableName + ".get(" + parameterItemName + ")";
-      String valueInnerVariableName = createProperty(valueParameterTypeMirror, true, valueInnerName, valueParcelableParameterType)
+      String valueInnerVariableName = createProperty(valueParameterPropertyType, true, valueInnerName)
           .generateParcelableVariable(block, valueSource);
+
       block.addStatement("$N.put($N, $N)", wrappedName, keyInnerVariableName, valueInnerVariableName);
       block.endControlFlow();
       return wrappedName;
     }
+
     return variableName;
   }
 }

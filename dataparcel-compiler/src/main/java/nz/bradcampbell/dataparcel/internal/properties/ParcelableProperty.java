@@ -5,15 +5,14 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import nz.bradcampbell.dataparcel.internal.Property;
 
-import javax.lang.model.type.TypeMirror;
-
 public class ParcelableProperty extends Property {
-  public ParcelableProperty(TypeMirror typeMirror, boolean isNullable, String name, TypeName parcelableTypeName) {
-    super(typeMirror, isNullable, name, parcelableTypeName);
+  public ParcelableProperty(Property.Type propertyType, boolean isNullable, String name) {
+    super(propertyType, isNullable, name);
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    block.addStatement("$N = ($T) $N.readParcelable(getClass().getClassLoader())", getName(), getParcelableTypeName(), in);
+    TypeName wrappedTypeName = getPropertyType().getFullWrappedTypeName();
+    block.addStatement("$N = ($T) $N.readParcelable(getClass().getClassLoader())", getName(), wrappedTypeName, in);
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {

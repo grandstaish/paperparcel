@@ -5,18 +5,14 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import nz.bradcampbell.dataparcel.internal.Property;
 
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.TypeMirror;
-
-import static nz.bradcampbell.dataparcel.DataParcelProcessor.DATA_VARIABLE_NAME;
-
 public class CharProperty extends Property {
-  public CharProperty(TypeMirror typeMirror, boolean isNullable, String name, TypeName parcelableTypeName) {
-    super(typeMirror, isNullable, name, parcelableTypeName);
+  public CharProperty(Property.Type propertyType, boolean isNullable, String name) {
+    super(propertyType, isNullable, name);
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    block.addStatement("$N = ($T) $N.readInt()", getName(), getParcelableTypeName(), in);
+    TypeName charType = getPropertyType().getTypeName();
+    block.addStatement("$N = ($T) $N.readInt()", getName(), charType, in);
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {

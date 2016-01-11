@@ -3,16 +3,14 @@ package nz.bradcampbell.dataparcel.internal.properties;
 import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.Property;
 
-import javax.lang.model.type.TypeMirror;
-
 public class ObjectArrayProperty extends Property {
-  public ObjectArrayProperty(TypeMirror typeMirror, boolean isNullable, String name, TypeName parcelableTypeName) {
-    super(typeMirror, isNullable, name, parcelableTypeName);
+  public ObjectArrayProperty(Property.Type propertyType, boolean isNullable, String name) {
+    super(propertyType, isNullable, name);
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
     TypeName objectArrayClassName = ArrayTypeName.get(Object[].class);
-    TypeName componentType = ((ArrayTypeName) getOriginalTypeName()).componentType;
+    TypeName componentType = ((ArrayTypeName) getPropertyType().getFullTypeName()).componentType;
     String objectArrayName = getWrappedName();
     block.addStatement("$T $N = $N.readArray($T.class.getClassLoader())", objectArrayClassName, objectArrayName, in,
         componentType);

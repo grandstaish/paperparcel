@@ -21,7 +21,6 @@ import java.util.*;
 
 import static javax.lang.model.element.Modifier.*;
 import static nz.bradcampbell.dataparcel.internal.PropertyCreator.createProperty;
-import static nz.bradcampbell.dataparcel.internal.PropertyCreator.isValidType;
 
 @AutoService(Processor.class)
 public class DataParcelProcessor extends AbstractProcessor {
@@ -39,9 +38,6 @@ public class DataParcelProcessor extends AbstractProcessor {
     elementUtils = env.getElementUtils();
     filer = env.getFiler();
     typeUtil = env.getTypeUtils();
-
-    // TODO: use DI instead of static instance
-    PropertyCreator.init(typeUtil);
   }
 
   @Override
@@ -86,8 +82,8 @@ public class DataParcelProcessor extends AbstractProcessor {
     for (int i = 0; i < variableElements.size(); i++) {
       VariableElement variableElement = variableElements.get(i);
       boolean isNullable = !isFieldRequired(variableElement);
-      TypeName parsedTypeName = parseParameterTypes(variableElement.asType(), variableDataParcelDependencies);
-      Property property = createProperty(variableElement.asType(), isNullable, "component" + (i + 1), parsedTypeName);
+      Property.Type propertyType = parsePropertyType(variableElement.asType(), variableDataParcelDependencies);
+      Property property = createProperty(propertyType, isNullable, "component" + (i + 1));
       properties.add(property);
     }
     parcels.put(typeElement.getQualifiedName().toString(), new DataClass(properties, classPackage, className, typeElement));
@@ -97,36 +93,59 @@ public class DataParcelProcessor extends AbstractProcessor {
     }
   }
 
-  private TypeName parseParameterTypes(TypeMirror type, List<TypeElement> variableDataParcelDependencies) {
-    TypeName typeName = ClassName.get(typeUtil.erasure(type));
-    boolean isParcelable = isValidType(typeUtil, type);
-    TypeName result;
+  private Property.Type parsePropertyType(TypeMirror type, List<TypeElement> variableDataParcelDependencies) {
+    TypeMirror erasedType = typeUtil.erasure(type);
+
+    // List of type arguments for this property
+    List<Property.Type> args = null;
+
+    // The type that allows this type to be parcelable, or null
+    TypeName parcelableTypeName = PropertyCreator.getParcelableType(typeUtil, erasedType);
+
+    TypeName typeName = ClassName.get(erasedType);
+    TypeName wrappedTypeName = typeName;
+    TypeName fullTypeName = typeName;
+    TypeName fullWrappedTypeName = typeName;
+
+    boolean isParcelable = parcelableTypeName != null;
+
     if (isParcelable) {
       if (type instanceof DeclaredType) {
+
+        // Parse type arguments
         DeclaredType declaredType = (DeclaredType) type;
         List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
+
         int numTypeArgs = typeArguments.size();
         if (numTypeArgs > 0) {
-          TypeName[] args = new TypeName[numTypeArgs];
-          for (int i = 0; i < args.length; i++) {
-            args[i] = parseParameterTypes(typeArguments.get(i), variableDataParcelDependencies);
+
+          args = new ArrayList<Property.Type>(numTypeArgs);
+          TypeName[] parameterArray = new TypeName[numTypeArgs];
+          TypeName[] wrappedParameterArray = new TypeName[numTypeArgs];
+
+          for (int i = 0; i < numTypeArgs; i++) {
+            Property.Type argType = parsePropertyType(typeArguments.get(i), variableDataParcelDependencies);
+            args.add(argType);
+            parameterArray[i] = argType.getFullTypeName();
+            wrappedParameterArray[i] = argType.getFullWrappedTypeName();
           }
-          result = ParameterizedTypeName.get((ClassName) typeName, args);
-        } else {
-          result = typeName;
+
+          fullTypeName = ParameterizedTypeName.get((ClassName) typeName, parameterArray);
+          fullWrappedTypeName = ParameterizedTypeName.get((ClassName) typeName, wrappedParameterArray);
         }
-      } else {
-        result = typeName;
       }
     } else {
+
       // This is (one of) the reason(s) it is not parcelable. Assume it contains a data object as a parameter
-      TypeElement requiredElement = (TypeElement) typeUtil.asElement(type);
+      TypeElement requiredElement = (TypeElement) typeUtil.asElement(erasedType);
       variableDataParcelDependencies.add(requiredElement);
       String packageName = elementUtils.getPackageOf(requiredElement).getQualifiedName().toString();
       String className = requiredElement.getSimpleName().toString() + "Parcel";
-      result = ClassName.get(packageName, className);
+      parcelableTypeName = wrappedTypeName = fullWrappedTypeName = ClassName.get(packageName, className);
     }
-    return result;
+
+    return new Property.Type(args, parcelableTypeName, typeName, wrappedTypeName, fullTypeName, fullWrappedTypeName,
+        fullTypeName.equals(fullWrappedTypeName));
   }
 
   private List<VariableElement> getFields(TypeElement el) {

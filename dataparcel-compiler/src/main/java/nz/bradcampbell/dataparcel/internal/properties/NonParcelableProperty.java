@@ -5,17 +5,15 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import nz.bradcampbell.dataparcel.internal.Property;
 
-import javax.lang.model.type.TypeMirror;
-
 public class NonParcelableProperty extends Property {
-  public NonParcelableProperty(TypeMirror typeMirror, boolean isNullable, String name, TypeName parcelableTypeName) {
-    super(typeMirror, isNullable, name, parcelableTypeName);
+  public NonParcelableProperty(Property.Type propertyType, boolean isNullable, String name) {
+    super(propertyType, isNullable, name);
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    TypeName parcelableTypeName = getParcelableTypeName();
-    block.addStatement("$T $N = ($T) $N.readParcelable(getClass().getClassLoader())", parcelableTypeName,
-        getWrappedName(), parcelableTypeName, in);
+    TypeName wrappedTypeName = getPropertyType().getFullWrappedTypeName();
+    block.addStatement("$T $N = ($T) $N.readParcelable(getClass().getClassLoader())", wrappedTypeName,
+        getWrappedName(), wrappedTypeName, in);
     unparcelVariable(block);
   }
 
@@ -29,8 +27,8 @@ public class NonParcelableProperty extends Property {
 
   @Override public String generateParcelableVariable(CodeBlock.Builder block, String source) {
     String variableName = getName();
-    TypeName parcelableTypeName = getParcelableTypeName();
-    block.addStatement("$T $N = $T.wrap($N)", parcelableTypeName, variableName, parcelableTypeName, source);
+    TypeName wrappedTypeName = getPropertyType().getFullWrappedTypeName();
+    block.addStatement("$T $N = $T.wrap($N)", wrappedTypeName, variableName, wrappedTypeName, source);
     return variableName;
   }
 }
