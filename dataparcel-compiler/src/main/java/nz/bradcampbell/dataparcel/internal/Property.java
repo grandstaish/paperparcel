@@ -1,8 +1,7 @@
 package nz.bradcampbell.dataparcel.internal;
 
+import android.support.annotation.Nullable;
 import com.squareup.javapoet.*;
-
-import javax.lang.model.type.TypeMirror;
 
 import java.util.List;
 
@@ -10,26 +9,21 @@ import static com.squareup.javapoet.TypeName.OBJECT;
 import static nz.bradcampbell.dataparcel.DataParcelProcessor.DATA_VARIABLE_NAME;
 
 public abstract class Property {
-  private final static Type NO_TYPE = new Type(null, OBJECT, OBJECT, OBJECT, OBJECT, OBJECT, false);
+  private final static Type NO_TYPE = new Type(null, OBJECT, OBJECT, OBJECT, false);
 
   public static final class Type {
     private final List<Type> typeArguments;
     private final TypeName parcelableTypeName;
     private final TypeName typeName;
     private final TypeName wrappedTypeName;
-    private final TypeName fullTypeName;
-    private final TypeName fullWrappedTypeName;
     private final boolean isParcelable;
 
-    public Type(List<Type> typeArguments, TypeName parcelableTypeName, TypeName typeName, TypeName wrappedTypeName,
-                TypeName fullTypeName, TypeName fullWrappedTypeName, boolean isParcelable) {
-
+    public Type(@Nullable List<Type> typeArguments, TypeName parcelableTypeName, TypeName typeName,
+                TypeName wrappedTypeName, boolean isParcelable) {
       this.typeArguments = typeArguments;
       this.parcelableTypeName = parcelableTypeName;
       this.typeName = typeName;
       this.wrappedTypeName = wrappedTypeName;
-      this.fullTypeName = fullTypeName;
-      this.fullWrappedTypeName = fullWrappedTypeName;
       this.isParcelable = isParcelable;
     }
 
@@ -40,24 +34,16 @@ public abstract class Property {
       return typeArguments.get(index);
     }
 
-    public TypeName getTypeName() {
-      return typeName;
-    }
-
     public TypeName getParcelableTypeName() {
       return parcelableTypeName;
     }
 
+    public TypeName getTypeName() {
+      return typeName;
+    }
+
     public TypeName getWrappedTypeName() {
       return wrappedTypeName;
-    }
-
-    public TypeName getFullTypeName() {
-      return fullTypeName;
-    }
-
-    public TypeName getFullWrappedTypeName() {
-      return fullWrappedTypeName;
     }
 
     public boolean isParcelable() {
@@ -96,10 +82,11 @@ public abstract class Property {
   public CodeBlock readFromParcel(ParameterSpec in) {
     CodeBlock.Builder block = CodeBlock.builder();
 
-    if (propertyType.fullTypeName.isPrimitive()) {
-      block.addStatement("$T $N", propertyType.fullTypeName, getName());
+    TypeName typeName = propertyType.getTypeName();
+    if (typeName.isPrimitive()) {
+      block.addStatement("$T $N", typeName, getName());
     } else {
-      block.addStatement("$T $N = null", propertyType.fullTypeName, getName());
+      block.addStatement("$T $N = null", typeName, getName());
     }
 
     if (isNullable()) {
@@ -147,7 +134,7 @@ public abstract class Property {
 
   public String generateParcelableVariable(CodeBlock.Builder block, String source) {
     String variableName = getName();
-    TypeName typeName = propertyType.fullWrappedTypeName;
+    TypeName typeName = propertyType.getWrappedTypeName();
     block.addStatement("$T $N = $N", typeName, variableName, source);
     return variableName;
   }

@@ -11,7 +11,7 @@ public class CharSequenceProperty extends Property {
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    TypeName wrappedTypeName = getPropertyType().getFullWrappedTypeName();
+    TypeName wrappedTypeName = getPropertyType().getWrappedTypeName();
     block.addStatement("$N = ($T) $N.readCharSequence()", getName(), wrappedTypeName, in);
   }
 

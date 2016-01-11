@@ -11,7 +11,7 @@ public class NonParcelableProperty extends Property {
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    TypeName wrappedTypeName = getPropertyType().getFullWrappedTypeName();
+    TypeName wrappedTypeName = getPropertyType().getWrappedTypeName();
     block.addStatement("$T $N = ($T) $N.readParcelable(getClass().getClassLoader())", wrappedTypeName,
         getWrappedName(), wrappedTypeName, in);
     unparcelVariable(block);
@@ -27,7 +27,7 @@ public class NonParcelableProperty extends Property {
 
   @Override public String generateParcelableVariable(CodeBlock.Builder block, String source) {
     String variableName = getName();
-    TypeName wrappedTypeName = getPropertyType().getFullWrappedTypeName();
+    TypeName wrappedTypeName = getPropertyType().getWrappedTypeName();
     block.addStatement("$T $N = $T.wrap($N)", wrappedTypeName, variableName, wrappedTypeName, source);
     return variableName;
   }

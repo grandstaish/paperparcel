@@ -14,7 +14,7 @@ public class ListProperty extends Property {
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
     Property.Type propertyType = getPropertyType();
-    TypeName wrappedTypeName = propertyType.getFullWrappedTypeName();
+    TypeName wrappedTypeName = propertyType.getWrappedTypeName();
 
     if (propertyType.isParcelable()) {
       block.addStatement("$N = ($T) $N.readArrayList(getClass().getClassLoader())", getName(), wrappedTypeName, in);
@@ -33,8 +33,8 @@ public class ListProperty extends Property {
       TypeName arrayListTypeName = TypeName.get(ArrayList.class);
       block.addStatement("$N = new $T<>($N.size())", getName(), arrayListTypeName, getWrappedName());
       Property.Type parameterPropertyType = propertyType.getTypeArgumentAtIndex(0);
-      TypeName parameterType = parameterPropertyType.getFullTypeName();
-      TypeName wrappedParameterType = parameterPropertyType.getFullWrappedTypeName();
+      TypeName parameterType = parameterPropertyType.getTypeName();
+      TypeName wrappedParameterType = parameterPropertyType.getWrappedTypeName();
       String innerWrappedName = "_" + getWrappedName();
       block.beginControlFlow("for ($T $N : $N)", wrappedParameterType, innerWrappedName, getWrappedName());
       String innerName = "_" + getName();
@@ -52,14 +52,14 @@ public class ListProperty extends Property {
   @Override public String generateParcelableVariable(CodeBlock.Builder block, String source) {
     Property.Type propertyType = getPropertyType();
     String variableName = getName();
-    block.addStatement("$T $N = $N", propertyType.getFullTypeName(), variableName, source);
+    block.addStatement("$T $N = $N", propertyType.getTypeName(), variableName, source);
     if (!propertyType.isParcelable()) {
       String wrappedName = getWrappedName();
       TypeName arrayListTypeName = TypeName.get(ArrayList.class);
-      TypeName wrappedTypeName = propertyType.getFullWrappedTypeName();
+      TypeName wrappedTypeName = propertyType.getWrappedTypeName();
       block.addStatement("$T $N = new $T<>($N.size())", wrappedTypeName, wrappedName, arrayListTypeName, variableName);
       Property.Type parameterPropertyType = propertyType.getTypeArgumentAtIndex(0);
-      TypeName parameterType = parameterPropertyType.getFullTypeName();
+      TypeName parameterType = parameterPropertyType.getTypeName();
       String parameterItemName = variableName + "Item";
       block.beginControlFlow("for ($T $N : $N)", parameterType, parameterItemName, variableName);
       String innerName = "_" + variableName;

@@ -104,8 +104,6 @@ public class DataParcelProcessor extends AbstractProcessor {
 
     TypeName typeName = ClassName.get(erasedType);
     TypeName wrappedTypeName = typeName;
-    TypeName fullTypeName = typeName;
-    TypeName fullWrappedTypeName = typeName;
 
     boolean isParcelable = parcelableTypeName != null;
 
@@ -126,12 +124,12 @@ public class DataParcelProcessor extends AbstractProcessor {
           for (int i = 0; i < numTypeArgs; i++) {
             Property.Type argType = parsePropertyType(typeArguments.get(i), variableDataParcelDependencies);
             args.add(argType);
-            parameterArray[i] = argType.getFullTypeName();
-            wrappedParameterArray[i] = argType.getFullWrappedTypeName();
+            parameterArray[i] = argType.getTypeName();
+            wrappedParameterArray[i] = argType.getWrappedTypeName();
           }
 
-          fullTypeName = ParameterizedTypeName.get((ClassName) typeName, parameterArray);
-          fullWrappedTypeName = ParameterizedTypeName.get((ClassName) typeName, wrappedParameterArray);
+          wrappedTypeName = ParameterizedTypeName.get((ClassName) typeName, wrappedParameterArray);
+          typeName = ParameterizedTypeName.get((ClassName) typeName, parameterArray);
         }
       }
     } else {
@@ -141,11 +139,10 @@ public class DataParcelProcessor extends AbstractProcessor {
       variableDataParcelDependencies.add(requiredElement);
       String packageName = elementUtils.getPackageOf(requiredElement).getQualifiedName().toString();
       String className = requiredElement.getSimpleName().toString() + "Parcel";
-      parcelableTypeName = wrappedTypeName = fullWrappedTypeName = ClassName.get(packageName, className);
+      parcelableTypeName = wrappedTypeName = ClassName.get(packageName, className);
     }
 
-    return new Property.Type(args, parcelableTypeName, typeName, wrappedTypeName, fullTypeName, fullWrappedTypeName,
-        fullTypeName.equals(fullWrappedTypeName));
+    return new Property.Type(args, parcelableTypeName, typeName, wrappedTypeName, typeName.equals(wrappedTypeName));
   }
 
   private List<VariableElement> getFields(TypeElement el) {

@@ -11,7 +11,7 @@ public class ShortProperty extends Property {
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    TypeName shortType = getPropertyType().getTypeName();
+    TypeName shortType = getPropertyType().getWrappedTypeName();
     block.addStatement("$N = ($T) $N.readInt()", getName(), shortType, in);
   }
 

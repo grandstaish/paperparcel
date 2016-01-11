@@ -14,7 +14,7 @@ public class MapProperty extends Property {
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
     Property.Type propertyType = getPropertyType();
-    TypeName wrappedTypeName = propertyType.getFullWrappedTypeName();
+    TypeName wrappedTypeName = propertyType.getWrappedTypeName();
 
     if (propertyType.isParcelable()) {
       block.addStatement("$N = ($T) $N.readHashMap(getClass().getClassLoader())", getName(), wrappedTypeName, in);
@@ -34,8 +34,8 @@ public class MapProperty extends Property {
       block.addStatement("$N = new $T<>($N.size())", getName(), hashMapTypeName, getWrappedName());
 
       Type keyParameterPropertyType = propertyType.getTypeArgumentAtIndex(0);
-      TypeName keyParameterType = keyParameterPropertyType.getFullTypeName();
-      TypeName keyWrappedParameterType = keyParameterPropertyType.getFullWrappedTypeName();
+      TypeName keyParameterType = keyParameterPropertyType.getTypeName();
+      TypeName keyWrappedParameterType = keyParameterPropertyType.getWrappedTypeName();
       String innerWrappedName = "_" + getWrappedName();
       block.beginControlFlow("for ($T $N : $N.keySet())", keyWrappedParameterType, innerWrappedName, getWrappedName());
       String keyInnerName = "_" + getName();
@@ -43,8 +43,8 @@ public class MapProperty extends Property {
       createProperty(keyParameterPropertyType, true, keyInnerName).unparcelVariable(block);
 
       Type valueParameterPropertyType = propertyType.getTypeArgumentAtIndex(1);
-      TypeName valueParameterType = valueParameterPropertyType.getFullTypeName();
-      TypeName valueWrappedParameterType = valueParameterPropertyType.getFullWrappedTypeName();
+      TypeName valueParameterType = valueParameterPropertyType.getTypeName();
+      TypeName valueWrappedParameterType = valueParameterPropertyType.getWrappedTypeName();
       String valueInnerName = "$" + getName();
       String valueInnerWrappedName = "$" + getWrappedName();
       block.addStatement("$T $N = $N.get($N)", valueWrappedParameterType, valueInnerWrappedName, getWrappedName(), innerWrappedName);
@@ -62,7 +62,7 @@ public class MapProperty extends Property {
 
   @Override public String generateParcelableVariable(CodeBlock.Builder block, String source) {
     Property.Type propertyType = getPropertyType();
-    TypeName typeName = propertyType.getFullTypeName();
+    TypeName typeName = propertyType.getTypeName();
     String variableName = getName();
 
     block.addStatement("$T $N = $N", typeName, variableName, source);
@@ -70,11 +70,11 @@ public class MapProperty extends Property {
     if (!propertyType.isParcelable()) {
       String wrappedName = getWrappedName();
       TypeName hashMapTypeName = TypeName.get(HashMap.class);
-      TypeName wrappedTypeName = propertyType.getFullWrappedTypeName();
+      TypeName wrappedTypeName = propertyType.getWrappedTypeName();
       block.addStatement("$T $N = new $T<>($N.size())", wrappedTypeName, wrappedName, hashMapTypeName, variableName);
 
       Property.Type keyParameterPropertyType = propertyType.getTypeArgumentAtIndex(0);
-      TypeName keyParameterType = keyParameterPropertyType.getFullTypeName();
+      TypeName keyParameterType = keyParameterPropertyType.getTypeName();
       String parameterItemName = variableName + "Item";
       block.beginControlFlow("for ($T $N : $N.keySet())", keyParameterType, parameterItemName, variableName);
       String keyInnerName = "_" + variableName;
