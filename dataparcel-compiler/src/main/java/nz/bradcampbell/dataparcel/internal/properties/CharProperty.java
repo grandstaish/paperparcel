@@ -11,7 +11,7 @@ public class CharProperty extends Property {
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    TypeName charType = getPropertyType().getWrappedTypeName();
+    TypeName charType = TypeName.CHAR;
     block.addStatement("$N = ($T) $N.readInt()", getName(), charType, in);
   }
 
