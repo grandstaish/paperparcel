@@ -137,7 +137,7 @@ public class DataParcelProcessor extends AbstractProcessor {
       // This is (one of) the reason(s) it is not parcelable. Assume it contains a data object as a parameter
       TypeElement requiredElement = (TypeElement) typeUtil.asElement(erasedType);
       variableDataParcelDependencies.add(requiredElement);
-      String packageName = elementUtils.getPackageOf(requiredElement).getQualifiedName().toString();
+      String packageName = getPackageName(requiredElement);
       String className = requiredElement.getSimpleName().toString() + "Parcel";
       parcelableTypeName = wrappedTypeName = ClassName.get(packageName, className);
     }

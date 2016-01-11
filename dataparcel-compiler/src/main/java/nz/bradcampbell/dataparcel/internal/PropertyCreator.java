@@ -134,9 +134,6 @@ public class PropertyCreator {
   }
 
   public static TypeName getParcelableType(Types types, TypeMirror typeMirror) {
-
-    typeMirror = types.erasure(typeMirror);
-
     TypeElement type = (TypeElement) types.asElement(typeMirror);
     while (typeMirror.getKind() != TypeKind.NONE) {
 
@@ -148,7 +145,6 @@ public class PropertyCreator {
       if (typeName.isPrimitive() || VALID_TYPES.contains(typeName)) {
         return typeName;
       }
-
       if (typeName instanceof ArrayTypeName) {
         // TODO: handle non-parcelable arrays
         return OBJECT_ARRAY;
