@@ -14,6 +14,6 @@ public class ByteProperty extends Property {
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {
-    block.addStatement("$N.writeInt($N)", dest, variableName);
+    block.addStatement("$N.writeByte($N)", dest, variableName);
   }
 }
