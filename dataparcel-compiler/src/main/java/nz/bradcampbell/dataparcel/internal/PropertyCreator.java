@@ -40,13 +40,21 @@ public class PropertyCreator {
   private static final TypeName SIZE = ClassName.get("android.util", "Size");
   private static final TypeName SIZEF = ClassName.get("android.util", "SizeF");
   private static final TypeName ENUM = ClassName.get("java.lang", "Enum");
+  private static final TypeName BOXED_INT = INT.box();
+  private static final TypeName BOXED_LONG = LONG.box();
+  private static final TypeName BOXED_BYTE = BYTE.box();
+  private static final TypeName BOXED_BOOLEAN = BOOLEAN.box();
+  private static final TypeName BOXED_FLOAT = FLOAT.box();
+  private static final TypeName BOXED_CHAR = CHAR.box();
+  private static final TypeName BOXED_DOUBLE = DOUBLE.box();
+  private static final TypeName BOXED_SHORT = SHORT.box();
 
   private static final Set<TypeName> VALID_TYPES = ImmutableSet.of(STRING, MAP, LIST, BOOLEAN_ARRAY,
       BYTE_ARRAY, INT_ARRAY, LONG_ARRAY, STRING_ARRAY, SPARSE_ARRAY, SPARSE_BOOLEAN_ARRAY, BUNDLE,
       PARCELABLE, PARCELABLE_ARRAY, CHAR_SEQUENCE, CHAR_SEQUENCE_ARRAY, IBINDER, OBJECT_ARRAY,
-      SERIALIZABLE, PERSISTABLE_BUNDLE, SIZE, SIZEF, ENUM, INT, INT.box(), LONG, LONG.box(), BYTE,
-      BYTE.box(), BOOLEAN, BOOLEAN.box(), FLOAT, FLOAT.box(), CHAR, CHAR.box(), DOUBLE, DOUBLE.box(),
-      SHORT, SHORT.box());
+      SERIALIZABLE, PERSISTABLE_BUNDLE, SIZE, SIZEF, ENUM, INT, BOXED_INT, LONG, BOXED_LONG, BYTE,
+      BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT, CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE,
+      SHORT, BOXED_SHORT);
 
   public static Property createProperty(Property.Type propertyType, boolean isNullable, String name) {
 
@@ -56,36 +64,36 @@ public class PropertyCreator {
       return new StringProperty(propertyType, isNullable, name);
     } else if (INT.equals(parcelableType)) {
       return new IntProperty(propertyType, isNullable, name);
-    } else if (INT.box().equals(parcelableType)) {
-      return new IntProperty(propertyType, isNullable, name);
+    } else if (BOXED_INT.equals(parcelableType)) {
+      return new ValueProperty(propertyType, isNullable, name);
     } else if (LONG.equals(parcelableType)) {
       return new LongProperty(propertyType, isNullable, name);
-    } else if (LONG.box().equals(parcelableType)) {
-      return new LongProperty(propertyType, isNullable, name);
+    } else if (BOXED_LONG.box().equals(parcelableType)) {
+      return new ValueProperty(propertyType, isNullable, name);
     } else if (BYTE.equals(parcelableType)) {
       return new ByteProperty(propertyType, isNullable, name);
-    } else if (BYTE.box().equals(parcelableType)) {
-      return new ByteProperty(propertyType, isNullable, name);
+    } else if (BOXED_BYTE.equals(parcelableType)) {
+      return new ValueProperty(propertyType, isNullable, name);
     } else if (BOOLEAN.equals(parcelableType)) {
       return new BooleanProperty(propertyType, isNullable, name);
-    } else if (BOOLEAN.box().equals(parcelableType)) {
-      return new BooleanProperty(propertyType, isNullable, name);
+    } else if (BOXED_BOOLEAN.equals(parcelableType)) {
+      return new ValueProperty(propertyType, isNullable, name);
     } else if (FLOAT.equals(parcelableType)) {
       return new FloatProperty(propertyType, isNullable, name);
-    } else if (FLOAT.box().equals(parcelableType)) {
-      return new FloatProperty(propertyType, isNullable, name);
+    } else if (BOXED_FLOAT.equals(parcelableType)) {
+      return new ValueProperty(propertyType, isNullable, name);
     } else if (CHAR.equals(parcelableType)) {
       return new CharProperty(propertyType, isNullable, name);
-    } else if (CHAR.box().equals(parcelableType)) {
-      return new CharProperty(propertyType, isNullable, name);
+    } else if (BOXED_CHAR.equals(parcelableType)) {
+      return new ValueProperty(propertyType, isNullable, name);
     } else if (DOUBLE.equals(parcelableType)) {
       return new DoubleProperty(propertyType, isNullable, name);
-    } else if (DOUBLE.box().equals(parcelableType)) {
-      return new DoubleProperty(propertyType, isNullable, name);
+    } else if (BOXED_DOUBLE.equals(parcelableType)) {
+      return new ValueProperty(propertyType, isNullable, name);
     } else if (SHORT.equals(parcelableType)) {
       return new ShortProperty(propertyType, isNullable, name);
-    } else if (SHORT.box().equals(parcelableType)) {
-      return new ShortProperty(propertyType, isNullable, name);
+    } else if (BOXED_SHORT.equals(parcelableType)) {
+      return new ValueProperty(propertyType, isNullable, name);
     } else if (MAP.equals(parcelableType)) {
       return new MapProperty(propertyType, isNullable, name);
     } else if (LIST.equals(parcelableType)) {
