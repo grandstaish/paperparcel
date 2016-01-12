@@ -1,5 +1,7 @@
 package nz.bradcampbell.dataparcel.internal.properties;
 
+import android.text.TextUtils;
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
@@ -11,11 +13,12 @@ public class CharSequenceProperty extends Property {
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    TypeName wrappedTypeName = getPropertyType().getWrappedTypeName();
-    block.addStatement("$N = ($T) $N.readCharSequence()", getName(), wrappedTypeName, in);
+    TypeName textUtilsTypeName = ClassName.get(TextUtils.class);
+    block.addStatement("$N = $T.CHAR_SEQUENCE_CREATOR.createFromParcel($N)", getName(), textUtilsTypeName, in);
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {
-    block.addStatement("$N.writeCharSequence($N)", dest, variableName);
+    TypeName textUtilsTypeName = ClassName.get(TextUtils.class);
+    block.addStatement("$T.writeToParcel($N, $N, 0)", textUtilsTypeName, variableName, dest);
   }
 }
