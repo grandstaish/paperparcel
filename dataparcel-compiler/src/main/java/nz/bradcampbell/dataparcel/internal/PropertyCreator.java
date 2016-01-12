@@ -8,6 +8,7 @@ import com.squareup.javapoet.TypeName;
 import nz.bradcampbell.dataparcel.internal.properties.*;
 
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
@@ -154,6 +155,10 @@ public class PropertyCreator {
         return typeName;
       }
       if (typeName instanceof ArrayTypeName) {
+        TypeName arrayParcelableType = getParcelableType(types, ((ArrayType) typeMirror).getComponentType());
+        if (PARCELABLE.equals(arrayParcelableType)) {
+          return PARCELABLE_ARRAY;
+        }
         // TODO: handle non-parcelable arrays
         return OBJECT_ARRAY;
       }

@@ -1,5 +1,6 @@
 package nz.bradcampbell.dataparcel.internal.properties;
 
+import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
@@ -11,11 +12,12 @@ public class ParcelableArrayProperty extends Property {
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    TypeName wrappedTypeName = getPropertyType().getWrappedTypeName();
-    block.addStatement("$N = ($T) $N.readParcelableArray(getClass().getClassLoader())", getName(), wrappedTypeName, in);
+    ArrayTypeName wrappedTypeName = (ArrayTypeName) getPropertyType().getWrappedTypeName();
+    block.addStatement("$N = ($T) $N.readParcelableArray($T.class.getClassLoader())", getName(), wrappedTypeName, in,
+        wrappedTypeName.componentType);
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {
-    block.addStatement("$N.writeParcelableArray($N)", dest, variableName);
+    block.addStatement("$N.writeParcelableArray($N, 0)", dest, variableName);
   }
 }
