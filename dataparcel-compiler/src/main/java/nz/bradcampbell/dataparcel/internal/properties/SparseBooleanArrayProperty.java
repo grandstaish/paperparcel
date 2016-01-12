@@ -4,8 +4,8 @@ import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.ParameterSpec;
 import nz.bradcampbell.dataparcel.internal.Property;
 
-public class SparseBooleanArray extends Property {
-  public SparseBooleanArray(Property.Type propertyType, boolean isNullable, String name) {
+public class SparseBooleanArrayProperty extends Property {
+  public SparseBooleanArrayProperty(Property.Type propertyType, boolean isNullable, String name) {
     super(propertyType, isNullable, name);
   }
 
