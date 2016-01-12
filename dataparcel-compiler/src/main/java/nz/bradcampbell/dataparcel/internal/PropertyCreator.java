@@ -135,7 +135,7 @@ public class PropertyCreator {
     } else if (SIZEF.equals(parcelableType)) {
       return new SizeFProperty(propertyType, isNullable, name);
     } else if (ENUM.equals(parcelableType)) {
-      return new EnumProperty(propertyType, isNullable, name);
+      return new SerializableProperty(propertyType, isNullable, name);
     } else {
       return new NonParcelableProperty(propertyType, isNullable, name);
     }
