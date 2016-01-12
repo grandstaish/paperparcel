@@ -16,6 +16,6 @@ public class ShortProperty extends Property {
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {
-    block.addStatement("$N.writeInt(((Short) $N).intValue())", dest, variableName);
+    block.addStatement("$N.writeInt($N)", dest, variableName);
   }
 }
