@@ -108,7 +108,7 @@ public class PropertyCreator {
     } else if (LONG_ARRAY.equals(parcelableType)) {
       return new LongArrayProperty(propertyType, isNullable, name);
     } else if (STRING_ARRAY.equals(parcelableType)) {
-      return new ValueProperty(propertyType, isNullable, name);
+      return new StringArrayProperty(propertyType, isNullable, name);
     } else if (SPARSE_ARRAY.equals(parcelableType)) {
       return new SparseArrayProperty(propertyType, isNullable, name);
     } else if (SPARSE_BOOLEAN_ARRAY.equals(parcelableType)) {
