@@ -9,19 +9,19 @@ import javax.tools.JavaFileObject;
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 
-public class CharPropertyTests {
+public class ByteTests {
 
-  @Test public void primitiveCharTest() throws Exception {
+  @Test public void primitiveByteTest() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
         "import nz.bradcampbell.dataparcel.DataParcel;",
         "@DataParcel",
         "public final class Test {",
-        "private final char child;",
-        "public Test(char child) {",
+        "private final byte child;",
+        "public Test(byte child) {",
         "this.child = child;",
         "}",
-        "public char component1() {",
+        "public byte component1() {",
         "return this.child;",
         "}",
         "}"
@@ -46,8 +46,8 @@ public class CharPropertyTests {
         "this.data = data;",
         "}",
         "private TestParcel(Parcel in) {",
-        "char component1;",
-        "component1 = (char) in.readInt();",
+        "byte component1;",
+        "component1 = in.readByte();",
         "this.data = new Test(component1);",
         "}",
         "public static final TestParcel wrap(Test data) {",
@@ -60,8 +60,8 @@ public class CharPropertyTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "char component1 = data.component1();",
-        "dest.writeInt(component1);",
+        "byte component1 = data.component1();",
+        "dest.writeByte(component1);",
         "}",
         "}"
     ));

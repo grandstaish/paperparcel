@@ -9,20 +9,20 @@ import javax.tools.JavaFileObject;
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 
-public class ByteArrayPropertyTests {
+public class CharSequenceTests {
 
-  @Test public void nullableByteArrayTest() throws Exception {
+  @Test public void nullableCharSequenceTest() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
         "import android.support.annotation.Nullable;",
         "import nz.bradcampbell.dataparcel.DataParcel;",
         "@DataParcel",
         "public final class Test {",
-        "@Nullable private final byte[] child;",
-        "public Test(@Nullable byte[] child) {",
+        "@Nullable private final CharSequence child;",
+        "public Test(@Nullable CharSequence child) {",
         "this.child = child;",
         "}",
-        "@Nullable public byte[] component1() {",
+        "@Nullable public CharSequence component1() {",
         "return this.child;",
         "}",
         "}"
@@ -32,6 +32,8 @@ public class ByteArrayPropertyTests {
         "package test;",
         "import android.os.Parcel;",
         "import android.os.Parcelable;",
+        "import android.text.TextUtils;",
+        "import java.lang.CharSequence;",
         "import java.lang.Override;",
         "public class TestParcel implements Parcelable {",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
@@ -47,9 +49,9 @@ public class ByteArrayPropertyTests {
         "this.data = data;",
         "}",
         "private TestParcel(Parcel in) {",
-        "byte[] component1 = null;",
+        "CharSequence component1 = null;",
         "if (in.readInt() == 0) {",
-        "component1 = in.createByteArray();",
+        "component1 = TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in);",
         "}",
         "this.data = new Test(component1);",
         "}",
@@ -67,8 +69,8 @@ public class ByteArrayPropertyTests {
         "dest.writeInt(1);",
         "} else {",
         "dest.writeInt(0);",
-        "byte[] component1 = data.component1();",
-        "dest.writeByteArray(component1);",
+        "CharSequence component1 = data.component1();",
+        "TextUtils.writeToParcel(component1, dest, 0);",
         "}",
         "}",
         "}"
@@ -81,17 +83,17 @@ public class ByteArrayPropertyTests {
         .generatesSources(expectedSource);
   }
 
-  @Test public void byteArrayTest() throws Exception {
+  @Test public void charSequenceTest() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
         "import nz.bradcampbell.dataparcel.DataParcel;",
         "@DataParcel",
         "public final class Test {",
-        "private final byte[] child;",
-        "public Test(byte[] child) {",
+        "private final CharSequence child;",
+        "public Test(CharSequence child) {",
         "this.child = child;",
         "}",
-        "public byte[] component1() {",
+        "public CharSequence component1() {",
         "return this.child;",
         "}",
         "}"
@@ -101,6 +103,8 @@ public class ByteArrayPropertyTests {
         "package test;",
         "import android.os.Parcel;",
         "import android.os.Parcelable;",
+        "import android.text.TextUtils;",
+        "import java.lang.CharSequence;",
         "import java.lang.Override;",
         "public class TestParcel implements Parcelable {",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
@@ -116,8 +120,8 @@ public class ByteArrayPropertyTests {
         "this.data = data;",
         "}",
         "private TestParcel(Parcel in) {",
-        "byte[] component1 = null;",
-        "component1 = in.createByteArray();",
+        "CharSequence component1 = null;",
+        "component1 = TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in);",
         "this.data = new Test(component1);",
         "}",
         "public static final TestParcel wrap(Test data) {",
@@ -130,8 +134,8 @@ public class ByteArrayPropertyTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "byte[] component1 = data.component1();",
-        "dest.writeByteArray(component1);",
+        "CharSequence component1 = data.component1();",
+        "TextUtils.writeToParcel(component1, dest, 0);",
         "}",
         "}"
     ));

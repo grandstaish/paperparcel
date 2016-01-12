@@ -9,19 +9,19 @@ import javax.tools.JavaFileObject;
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 
-public class BytePropertyTests {
+public class DoubleTests {
 
-  @Test public void primitiveByteTest() throws Exception {
+  @Test public void primitiveDoubleTest() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
         "import nz.bradcampbell.dataparcel.DataParcel;",
         "@DataParcel",
         "public final class Test {",
-        "private final byte child;",
-        "public Test(byte child) {",
+        "private final double child;",
+        "public Test(double child) {",
         "this.child = child;",
         "}",
-        "public byte component1() {",
+        "public double component1() {",
         "return this.child;",
         "}",
         "}"
@@ -46,8 +46,8 @@ public class BytePropertyTests {
         "this.data = data;",
         "}",
         "private TestParcel(Parcel in) {",
-        "byte component1;",
-        "component1 = in.readByte();",
+        "double component1;",
+        "component1 = in.readDouble();",
         "this.data = new Test(component1);",
         "}",
         "public static final TestParcel wrap(Test data) {",
@@ -60,8 +60,8 @@ public class BytePropertyTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "byte component1 = data.component1();",
-        "dest.writeByte(component1);",
+        "double component1 = data.component1();",
+        "dest.writeDouble(component1);",
         "}",
         "}"
     ));

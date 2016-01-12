@@ -9,19 +9,19 @@ import javax.tools.JavaFileObject;
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 
-public class BooleanPropertyTests {
+public class CharTests {
 
-  @Test public void primitiveBooleanTest() throws Exception {
+  @Test public void primitiveCharTest() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
         "import nz.bradcampbell.dataparcel.DataParcel;",
         "@DataParcel",
         "public final class Test {",
-        "private final boolean child;",
-        "public Test(boolean child) {",
+        "private final char child;",
+        "public Test(char child) {",
         "this.child = child;",
         "}",
-        "public boolean component1() {",
+        "public char component1() {",
         "return this.child;",
         "}",
         "}"
@@ -46,8 +46,8 @@ public class BooleanPropertyTests {
         "this.data = data;",
         "}",
         "private TestParcel(Parcel in) {",
-        "boolean component1;",
-        "component1 = in.readInt() == 1;",
+        "char component1;",
+        "component1 = (char) in.readInt();",
         "this.data = new Test(component1);",
         "}",
         "public static final TestParcel wrap(Test data) {",
@@ -60,8 +60,8 @@ public class BooleanPropertyTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "boolean component1 = data.component1();",
-        "dest.writeInt(component1 ? 1 : 0);",
+        "char component1 = data.component1();",
+        "dest.writeInt(component1);",
         "}",
         "}"
     ));
