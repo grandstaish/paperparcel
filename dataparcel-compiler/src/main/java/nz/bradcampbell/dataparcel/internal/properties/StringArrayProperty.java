@@ -10,7 +10,7 @@ public class StringArrayProperty extends Property {
   }
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    block.addStatement("$N = $N.readStringArray()", getName(), in);
+    block.addStatement("$N = $N.createStringArray()", getName(), in);
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {
