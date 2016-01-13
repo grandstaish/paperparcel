@@ -268,6 +268,7 @@ public class ParcelableArrayTests {
         "Child _component1 = null;",
         "ChildParcel _component1Wrapped = component1Wrapped[component1Index];",
         "_component1 = _component1Wrapped.getContents();",
+        "component1[component1Index] = _component1;",
         "}",
         "this.data = new Test(component1);",
         "}",

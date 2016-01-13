@@ -48,6 +48,7 @@ public class ParcelableArrayProperty extends Property {
     block.addStatement("$T $N = null", componentType.getTypeName(), innerName);
     block.addStatement("$T $N = $N[$N]", wrappedTypeName.componentType, innerWrappedName, wrappedVariableName, indexName);
     PropertyCreator.createProperty(componentType, false, innerName).unparcelVariable(block);
+    block.addStatement("$N[$N] = $N", variableName, indexName, innerName);
 
     block.endControlFlow();
   }
