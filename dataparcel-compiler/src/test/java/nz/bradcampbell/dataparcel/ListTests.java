@@ -6,6 +6,8 @@ import org.junit.Test;
 
 import javax.tools.JavaFileObject;
 
+import java.util.List;
+
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
@@ -715,6 +717,146 @@ public class ListTests {
         "Integer __component1 = _component1Item;",
         "ChildParcel $_component1 = ChildParcel.wrap(_component1.get(_component1Item));",
         "_component1Wrapped.put(__component1, $_component1);",
+        "}",
+        "component1Wrapped.add(_component1Wrapped);",
+        "}",
+        "dest.writeList(component1Wrapped);",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject childParcel = JavaFileObjects.forSourceString("test/ChildParcel", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
+        "import java.lang.Integer;",
+        "import java.lang.Override;",
+        "public class ChildParcel implements Parcelable {",
+        "public static final Parcelable.Creator<ChildParcel> CREATOR = new Parcelable.Creator<ChildParcel>() {",
+        "@Override public ChildParcel createFromParcel(Parcel in) {",
+        "return new ChildParcel(in);",
+        "}",
+        "@Override public ChildParcel[] newArray(int size) {",
+        "return new ChildParcel[size];",
+        "}",
+        "};",
+        "private final Child data;",
+        "private ChildParcel(Child data) {",
+        "this.data = data;",
+        "}",
+        "private ChildParcel(Parcel in) {",
+        "Integer component1 = null;",
+        "component1 = (Integer) in.readValue(Integer.class.getClassLoader());",
+        "this.data = new Child(component1);",
+        "}",
+        "public static final ChildParcel wrap(Child data) {",
+        "return new ChildParcel(data);",
+        "}",
+        "public Child getContents() {",
+        "return data;",
+        "}",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "Integer component1 = data.component1();",
+        "dest.writeValue(component1);",
+        "}",
+        "}"
+    ));
+
+    assertAbout(javaSources()).that(asList(dataClassRoot, dataClassChild))
+        .processedWith(new DataParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(rootParcel, childParcel);
+  }
+
+  @Test public void listOfNonParcelableArraysTest() throws Exception {
+    JavaFileObject dataClassRoot = JavaFileObjects.forSourceString("test.Root", Joiner.on('\n').join(
+        "package test;",
+        "import nz.bradcampbell.dataparcel.DataParcel;",
+        "import java.util.List;",
+        "@DataParcel",
+        "public final class Root {",
+        "private final List<Child[]> child;",
+        "public Root(List<Child[]> child) {",
+        "this.child = child;",
+        "}",
+        "public List<Child[]> component1() {",
+        "return this.child;",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject dataClassChild = JavaFileObjects.forSourceString("test.Child", Joiner.on('\n').join(
+        "package test;",
+        "public final class Child {",
+        "private final Integer test;",
+        "public Child(Integer test) {",
+        "this.test = test;",
+        "}",
+        "public Integer component1() {",
+        "return this.test;",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject rootParcel = JavaFileObjects.forSourceString("test/RootParcel", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
+        "import java.lang.Override;",
+        "import java.util.ArrayList;",
+        "import java.util.List;",
+        "public class RootParcel implements Parcelable {",
+        "public static final Parcelable.Creator<RootParcel> CREATOR = new Parcelable.Creator<RootParcel>() {",
+        "@Override public RootParcel createFromParcel(Parcel in) {",
+        "return new RootParcel(in);",
+        "}",
+        "@Override public RootParcel[] newArray(int size) {",
+        "return new RootParcel[size];",
+        "}",
+        "};",
+        "private final Root data;",
+        "private RootParcel(Root data) {",
+        "this.data = data;",
+        "}",
+        "private RootParcel(Parcel in) {",
+        "List<Child[]> component1 = null;",
+        "List<ChildParcel[]> component1Wrapped = (List<ChildParcel[]>) in.readArrayList(getClass().getClassLoader());",
+        "component1 = new ArrayList<>(component1Wrapped.size());",
+        "for (ChildParcel[] _component1Wrapped : component1Wrapped) {",
+        "Child[] _component1 = null;",
+        "_component1 = new Child[_component1Wrapped.length];",
+        "for (int _component1Index = 0; _component1Index < _component1Wrapped.length; _component1Index++) {",
+        "Child __component1 = null;",
+        "ChildParcel __component1Wrapped = _component1Wrapped[_component1Index];",
+        "__component1 = __component1Wrapped.getContents();",
+        "_component1[_component1Index] = __component1;",
+        "}",
+        "component1.add(_component1);",
+        "}",
+        "this.data = new Root(component1);",
+        "}",
+        "public static final RootParcel wrap(Root data) {",
+        "return new RootParcel(data);",
+        "}",
+        "public Root getContents() {",
+        "return data;",
+        "}",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "List<Child[]> component1 = data.component1();",
+        "List<ChildParcel[]> component1Wrapped = new ArrayList<>(component1.size());",
+        "for (Child[] component1Item : component1) {",
+        "Child[] _component1 = component1Item;",
+        "ChildParcel[] _component1Wrapped = new ChildParcel[_component1.length];",
+        "for (int _component1Index = 0; _component1Index < _component1.length; _component1Index++) {",
+        "ChildParcel __component1 = ChildParcel.wrap(_component1[_component1Index]);",
+        "_component1Wrapped[_component1Index] = __component1;",
         "}",
         "component1Wrapped.add(_component1Wrapped);",
         "}",

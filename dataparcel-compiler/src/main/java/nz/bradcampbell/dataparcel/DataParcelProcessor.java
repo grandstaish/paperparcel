@@ -135,8 +135,8 @@ public class DataParcelProcessor extends AbstractProcessor {
         }
       }
 
-      if (type instanceof ArrayType) {
-        ArrayType arrayType = (ArrayType) type;
+      if (erasedType instanceof ArrayType) {
+        ArrayType arrayType = (ArrayType) erasedType;
 
         childTypes = new ArrayList<Property.Type>(1);
 
