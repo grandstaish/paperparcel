@@ -13,6 +13,7 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -108,6 +109,8 @@ public class DataParcelProcessor extends AbstractProcessor {
 
     boolean isParcelable = parcelableTypeName != null;
 
+    Element typeElement = typeUtil.asElement(erasedType);
+
     if (isParcelable) {
 
       if (type instanceof DeclaredType) {
@@ -150,14 +153,16 @@ public class DataParcelProcessor extends AbstractProcessor {
     } else {
 
       // This is (one of) the reason(s) it is not parcelable. Assume it contains a data object as a parameter
-      TypeElement requiredElement = (TypeElement) typeUtil.asElement(erasedType);
+      TypeElement requiredElement = (TypeElement) typeElement;
       variableDataParcelDependencies.add(requiredElement);
       String packageName = getPackageName(requiredElement);
       String className = requiredElement.getSimpleName().toString() + "Parcel";
       parcelableTypeName = wrappedTypeName = ClassName.get(packageName, className);
     }
 
-    return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, typeName.equals(wrappedTypeName));
+    boolean isInterface = typeElement != null && typeElement.getKind() == ElementKind.INTERFACE;
+
+    return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, typeName.equals(wrappedTypeName), isInterface);
   }
 
   private List<VariableElement> getFields(TypeElement el) {

@@ -17,10 +17,20 @@ public class ListProperty extends Property {
     TypeName wrappedTypeName = propertyType.getWrappedTypeName();
 
     if (propertyType.isParcelable()) {
-      block.addStatement("$N = ($T) $N.readArrayList(getClass().getClassLoader())", getName(), wrappedTypeName, in);
+      if (propertyType.isInterface()) {
+        block.addStatement("$N = ($T) $N.readArrayList(getClass().getClassLoader())", getName(), wrappedTypeName, in);
+      } else {
+        block.addStatement("$N = new $T()", getName(), wrappedTypeName);
+        block.addStatement("$N.readList($N, getClass().getClassLoader())", in, getName());
+      }
     } else {
-      block.addStatement("$T $N = ($T) $N.readArrayList(getClass().getClassLoader())", wrappedTypeName,
-          getWrappedName(), wrappedTypeName, in);
+      if (propertyType.isInterface()) {
+        block.addStatement("$T $N = ($T) $N.readArrayList(getClass().getClassLoader())", wrappedTypeName,
+            getWrappedName(), wrappedTypeName, in);
+      } else {
+        block.addStatement("$T $N = new $T()", wrappedTypeName, getWrappedName(), wrappedTypeName);
+        block.addStatement("$N.readList($N, getClass().getClassLoader())", in, getWrappedName());
+      }
       unparcelVariable(block);
     }
   }

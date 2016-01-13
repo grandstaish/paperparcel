@@ -951,7 +951,8 @@ public class ListTests {
         "}",
         "private TestParcel(Parcel in) {",
         "ArrayList<Integer> component1 = null;",
-        "component1 = (ArrayList<Integer>) in.readArrayList(getClass().getClassLoader());",
+        "component1 = new ArrayList<Integer>();",
+        "in.readList(component1, getClass().getClassLoader());",
         "this.data = new Test(component1);",
         "}",
         "public static final TestParcel wrap(Test data) {",
@@ -965,6 +966,72 @@ public class ListTests {
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
         "ArrayList<Integer> component1 = data.component1();",
+        "dest.writeList(component1);",
+        "}",
+        "}"
+    ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new DataParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expectedSource);
+  }
+
+  @Test public void linkedListOfParcelableTypesTest() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+        "package test;",
+        "import nz.bradcampbell.dataparcel.DataParcel;",
+        "import java.util.LinkedList;",
+        "@DataParcel",
+        "public final class Test {",
+        "private final LinkedList<Integer> testList;",
+        "public Test(LinkedList<Integer> testList) {",
+        "this.testList = testList;",
+        "}",
+        "public LinkedList<Integer> component1() {",
+        "return this.testList;",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject expectedSource = JavaFileObjects.forSourceString("test/TestParcel", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
+        "import java.lang.Integer;",
+        "import java.lang.Override;",
+        "import java.util.LinkedList;",
+        "public class TestParcel implements Parcelable {",
+        "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
+        "@Override public TestParcel createFromParcel(Parcel in) {",
+        "return new TestParcel(in);",
+        "}",
+        "@Override public TestParcel[] newArray(int size) {",
+        "return new TestParcel[size];",
+        "}",
+        "};",
+        "private final Test data;",
+        "private TestParcel(Test data) {",
+        "this.data = data;",
+        "}",
+        "private TestParcel(Parcel in) {",
+        "LinkedList<Integer> component1 = null;",
+        "component1 = new LinkedList<Integer>();",
+        "in.readList(component1, getClass().getClassLoader());",
+        "this.data = new Test(component1);",
+        "}",
+        "public static final TestParcel wrap(Test data) {",
+        "return new TestParcel(data);",
+        "}",
+        "public Test getContents() {",
+        "return data;",
+        "}",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "LinkedList<Integer> component1 = data.component1();",
         "dest.writeList(component1);",
         "}",
         "}"

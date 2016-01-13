@@ -9,7 +9,7 @@ import static com.squareup.javapoet.TypeName.OBJECT;
 import static nz.bradcampbell.dataparcel.DataParcelProcessor.DATA_VARIABLE_NAME;
 
 public abstract class Property {
-  private final static Type NO_TYPE = new Type(null, OBJECT, OBJECT, OBJECT, false);
+  private final static Type NO_TYPE = new Type(null, OBJECT, OBJECT, OBJECT, false, false);
 
   public static final class Type {
     private final List<Type> childTypes;
@@ -17,14 +17,16 @@ public abstract class Property {
     private final TypeName typeName;
     private final TypeName wrappedTypeName;
     private final boolean isParcelable;
+    private final boolean isInterface;
 
     public Type(@Nullable List<Type> childTypes, TypeName parcelableTypeName, TypeName typeName,
-                TypeName wrappedTypeName, boolean isParcelable) {
+                TypeName wrappedTypeName, boolean isParcelable, boolean isInterface) {
       this.childTypes = childTypes;
       this.parcelableTypeName = parcelableTypeName;
       this.typeName = typeName;
       this.wrappedTypeName = wrappedTypeName;
       this.isParcelable = isParcelable;
+      this.isInterface = isInterface;
     }
 
     public Type getChildType(int index) {
@@ -48,6 +50,10 @@ public abstract class Property {
 
     public boolean isParcelable() {
       return isParcelable;
+    }
+
+    public boolean isInterface() {
+      return isInterface;
     }
   }
 
