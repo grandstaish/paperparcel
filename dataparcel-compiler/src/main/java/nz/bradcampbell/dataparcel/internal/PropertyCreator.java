@@ -144,6 +144,9 @@ public class PropertyCreator {
 
   public static TypeName getParcelableType(Types types, TypeMirror typeMirror) {
     TypeElement type = (TypeElement) types.asElement(typeMirror);
+
+    boolean isSerializable = false;
+
     while (typeMirror.getKind() != TypeKind.NONE) {
 
       // first, check if the class is valid.
@@ -151,9 +154,11 @@ public class PropertyCreator {
       if (typeName instanceof ParameterizedTypeName) {
         typeName = ((ParameterizedTypeName) typeName).rawType;
       }
+
       if (typeName.isPrimitive() || VALID_TYPES.contains(typeName)) {
         return typeName;
       }
+
       if (typeName instanceof ArrayTypeName) {
         TypeName arrayParcelableType = getParcelableType(types, ((ArrayType) typeMirror).getComponentType());
         if (arrayParcelableType == null || PARCELABLE.equals(arrayParcelableType)) {
@@ -165,7 +170,14 @@ public class PropertyCreator {
       // then check if it implements valid interfaces
       for (TypeMirror iface : type.getInterfaces()) {
         TypeName ifaceName = get(iface);
-        if (VALID_TYPES.contains(ifaceName)) {
+
+        if (ifaceName instanceof ParameterizedTypeName) {
+          ifaceName = ((ParameterizedTypeName) ifaceName).rawType;
+        }
+
+        if (SERIALIZABLE.equals(ifaceName)) {
+          isSerializable = true;
+        } else if (VALID_TYPES.contains(ifaceName)) {
           return ifaceName;
         }
       }
@@ -174,6 +186,12 @@ public class PropertyCreator {
       type = (TypeElement) types.asElement(typeMirror);
       typeMirror = type.getSuperclass();
     }
+
+    // Serializable should be a last resort as it is slow
+    if (isSerializable) {
+      return SERIALIZABLE;
+    }
+
     return null;
   }
 }
