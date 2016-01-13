@@ -40,21 +40,29 @@ public class MapProperty extends Property {
     if (propertyType.isParcelable()) {
       super.unparcelVariable(block);
     } else {
-      TypeName hashMapTypeName = TypeName.get(HashMap.class);
-      block.addStatement("$N = new $T<>($N.size())", getName(), hashMapTypeName, getWrappedName());
 
       Type keyParameterPropertyType = propertyType.getChildType(0);
       TypeName keyParameterType = keyParameterPropertyType.getTypeName();
       TypeName keyWrappedParameterType = keyParameterPropertyType.getWrappedTypeName();
+
+      Type valueParameterPropertyType = propertyType.getChildType(1);
+      TypeName valueParameterType = valueParameterPropertyType.getTypeName();
+      TypeName valueWrappedParameterType = valueParameterPropertyType.getWrappedTypeName();
+
+      if (propertyType.isInterface()) {
+        TypeName hashMapTypeName = TypeName.get(HashMap.class);
+        block.addStatement("$N = new $T<$T, $T>($N.size())", getName(), hashMapTypeName, keyParameterType,
+            valueParameterType, getWrappedName());
+      } else {
+        block.addStatement("$N = new $T()", getName(), propertyType.getTypeName());
+      }
+
       String innerWrappedName = "_" + getWrappedName();
       block.beginControlFlow("for ($T $N : $N.keySet())", keyWrappedParameterType, innerWrappedName, getWrappedName());
       String keyInnerName = "_" + getName();
       block.addStatement("$T $N = null", keyParameterType, keyInnerName);
       createProperty(keyParameterPropertyType, true, keyInnerName).unparcelVariable(block);
 
-      Type valueParameterPropertyType = propertyType.getChildType(1);
-      TypeName valueParameterType = valueParameterPropertyType.getTypeName();
-      TypeName valueWrappedParameterType = valueParameterPropertyType.getWrappedTypeName();
       String valueInnerName = "$" + getName();
       String valueInnerWrappedName = "$" + getWrappedName();
       block.addStatement("$T $N = $N.get($N)", valueWrappedParameterType, valueInnerWrappedName, getWrappedName(), innerWrappedName);
@@ -79,19 +87,30 @@ public class MapProperty extends Property {
 
     if (!propertyType.isParcelable()) {
       String wrappedName = getWrappedName();
-      TypeName hashMapTypeName = TypeName.get(HashMap.class);
-      TypeName wrappedTypeName = propertyType.getWrappedTypeName();
-      block.addStatement("$T $N = new $T<>($N.size())", wrappedTypeName, wrappedName, hashMapTypeName, variableName);
 
       Property.Type keyParameterPropertyType = propertyType.getChildType(0);
       TypeName keyParameterType = keyParameterPropertyType.getTypeName();
+      TypeName keyWrappedParameterType = keyParameterPropertyType.getWrappedTypeName();
+
+      Type valueParameterPropertyType = propertyType.getChildType(1);
+      TypeName valueWrappedParameterType = valueParameterPropertyType.getWrappedTypeName();
+
+      if (propertyType.isInterface()) {
+        TypeName hashMapTypeName = TypeName.get(HashMap.class);
+        TypeName wrappedTypeName = propertyType.getWrappedTypeName();
+        block.addStatement("$T $N = new $T<$T, $T>($N.size())", wrappedTypeName, wrappedName, hashMapTypeName,
+            keyWrappedParameterType, valueWrappedParameterType, variableName);
+      } else {
+        TypeName wrappedTypeName = propertyType.getWrappedTypeName();
+        block.addStatement("$T $N = new $T()", wrappedTypeName, wrappedName, wrappedTypeName);
+      }
+
       String parameterItemName = variableName + "Item";
       block.beginControlFlow("for ($T $N : $N.keySet())", keyParameterType, parameterItemName, variableName);
       String keyInnerName = "_" + variableName;
       String keyInnerVariableName = createProperty(keyParameterPropertyType, true, keyInnerName)
           .generateParcelableVariable(block, parameterItemName);
 
-      Type valueParameterPropertyType = propertyType.getChildType(1);
       String valueInnerName = "$" + variableName;
       String valueSource = variableName + ".get(" + parameterItemName + ")";
       String valueInnerVariableName = createProperty(valueParameterPropertyType, true, valueInnerName)
