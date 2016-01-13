@@ -11,6 +11,7 @@ import nz.bradcampbell.dataparcel.internal.PropertyCreator;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
@@ -97,7 +98,7 @@ public class DataParcelProcessor extends AbstractProcessor {
     TypeMirror erasedType = typeUtil.erasure(type);
 
     // List of type arguments for this property
-    List<Property.Type> args = null;
+    List<Property.Type> childTypes = null;
 
     // The type that allows this type to be parcelable, or null
     TypeName parcelableTypeName = PropertyCreator.getParcelableType(typeUtil, erasedType);
@@ -108,6 +109,7 @@ public class DataParcelProcessor extends AbstractProcessor {
     boolean isParcelable = parcelableTypeName != null;
 
     if (isParcelable) {
+
       if (type instanceof DeclaredType) {
 
         // Parse type arguments
@@ -117,13 +119,13 @@ public class DataParcelProcessor extends AbstractProcessor {
         int numTypeArgs = typeArguments.size();
         if (numTypeArgs > 0) {
 
-          args = new ArrayList<Property.Type>(numTypeArgs);
+          childTypes = new ArrayList<Property.Type>(numTypeArgs);
           TypeName[] parameterArray = new TypeName[numTypeArgs];
           TypeName[] wrappedParameterArray = new TypeName[numTypeArgs];
 
           for (int i = 0; i < numTypeArgs; i++) {
             Property.Type argType = parsePropertyType(typeArguments.get(i), variableDataParcelDependencies);
-            args.add(argType);
+            childTypes.add(argType);
             parameterArray[i] = argType.getTypeName();
             wrappedParameterArray[i] = argType.getWrappedTypeName();
           }
@@ -132,6 +134,19 @@ public class DataParcelProcessor extends AbstractProcessor {
           typeName = ParameterizedTypeName.get((ClassName) typeName, parameterArray);
         }
       }
+
+      if (type instanceof ArrayType) {
+        ArrayType arrayType = (ArrayType) type;
+
+        childTypes = new ArrayList<Property.Type>(1);
+
+        Property.Type componentType = parsePropertyType(arrayType.getComponentType(), variableDataParcelDependencies);
+        childTypes.add(componentType);
+
+        wrappedTypeName = ArrayTypeName.of(componentType.getWrappedTypeName());
+        typeName = ArrayTypeName.of(componentType.getTypeName());
+      }
+
     } else {
 
       // This is (one of) the reason(s) it is not parcelable. Assume it contains a data object as a parameter
@@ -142,7 +157,7 @@ public class DataParcelProcessor extends AbstractProcessor {
       parcelableTypeName = wrappedTypeName = ClassName.get(packageName, className);
     }
 
-    return new Property.Type(args, parcelableTypeName, typeName, wrappedTypeName, typeName.equals(wrappedTypeName));
+    return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, typeName.equals(wrappedTypeName));
   }
 
   private List<VariableElement> getFields(TypeElement el) {

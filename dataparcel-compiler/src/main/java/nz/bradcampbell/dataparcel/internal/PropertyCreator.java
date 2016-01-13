@@ -156,10 +156,9 @@ public class PropertyCreator {
       }
       if (typeName instanceof ArrayTypeName) {
         TypeName arrayParcelableType = getParcelableType(types, ((ArrayType) typeMirror).getComponentType());
-        if (PARCELABLE.equals(arrayParcelableType)) {
+        if (arrayParcelableType == null || PARCELABLE.equals(arrayParcelableType)) {
           return PARCELABLE_ARRAY;
         }
-        // TODO: handle non-parcelable arrays
         return OBJECT_ARRAY;
       }
 

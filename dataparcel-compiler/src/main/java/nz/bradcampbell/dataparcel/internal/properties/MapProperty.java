@@ -33,7 +33,7 @@ public class MapProperty extends Property {
       TypeName hashMapTypeName = TypeName.get(HashMap.class);
       block.addStatement("$N = new $T<>($N.size())", getName(), hashMapTypeName, getWrappedName());
 
-      Type keyParameterPropertyType = propertyType.getTypeArgumentAtIndex(0);
+      Type keyParameterPropertyType = propertyType.getChildType(0);
       TypeName keyParameterType = keyParameterPropertyType.getTypeName();
       TypeName keyWrappedParameterType = keyParameterPropertyType.getWrappedTypeName();
       String innerWrappedName = "_" + getWrappedName();
@@ -42,7 +42,7 @@ public class MapProperty extends Property {
       block.addStatement("$T $N = null", keyParameterType, keyInnerName);
       createProperty(keyParameterPropertyType, true, keyInnerName).unparcelVariable(block);
 
-      Type valueParameterPropertyType = propertyType.getTypeArgumentAtIndex(1);
+      Type valueParameterPropertyType = propertyType.getChildType(1);
       TypeName valueParameterType = valueParameterPropertyType.getTypeName();
       TypeName valueWrappedParameterType = valueParameterPropertyType.getWrappedTypeName();
       String valueInnerName = "$" + getName();
@@ -73,7 +73,7 @@ public class MapProperty extends Property {
       TypeName wrappedTypeName = propertyType.getWrappedTypeName();
       block.addStatement("$T $N = new $T<>($N.size())", wrappedTypeName, wrappedName, hashMapTypeName, variableName);
 
-      Property.Type keyParameterPropertyType = propertyType.getTypeArgumentAtIndex(0);
+      Property.Type keyParameterPropertyType = propertyType.getChildType(0);
       TypeName keyParameterType = keyParameterPropertyType.getTypeName();
       String parameterItemName = variableName + "Item";
       block.beginControlFlow("for ($T $N : $N.keySet())", keyParameterType, parameterItemName, variableName);
@@ -81,7 +81,7 @@ public class MapProperty extends Property {
       String keyInnerVariableName = createProperty(keyParameterPropertyType, true, keyInnerName)
           .generateParcelableVariable(block, parameterItemName);
 
-      Type valueParameterPropertyType = propertyType.getTypeArgumentAtIndex(1);
+      Type valueParameterPropertyType = propertyType.getChildType(1);
       String valueInnerName = "$" + variableName;
       String valueSource = variableName + ".get(" + parameterItemName + ")";
       String valueInnerVariableName = createProperty(valueParameterPropertyType, true, valueInnerName)

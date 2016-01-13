@@ -32,7 +32,7 @@ public class ListProperty extends Property {
     } else {
       TypeName arrayListTypeName = TypeName.get(ArrayList.class);
       block.addStatement("$N = new $T<>($N.size())", getName(), arrayListTypeName, getWrappedName());
-      Property.Type parameterPropertyType = propertyType.getTypeArgumentAtIndex(0);
+      Property.Type parameterPropertyType = propertyType.getChildType(0);
       TypeName parameterType = parameterPropertyType.getTypeName();
       TypeName wrappedParameterType = parameterPropertyType.getWrappedTypeName();
       String innerWrappedName = "_" + getWrappedName();
@@ -58,7 +58,7 @@ public class ListProperty extends Property {
       TypeName arrayListTypeName = TypeName.get(ArrayList.class);
       TypeName wrappedTypeName = propertyType.getWrappedTypeName();
       block.addStatement("$T $N = new $T<>($N.size())", wrappedTypeName, wrappedName, arrayListTypeName, variableName);
-      Property.Type parameterPropertyType = propertyType.getTypeArgumentAtIndex(0);
+      Property.Type parameterPropertyType = propertyType.getChildType(0);
       TypeName parameterType = parameterPropertyType.getTypeName();
       String parameterItemName = variableName + "Item";
       block.beginControlFlow("for ($T $N : $N)", parameterType, parameterItemName, variableName);

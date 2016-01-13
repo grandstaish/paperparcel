@@ -12,26 +12,26 @@ public abstract class Property {
   private final static Type NO_TYPE = new Type(null, OBJECT, OBJECT, OBJECT, false);
 
   public static final class Type {
-    private final List<Type> typeArguments;
+    private final List<Type> childTypes;
     private final TypeName parcelableTypeName;
     private final TypeName typeName;
     private final TypeName wrappedTypeName;
     private final boolean isParcelable;
 
-    public Type(@Nullable List<Type> typeArguments, TypeName parcelableTypeName, TypeName typeName,
+    public Type(@Nullable List<Type> childTypes, TypeName parcelableTypeName, TypeName typeName,
                 TypeName wrappedTypeName, boolean isParcelable) {
-      this.typeArguments = typeArguments;
+      this.childTypes = childTypes;
       this.parcelableTypeName = parcelableTypeName;
       this.typeName = typeName;
       this.wrappedTypeName = wrappedTypeName;
       this.isParcelable = isParcelable;
     }
 
-    public Type getTypeArgumentAtIndex(int index) {
-      if (typeArguments == null || index > typeArguments.size()) {
+    public Type getChildType(int index) {
+      if (childTypes == null || index > childTypes.size()) {
         return NO_TYPE;
       }
-      return typeArguments.get(index);
+      return childTypes.get(index);
     }
 
     public TypeName getParcelableTypeName() {
@@ -134,7 +134,7 @@ public abstract class Property {
 
   public String generateParcelableVariable(CodeBlock.Builder block, String source) {
     String variableName = getName();
-    TypeName typeName = propertyType.getWrappedTypeName();
+    TypeName typeName = propertyType.getTypeName();
     block.addStatement("$T $N = $N", typeName, variableName, source);
     return variableName;
   }
