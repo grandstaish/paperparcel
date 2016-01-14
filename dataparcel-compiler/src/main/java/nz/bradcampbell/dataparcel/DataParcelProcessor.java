@@ -13,7 +13,6 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -54,16 +53,25 @@ public class DataParcelProcessor extends AbstractProcessor {
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnvironment) {
     if (annotations.isEmpty()) {
+
+      // Nothing to do
       return true;
     }
+
+    // Create a DataClass models for all classes annotated with @DataParcel
     for (Element element : roundEnvironment.getElementsAnnotatedWith(DataParcel.class)) {
+
+      // Ensure we are dealing with a TypeElement
       if (!(element instanceof TypeElement)) {
         error("@DataParcel applies to a type, " + element.getSimpleName() + " is a " + element.getKind(), element);
         continue;
       }
+
       TypeElement el = (TypeElement) element;
       createParcel(el);
     }
+
+    // Generate java files for every data class found
     for (DataClass p : parcels.values()) {
       try {
         generateJavaFileFor(p).writeTo(filer);
@@ -71,28 +79,90 @@ public class DataParcelProcessor extends AbstractProcessor {
         throw new RuntimeException("An error occurred while writing to filer.", e);
       }
     }
+
     return true;
   }
 
+  /**
+   * Create a Parcel wrapper for the given data class
+   *
+   * @param typeElement The data class
+   */
   private void createParcel(TypeElement typeElement) {
-    if (parcels.containsKey(typeElement.getQualifiedName().toString())) return;
+
+    // Exit early if we have already created a parcel for this data class
+    String className = typeElement.getQualifiedName().toString();
+    if (parcels.containsKey(className)) return;
+
+    // Needs to be in the same package as the data class
     String classPackage = getPackageName(typeElement);
-    String className = ClassName.get(typeElement).simpleName() + "Parcel";
+
+    // Name is always {className}Parcel
+    String wrappedClassName = ClassName.get(typeElement).simpleName() + "Parcel";
+
     List<Property> properties = new ArrayList<Property>();
-    List<VariableElement> variableElements = getFields(typeElement);
     List<TypeElement> variableDataParcelDependencies = new ArrayList<TypeElement>();
+
+    // Get all member variable elements in the data class
+    List<VariableElement> variableElements = getFields(typeElement);
+
     for (int i = 0; i < variableElements.size(); i++) {
       VariableElement variableElement = variableElements.get(i);
+
+      // A field is only "nullable" when annotated with @Nullable
       boolean isNullable = !isFieldRequired(variableElement);
+
+      // Parse the property type into a Property.Type object and find all recursive data class dependencies
       Property.Type propertyType = parsePropertyType(variableElement.asType(), variableDataParcelDependencies);
-      Property property = createProperty(propertyType, isNullable, "component" + (i + 1));
-      properties.add(property);
+
+      // Validate data class has a method for retrieving the member variable
+      String getterMethodName = "component" + (i + 1);
+      if (!canFindGetterMethodForProperty(typeElement, propertyType, getterMethodName)) {
+        throw new RuntimeException(typeElement.toString() + " is not a valid type.");
+      }
+
+      properties.add(createProperty(propertyType, isNullable, getterMethodName));
     }
-    parcels.put(typeElement.getQualifiedName().toString(), new DataClass(properties, classPackage, className, typeElement));
+
+    parcels.put(className, new DataClass(properties, classPackage, wrappedClassName, typeElement));
+
     // Build parcel dependencies
     for (TypeElement requiredParcel : variableDataParcelDependencies) {
       createParcel(requiredParcel);
     }
+  }
+
+  /**
+   * Ensures the data class has a getter method that we can use to access the property
+   *
+   * @param typeElement The data class
+   * @param propertyType A property in the data class
+   * @param getterMethodName The expected name for the property getter method
+   * @return true if a getter method is found, false otherwise
+   */
+  private boolean canFindGetterMethodForProperty(TypeElement typeElement, Property.Type propertyType, String getterMethodName) {
+    for (Element enclosedElement : typeElement.getEnclosedElements()) {
+
+      // Find all enclosing methods
+      if (enclosedElement instanceof ExecutableElement) {
+        ExecutableElement method = (ExecutableElement) enclosedElement;
+
+        // Check this method returns the property type
+        TypeName returnType = TypeName.get(method.getReturnType());
+        if (returnType.equals(propertyType.getTypeName())) {
+
+          // Check the method name matches what we're expecting
+          if (method.getSimpleName().toString().equals(getterMethodName)) {
+
+            // Property is valid
+            return true;
+          }
+        }
+      }
+    }
+
+    // Could not find an appropriate getter method for the property
+    return false;
   }
 
   private Property.Type parsePropertyType(TypeMirror type, List<TypeElement> variableDataParcelDependencies) {
@@ -165,6 +235,12 @@ public class DataParcelProcessor extends AbstractProcessor {
     return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, typeName.equals(wrappedTypeName), isInterface);
   }
 
+  /**
+   * Gets a list of all non-static member variables of a TypeElement
+   *
+   * @param el The data class
+   * @return A list of non-static member variables. Cannot be null.
+   */
   private List<VariableElement> getFields(TypeElement el) {
     List<? extends Element> enclosedElements = el.getEnclosedElements();
     List<VariableElement> variables = new ArrayList<VariableElement>();
