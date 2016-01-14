@@ -165,6 +165,14 @@ public class DataParcelProcessor extends AbstractProcessor {
     return false;
   }
 
+  /**
+   * Parses a TypeMirror into a Property.Type object. While doing so, this method will find all DataParcel
+   * dependencies and append them to variableDataParcelDependencies.
+   *
+   * @param type The member variable type
+   * @param variableDataParcelDependencies A list to hold all recursive dependencies
+   * @return The parsed type
+   */
   private Property.Type parsePropertyType(TypeMirror type, List<TypeElement> variableDataParcelDependencies) {
     TypeMirror erasedType = typeUtil.erasure(type);
 
@@ -173,12 +181,12 @@ public class DataParcelProcessor extends AbstractProcessor {
 
     // The type that allows this type to be parcelable, or null
     TypeName parcelableTypeName = PropertyCreator.getParcelableType(typeUtil, erasedType);
+    boolean isParcelable = parcelableTypeName != null;
 
     TypeName typeName = ClassName.get(erasedType);
     TypeName wrappedTypeName = typeName;
 
-    boolean isParcelable = parcelableTypeName != null;
-
+    // The type element associated, or null
     Element typeElement = typeUtil.asElement(erasedType);
 
     if (isParcelable) {
@@ -189,6 +197,7 @@ public class DataParcelProcessor extends AbstractProcessor {
         DeclaredType declaredType = (DeclaredType) type;
         List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
 
+        // Parse a "child type" for each type argument
         int numTypeArgs = typeArguments.size();
         if (numTypeArgs > 0) {
 
@@ -211,8 +220,8 @@ public class DataParcelProcessor extends AbstractProcessor {
       if (erasedType instanceof ArrayType) {
         ArrayType arrayType = (ArrayType) erasedType;
 
+        // Array types will always have 1 "child type" which is the component type
         childTypes = new ArrayList<Property.Type>(1);
-
         Property.Type componentType = parsePropertyType(arrayType.getComponentType(), variableDataParcelDependencies);
         childTypes.add(componentType);
 
@@ -231,8 +240,9 @@ public class DataParcelProcessor extends AbstractProcessor {
     }
 
     boolean isInterface = typeElement != null && typeElement.getKind() == ElementKind.INTERFACE;
+    isParcelable = typeName.equals(wrappedTypeName);
 
-    return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, typeName.equals(wrappedTypeName), isInterface);
+    return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, isParcelable, isInterface);
   }
 
   /**
@@ -252,6 +262,12 @@ public class DataParcelProcessor extends AbstractProcessor {
     return variables;
   }
 
+  /**
+   * Print an error message to the console so that the user can see something went wrong.
+   *
+   * @param message The message the user will see
+   * @param element The element to use as a position hint
+   */
   private void error(String message, Element element) {
     processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
   }
@@ -286,6 +302,8 @@ public class DataParcelProcessor extends AbstractProcessor {
         .addMethod(generateGetter(dataClass))
         .addMethod(generateDescribeContents())
         .addMethod(generateWriteToParcel(dataClass));
+
+    // Build the java file
     return JavaFile.builder(dataClass.getClassPackage(), o.build()).build();
   }
 
