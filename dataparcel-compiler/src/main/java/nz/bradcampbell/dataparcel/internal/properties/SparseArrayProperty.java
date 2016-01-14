@@ -18,7 +18,7 @@ public class SparseArrayProperty extends Property {
 
     if (propertyType.isParcelable()) {
 
-      TypeName parameterType = propertyType.getChildType(0).getTypeName();
+      TypeName parameterType = propertyType.getChildType(0).getTypeName(false);
       block.addStatement("$N = $N.readSparseArray($T.class.getClassLoader())", getName(), in, parameterType);
 
     } else {
@@ -46,10 +46,10 @@ public class SparseArrayProperty extends Property {
       String wrappedName = getWrappedName();
 
       Property.Type parameterPropertyType = propertyType.getChildType(0);
-      TypeName parameterType = parameterPropertyType.getTypeName();
+      TypeName parameterType = parameterPropertyType.getTypeName(false);
       TypeName wrappedParameterType = parameterPropertyType.getWrappedTypeName();
 
-      block.addStatement("$N = new $T()", variableName, propertyType.getTypeName());
+      block.addStatement("$N = new $T()", variableName, propertyType.getTypeName(false));
 
       String innerWrappedName = "_" + wrappedName;
       String indexName = variableName + "Index";
@@ -76,8 +76,8 @@ public class SparseArrayProperty extends Property {
     block.addStatement("$N.writeSparseArray(($T) $N)", dest, SparseArray.class, variableName);
   }
 
-  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source) {
-    String variableName = super.generateParcelableVariable(block, source);
+  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source, boolean includeWildcards) {
+    String variableName = super.generateParcelableVariable(block, source, includeWildcards);
 
     Property.Type propertyType = getPropertyType();
     if (!propertyType.isParcelable()) {
@@ -98,7 +98,7 @@ public class SparseArrayProperty extends Property {
 
       Property.Type parameterPropertyType = propertyType.getChildType(0);
       String innerVariableName = createProperty(parameterPropertyType, true, innerName)
-          .generateParcelableVariable(block, innerSource);
+          .generateParcelableVariable(block, innerSource, false);
 
       block.addStatement("$N.put($N, $N)", wrappedName, keyName, innerVariableName);
 

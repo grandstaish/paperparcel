@@ -34,7 +34,7 @@ public class ParcelableArrayProperty extends Property {
     String variableName = getName();
     String wrappedVariableName = getWrappedName();
 
-    ArrayTypeName typeName = (ArrayTypeName) getPropertyType().getTypeName();
+    ArrayTypeName typeName = (ArrayTypeName) getPropertyType().getTypeName(false);
     ArrayTypeName wrappedTypeName = (ArrayTypeName) getPropertyType().getWrappedTypeName();
 
     block.addStatement("$N = new $T[$N.length]", variableName, typeName.componentType, wrappedVariableName);
@@ -45,7 +45,7 @@ public class ParcelableArrayProperty extends Property {
     Property.Type componentType = propertyType.getChildType(0);
     String innerName = "_" + variableName;
     String innerWrappedName = "_" + wrappedVariableName;
-    block.addStatement("$T $N = null", componentType.getTypeName(), innerName);
+    block.addStatement("$T $N = null", componentType.getTypeName(false), innerName);
     block.addStatement("$T $N = $N[$N]", wrappedTypeName.componentType, innerWrappedName, wrappedVariableName, indexName);
     Properties.createProperty(componentType, false, innerName).unparcelVariable(block);
     block.addStatement("$N[$N] = $N", variableName, indexName, innerName);
@@ -57,9 +57,9 @@ public class ParcelableArrayProperty extends Property {
     block.addStatement("$N.writeParcelableArray($N, 0)", dest, variableName);
   }
 
-  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source) {
+  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source, boolean includeWildcards) {
     Property.Type propertyType = getPropertyType();
-    String variableName = super.generateParcelableVariable(block, source);
+    String variableName = super.generateParcelableVariable(block, source, includeWildcards);
 
     if (!propertyType.isParcelable()) {
 
@@ -75,7 +75,7 @@ public class ParcelableArrayProperty extends Property {
       String innerName = "_" + variableName;
       String innerSource = variableName + "[" + indexName + "]";
       String wrappedInnerName = Properties.createProperty(propertyType.getChildType(0), false, innerName)
-          .generateParcelableVariable(block, innerSource);
+          .generateParcelableVariable(block, innerSource, false);
 
       block.addStatement("$N[$N] = $N", wrappedVariableName, indexName, wrappedInnerName);
 

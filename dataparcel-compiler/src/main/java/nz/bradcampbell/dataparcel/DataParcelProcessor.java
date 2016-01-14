@@ -11,9 +11,7 @@ import nz.bradcampbell.dataparcel.internal.Properties;
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
-import javax.lang.model.type.ArrayType;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.*;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
@@ -152,7 +150,7 @@ public class DataParcelProcessor extends AbstractProcessor {
 
         // Check this method returns the property type
         TypeName returnType = TypeName.get(method.getReturnType());
-        if (returnType.equals(propertyType.getTypeName())) {
+        if (returnType.equals(propertyType.getTypeName(true))) {
 
           // Check the method name matches what we're expecting
           if (method.getSimpleName().toString().equals(getterMethodName)) {
@@ -188,16 +186,24 @@ public class DataParcelProcessor extends AbstractProcessor {
 
     TypeName typeName = ClassName.get(erasedType);
     TypeName wrappedTypeName = typeName;
+    TypeName wildcardTypeName = typeName;
 
     // The type element associated, or null
     Element typeElement = typeUtil.asElement(erasedType);
 
     if (isParcelable) {
 
-      if (type instanceof DeclaredType) {
+      TypeMirror noWildCardType = type;
+      if (type instanceof WildcardType) {
+
+        // Properties using Kotlin's @JvmWildcard will fall into here
+        noWildCardType = ((WildcardType) type).getExtendsBound();
+      }
+
+      if (noWildCardType instanceof DeclaredType) {
 
         // Parse type arguments
-        DeclaredType declaredType = (DeclaredType) type;
+        DeclaredType declaredType = (DeclaredType) noWildCardType;
         List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
 
         // Parse a "child type" for each type argument
@@ -206,22 +212,25 @@ public class DataParcelProcessor extends AbstractProcessor {
 
           childTypes = new ArrayList<Property.Type>(numTypeArgs);
           TypeName[] parameterArray = new TypeName[numTypeArgs];
+          TypeName[] wildcardParameterArray = new TypeName[numTypeArgs];
           TypeName[] wrappedParameterArray = new TypeName[numTypeArgs];
 
           for (int i = 0; i < numTypeArgs; i++) {
             Property.Type argType = parsePropertyType(typeArguments.get(i), variableDataParcelDependencies);
             childTypes.add(argType);
-            parameterArray[i] = argType.getTypeName();
+            parameterArray[i] = argType.getTypeName(false);
+            wildcardParameterArray[i] = argType.getTypeName(true);
             wrappedParameterArray[i] = argType.getWrappedTypeName();
           }
 
           wrappedTypeName = ParameterizedTypeName.get((ClassName) typeName, wrappedParameterArray);
+          wildcardTypeName = ParameterizedTypeName.get((ClassName) typeName, wildcardParameterArray);
           typeName = ParameterizedTypeName.get((ClassName) typeName, parameterArray);
         }
       }
 
-      if (erasedType instanceof ArrayType) {
-        ArrayType arrayType = (ArrayType) erasedType;
+      if (noWildCardType instanceof ArrayType) {
+        ArrayType arrayType = (ArrayType) noWildCardType;
 
         // Array types will always have 1 "child type" which is the component type
         childTypes = new ArrayList<Property.Type>(1);
@@ -229,10 +238,20 @@ public class DataParcelProcessor extends AbstractProcessor {
         childTypes.add(componentType);
 
         wrappedTypeName = ArrayTypeName.of(componentType.getWrappedTypeName());
-        typeName = ArrayTypeName.of(componentType.getTypeName());
+        typeName = ArrayTypeName.of(componentType.getTypeName(false));
+        wildcardTypeName = ArrayTypeName.of(componentType.getTypeName(true));
+      }
+
+      // Add the wildcard back if it existed
+      if (type instanceof WildcardType) {
+        wildcardTypeName = WildcardTypeName.subtypeOf(wildcardTypeName);
       }
 
     } else {
+
+      if (type instanceof WildcardType) {
+        wildcardTypeName = TypeName.get(type);
+      }
 
       // This is (one of) the reason(s) it is not parcelable. Assume it contains a data object as a parameter
       TypeElement requiredElement = (TypeElement) typeElement;
@@ -245,7 +264,7 @@ public class DataParcelProcessor extends AbstractProcessor {
     boolean isInterface = typeElement != null && typeElement.getKind() == ElementKind.INTERFACE;
     isParcelable = typeName.equals(wrappedTypeName);
 
-    return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, isParcelable, isInterface);
+    return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, wildcardTypeName, isParcelable, isInterface);
   }
 
   /**

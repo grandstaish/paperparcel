@@ -44,7 +44,7 @@ public class ListProperty extends Property {
     } else {
 
       Property.Type parameterPropertyType = propertyType.getChildType(0);
-      TypeName parameterType = parameterPropertyType.getTypeName();
+      TypeName parameterType = parameterPropertyType.getTypeName(false);
       TypeName wrappedParameterType = parameterPropertyType.getWrappedTypeName();
 
       if (propertyType.isInterface()) {
@@ -52,7 +52,7 @@ public class ListProperty extends Property {
         block.addStatement("$N = new $T<$T>($N.size())", getName(), arrayListTypeName, parameterType,
             getWrappedName());
       } else {
-        block.addStatement("$N = new $T()", getName(), propertyType.getTypeName());
+        block.addStatement("$N = new $T()", getName(), propertyType.getTypeName(false));
       }
 
       String innerWrappedName = "_" + getWrappedName();
@@ -72,15 +72,15 @@ public class ListProperty extends Property {
     block.addStatement("$N.writeList($N)", dest, variableName);
   }
 
-  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source) {
-    String variableName = super.generateParcelableVariable(block, source);
+  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source, boolean includeWildcards) {
+    String variableName = super.generateParcelableVariable(block, source, includeWildcards);
 
     Property.Type propertyType = getPropertyType();
     if (!propertyType.isParcelable()) {
       String wrappedName = getWrappedName();
 
       Property.Type parameterPropertyType = propertyType.getChildType(0);
-      TypeName parameterType = parameterPropertyType.getTypeName();
+      TypeName parameterType = parameterPropertyType.getTypeName(false);
       TypeName wrappedParameterType = parameterPropertyType.getWrappedTypeName();
 
       if (propertyType.isInterface()) {
@@ -103,7 +103,7 @@ public class ListProperty extends Property {
 
       String innerName = "_" + variableName;
       String innerVariableName = createProperty(parameterPropertyType, true, innerName)
-          .generateParcelableVariable(block, parameterItemName);
+          .generateParcelableVariable(block, parameterItemName, false);
       block.addStatement("$N.add($N)", wrappedName, innerVariableName);
 
       block.endControlFlow();

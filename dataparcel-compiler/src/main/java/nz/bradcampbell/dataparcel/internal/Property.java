@@ -12,25 +12,28 @@ import static nz.bradcampbell.dataparcel.DataParcelProcessor.DATA_VARIABLE_NAME;
  * A model object that can generate a code block for both reading and writing itself to/from a Parcel
  */
 public abstract class Property {
-  private final static Type NO_TYPE = new Type(null, OBJECT, OBJECT, OBJECT, false, false);
+  private final static Type NO_TYPE = new Type(null, OBJECT, OBJECT, OBJECT, null, false, false);
 
   /**
    * A model object that holds all parsed information about the property type
    */
   public static final class Type {
-    private final List<Type> childTypes;
+    @Nullable private final List<Type> childTypes;
     private final TypeName parcelableTypeName;
     private final TypeName typeName;
     private final TypeName wrappedTypeName;
+    private final TypeName wildcardTypeName;
     private final boolean isParcelable;
     private final boolean isInterface;
 
     public Type(@Nullable List<Type> childTypes, TypeName parcelableTypeName, TypeName typeName,
-                TypeName wrappedTypeName, boolean isParcelable, boolean isInterface) {
+                TypeName wrappedTypeName, TypeName wildcardTypeName, boolean isParcelable, boolean isInterface) {
+
       this.childTypes = childTypes;
       this.parcelableTypeName = parcelableTypeName;
       this.typeName = typeName;
       this.wrappedTypeName = wrappedTypeName;
+      this.wildcardTypeName = wildcardTypeName;
       this.isParcelable = isParcelable;
       this.isInterface = isInterface;
     }
@@ -46,8 +49,8 @@ public abstract class Property {
       return parcelableTypeName;
     }
 
-    public TypeName getTypeName() {
-      return typeName;
+    public TypeName getTypeName(boolean includeWildcards) {
+      return includeWildcards ? wildcardTypeName : typeName;
     }
 
     public TypeName getWrappedTypeName() {
@@ -108,7 +111,7 @@ public abstract class Property {
   public CodeBlock readFromParcel(ParameterSpec in) {
     CodeBlock.Builder block = CodeBlock.builder();
 
-    TypeName typeName = propertyType.getTypeName();
+    TypeName typeName = propertyType.getTypeName(false);
     if (typeName.isPrimitive()) {
       block.addStatement("$T $N", typeName, getName());
     } else {
@@ -156,7 +159,7 @@ public abstract class Property {
   /**
    * Generates a CodeBlock object that can be used to write the property to the given parcel. This handles checks
    * if the property is nullable. This method will always call
-   * {@link #generateParcelableVariable(CodeBlock.Builder, String)} before calling
+   * {@link #generateParcelableVariable(CodeBlock.Builder, String, boolean)} before calling
    * {@link #writeToParcelInner(CodeBlock.Builder, ParameterSpec, String)} so that a variable will always be declared
    * for use in {@link #writeToParcelInner(CodeBlock.Builder, ParameterSpec, String)}.
    *
@@ -175,7 +178,7 @@ public abstract class Property {
       block.addStatement("$N.writeInt(0)", dest);
     }
 
-    String variableName = generateParcelableVariable(block, source);
+    String variableName = generateParcelableVariable(block, source, true);
     writeToParcelInner(block, dest, variableName);
 
     if (isNullable()) {
@@ -207,9 +210,9 @@ public abstract class Property {
    * @param source code to access the non-parcelable variable
    * @return The generated parcelable variable name
    */
-  public String generateParcelableVariable(CodeBlock.Builder block, String source) {
+  public String generateParcelableVariable(CodeBlock.Builder block, String source, boolean includeWildcards) {
     String variableName = getName();
-    TypeName typeName = propertyType.getTypeName();
+    TypeName typeName = propertyType.getTypeName(includeWildcards);
     block.addStatement("$T $N = $N", typeName, variableName, source);
     return variableName;
   }

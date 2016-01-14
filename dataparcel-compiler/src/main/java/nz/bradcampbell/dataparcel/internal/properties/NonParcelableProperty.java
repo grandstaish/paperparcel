@@ -25,7 +25,7 @@ public class NonParcelableProperty extends Property {
     block.addStatement("$N.writeParcelable($N, 0)", dest, variableName);
   }
 
-  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source) {
+  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source, boolean includeWildcards) {
     String variableName = getName();
     TypeName wrappedTypeName = getPropertyType().getWrappedTypeName();
     block.addStatement("$T $N = $T.wrap($N)", wrappedTypeName, variableName, wrappedTypeName, source);
