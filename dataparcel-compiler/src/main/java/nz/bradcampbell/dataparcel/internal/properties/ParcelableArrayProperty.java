@@ -4,7 +4,7 @@ import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.ParameterSpec;
 import nz.bradcampbell.dataparcel.internal.Property;
-import nz.bradcampbell.dataparcel.internal.PropertyCreator;
+import nz.bradcampbell.dataparcel.internal.Properties;
 
 public class ParcelableArrayProperty extends Property {
   public ParcelableArrayProperty(Property.Type propertyType, boolean isNullable, String name) {
@@ -47,7 +47,7 @@ public class ParcelableArrayProperty extends Property {
     String innerWrappedName = "_" + wrappedVariableName;
     block.addStatement("$T $N = null", componentType.getTypeName(), innerName);
     block.addStatement("$T $N = $N[$N]", wrappedTypeName.componentType, innerWrappedName, wrappedVariableName, indexName);
-    PropertyCreator.createProperty(componentType, false, innerName).unparcelVariable(block);
+    Properties.createProperty(componentType, false, innerName).unparcelVariable(block);
     block.addStatement("$N[$N] = $N", variableName, indexName, innerName);
 
     block.endControlFlow();
@@ -74,7 +74,7 @@ public class ParcelableArrayProperty extends Property {
 
       String innerName = "_" + variableName;
       String innerSource = variableName + "[" + indexName + "]";
-      String wrappedInnerName = PropertyCreator.createProperty(propertyType.getChildType(0), false, innerName)
+      String wrappedInnerName = Properties.createProperty(propertyType.getChildType(0), false, innerName)
           .generateParcelableVariable(block, innerSource);
 
       block.addStatement("$N[$N] = $N", wrappedVariableName, indexName, wrappedInnerName);

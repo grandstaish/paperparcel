@@ -18,7 +18,11 @@ import java.util.Set;
 import static com.squareup.javapoet.TypeName.*;
 import static com.squareup.javapoet.TypeName.SHORT;
 
-public class PropertyCreator {
+/**
+ * Property utilities class
+ */
+public class Properties {
+
   private static final TypeName STRING = ClassName.get("java.lang", "String");
   private static final TypeName MAP = ClassName.get("java.util", "Map");
   private static final TypeName LIST = ClassName.get("java.util", "List");

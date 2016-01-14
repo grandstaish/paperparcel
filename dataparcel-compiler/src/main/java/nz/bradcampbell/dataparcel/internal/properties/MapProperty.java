@@ -5,7 +5,7 @@ import nz.bradcampbell.dataparcel.internal.Property;
 
 import java.util.HashMap;
 
-import static nz.bradcampbell.dataparcel.internal.PropertyCreator.createProperty;
+import static nz.bradcampbell.dataparcel.internal.Properties.createProperty;
 
 public class MapProperty extends Property {
   public MapProperty(Property.Type propertyType, boolean isNullable, String name) {

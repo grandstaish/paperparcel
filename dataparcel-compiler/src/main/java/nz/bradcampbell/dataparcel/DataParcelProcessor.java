@@ -6,7 +6,7 @@ import com.google.common.base.Joiner;
 import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.DataClass;
 import nz.bradcampbell.dataparcel.internal.Property;
-import nz.bradcampbell.dataparcel.internal.PropertyCreator;
+import nz.bradcampbell.dataparcel.internal.Properties;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
@@ -21,8 +21,11 @@ import java.io.IOException;
 import java.util.*;
 
 import static javax.lang.model.element.Modifier.*;
-import static nz.bradcampbell.dataparcel.internal.PropertyCreator.createProperty;
+import static nz.bradcampbell.dataparcel.internal.Properties.createProperty;
 
+/**
+ * An annotation processor that creates Parcelable wrappers for all Kotlin data classes annotated with @DataParcel
+ */
 @AutoService(Processor.class)
 public class DataParcelProcessor extends AbstractProcessor {
   private static final String NULLABLE_ANNOTATION_NAME = "Nullable";
@@ -180,7 +183,7 @@ public class DataParcelProcessor extends AbstractProcessor {
     List<Property.Type> childTypes = null;
 
     // The type that allows this type to be parcelable, or null
-    TypeName parcelableTypeName = PropertyCreator.getParcelableType(typeUtil, erasedType);
+    TypeName parcelableTypeName = Properties.getParcelableType(typeUtil, erasedType);
     boolean isParcelable = parcelableTypeName != null;
 
     TypeName typeName = ClassName.get(erasedType);
