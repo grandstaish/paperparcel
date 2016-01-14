@@ -57,6 +57,14 @@ public class PropertyCreator {
       BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT, CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE,
       SHORT, BOXED_SHORT);
 
+  /**
+   * Creates a new Property object
+   *
+   * @param propertyType The property type
+   * @param isNullable True if the property can be null, false otherwise
+   * @param name The name for the getter method on the data class
+   * @return A new Property object
+   */
   public static Property createProperty(Property.Type propertyType, boolean isNullable, String name) {
 
     TypeName parcelableType = propertyType.getParcelableTypeName();
@@ -142,6 +150,14 @@ public class PropertyCreator {
     }
   }
 
+  /**
+   * Gets the type that allows the given type mirror to be written to a Parcel, or null if it is not parcelable. Always
+   * prioritizes Serializable last as it is inefficient.
+   *
+   * @param types The type utilities class
+   * @param typeMirror The type
+   * @return The parcelable type, or null
+   */
   public static TypeName getParcelableType(Types types, TypeMirror typeMirror) {
     TypeElement type = (TypeElement) types.asElement(typeMirror);
 
