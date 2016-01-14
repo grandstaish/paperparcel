@@ -37,9 +37,10 @@ public class ListProperty extends Property {
 
   @Override public void unparcelVariable(CodeBlock.Builder block) {
     Property.Type propertyType = getPropertyType();
-
     if (propertyType.isParcelable()) {
+
       super.unparcelVariable(block);
+
     } else {
 
       Property.Type parameterPropertyType = propertyType.getChildType(0);
@@ -72,10 +73,9 @@ public class ListProperty extends Property {
   }
 
   @Override public String generateParcelableVariable(CodeBlock.Builder block, String source) {
-    Property.Type propertyType = getPropertyType();
-    String variableName = getName();
-    block.addStatement("$T $N = $N", propertyType.getTypeName(), variableName, source);
+    String variableName = super.generateParcelableVariable(block, source);
 
+    Property.Type propertyType = getPropertyType();
     if (!propertyType.isParcelable()) {
       String wrappedName = getWrappedName();
 
@@ -84,15 +84,18 @@ public class ListProperty extends Property {
       TypeName wrappedParameterType = parameterPropertyType.getWrappedTypeName();
 
       if (propertyType.isInterface()) {
+
         TypeName arrayListTypeName = TypeName.get(ArrayList.class);
         TypeName wrappedTypeName = propertyType.getWrappedTypeName();
         block.addStatement("$T $N = new $T<$T>($N.size())", wrappedTypeName, wrappedName, arrayListTypeName,
             wrappedParameterType, variableName);
+
       } else {
+
         TypeName wrappedTypeName = propertyType.getWrappedTypeName();
         block.addStatement("$T $N = new $T()", wrappedTypeName, wrappedName, wrappedTypeName);
-      }
 
+      }
 
       String parameterItemName = variableName + "Item";
 
