@@ -118,7 +118,7 @@ public class DataParcelProcessor extends AbstractProcessor {
       // Validate data class has a method for retrieving the member variable
       String getterMethodName = "component" + (i + 1);
       if (!canFindGetterMethodForProperty(typeElement, propertyType, getterMethodName)) {
-        throw new RuntimeException(typeElement.toString() + " is not a valid type.");
+        error(typeElement.getSimpleName() + " is not a supported type.", typeElement);
       }
 
       properties.add(createProperty(propertyType, isNullable, getterMethodName));
