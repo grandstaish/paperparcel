@@ -3,6 +3,7 @@ package nz.bradcampbell.dataparcel.internal.properties;
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.TypeName;
 import nz.bradcampbell.dataparcel.internal.Property;
 import nz.bradcampbell.dataparcel.internal.Properties;
 
@@ -14,12 +15,13 @@ public class ParcelableArrayProperty extends Property {
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
     Property.Type propertyType = getPropertyType();
     ArrayTypeName wrappedTypeName = (ArrayTypeName) getPropertyType().getWrappedTypeName();
+    TypeName rawWrappedComponentTypeName = propertyType.getChildType(0).getWrappedRawTypeName();
     if (propertyType.isParcelable()) {
       block.addStatement("$N = ($T) $N.readParcelableArray($T.class.getClassLoader())", getName(), wrappedTypeName, in,
-          wrappedTypeName.componentType);
+          rawWrappedComponentTypeName);
     } else {
       block.addStatement("$T $N = ($T) $N.readParcelableArray($T.class.getClassLoader())", wrappedTypeName,
-          getWrappedName(), wrappedTypeName, in, wrappedTypeName.componentType);
+          getWrappedName(), wrappedTypeName, in, rawWrappedComponentTypeName);
       unparcelVariable(block);
     }
   }
@@ -57,9 +59,9 @@ public class ParcelableArrayProperty extends Property {
     block.addStatement("$N.writeParcelableArray($N, 0)", dest, variableName);
   }
 
-  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source, boolean includeWildcards) {
+  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source, boolean wildcard) {
     Property.Type propertyType = getPropertyType();
-    String variableName = super.generateParcelableVariable(block, source, includeWildcards);
+    String variableName = super.generateParcelableVariable(block, source, wildcard);
 
     if (!propertyType.isParcelable()) {
 

@@ -12,7 +12,7 @@ import static nz.bradcampbell.dataparcel.DataParcelProcessor.DATA_VARIABLE_NAME;
  * A model object that can generate a code block for both reading and writing itself to/from a Parcel
  */
 public abstract class Property {
-  private final static Type NO_TYPE = new Type(null, OBJECT, OBJECT, OBJECT, null, false, false);
+  private final static Type NO_TYPE = new Type(null, OBJECT, OBJECT, OBJECT, OBJECT, OBJECT, OBJECT, false, false);
 
   /**
    * A model object that holds all parsed information about the property type
@@ -23,17 +23,22 @@ public abstract class Property {
     private final TypeName typeName;
     private final TypeName wrappedTypeName;
     private final TypeName wildcardTypeName;
+    private final TypeName rawTypeName;
+    private final TypeName wrappedRawTypeName;
     private final boolean isParcelable;
     private final boolean isInterface;
 
     public Type(@Nullable List<Type> childTypes, TypeName parcelableTypeName, TypeName typeName,
-                TypeName wrappedTypeName, TypeName wildcardTypeName, boolean isParcelable, boolean isInterface) {
+                TypeName wrappedTypeName, TypeName wildcardTypeName, TypeName rawTypeName, TypeName wrappedRawTypeName,
+                boolean isParcelable, boolean isInterface) {
 
       this.childTypes = childTypes;
       this.parcelableTypeName = parcelableTypeName;
       this.typeName = typeName;
       this.wrappedTypeName = wrappedTypeName;
       this.wildcardTypeName = wildcardTypeName;
+      this.rawTypeName = rawTypeName;
+      this.wrappedRawTypeName = wrappedRawTypeName;
       this.isParcelable = isParcelable;
       this.isInterface = isInterface;
     }
@@ -55,6 +60,14 @@ public abstract class Property {
 
     public TypeName getWrappedTypeName() {
       return wrappedTypeName;
+    }
+
+    public TypeName getRawTypeName() {
+      return rawTypeName;
+    }
+
+    public TypeName getWrappedRawTypeName() {
+      return wrappedRawTypeName;
     }
 
     public boolean isParcelable() {

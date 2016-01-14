@@ -28,4 +28,27 @@ public class InvalidTypeTest {
         .processedWith(new DataParcelProcessor())
         .failsToCompile();
   }
+
+  @Test public void genericArrayTest() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+        "package test;",
+        "import nz.bradcampbell.dataparcel.DataParcel;",
+        "import android.util.SparseArray;",
+        "import java.util.List;",
+        "@DataParcel",
+        "public final class Test {",
+        "private final SparseArray<String>[] child;",
+        "public Test(SparseArray<String>[] child) {",
+        "this.child = child;",
+        "}",
+        "public SparseArray<String>[] component1() {",
+        "return this.child;",
+        "}",
+        "}"
+    ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new DataParcelProcessor())
+        .compilesWithoutError();
+  }
 }

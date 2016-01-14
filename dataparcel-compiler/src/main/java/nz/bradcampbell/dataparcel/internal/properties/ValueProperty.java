@@ -13,7 +13,8 @@ public class ValueProperty extends Property {
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
     TypeName typeName = getPropertyType().getWrappedTypeName();
-    block.addStatement("$N = ($T) $N.readValue($T.class.getClassLoader())", getName(), typeName, in, typeName);
+    TypeName rawType = getPropertyType().getWrappedRawTypeName();
+    block.addStatement("$N = ($T) $N.readValue($T.class.getClassLoader())", getName(), typeName, in, rawType);
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {

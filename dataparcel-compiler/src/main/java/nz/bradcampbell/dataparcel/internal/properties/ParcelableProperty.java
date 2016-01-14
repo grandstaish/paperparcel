@@ -13,10 +13,7 @@ public class ParcelableProperty extends Property {
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
     TypeName wrappedTypeName = getPropertyType().getWrappedTypeName();
-    TypeName rawType = wrappedTypeName;
-    if (rawType instanceof ParameterizedTypeName) {
-      rawType = ((ParameterizedTypeName) rawType).rawType;
-    }
+    TypeName rawType = getPropertyType().getWrappedRawTypeName();
     block.addStatement("$N = ($T) $N.readParcelable($T.class.getClassLoader())", getName(), wrappedTypeName, in, rawType);
   }
 

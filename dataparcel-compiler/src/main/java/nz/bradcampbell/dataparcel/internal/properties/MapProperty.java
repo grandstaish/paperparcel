@@ -16,20 +16,25 @@ public class MapProperty extends Property {
     Property.Type propertyType = getPropertyType();
     TypeName wrappedTypeName = propertyType.getWrappedTypeName();
 
+    TypeName valueParameterRawTypeName = propertyType.getChildType(1).getRawTypeName();
+    TypeName valueParameterWrappedRawTypeName = propertyType.getChildType(1).getWrappedRawTypeName();
+
     if (propertyType.isParcelable()) {
       if (propertyType.isInterface()) {
-        block.addStatement("$N = ($T) $N.readHashMap(getClass().getClassLoader())", getName(), wrappedTypeName, in);
+        block.addStatement("$N = ($T) $N.readHashMap($T.class.getClassLoader())", getName(), wrappedTypeName, in,
+            valueParameterRawTypeName);
       } else {
         block.addStatement("$N = new $T()", getName(), wrappedTypeName);
-        block.addStatement("$N.readMap($N, getClass().getClassLoader())", in, getName());
+        block.addStatement("$N.readMap($N, $T.class.getClassLoader())", in, getName(), valueParameterRawTypeName);
       }
     } else {
       if (propertyType.isInterface()) {
-        block.addStatement("$T $N = ($T) $N.readHashMap(getClass().getClassLoader())", wrappedTypeName,
-            getWrappedName(), wrappedTypeName, in);
+        block.addStatement("$T $N = ($T) $N.readHashMap($T.class.getClassLoader())", wrappedTypeName,
+            getWrappedName(), wrappedTypeName, in, valueParameterWrappedRawTypeName);
       } else {
         block.addStatement("$T $N = new $T()", wrappedTypeName, getWrappedName(), wrappedTypeName);
-        block.addStatement("$N.readMap($N, getClass().getClassLoader())", in, getWrappedName());
+        block.addStatement("$N.readMap($N, $T.class.getClassLoader())", in, getWrappedName(),
+             valueParameterWrappedRawTypeName);
       }
       unparcelVariable(block);
     }
@@ -78,8 +83,8 @@ public class MapProperty extends Property {
     block.addStatement("$N.writeMap($N)", dest, variableName);
   }
 
-  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source, boolean includeWildcards) {
-    String variableName = super.generateParcelableVariable(block, source, includeWildcards);
+  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source, boolean wildcard) {
+    String variableName = super.generateParcelableVariable(block, source, wildcard);
 
     Property.Type propertyType = getPropertyType();
     if (!propertyType.isParcelable()) {

@@ -187,6 +187,8 @@ public class DataParcelProcessor extends AbstractProcessor {
     TypeName typeName = ClassName.get(erasedType);
     TypeName wrappedTypeName = typeName;
     TypeName wildcardTypeName = typeName;
+    TypeName rawTypeName = typeName;
+    TypeName wrappedRawTypeName = typeName;
 
     // The type element associated, or null
     Element typeElement = typeUtil.asElement(erasedType);
@@ -240,6 +242,8 @@ public class DataParcelProcessor extends AbstractProcessor {
         wrappedTypeName = ArrayTypeName.of(componentType.getWrappedTypeName());
         typeName = ArrayTypeName.of(componentType.getTypeName(false));
         wildcardTypeName = ArrayTypeName.of(componentType.getTypeName(true));
+        rawTypeName = ArrayTypeName.of(componentType.getRawTypeName());
+        wrappedRawTypeName = ArrayTypeName.of(componentType.getWrappedRawTypeName());
       }
 
       // Add the wildcard back if it existed
@@ -258,13 +262,13 @@ public class DataParcelProcessor extends AbstractProcessor {
       variableDataParcelDependencies.add(requiredElement);
       String packageName = getPackageName(requiredElement);
       String className = requiredElement.getSimpleName().toString() + "Parcel";
-      parcelableTypeName = wrappedTypeName = ClassName.get(packageName, className);
+      parcelableTypeName = wrappedTypeName = wrappedRawTypeName = ClassName.get(packageName, className);
     }
 
     boolean isInterface = typeElement != null && typeElement.getKind() == ElementKind.INTERFACE;
     isParcelable = typeName.equals(wrappedTypeName);
 
-    return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, wildcardTypeName, isParcelable, isInterface);
+    return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, wildcardTypeName, rawTypeName, wrappedRawTypeName, isParcelable, isInterface);
   }
 
   /**

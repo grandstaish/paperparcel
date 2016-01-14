@@ -10,7 +10,7 @@ public class ObjectArrayProperty extends Property {
 
   @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
     TypeName objectArrayClassName = ArrayTypeName.get(Object[].class);
-    TypeName componentType = ((ArrayTypeName) getPropertyType().getWrappedTypeName()).componentType;
+    TypeName componentType = ((ArrayTypeName) getPropertyType().getWrappedRawTypeName()).componentType;
     String objectArrayName = getWrappedName();
     block.addStatement("$T $N = $N.readArray($T.class.getClassLoader())", objectArrayClassName, objectArrayName, in,
         componentType);

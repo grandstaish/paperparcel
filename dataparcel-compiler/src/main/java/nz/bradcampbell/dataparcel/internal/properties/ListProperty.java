@@ -16,20 +16,25 @@ public class ListProperty extends Property {
     Property.Type propertyType = getPropertyType();
     TypeName wrappedTypeName = propertyType.getWrappedTypeName();
 
+    TypeName rawParameterTypeName = propertyType.getChildType(0).getRawTypeName();
+    TypeName wrappedRawParameterTypeName = propertyType.getChildType(0).getWrappedRawTypeName();
+
     if (propertyType.isParcelable()) {
       if (propertyType.isInterface()) {
-        block.addStatement("$N = ($T) $N.readArrayList(getClass().getClassLoader())", getName(), wrappedTypeName, in);
+        block.addStatement("$N = ($T) $N.readArrayList($T.class.getClassLoader())", getName(), wrappedTypeName, in,
+            rawParameterTypeName);
       } else {
         block.addStatement("$N = new $T()", getName(), wrappedTypeName);
-        block.addStatement("$N.readList($N, getClass().getClassLoader())", in, getName());
+        block.addStatement("$N.readList($N, $T.class.getClassLoader())", in, getName(), rawParameterTypeName);
       }
     } else {
       if (propertyType.isInterface()) {
-        block.addStatement("$T $N = ($T) $N.readArrayList(getClass().getClassLoader())", wrappedTypeName,
-            getWrappedName(), wrappedTypeName, in);
+        block.addStatement("$T $N = ($T) $N.readArrayList($T.class.getClassLoader())", wrappedTypeName,
+            getWrappedName(), wrappedTypeName, in, wrappedRawParameterTypeName);
       } else {
         block.addStatement("$T $N = new $T()", wrappedTypeName, getWrappedName(), wrappedTypeName);
-        block.addStatement("$N.readList($N, getClass().getClassLoader())", in, getWrappedName());
+        block.addStatement("$N.readList($N, $T.class.getClassLoader())", in, getWrappedName(),
+            wrappedRawParameterTypeName);
       }
       unparcelVariable(block);
     }

@@ -18,17 +18,17 @@ public class SparseArrayProperty extends Property {
 
     if (propertyType.isParcelable()) {
 
-      TypeName parameterType = propertyType.getChildType(0).getTypeName(false);
-      block.addStatement("$N = $N.readSparseArray($T.class.getClassLoader())", getName(), in, parameterType);
+      TypeName rawParameterType = propertyType.getChildType(0).getRawTypeName();
+      block.addStatement("$N = $N.readSparseArray($T.class.getClassLoader())", getName(), in, rawParameterType);
 
     } else {
 
       TypeName wrappedTypeName = propertyType.getWrappedTypeName();
-      TypeName wrappedParameterType = propertyType.getChildType(0).getWrappedTypeName();
+      TypeName wrappedRawParameterType = propertyType.getChildType(0).getWrappedRawTypeName();
       String wrappedName = getWrappedName();
 
       block.addStatement("$T $N = $N.readSparseArray($T.class.getClassLoader())", wrappedTypeName, wrappedName, in,
-          wrappedParameterType);
+          wrappedRawParameterType);
 
       unparcelVariable(block);
     }
@@ -76,8 +76,8 @@ public class SparseArrayProperty extends Property {
     block.addStatement("$N.writeSparseArray(($T) $N)", dest, SparseArray.class, variableName);
   }
 
-  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source, boolean includeWildcards) {
-    String variableName = super.generateParcelableVariable(block, source, includeWildcards);
+  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source, boolean wildcard) {
+    String variableName = super.generateParcelableVariable(block, source, wildcard);
 
     Property.Type propertyType = getPropertyType();
     if (!propertyType.isParcelable()) {
