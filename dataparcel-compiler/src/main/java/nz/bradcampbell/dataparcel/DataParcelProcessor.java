@@ -127,7 +127,7 @@ public class DataParcelProcessor extends AbstractProcessor {
       properties.add(createProperty(propertyType, isNullable, getterMethodName));
     }
 
-    parcels.put(className, new DataClass(properties, classPackage, wrappedClassName, typeElement));
+    parcels.put(className, new DataClass(properties, classPackage, wrappedClassName, ClassName.get(typeElement)));
 
     // Build parcel dependencies
     for (TypeElement requiredParcel : variableDataParcelDependencies) {
@@ -332,14 +332,14 @@ public class DataParcelProcessor extends AbstractProcessor {
   }
 
   private FieldSpec generateContentsField(DataClass dataClass) {
-    return FieldSpec.builder(dataClass.getDataClassTypeName(), DATA_VARIABLE_NAME, PRIVATE, FINAL).build();
+    return FieldSpec.builder(dataClass.getClassName(), DATA_VARIABLE_NAME, PRIVATE, FINAL).build();
   }
 
   private MethodSpec generateWrapMethod(DataClass dataClass) {
     ClassName className = dataClass.getWrapperClassName();
     return MethodSpec.methodBuilder("wrap")
         .addModifiers(PUBLIC, STATIC, FINAL)
-        .addParameter(dataClass.getDataClassTypeName(), DATA_VARIABLE_NAME)
+        .addParameter(dataClass.getClassName(), DATA_VARIABLE_NAME)
         .addStatement("return new $T($N)", className, DATA_VARIABLE_NAME)
         .returns(className)
         .build();
@@ -348,7 +348,7 @@ public class DataParcelProcessor extends AbstractProcessor {
   private MethodSpec generateContentsConstructor(DataClass dataClass) {
     return MethodSpec.constructorBuilder()
         .addModifiers(PRIVATE)
-        .addParameter(dataClass.getDataClassTypeName(), DATA_VARIABLE_NAME)
+        .addParameter(dataClass.getClassName(), DATA_VARIABLE_NAME)
         .addStatement("this.$N = $N", DATA_VARIABLE_NAME, DATA_VARIABLE_NAME)
         .build();
   }
@@ -361,11 +361,11 @@ public class DataParcelProcessor extends AbstractProcessor {
         .addModifiers(PRIVATE)
         .addParameter(in);
     List<String> paramNames = new ArrayList<String>();
-    for (Property p : dataClass.getDataClassProperties()) {
+    for (Property p : dataClass.getProperties()) {
       builder.addCode(p.readFromParcel(in));
       paramNames.add(p.getName());
     }
-    builder.addStatement("this.$N = new $T($N)", DATA_VARIABLE_NAME, dataClass.getDataClassTypeName(),
+    builder.addStatement("this.$N = new $T($N)", DATA_VARIABLE_NAME, dataClass.getClassName(),
         Joiner.on(", ").join(paramNames));
     return builder.build();
   }
@@ -373,7 +373,7 @@ public class DataParcelProcessor extends AbstractProcessor {
   private MethodSpec generateGetter(DataClass dataClass) {
     return MethodSpec.methodBuilder("getContents")
         .addModifiers(PUBLIC)
-        .returns(dataClass.getDataClassTypeName())
+        .returns(dataClass.getClassName())
         .addStatement("return $N", DATA_VARIABLE_NAME)
         .build();
   }
@@ -396,7 +396,7 @@ public class DataParcelProcessor extends AbstractProcessor {
         .addModifiers(PUBLIC)
         .addParameter(dest)
         .addParameter(int.class, "flags");
-    for (Property p : dataClass.getDataClassProperties()) {
+    for (Property p : dataClass.getProperties()) {
       builder.addCode(p.writeToParcel(dest));
     }
     return builder.build();

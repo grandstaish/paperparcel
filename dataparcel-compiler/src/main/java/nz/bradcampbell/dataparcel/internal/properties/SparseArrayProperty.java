@@ -15,7 +15,7 @@ public class SparseArrayProperty extends Property {
 //
 //    String wrappedName = getName() + "Wrapped";
 //
-//    block.addStatement("new $T()", getTypeName());
+//    block.addStatement("new $T()", getClassName());
 //
 //    block.addStatement("$T<$T, $N> $N = $N.readHashMap(getClass().getClassLoader())", mapTypeName,
 //        integerType, typeArgumentString, wrappedName, in);
@@ -36,7 +36,7 @@ public class SparseArrayProperty extends Property {
 //    TypeName hashMapTypeName = ClassName.get(HashMap.class);
 //    String wrappedName = getName() + "Wrapped";
 //
-//    block.addStatement("$T $N = $N.$N()", getTypeName(), getName(), DATA_VARIABLE_NAME, getName());
+//    block.addStatement("$T $N = $N.$N()", getClassName(), getName(), DATA_VARIABLE_NAME, getName());
 //    block.addStatement("$T<$T, $N> $N = new $T<$T, $N>()", mapTypeName, integerType, typeArgumentString,
 //        wrappedName, hashMapTypeName, integerType, typeArgumentString);
 //

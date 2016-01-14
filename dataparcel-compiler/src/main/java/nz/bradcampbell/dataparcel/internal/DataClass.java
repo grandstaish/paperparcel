@@ -1,49 +1,46 @@
 package nz.bradcampbell.dataparcel.internal;
 
 import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.TypeName;
 
-import javax.lang.model.element.TypeElement;
 import java.util.List;
 
+/**
+ * A model object that holds information needed to build a Parcelable data class wrapper
+ */
 public class DataClass {
-
-  // Shared package. The data class wrapper is generated in the same package as the data class
   private final String classPackage;
-
-  // Data class info
-  private final List<Property> dataClassProperties;
-  private final TypeName dataClassTypeName;
-  private final TypeElement dataClassElement;
-
-  // Wrapper class info
+  private final List<Property> properties;
+  private final ClassName className;
   private final ClassName wrapperClassName;
 
-  public DataClass(List<Property> dataClassProperties, String classPackage, String wrapperClassName, TypeElement dataClassElement) {
-    this.dataClassProperties = dataClassProperties;
+  /**
+   * Constructor.
+   *
+   * @param properties All properties in the data class
+   * @param classPackage The package of the data class
+   * @param wrapperTypeName The simple name of the wrapper class
+   * @param className The data class type name
+   */
+  public DataClass(List<Property> properties, String classPackage, String wrapperTypeName, ClassName className) {
+    this.properties = properties;
     this.classPackage = classPackage;
-    this.dataClassElement = dataClassElement;
-    this.wrapperClassName = ClassName.get(classPackage, wrapperClassName);
-    this.dataClassTypeName = ClassName.get(dataClassElement);
+    this.wrapperClassName = ClassName.get(classPackage, wrapperTypeName);
+    this.className = className;
   }
 
-  public List<Property> getDataClassProperties() {
-    return dataClassProperties;
+  public List<Property> getProperties() {
+    return properties;
   }
 
   public String getClassPackage() {
     return classPackage;
   }
 
-  public TypeElement getDataClassElement() {
-    return dataClassElement;
-  }
-
   public ClassName getWrapperClassName() {
     return wrapperClassName;
   }
 
-  public TypeName getDataClassTypeName() {
-    return dataClassTypeName;
+  public ClassName getClassName() {
+    return className;
   }
 }
