@@ -1,6 +1,8 @@
 package nz.bradcampbell.dataparcel.internal.properties;
 
+import android.support.annotation.Nullable;
 import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import nz.bradcampbell.dataparcel.internal.Property;
@@ -11,13 +13,16 @@ public class ValueProperty extends Property {
     super(propertyType, false, name);
   }
 
-  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
+  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
     TypeName typeName = getPropertyType().getWrappedTypeName();
-    TypeName rawType = getPropertyType().getWrappedRawTypeName();
-    block.addStatement("$N = ($T) $N.readValue($T.class.getClassLoader())", getName(), typeName, in, rawType);
+    block.addStatement("$N = ($T) $N.readValue($N)", getName(), typeName, in, classLoader);
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {
     block.addStatement("$N.writeValue($N)", dest, variableName);
+  }
+
+  @Override public boolean requiresClassLoader() {
+    return true;
   }
 }

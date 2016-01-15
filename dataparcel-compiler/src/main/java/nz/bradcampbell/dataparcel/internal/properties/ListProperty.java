@@ -1,5 +1,6 @@
 package nz.bradcampbell.dataparcel.internal.properties;
 
+import android.support.annotation.Nullable;
 import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.Property;
 
@@ -12,29 +13,24 @@ public class ListProperty extends Property {
     super(propertyType, isNullable, name);
   }
 
-  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
+  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
     Property.Type propertyType = getPropertyType();
     TypeName wrappedTypeName = propertyType.getWrappedTypeName();
 
-    TypeName rawParameterTypeName = propertyType.getChildType(0).getRawTypeName();
-    TypeName wrappedRawParameterTypeName = propertyType.getChildType(0).getWrappedRawTypeName();
-
     if (propertyType.isParcelable()) {
       if (propertyType.isInterface()) {
-        block.addStatement("$N = ($T) $N.readArrayList($T.class.getClassLoader())", getName(), wrappedTypeName, in,
-            rawParameterTypeName);
+        block.addStatement("$N = ($T) $N.readArrayList($N)", getName(), wrappedTypeName, in, classLoader);
       } else {
         block.addStatement("$N = new $T()", getName(), wrappedTypeName);
-        block.addStatement("$N.readList($N, $T.class.getClassLoader())", in, getName(), rawParameterTypeName);
+        block.addStatement("$N.readList($N, $N)", in, getName(), classLoader);
       }
     } else {
       if (propertyType.isInterface()) {
-        block.addStatement("$T $N = ($T) $N.readArrayList($T.class.getClassLoader())", wrappedTypeName,
-            getWrappedName(), wrappedTypeName, in, wrappedRawParameterTypeName);
+        block.addStatement("$T $N = ($T) $N.readArrayList($N)", wrappedTypeName, getWrappedName(), wrappedTypeName,
+            in, classLoader);
       } else {
         block.addStatement("$T $N = new $T()", wrappedTypeName, getWrappedName(), wrappedTypeName);
-        block.addStatement("$N.readList($N, $T.class.getClassLoader())", in, getWrappedName(),
-            wrappedRawParameterTypeName);
+        block.addStatement("$N.readList($N, $N)", in, getWrappedName(), classLoader);
       }
       unparcelVariable(block);
     }
@@ -117,5 +113,9 @@ public class ListProperty extends Property {
     }
 
     return variableName;
+  }
+
+  @Override public boolean requiresClassLoader() {
+    return true;
   }
 }

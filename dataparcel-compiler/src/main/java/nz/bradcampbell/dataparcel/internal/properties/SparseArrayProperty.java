@@ -1,7 +1,9 @@
 package nz.bradcampbell.dataparcel.internal.properties;
 
+import android.support.annotation.Nullable;
 import android.util.SparseArray;
 import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import nz.bradcampbell.dataparcel.internal.Property;
@@ -13,22 +15,19 @@ public class SparseArrayProperty extends Property {
     super(propertyType, isNullable, name);
   }
 
-  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
+  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
     Property.Type propertyType = getPropertyType();
 
     if (propertyType.isParcelable()) {
 
-      TypeName rawParameterType = propertyType.getChildType(0).getRawTypeName();
-      block.addStatement("$N = $N.readSparseArray($T.class.getClassLoader())", getName(), in, rawParameterType);
+      block.addStatement("$N = $N.readSparseArray($N)", getName(), in, classLoader);
 
     } else {
 
       TypeName wrappedTypeName = propertyType.getWrappedTypeName();
-      TypeName wrappedRawParameterType = propertyType.getChildType(0).getWrappedRawTypeName();
       String wrappedName = getWrappedName();
 
-      block.addStatement("$T $N = $N.readSparseArray($T.class.getClassLoader())", wrappedTypeName, wrappedName, in,
-          wrappedRawParameterType);
+      block.addStatement("$T $N = $N.readSparseArray($N)", wrappedTypeName, wrappedName, in, classLoader);
 
       unparcelVariable(block);
     }
@@ -108,5 +107,9 @@ public class SparseArrayProperty extends Property {
     }
 
     return variableName;
+  }
+
+  @Override public boolean requiresClassLoader() {
+    return true;
   }
 }

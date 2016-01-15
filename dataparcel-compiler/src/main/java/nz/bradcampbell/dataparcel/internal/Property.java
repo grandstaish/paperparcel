@@ -98,19 +98,19 @@ public abstract class Property {
     this.wrappedName = name + "Wrapped";
   }
 
-  public boolean isNullable() {
+  public final boolean isNullable() {
     return isNullable;
   }
 
-  public String getName() {
+  public final String getName() {
     return name;
   }
 
-  public String getWrappedName() {
+  public final String getWrappedName() {
     return wrappedName;
   }
 
-  public Type getPropertyType() {
+  public final Type getPropertyType() {
     return propertyType;
   }
 
@@ -119,9 +119,10 @@ public abstract class Property {
    * if the property is nullable.
    *
    * @param in The Parcel parameter
+   * @param classLoader ClassLoader to use for reading data
    * @return Code to read this property from the parcel
    */
-  public CodeBlock readFromParcel(ParameterSpec in) {
+  public final CodeBlock readFromParcel(ParameterSpec in, @Nullable FieldSpec classLoader) {
     CodeBlock.Builder block = CodeBlock.builder();
 
     TypeName typeName = propertyType.getTypeName(false);
@@ -135,7 +136,7 @@ public abstract class Property {
       block.beginControlFlow("if ($N.readInt() == 0)", in);
     }
 
-    readFromParcelInner(block, in);
+    readFromParcelInner(block, in, classLoader);
 
     if (isNullable()) {
       block.endControlFlow();
@@ -154,8 +155,9 @@ public abstract class Property {
    *
    * @param block The CodeBlock builder to write the code to
    * @param in The Parcel parameter
+   * @param classLoader ClassLoader to use for reading data
    */
-  protected abstract void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in);
+  protected abstract void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader);
 
   /**
    * May be called from within other properties to write code to translate the parceled version of this property into
@@ -179,7 +181,7 @@ public abstract class Property {
    * @param dest The Parcel parameter
    * @return The CodeBlock for writing the property
    */
-  public CodeBlock writeToParcel(ParameterSpec dest) {
+  public final CodeBlock writeToParcel(ParameterSpec dest) {
     CodeBlock.Builder block = CodeBlock.builder();
 
     String source = DATA_VARIABLE_NAME + "." + getName() + "()";
@@ -228,5 +230,13 @@ public abstract class Property {
     TypeName typeName = propertyType.getTypeName(includeWildcards);
     block.addStatement("$T $N = $N", typeName, variableName, source);
     return variableName;
+  }
+
+  /**
+   * @return True if this property type requires a ClassLoader instance passed into
+   *         {@link #readFromParcelInner(CodeBlock.Builder, ParameterSpec, FieldSpec)}
+   */
+  public boolean requiresClassLoader() {
+    return false;
   }
 }

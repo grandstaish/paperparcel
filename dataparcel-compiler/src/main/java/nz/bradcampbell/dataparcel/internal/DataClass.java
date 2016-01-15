@@ -12,18 +12,21 @@ public class DataClass {
   private final List<Property> properties;
   private final ClassName className;
   private final ClassName wrapperClassName;
+  private final boolean requiresClassLoader;
 
   /**
    * Constructor.
-   *
-   * @param properties All properties in the data class
+   *  @param properties All properties in the data class
    * @param classPackage The package of the data class
    * @param wrapperTypeName The simple name of the wrapper class
    * @param className The data class type name
+   * @param requiresClassLoader True if a ClassLoader field is required, false otherwise
    */
-  public DataClass(List<Property> properties, String classPackage, String wrapperTypeName, ClassName className) {
+  public DataClass(List<Property> properties, String classPackage, String wrapperTypeName, ClassName className,
+                   boolean requiresClassLoader) {
     this.properties = properties;
     this.classPackage = classPackage;
+    this.requiresClassLoader = requiresClassLoader;
     this.wrapperClassName = ClassName.get(classPackage, wrapperTypeName);
     this.className = className;
   }
@@ -42,5 +45,9 @@ public class DataClass {
 
   public ClassName getClassName() {
     return className;
+  }
+
+  public boolean requiresClassLoader() {
+    return requiresClassLoader;
   }
 }

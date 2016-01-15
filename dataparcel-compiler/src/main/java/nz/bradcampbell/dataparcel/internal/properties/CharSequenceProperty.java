@@ -1,10 +1,8 @@
 package nz.bradcampbell.dataparcel.internal.properties;
 
+import android.support.annotation.Nullable;
 import android.text.TextUtils;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.CodeBlock;
-import com.squareup.javapoet.ParameterSpec;
-import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.Property;
 
 public class CharSequenceProperty extends Property {
@@ -12,7 +10,7 @@ public class CharSequenceProperty extends Property {
     super(propertyType, isNullable, name);
   }
 
-  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
+  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
     TypeName textUtilsTypeName = ClassName.get(TextUtils.class);
     block.addStatement("$N = $T.CHAR_SEQUENCE_CREATOR.createFromParcel($N)", getName(), textUtilsTypeName, in);
   }

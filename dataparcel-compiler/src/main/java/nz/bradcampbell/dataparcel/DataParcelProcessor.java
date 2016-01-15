@@ -107,6 +107,8 @@ public class DataParcelProcessor extends AbstractProcessor {
     // Get all member variable elements in the data class
     List<VariableElement> variableElements = getFields(typeElement);
 
+    boolean requiresClassLoader = false;
+
     for (int i = 0; i < variableElements.size(); i++) {
       VariableElement variableElement = variableElements.get(i);
 
@@ -122,10 +124,13 @@ public class DataParcelProcessor extends AbstractProcessor {
         error(typeElement.getSimpleName() + " is not a supported type.", typeElement);
       }
 
-      properties.add(createProperty(propertyType, isNullable, getterMethodName));
+      Property property = createProperty(propertyType, isNullable, getterMethodName);
+      properties.add(property);
+
+      requiresClassLoader |= property.requiresClassLoader();
     }
 
-    parcels.put(className, new DataClass(properties, classPackage, wrappedClassName, ClassName.get(typeElement)));
+    parcels.put(className, new DataClass(properties, classPackage, wrappedClassName, ClassName.get(typeElement), requiresClassLoader));
 
     // Build parcel dependencies
     for (TypeElement requiredParcel : variableDataParcelDependencies) {
@@ -317,20 +322,33 @@ public class DataParcelProcessor extends AbstractProcessor {
   }
 
   private JavaFile generateJavaFileFor(DataClass dataClass) {
-    TypeSpec.Builder o = TypeSpec.classBuilder(dataClass.getWrapperClassName().simpleName())
+    TypeSpec.Builder wrapperBuilder = TypeSpec.classBuilder(dataClass.getWrapperClassName().simpleName())
         .addModifiers(PUBLIC)
-        .addSuperinterface(Parcelable.class)
-        .addField(generateCreator(dataClass))
+        .addSuperinterface(Parcelable.class);
+
+    FieldSpec classLoader = null;
+    if (dataClass.requiresClassLoader()) {
+      classLoader = generateClassLoaderField(dataClass);
+      wrapperBuilder.addField(classLoader);
+    }
+
+    wrapperBuilder.addField(generateCreator(dataClass))
         .addField(generateContentsField(dataClass))
         .addMethod(generateWrapMethod(dataClass))
         .addMethod(generateContentsConstructor(dataClass))
-        .addMethod(generateParcelConstructor(dataClass))
+        .addMethod(generateParcelConstructor(dataClass, classLoader))
         .addMethod(generateGetter(dataClass))
         .addMethod(generateDescribeContents())
         .addMethod(generateWriteToParcel(dataClass));
 
     // Build the java file
-    return JavaFile.builder(dataClass.getClassPackage(), o.build()).build();
+    return JavaFile.builder(dataClass.getClassPackage(), wrapperBuilder.build()).build();
+  }
+
+  private FieldSpec generateClassLoaderField(DataClass dataClass) {
+    return FieldSpec.builder(ClassLoader.class, "CLASS_LOADER",  Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
+        .initializer("$T.class.getClassLoader()", dataClass.getClassName())
+        .build();
   }
 
   private FieldSpec generateCreator(DataClass dataClass) {
@@ -376,7 +394,7 @@ public class DataParcelProcessor extends AbstractProcessor {
         .build();
   }
 
-  private MethodSpec generateParcelConstructor(DataClass dataClass) {
+  private MethodSpec generateParcelConstructor(DataClass dataClass, FieldSpec classLoader) {
     ParameterSpec in = ParameterSpec
         .builder(ClassName.get("android.os", "Parcel"), "in")
         .build();
@@ -385,7 +403,7 @@ public class DataParcelProcessor extends AbstractProcessor {
         .addParameter(in);
     List<String> paramNames = new ArrayList<String>();
     for (Property p : dataClass.getProperties()) {
-      builder.addCode(p.readFromParcel(in));
+      builder.addCode(p.readFromParcel(in, classLoader));
       paramNames.add(p.getName());
     }
     builder.addStatement("this.$N = new $T($N)", DATA_VARIABLE_NAME, dataClass.getClassName(),

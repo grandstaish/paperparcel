@@ -1,6 +1,8 @@
 package nz.bradcampbell.dataparcel.internal.properties;
 
+import android.support.annotation.Nullable;
 import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
 import nz.bradcampbell.dataparcel.internal.Property;
 
@@ -9,11 +11,15 @@ public class BundleProperty extends Property {
     super(propertyType, isNullable, name);
   }
 
-  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
-    block.addStatement("$N = $N.readBundle(getClass().getClassLoader())", getName(), in);
+  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
+    block.addStatement("$N = $N.readBundle($N)", getName(), in, classLoader);
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {
     block.addStatement("$N.writeBundle($N)", dest, variableName);
+  }
+
+  @Override public boolean requiresClassLoader() {
+    return true;
   }
 }

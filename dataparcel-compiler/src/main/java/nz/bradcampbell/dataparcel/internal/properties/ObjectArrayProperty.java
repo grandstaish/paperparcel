@@ -1,5 +1,6 @@
 package nz.bradcampbell.dataparcel.internal.properties;
 
+import android.support.annotation.Nullable;
 import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.Properties;
 import nz.bradcampbell.dataparcel.internal.Property;
@@ -9,10 +10,10 @@ public class ObjectArrayProperty extends Property {
     super(propertyType, isNullable, name);
   }
 
-  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
+  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
     TypeName objectArrayClassName = ArrayTypeName.get(Object[].class);
     String objectArrayName = getWrappedName();
-    block.addStatement("$T $N = $N.readArray(getClass().getClassLoader())", objectArrayClassName, objectArrayName, in);
+    block.addStatement("$T $N = $N.readArray($N)", objectArrayClassName, objectArrayName, in, classLoader);
     unparcelVariable(block);
   }
 
@@ -75,5 +76,9 @@ public class ObjectArrayProperty extends Property {
     }
 
     return variableName;
+  }
+
+  @Override public boolean requiresClassLoader() {
+    return true;
   }
 }

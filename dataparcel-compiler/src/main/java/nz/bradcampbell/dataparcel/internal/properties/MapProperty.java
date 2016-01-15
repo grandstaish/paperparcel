@@ -1,5 +1,6 @@
 package nz.bradcampbell.dataparcel.internal.properties;
 
+import android.support.annotation.Nullable;
 import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.Property;
 
@@ -12,29 +13,24 @@ public class MapProperty extends Property {
     super(propertyType, isNullable, name);
   }
 
-  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in) {
+  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
     Property.Type propertyType = getPropertyType();
     TypeName wrappedTypeName = propertyType.getWrappedTypeName();
 
-    TypeName valueParameterRawTypeName = propertyType.getChildType(1).getRawTypeName();
-    TypeName valueParameterWrappedRawTypeName = propertyType.getChildType(1).getWrappedRawTypeName();
-
     if (propertyType.isParcelable()) {
       if (propertyType.isInterface()) {
-        block.addStatement("$N = ($T) $N.readHashMap($T.class.getClassLoader())", getName(), wrappedTypeName, in,
-            valueParameterRawTypeName);
+        block.addStatement("$N = ($T) $N.readHashMap($N)", getName(), wrappedTypeName, in, classLoader);
       } else {
         block.addStatement("$N = new $T()", getName(), wrappedTypeName);
-        block.addStatement("$N.readMap($N, $T.class.getClassLoader())", in, getName(), valueParameterRawTypeName);
+        block.addStatement("$N.readMap($N, $N)", in, getName(), classLoader);
       }
     } else {
       if (propertyType.isInterface()) {
-        block.addStatement("$T $N = ($T) $N.readHashMap($T.class.getClassLoader())", wrappedTypeName,
-            getWrappedName(), wrappedTypeName, in, valueParameterWrappedRawTypeName);
+        block.addStatement("$T $N = ($T) $N.readHashMap($N)", wrappedTypeName,
+            getWrappedName(), wrappedTypeName, in, classLoader);
       } else {
         block.addStatement("$T $N = new $T()", wrappedTypeName, getWrappedName(), wrappedTypeName);
-        block.addStatement("$N.readMap($N, $T.class.getClassLoader())", in, getWrappedName(),
-             valueParameterWrappedRawTypeName);
+        block.addStatement("$N.readMap($N, $N)", in, getWrappedName(), classLoader);
       }
       unparcelVariable(block);
     }
@@ -124,5 +120,9 @@ public class MapProperty extends Property {
     }
 
     return variableName;
+  }
+
+  @Override public boolean requiresClassLoader() {
+    return true;
   }
 }
