@@ -254,9 +254,9 @@ public class DataParcelProcessor extends AbstractProcessor {
 
     } else {
 
-      if (type instanceof WildcardType) {
-        wildcardTypeName = TypeName.get(type);
-      }
+      // Update wildcard and typename to include wildcards and generics
+      wildcardTypeName = TypeName.get(type);
+      typeName = TypeName.get(type);
 
       // This is (one of) the reason(s) it is not parcelable. Assume it contains a data object as a parameter
       TypeElement requiredElement = (TypeElement) typeElement;

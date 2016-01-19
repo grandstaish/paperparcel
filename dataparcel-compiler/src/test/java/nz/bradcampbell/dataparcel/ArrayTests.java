@@ -95,7 +95,7 @@ public class ArrayTests {
         .generatesSources(expectedSource);
   }
 
-  @Test public void genericNonParcelableArrayTest() {
+  @Test public void arrayOfListsOfNonParcelableObjectsTest() {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
         "import nz.bradcampbell.dataparcel.DataParcel;",
@@ -568,6 +568,120 @@ public class ArrayTests {
         "dest.writeInt(0);",
         "ChildParcel component1ComponentParcel = ChildParcel.wrap(component1Item);",
         "component1ComponentParcel.writeToParcel(dest, 0);",
+        "}",
+        "}",
+        "}",
+        "}"
+    ));
+
+    assertAbout(javaSources()).that(asList(source, dataClassChild))
+        .processedWith(new DataParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expectedSource);
+  }
+
+  @Test public void genericNonParcelableArrayTest() {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+        "package test;",
+        "import nz.bradcampbell.dataparcel.DataParcel;",
+        "@DataParcel",
+        "public final class Test {",
+        "private final Child<Integer>[][] child;",
+        "public Test(Child<Integer>[][] child) {",
+        "this.child = child;",
+        "}",
+        "public Child<Integer>[][] component1() {",
+        "return this.child;",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject dataClassChild = JavaFileObjects.forSourceString("test.Child", Joiner.on('\n').join(
+        "package test;",
+        "public final class Child<T> {",
+        "private final Integer test;",
+        "public Child(Integer test) {",
+        "this.test = test;",
+        "}",
+        "public Integer component1() {",
+        "return this.test;",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject expectedSource = JavaFileObjects.forSourceString("test/TestParcel", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
+        "import java.lang.Integer;",
+        "import java.lang.Override;",
+        "public class TestParcel implements Parcelable {",
+        "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
+        "@Override public TestParcel createFromParcel(Parcel in) {",
+        "return new TestParcel(in);",
+        "}",
+        "@Override public TestParcel[] newArray(int size) {",
+        "return new TestParcel[size];",
+        "}",
+        "};",
+        "private final Test data;",
+        "private TestParcel(Test data) {",
+        "this.data = data;",
+        "}",
+        "private TestParcel(Parcel in) {",
+        "int component1Size = in.readInt();",
+        "Child<Integer>[][] component1 = new Child[component1Size][];",
+        "for (int component1Index = 0; component1Index < component1Size; component1Index++) {",
+        "Child<Integer>[] outComponent1Item = null;",
+        "if (in.readInt() == 0) {",
+        "int component1ItemSize = in.readInt();",
+        "Child<Integer>[] component1Item = new Child[component1ItemSize];",
+        "for (int component1ItemIndex = 0; component1ItemIndex < component1ItemSize; component1ItemIndex++) {",
+        "Child<Integer> outComponent1ItemItem = null;",
+        "if (in.readInt() == 0) {",
+        "ChildParcel component1ItemItemParcel = ChildParcel.CREATOR.createFromParcel(in);",
+        "outComponent1ItemItem = component1ItemItemParcel.getContents();",
+        "}",
+        "component1Item[component1ItemIndex] = outComponent1ItemItem;",
+        "}",
+        "outComponent1Item = component1Item;",
+        "}",
+        "component1[component1Index] = outComponent1Item;",
+        "}",
+        "this.data = new Test(component1);",
+        "}",
+        "public static final TestParcel wrap(Test data) {",
+        "return new TestParcel(data);",
+        "}",
+        "public Test getContents() {",
+        "return data;",
+        "}",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "Child<Integer>[][] component1 = data.component1();",
+        "int component1Size = component1.length;",
+        "dest.writeInt(component1Size);",
+        "for (int component1Index = 0; component1Index < component1Size; component1Index++) {",
+        "Child<Integer>[] component1Item = component1[component1Index];",
+        "if (component1Item == null) {",
+        "dest.writeInt(1);",
+        "} else {",
+        "dest.writeInt(0);",
+        "int component1ComponentSize = component1Item.length;",
+        "dest.writeInt(component1ComponentSize);",
+        "for (int component1ComponentIndex = 0; component1ComponentIndex < component1ComponentSize; component1ComponentIndex++) {",
+        "Child<Integer> component1ComponentItem = component1Item[component1ComponentIndex];",
+        "if (component1ComponentItem == null) {",
+        "dest.writeInt(1);",
+        "} else {",
+        "dest.writeInt(0);",
+        "ChildParcel component1ComponentComponentParcel = ChildParcel.wrap(component1ComponentItem);",
+        "component1ComponentComponentParcel.writeToParcel(dest, 0);",
+        "}",
+        "}",
         "}",
         "}",
         "}",
