@@ -14,7 +14,7 @@ public final class Sources {
   }
 
   public static TypeName getRawTypeName(Property.Type type, boolean wrapped) {
-    TypeName typeName = wrapped ? type.getWrappedTypeName() : type.getTypeName(false);
+    TypeName typeName = wrapped ? type.getWrappedTypeName() : type.getTypeName();
     while (typeName instanceof ParameterizedTypeName) {
       typeName = ((ParameterizedTypeName) typeName).rawType;
     }

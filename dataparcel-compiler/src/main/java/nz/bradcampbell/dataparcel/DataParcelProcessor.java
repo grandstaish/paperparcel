@@ -155,7 +155,7 @@ public class DataParcelProcessor extends AbstractProcessor {
 
         // Check this method returns the property type
         TypeName returnType = TypeName.get(method.getReturnType());
-        if (returnType.equals(propertyType.getTypeName(true))) {
+        if (returnType.equals(propertyType.getWildcardTypeName())) {
 
           // Check the method name matches what we're expecting
           if (method.getSimpleName().toString().equals(getterMethodName)) {
@@ -223,8 +223,8 @@ public class DataParcelProcessor extends AbstractProcessor {
           for (int i = 0; i < numTypeArgs; i++) {
             Property.Type argType = parsePropertyType(typeArguments.get(i), variableDataParcelDependencies);
             childTypes.add(argType);
-            parameterArray[i] = argType.getTypeName(false);
-            wildcardParameterArray[i] = argType.getTypeName(true);
+            parameterArray[i] = argType.getTypeName();
+            wildcardParameterArray[i] = argType.getWildcardTypeName();
             wrappedParameterArray[i] = argType.getWrappedTypeName();
           }
 
@@ -243,8 +243,8 @@ public class DataParcelProcessor extends AbstractProcessor {
         childTypes.add(componentType);
 
         wrappedTypeName = ArrayTypeName.of(componentType.getWrappedTypeName());
-        typeName = ArrayTypeName.of(componentType.getTypeName(false));
-        wildcardTypeName = ArrayTypeName.of(componentType.getTypeName(true));
+        typeName = ArrayTypeName.of(componentType.getTypeName());
+        wildcardTypeName = ArrayTypeName.of(componentType.getWildcardTypeName());
       }
 
       // Add the wildcard back if it existed
@@ -267,7 +267,6 @@ public class DataParcelProcessor extends AbstractProcessor {
     }
 
     boolean isInterface = typeElement != null && typeElement.getKind() == ElementKind.INTERFACE;
-    isParcelable = typeName.equals(wrappedTypeName);
 
     boolean requiresClassLoader = Properties.requiresClassLoader(parcelableTypeName);
     if (childTypes != null) {
@@ -276,8 +275,8 @@ public class DataParcelProcessor extends AbstractProcessor {
       }
     }
 
-    return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, wildcardTypeName, isParcelable,
-        isInterface, requiresClassLoader);
+    return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, wildcardTypeName, isInterface,
+        requiresClassLoader);
   }
 
   /**
@@ -467,7 +466,7 @@ public class DataParcelProcessor extends AbstractProcessor {
 
     CodeBlock.Builder block = CodeBlock.builder();
     for (Property p : dataClass.getProperties()) {
-      TypeName wildCardTypeName = p.getPropertyType().getTypeName(true);
+      TypeName wildCardTypeName = p.getPropertyType().getWildcardTypeName();
       block.addStatement("$T $N = $N.$N()", wildCardTypeName, p.getName(), DATA_VARIABLE_NAME, p.getName());
       CodeBlock sourceLiteral = literal("$N", p.getName());
       p.writeToParcel(block, dest, sourceLiteral);

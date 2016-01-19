@@ -26,10 +26,10 @@ public class MapProperty extends Property {
 
     // Create map to read into
     String mapName = getName();
-    TypeName typeName = propertyType.getTypeName(false);
+    TypeName typeName = propertyType.getTypeName();
     if (propertyType.isInterface()) {
-      TypeName keyTypeName = keyType.getTypeName(false);
-      TypeName valueTypeName = valueType.getTypeName(false);
+      TypeName keyTypeName = keyType.getTypeName();
+      TypeName valueTypeName = valueType.getTypeName();
       block.addStatement("$T $N = new $T<$T, $T>($N)", typeName, mapName, HashMap.class, keyTypeName, valueTypeName,
           mapSize);
     } else {
@@ -66,9 +66,9 @@ public class MapProperty extends Property {
     block.addStatement("$N.writeInt($L.size())", dest, sourceLiteral);
 
     Property.Type keyType = propertyType.getChildType(0);
-    TypeName keyTypeName = keyType.getTypeName(false);
+    TypeName keyTypeName = keyType.getTypeName();
     Property.Type valueType = propertyType.getChildType(1);
-    TypeName valueTypeName = valueType.getTypeName(false);
+    TypeName valueTypeName = valueType.getTypeName();
 
     // Write a loop to iterate through each entry
     String entryName = getName() + "Entry";

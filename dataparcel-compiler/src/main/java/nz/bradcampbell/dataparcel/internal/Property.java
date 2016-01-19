@@ -13,7 +13,7 @@ import static nz.bradcampbell.dataparcel.internal.Strings.capitalizeFirstCharact
  * A model object that can generate a code block for both reading and writing itself to/from a Parcel
  */
 public abstract class Property {
-  private final static Type NO_TYPE = new Type(null, OBJECT, OBJECT, OBJECT, OBJECT, false, false, false);
+  private final static Type NO_TYPE = new Type(null, OBJECT, OBJECT, OBJECT, OBJECT, false, false);
 
   /**
    * A model object that holds all parsed information about the property type
@@ -27,13 +27,11 @@ public abstract class Property {
     private final TypeName wrappedTypeName;
     private final TypeName wildcardTypeName;
 
-    private final boolean isParcelable;
     private final boolean isInterface;
     private final boolean requiresClassLoader;
 
     public Type(@Nullable List<Type> childTypes, TypeName parcelableTypeName, TypeName typeName,
-                TypeName wrappedTypeName, TypeName wildcardTypeName, boolean isParcelable, boolean isInterface,
-                boolean requiresClassLoader) {
+                TypeName wrappedTypeName, TypeName wildcardTypeName, boolean isInterface, boolean requiresClassLoader) {
 
       this.childTypes = childTypes;
 
@@ -42,7 +40,6 @@ public abstract class Property {
       this.wrappedTypeName = wrappedTypeName;
       this.wildcardTypeName = wildcardTypeName;
 
-      this.isParcelable = isParcelable;
       this.isInterface = isInterface;
       this.requiresClassLoader = requiresClassLoader;
     }
@@ -58,16 +55,16 @@ public abstract class Property {
       return parcelableTypeName;
     }
 
-    public TypeName getTypeName(boolean includeWildcards) {
-      return includeWildcards ? wildcardTypeName : typeName;
+    public TypeName getTypeName() {
+      return typeName;
     }
 
     public TypeName getWrappedTypeName() {
       return wrappedTypeName;
     }
 
-    public boolean isParcelable() {
-      return isParcelable;
+    public TypeName getWildcardTypeName() {
+      return wildcardTypeName;
     }
 
     public boolean isInterface() {
@@ -113,7 +110,7 @@ public abstract class Property {
    * @param classLoader ClassLoader to use for reading data
    */
   public final CodeBlock readFromParcel(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
-    TypeName typeName = propertyType.getTypeName(false);
+    TypeName typeName = propertyType.getTypeName();
     CodeBlock defaultLiteral = literal("$N", name);
     CodeBlock nullableLiteral = literal("$N", "out" + capitalizeFirstCharacter(name));
 

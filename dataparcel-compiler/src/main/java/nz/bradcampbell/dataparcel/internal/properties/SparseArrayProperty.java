@@ -26,7 +26,7 @@ public class SparseArrayProperty extends Property {
 
     // Create SparseArray to read into
     String sparseArrayName = getName();
-    TypeName typeName = propertyType.getTypeName(false);
+    TypeName typeName = propertyType.getTypeName();
     block.addStatement("$T $N = new $T($N)", typeName, sparseArrayName, typeName, sparseArraySize);
 
     // Write a loop to iterate through each parameter
@@ -64,7 +64,7 @@ public class SparseArrayProperty extends Property {
 
     Property.Type propertyType = getPropertyType();
     Property.Type parameterPropertyType = propertyType.getChildType(0);
-    TypeName parameterTypeName = parameterPropertyType.getTypeName(false);
+    TypeName parameterTypeName = parameterPropertyType.getTypeName();
 
     String keyName = getName() + "Key";
     block.addStatement("$T $N = $L.keyAt($N)", int.class, keyName, sourceLiteral, indexName);

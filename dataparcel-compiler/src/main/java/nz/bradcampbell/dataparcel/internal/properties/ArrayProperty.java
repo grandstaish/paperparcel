@@ -22,7 +22,7 @@ public class ArrayProperty extends Property {
 
     // Create array to read into
     String arrayName = getName();
-    block.add("$T ", propertyType.getTypeName(false));
+    block.add("$T ", propertyType.getTypeName());
     block.add(generateArrayInitializer(arrayName, false, arraySize));
 
     // Write a loop to iterate through each component
@@ -57,7 +57,7 @@ public class ArrayProperty extends Property {
 
     Property.Type propertyType = getPropertyType();
     Property.Type componentPropertyType = propertyType.getChildType(0);
-    TypeName componentTypeName = componentPropertyType.getTypeName(false);
+    TypeName componentTypeName = componentPropertyType.getTypeName();
     String componentItemName = getName() + "Item";
 
     block.addStatement("$T $N = $L[$N]", componentTypeName, componentItemName, sourceLiteral, indexName);

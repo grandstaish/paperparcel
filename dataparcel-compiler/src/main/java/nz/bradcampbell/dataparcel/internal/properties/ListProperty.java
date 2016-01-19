@@ -24,9 +24,9 @@ public class ListProperty extends Property {
 
     // Create list to read into
     String listName = getName();
-    TypeName typeName = propertyType.getTypeName(false);
+    TypeName typeName = propertyType.getTypeName();
     if (propertyType.isInterface()) {
-      TypeName parameterTypeName = parameterPropertyType.getTypeName(false);
+      TypeName parameterTypeName = parameterPropertyType.getTypeName();
       block.addStatement("$T $N = new $T<$T>($N)", typeName, listName, ArrayList.class, parameterTypeName, listSize);
     } else {
       block.addStatement("$T $N = new $T()", typeName, listName, typeName);
@@ -64,7 +64,7 @@ public class ListProperty extends Property {
 
     Property.Type propertyType = getPropertyType();
     Property.Type parameterPropertyType = propertyType.getChildType(0);
-    TypeName parameterTypeName = parameterPropertyType.getTypeName(false);
+    TypeName parameterTypeName = parameterPropertyType.getTypeName();
     String parameterItemName = getName() + "Item";
 
     block.addStatement("$T $N = $L.get($N)", parameterTypeName, parameterItemName, sourceLiteral, indexName);

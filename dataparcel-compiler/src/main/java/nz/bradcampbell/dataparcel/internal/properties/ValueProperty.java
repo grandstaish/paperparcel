@@ -15,7 +15,7 @@ public class ValueProperty extends Property {
   }
 
   @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
-    return literal("($T) $N.readValue($L)", getPropertyType().getTypeName(false), in, classLoader);
+    return literal("($T) $N.readValue($L)", getPropertyType().getTypeName(), in, classLoader);
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral) {

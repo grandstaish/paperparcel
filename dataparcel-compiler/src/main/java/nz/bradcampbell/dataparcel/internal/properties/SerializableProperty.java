@@ -14,7 +14,7 @@ public class SerializableProperty extends Property {
   }
 
   @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
-    return literal("($T) $N.readSerializable()", getPropertyType().getTypeName(false), in);
+    return literal("($T) $N.readSerializable()", getPropertyType().getTypeName(), in);
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral) {
