@@ -9,107 +9,77 @@ import com.squareup.javapoet.TypeName;
 import nz.bradcampbell.dataparcel.internal.Property;
 
 import static nz.bradcampbell.dataparcel.internal.Properties.createProperty;
+import static nz.bradcampbell.dataparcel.internal.Sources.literal;
 
 public class SparseArrayProperty extends Property {
   public SparseArrayProperty(Property.Type propertyType, boolean isNullable, String name) {
     super(propertyType, isNullable, name);
   }
 
-  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
+  @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
     Property.Type propertyType = getPropertyType();
+    Property.Type parameterPropertyType = propertyType.getChildType(0);
 
-    if (propertyType.isParcelable()) {
+    // Read size
+    String sparseArraySize = getName() + "Size";
+    block.addStatement("$T $N = $N.readInt()", int.class, sparseArraySize, in);
 
-      block.addStatement("$N = $N.readSparseArray($N)", getName(), in, classLoader);
+    // Create SparseArray to read into
+    String sparseArrayName = getName();
+    TypeName typeName = propertyType.getTypeName(false);
+    block.addStatement("$T $N = new $T($N)", typeName, sparseArrayName, typeName, sparseArraySize);
 
-    } else {
+    // Write a loop to iterate through each parameter
+    String indexName = getName() + "Index";
+    block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, sparseArraySize, indexName);
 
-      TypeName wrappedTypeName = propertyType.getWrappedTypeName();
-      String wrappedName = getWrappedName();
+    String keyName = getName() + "Key";
+    String valueName = getName() + "Value";
 
-      block.addStatement("$T $N = $N.readSparseArray($N)", wrappedTypeName, wrappedName, in, classLoader);
+    // Read the key
+    block.addStatement("$T $N = $N.readInt()", int.class, keyName, in);
 
-      unparcelVariable(block);
-    }
+    // Read in the value. Set isNullable to true as I don't know how to tell if a parameter is
+    // nullable or not. Kotlin can do this, Java can't.
+    CodeBlock parameterLiteral = createProperty(parameterPropertyType, true, valueName)
+        .readFromParcel(block, in, classLoader);
+
+    // Add the parameter to the output list
+    block.addStatement("$N.put($N, $L)", sparseArrayName, keyName, parameterLiteral);
+
+    block.endControlFlow();
+
+    return literal("$N", sparseArrayName);
   }
 
-  @Override public void unparcelVariable(CodeBlock.Builder block) {
-    Property.Type propertyType = getPropertyType();
-    if (propertyType.isParcelable()) {
+  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral) {
+    // Write size
+    String sparseArraySize = getName() + "Size";
+    block.addStatement("$T $N = $L.size()", int.class, sparseArraySize, sourceLiteral);
+    block.addStatement("$N.writeInt($N)", dest, sparseArraySize);
 
-      super.unparcelVariable(block);
-
-    } else {
-
-      String variableName = getName();
-      String wrappedName = getWrappedName();
-
-      Property.Type parameterPropertyType = propertyType.getChildType(0);
-      TypeName parameterType = parameterPropertyType.getTypeName(false);
-      TypeName wrappedParameterType = parameterPropertyType.getWrappedTypeName();
-
-      block.addStatement("$N = new $T()", variableName, propertyType.getTypeName(false));
-
-      String innerWrappedName = "_" + wrappedName;
-      String indexName = variableName + "Index";
-
-      block.beginControlFlow("for (int $N = 0; $N < $N.size(); $N++)", indexName, indexName, wrappedName, indexName);
-
-      String innerName = "_" + variableName;
-      block.addStatement("$T $N = null", parameterType, innerName);
-
-      String keyName = wrappedName + "Key";
-      block.addStatement("int $N = $N.keyAt($N)", keyName, wrappedName, indexName);
-
-      block.addStatement("$T $N = $N.get($N)", wrappedParameterType, innerWrappedName, wrappedName, keyName);
-
-      createProperty(parameterPropertyType, true, innerName).unparcelVariable(block);
-
-      block.addStatement("$N.put($N, $N)", variableName, keyName, innerName);
-
-      block.endControlFlow();
-    }
-  }
-
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {
-    block.addStatement("$N.writeSparseArray(($T) $N)", dest, SparseArray.class, variableName);
-  }
-
-  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source, boolean wildcard) {
-    String variableName = super.generateParcelableVariable(block, source, wildcard);
+    // Write a loop to iterate through each parameter
+    String indexName = getName() + "Index";
+    block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, sparseArraySize, indexName);
 
     Property.Type propertyType = getPropertyType();
-    if (!propertyType.isParcelable()) {
-      String wrappedName = getWrappedName();
+    Property.Type parameterPropertyType = propertyType.getChildType(0);
+    TypeName parameterTypeName = parameterPropertyType.getTypeName(false);
 
-      TypeName wrappedTypeName = propertyType.getWrappedTypeName();
-      block.addStatement("$T $N = new $T()", wrappedTypeName, wrappedName, wrappedTypeName);
+    String keyName = getName() + "Key";
+    block.addStatement("$T $N = $L.keyAt($N)", int.class, keyName, sourceLiteral, indexName);
+    block.addStatement("$N.writeInt($N)", dest, keyName);
 
-      String indexName = variableName + "Index";
+    String valueName = getName() + "Value";
+    block.addStatement("$T $N = $L.get($N)", parameterTypeName, valueName, sourceLiteral, keyName);
 
-      block.beginControlFlow("for (int $N = 0; $N < $N.size(); $N++)", indexName, indexName, variableName, indexName);
+    String parameterName = getName() + "Param";
+    CodeBlock parameterSource = literal("$N", valueName);
 
-      String keyName = variableName + "Key";
-      block.addStatement("int $N = $N.keyAt($N)", keyName, variableName, indexName);
+    // Write in the parameter. Set isNullable to true as I don't know how to tell if a parameter is
+    // nullable or not. Kotlin can do this, Java can't.
+    createProperty(parameterPropertyType, true, parameterName).writeToParcel(block, dest, parameterSource);
 
-      String innerName = "_" + variableName;
-      String innerSource = variableName + ".get(" + keyName + ")";
-
-      Property.Type parameterPropertyType = propertyType.getChildType(0);
-      String innerVariableName = createProperty(parameterPropertyType, true, innerName)
-          .generateParcelableVariable(block, innerSource, false);
-
-      block.addStatement("$N.put($N, $N)", wrappedName, keyName, innerVariableName);
-
-      block.endControlFlow();
-
-      variableName = wrappedName;
-    }
-
-    return variableName;
-  }
-
-  @Override public boolean requiresClassLoader() {
-    return true;
+    block.endControlFlow();
   }
 }

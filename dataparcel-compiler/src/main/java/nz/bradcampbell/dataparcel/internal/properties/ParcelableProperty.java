@@ -4,21 +4,20 @@ import android.support.annotation.Nullable;
 import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.Property;
 
+import static nz.bradcampbell.dataparcel.internal.Sources.getRawTypeName;
+import static nz.bradcampbell.dataparcel.internal.Sources.literal;
+
 public class ParcelableProperty extends Property {
   public ParcelableProperty(Property.Type propertyType, boolean isNullable, String name) {
     super(propertyType, isNullable, name);
   }
 
-  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
-    TypeName wrappedTypeName = getPropertyType().getWrappedTypeName();
-    block.addStatement("$N = ($T) $N.readParcelable($N)", getName(), wrappedTypeName, in, classLoader);
+  @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
+    TypeName wrappedTypeName = getRawTypeName(getPropertyType(), true);
+    return literal("$T.CREATOR.createFromParcel($N)", wrappedTypeName, in);
   }
 
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {
-    block.addStatement("$N.writeParcelable($N, 0)", dest, variableName);
-  }
-
-  @Override public boolean requiresClassLoader() {
-    return true;
+  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral) {
+    block.addStatement("$L.writeToParcel($N, 0)", sourceLiteral, dest);
   }
 }

@@ -2,7 +2,6 @@ package nz.bradcampbell.dataparcel;
 
 import android.os.Parcelable;
 import com.google.auto.service.AutoService;
-import com.google.common.base.Joiner;
 import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.DataClass;
 import nz.bradcampbell.dataparcel.internal.Property;
@@ -20,6 +19,7 @@ import java.util.*;
 
 import static javax.lang.model.element.Modifier.*;
 import static nz.bradcampbell.dataparcel.internal.Properties.createProperty;
+import static nz.bradcampbell.dataparcel.internal.Sources.literal;
 
 /**
  * An annotation processor that creates Parcelable wrappers for all Kotlin data classes annotated with @DataParcel
@@ -192,8 +192,6 @@ public class DataParcelProcessor extends AbstractProcessor {
     TypeName typeName = ClassName.get(erasedType);
     TypeName wrappedTypeName = typeName;
     TypeName wildcardTypeName = typeName;
-    TypeName rawTypeName = typeName;
-    TypeName wrappedRawTypeName = typeName;
 
     // The type element associated, or null
     Element typeElement = typeUtil.asElement(erasedType);
@@ -247,8 +245,6 @@ public class DataParcelProcessor extends AbstractProcessor {
         wrappedTypeName = ArrayTypeName.of(componentType.getWrappedTypeName());
         typeName = ArrayTypeName.of(componentType.getTypeName(false));
         wildcardTypeName = ArrayTypeName.of(componentType.getTypeName(true));
-        rawTypeName = ArrayTypeName.of(componentType.getRawTypeName());
-        wrappedRawTypeName = ArrayTypeName.of(componentType.getWrappedRawTypeName());
       }
 
       // Add the wildcard back if it existed
@@ -267,13 +263,21 @@ public class DataParcelProcessor extends AbstractProcessor {
       variableDataParcelDependencies.add(requiredElement);
       String packageName = getPackageName(requiredElement);
       String className = requiredElement.getSimpleName().toString() + "Parcel";
-      parcelableTypeName = wrappedTypeName = wrappedRawTypeName = ClassName.get(packageName, className);
+      parcelableTypeName = wrappedTypeName = ClassName.get(packageName, className);
     }
 
     boolean isInterface = typeElement != null && typeElement.getKind() == ElementKind.INTERFACE;
     isParcelable = typeName.equals(wrappedTypeName);
 
-    return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, wildcardTypeName, rawTypeName, wrappedRawTypeName, isParcelable, isInterface);
+    boolean requiresClassLoader = Properties.requiresClassLoader(parcelableTypeName);
+    if (childTypes != null) {
+      for (Property.Type childProperty : childTypes) {
+        requiresClassLoader |= childProperty.requiresClassLoader();
+      }
+    }
+
+    return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, wildcardTypeName, isParcelable,
+        isInterface, requiresClassLoader);
   }
 
   /**
@@ -355,6 +359,7 @@ public class DataParcelProcessor extends AbstractProcessor {
     ClassName className = dataClass.getWrapperClassName();
     ClassName creator = ClassName.get("android.os", "Parcelable", "Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, className);
+
     return FieldSpec
         .builder(creatorOfClass, "CREATOR", Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC)
         .initializer(CodeBlock.builder()
@@ -398,16 +403,37 @@ public class DataParcelProcessor extends AbstractProcessor {
     ParameterSpec in = ParameterSpec
         .builder(ClassName.get("android.os", "Parcel"), "in")
         .build();
+
     MethodSpec.Builder builder = MethodSpec.constructorBuilder()
         .addModifiers(PRIVATE)
         .addParameter(in);
-    List<String> paramNames = new ArrayList<String>();
-    for (Property p : dataClass.getProperties()) {
-      builder.addCode(p.readFromParcel(in, classLoader));
-      paramNames.add(p.getName());
+
+    List<Property> properties = dataClass.getProperties();
+    if (properties != null) {
+
+      String initializer = "this.$N = new $T(";
+      int paramsOffset = 2;
+      Object[] params = new Object[properties.size() + paramsOffset];
+      params[0] = DATA_VARIABLE_NAME;
+      params[1] = dataClass.getClassName();
+
+      CodeBlock.Builder block = CodeBlock.builder();
+
+      for (int i = 0; i < properties.size(); i++) {
+        Property p = properties.get(i);
+        params[i + paramsOffset] = p.readFromParcel(block, in, classLoader);
+        initializer += "$L";
+        if (i != properties.size() - 1) {
+          initializer += ", ";
+        }
+      }
+
+      builder.addCode(block.build());
+
+      initializer += ")";
+      builder.addStatement(initializer, params);
     }
-    builder.addStatement("this.$N = new $T($N)", DATA_VARIABLE_NAME, dataClass.getClassName(),
-        Joiner.on(", ").join(paramNames));
+
     return builder.build();
   }
 
@@ -432,14 +458,21 @@ public class DataParcelProcessor extends AbstractProcessor {
     ParameterSpec dest = ParameterSpec
         .builder(ClassName.get("android.os", "Parcel"), "dest")
         .build();
+
     MethodSpec.Builder builder = MethodSpec.methodBuilder("writeToParcel")
         .addAnnotation(Override.class)
         .addModifiers(PUBLIC)
         .addParameter(dest)
         .addParameter(int.class, "flags");
+
+    CodeBlock.Builder block = CodeBlock.builder();
     for (Property p : dataClass.getProperties()) {
-      builder.addCode(p.writeToParcel(dest));
+      TypeName wildCardTypeName = p.getPropertyType().getTypeName(true);
+      block.addStatement("$T $N = $N.$N()", wildCardTypeName, p.getName(), DATA_VARIABLE_NAME, p.getName());
+      CodeBlock sourceLiteral = literal("$N", p.getName());
+      p.writeToParcel(block, dest, sourceLiteral);
     }
-    return builder.build();
+
+    return builder.addCode(block.build()).build();
   }
 }

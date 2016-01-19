@@ -5,124 +5,89 @@ import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.Property;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import static nz.bradcampbell.dataparcel.internal.Properties.createProperty;
+import static nz.bradcampbell.dataparcel.internal.Sources.literal;
 
 public class MapProperty extends Property {
   public MapProperty(Property.Type propertyType, boolean isNullable, String name) {
     super(propertyType, isNullable, name);
   }
 
-  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
+  @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
     Property.Type propertyType = getPropertyType();
-    TypeName wrappedTypeName = propertyType.getWrappedTypeName();
+    Property.Type keyType = propertyType.getChildType(0);
+    Property.Type valueType = propertyType.getChildType(1);
 
-    if (propertyType.isParcelable()) {
-      if (propertyType.isInterface()) {
-        block.addStatement("$N = ($T) $N.readHashMap($N)", getName(), wrappedTypeName, in, classLoader);
-      } else {
-        block.addStatement("$N = new $T()", getName(), wrappedTypeName);
-        block.addStatement("$N.readMap($N, $N)", in, getName(), classLoader);
-      }
+    // Read size
+    String mapSize = getName() + "Size";
+    block.addStatement("$T $N = $N.readInt()", int.class, mapSize, in);
+
+    // Create map to read into
+    String mapName = getName();
+    TypeName typeName = propertyType.getTypeName(false);
+    if (propertyType.isInterface()) {
+      TypeName keyTypeName = keyType.getTypeName(false);
+      TypeName valueTypeName = valueType.getTypeName(false);
+      block.addStatement("$T $N = new $T<$T, $T>($N)", typeName, mapName, HashMap.class, keyTypeName, valueTypeName,
+          mapSize);
     } else {
-      if (propertyType.isInterface()) {
-        block.addStatement("$T $N = ($T) $N.readHashMap($N)", wrappedTypeName,
-            getWrappedName(), wrappedTypeName, in, classLoader);
-      } else {
-        block.addStatement("$T $N = new $T()", wrappedTypeName, getWrappedName(), wrappedTypeName);
-        block.addStatement("$N.readMap($N, $N)", in, getWrappedName(), classLoader);
-      }
-      unparcelVariable(block);
+      block.addStatement("$T $N = new $T()", typeName, mapName, typeName);
     }
+
+    // Write a loop to iterate through each entity
+    String indexName = getName() + "Index";
+    block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, mapSize, indexName);
+
+    String keyName = getName() + "Key";
+    String valueName = getName() + "Value";
+
+    // Read in the key. Set isNullable to true as I don't know how to tell if a parameter is
+    // nullable or not. Kotlin can do this, Java can't.
+    CodeBlock keyLiteral = createProperty(keyType, true, keyName).readFromParcel(block, in, classLoader);
+
+    // Read in the value. Set isNullable to true as I don't know how to tell if a parameter is
+    // nullable or not. Kotlin can do this, Java can't.
+    CodeBlock valueLiteral = createProperty(valueType, true, valueName).readFromParcel(block, in, classLoader);
+
+    // Add the parameter to the output map
+    block.addStatement("$N.put($L, $L)", mapName, keyLiteral, valueLiteral);
+
+    block.endControlFlow();
+
+    return literal("$N", mapName);
   }
 
-  @Override public void unparcelVariable(CodeBlock.Builder block) {
+  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral) {
     Property.Type propertyType = getPropertyType();
-    if (propertyType.isParcelable()) {
-      super.unparcelVariable(block);
-    } else {
 
-      Type keyParameterPropertyType = propertyType.getChildType(0);
-      TypeName keyParameterType = keyParameterPropertyType.getTypeName(false);
-      TypeName keyWrappedParameterType = keyParameterPropertyType.getWrappedTypeName();
+    // Write size
+    block.addStatement("$N.writeInt($L.size())", dest, sourceLiteral);
 
-      Type valueParameterPropertyType = propertyType.getChildType(1);
-      TypeName valueParameterType = valueParameterPropertyType.getTypeName(false);
-      TypeName valueWrappedParameterType = valueParameterPropertyType.getWrappedTypeName();
+    Property.Type keyType = propertyType.getChildType(0);
+    TypeName keyTypeName = keyType.getTypeName(false);
+    Property.Type valueType = propertyType.getChildType(1);
+    TypeName valueTypeName = valueType.getTypeName(false);
 
-      if (propertyType.isInterface()) {
-        TypeName hashMapTypeName = TypeName.get(HashMap.class);
-        block.addStatement("$N = new $T<$T, $T>($N.size())", getName(), hashMapTypeName, keyParameterType,
-            valueParameterType, getWrappedName());
-      } else {
-        block.addStatement("$N = new $T()", getName(), propertyType.getTypeName(false));
-      }
+    // Write a loop to iterate through each entry
+    String entryName = getName() + "Entry";
+    block.beginControlFlow("for ($T<$T, $T> $N : $L.entrySet())", Map.Entry.class, keyTypeName, valueTypeName,
+        entryName, sourceLiteral);
 
-      String innerWrappedName = "_" + getWrappedName();
-      block.beginControlFlow("for ($T $N : $N.keySet())", keyWrappedParameterType, innerWrappedName, getWrappedName());
-      String keyInnerName = "_" + getName();
-      block.addStatement("$T $N = null", keyParameterType, keyInnerName);
-      createProperty(keyParameterPropertyType, true, keyInnerName).unparcelVariable(block);
+    String keyName = getName() + "Key";
+    CodeBlock keySourceLiteral = literal("$N.getKey()", entryName);
+    String valueName = getName() + "Value";
+    CodeBlock valueSourceLiteral = literal("$N.getValue()", entryName);
 
-      String valueInnerName = "$" + getName();
-      String valueInnerWrappedName = "$" + getWrappedName();
-      block.addStatement("$T $N = $N.get($N)", valueWrappedParameterType, valueInnerWrappedName, getWrappedName(), innerWrappedName);
-      block.addStatement("$T $N = null", valueParameterType, valueInnerName);
-      createProperty(valueParameterPropertyType, true, valueInnerName).unparcelVariable(block);
+    // Write in the key. Set isNullable to true as I don't know how to tell if a parameter is
+    // nullable or not. Kotlin can do this, Java can't.
+    createProperty(keyType, true, keyName).writeToParcel(block, dest, keySourceLiteral);
 
-      block.addStatement("$N.put($N, $N)", getName(), keyInnerName, valueInnerName);
-      block.endControlFlow();
-    }
-  }
+    // Write in the value. Set isNullable to true as I don't know how to tell if a parameter is
+    // nullable or not. Kotlin can do this, Java can't.
+    createProperty(valueType, true, valueName).writeToParcel(block, dest, valueSourceLiteral);
 
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {
-    block.addStatement("$N.writeMap($N)", dest, variableName);
-  }
-
-  @Override public String generateParcelableVariable(CodeBlock.Builder block, String source, boolean wildcard) {
-    String variableName = super.generateParcelableVariable(block, source, wildcard);
-
-    Property.Type propertyType = getPropertyType();
-    if (!propertyType.isParcelable()) {
-      String wrappedName = getWrappedName();
-
-      Property.Type keyParameterPropertyType = propertyType.getChildType(0);
-      TypeName keyParameterType = keyParameterPropertyType.getTypeName(false);
-      TypeName keyWrappedParameterType = keyParameterPropertyType.getWrappedTypeName();
-
-      Type valueParameterPropertyType = propertyType.getChildType(1);
-      TypeName valueWrappedParameterType = valueParameterPropertyType.getWrappedTypeName();
-
-      if (propertyType.isInterface()) {
-        TypeName hashMapTypeName = TypeName.get(HashMap.class);
-        TypeName wrappedTypeName = propertyType.getWrappedTypeName();
-        block.addStatement("$T $N = new $T<$T, $T>($N.size())", wrappedTypeName, wrappedName, hashMapTypeName,
-            keyWrappedParameterType, valueWrappedParameterType, variableName);
-      } else {
-        TypeName wrappedTypeName = propertyType.getWrappedTypeName();
-        block.addStatement("$T $N = new $T()", wrappedTypeName, wrappedName, wrappedTypeName);
-      }
-
-      String parameterItemName = variableName + "Item";
-      block.beginControlFlow("for ($T $N : $N.keySet())", keyParameterType, parameterItemName, variableName);
-      String keyInnerName = "_" + variableName;
-      String keyInnerVariableName = createProperty(keyParameterPropertyType, true, keyInnerName)
-          .generateParcelableVariable(block, parameterItemName, false);
-
-      String valueInnerName = "$" + variableName;
-      String valueSource = variableName + ".get(" + parameterItemName + ")";
-      String valueInnerVariableName = createProperty(valueParameterPropertyType, true, valueInnerName)
-          .generateParcelableVariable(block, valueSource, false);
-
-      block.addStatement("$N.put($N, $N)", wrappedName, keyInnerVariableName, valueInnerVariableName);
-      block.endControlFlow();
-      return wrappedName;
-    }
-
-    return variableName;
-  }
-
-  @Override public boolean requiresClassLoader() {
-    return true;
+    block.endControlFlow();
   }
 }

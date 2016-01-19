@@ -6,16 +6,18 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
 import nz.bradcampbell.dataparcel.internal.Property;
 
+import static nz.bradcampbell.dataparcel.internal.Sources.literal;
+
 public class SizeProperty extends Property {
   public SizeProperty(Property.Type propertyType, boolean isNullable, String name) {
     super(propertyType, isNullable, name);
   }
 
-  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
-    block.addStatement("$N = $N.readSize()", getName(), in);
+  @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
+    return literal("$N.readSize()", in);
   }
 
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {
-    block.addStatement("$N.writeSize($N)", dest, variableName);
+  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral) {
+    block.addStatement("$N.writeSize($L)", dest, sourceLiteral);
   }
 }

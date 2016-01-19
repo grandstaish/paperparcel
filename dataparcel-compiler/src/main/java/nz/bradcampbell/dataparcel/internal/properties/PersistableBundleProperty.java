@@ -6,20 +6,18 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
 import nz.bradcampbell.dataparcel.internal.Property;
 
+import static nz.bradcampbell.dataparcel.internal.Sources.literal;
+
 public class PersistableBundleProperty extends Property {
   public PersistableBundleProperty(Property.Type propertyType, boolean isNullable, String name) {
     super(propertyType, isNullable, name);
   }
 
-  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
-    block.addStatement("$N = $N.readPersistableBundle($N)", getName(), in, classLoader);
+  @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
+    return literal("$N.readPersistableBundle($N)", in, classLoader);
   }
 
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {
-    block.addStatement("$N.writePersistableBundle($N)", dest, variableName);
-  }
-
-  @Override public boolean requiresClassLoader() {
-    return true;
+  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral) {
+    block.addStatement("$N.writePersistableBundle($L)", dest, sourceLiteral);
   }
 }

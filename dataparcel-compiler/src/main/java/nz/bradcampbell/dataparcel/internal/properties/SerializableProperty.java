@@ -4,20 +4,20 @@ import android.support.annotation.Nullable;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
-import com.squareup.javapoet.TypeName;
 import nz.bradcampbell.dataparcel.internal.Property;
+
+import static nz.bradcampbell.dataparcel.internal.Sources.literal;
 
 public class SerializableProperty extends Property {
   public SerializableProperty(Property.Type propertyType, boolean isNullable, String name) {
     super(propertyType, isNullable, name);
   }
 
-  @Override protected void readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
-    TypeName wrappedTypeName = getPropertyType().getWrappedTypeName();
-    block.addStatement("$N = ($T) $N.readSerializable()", getName(), wrappedTypeName, in);
+  @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
+    return literal("($T) $N.readSerializable()", getPropertyType().getTypeName(false), in);
   }
 
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, String variableName) {
-    block.addStatement("$N.writeSerializable($N)", dest, variableName);
+  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral) {
+    block.addStatement("$N.writeSerializable($L)", dest, sourceLiteral);
   }
 }

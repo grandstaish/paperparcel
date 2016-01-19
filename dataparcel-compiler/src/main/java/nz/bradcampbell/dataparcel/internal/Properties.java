@@ -61,6 +61,8 @@ public class Properties {
       BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT, CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE,
       SHORT, BOXED_SHORT);
 
+  private static final Set<TypeName> REQUIRES_CLASS_LOADER = ImmutableSet.of(BUNDLE, PERSISTABLE_BUNDLE);
+
   /**
    * Creates a new Property object
    *
@@ -130,15 +132,15 @@ public class Properties {
     } else if (PARCELABLE.equals(parcelableType)) {
       return new ParcelableProperty(propertyType, isNullable, name);
     } else if (PARCELABLE_ARRAY.equals(parcelableType)) {
-      return new ParcelableArrayProperty(propertyType, isNullable, name);
+      return new ArrayProperty(propertyType, isNullable, name);
     } else if (CHAR_SEQUENCE.equals(parcelableType)) {
       return new CharSequenceProperty(propertyType, isNullable, name);
     } else if (CHAR_SEQUENCE_ARRAY.equals(parcelableType)) {
-      return new CharSequenceArrayProperty(propertyType, isNullable, name);
+      return new ValueProperty(propertyType, isNullable, name);
     } else if (IBINDER.equals(parcelableType)) {
       return new IBinderProperty(propertyType, isNullable, name);
     } else if (OBJECT_ARRAY.equals(parcelableType)) {
-      return new ObjectArrayProperty(propertyType, isNullable, name);
+      return new ArrayProperty(propertyType, isNullable, name);
     } else if (SERIALIZABLE.equals(parcelableType)) {
       return new SerializableProperty(propertyType, isNullable, name);
     } else if (PERSISTABLE_BUNDLE.equals(parcelableType)) {
@@ -213,5 +215,9 @@ public class Properties {
     }
 
     return null;
+  }
+
+  public static boolean requiresClassLoader(TypeName parcelableTypeName) {
+    return REQUIRES_CLASS_LOADER.contains(parcelableTypeName);
   }
 }
