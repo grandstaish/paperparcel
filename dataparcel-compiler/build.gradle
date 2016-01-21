@@ -8,11 +8,10 @@ configurations {
 dependencies {
     compile project(':dataparcel-annotations')
 
-    provided files('libs/android.jar')
-
     compile deps.autoservice
     compile deps.javapoet
 
+    testCompile files('libs/android.jar')
     testCompile deps.junit
     testCompile deps.truth
     testCompile deps.compiletesting

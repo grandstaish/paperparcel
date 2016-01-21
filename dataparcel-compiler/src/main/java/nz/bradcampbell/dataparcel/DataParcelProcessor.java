@@ -1,7 +1,5 @@
 package nz.bradcampbell.dataparcel;
 
-import android.os.Parcel;
-import android.os.Parcelable;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.DataClass;
@@ -24,6 +22,9 @@ import static nz.bradcampbell.dataparcel.internal.Utils.*;
 @AutoService(Processor.class)
 public class DataParcelProcessor extends AbstractProcessor {
   public static final String DATA_VARIABLE_NAME = "data";
+
+  private static final TypeName PARCELABLE = ClassName.get("android.os", "Parcelable");
+  private static final TypeName PARCEL = ClassName.get("android.os", "Parcel");
 
   private Filer filer;
   private Types typeUtil;
@@ -278,7 +279,7 @@ public class DataParcelProcessor extends AbstractProcessor {
   private JavaFile generateJavaFileFor(DataClass dataClass) {
     TypeSpec.Builder wrapperBuilder = TypeSpec.classBuilder(dataClass.getWrapperClassName().simpleName())
         .addModifiers(PUBLIC)
-        .addSuperinterface(Parcelable.class);
+        .addSuperinterface(PARCELABLE);
 
     FieldSpec classLoader = null;
     if (dataClass.requiresClassLoader()) {
@@ -314,8 +315,7 @@ public class DataParcelProcessor extends AbstractProcessor {
         .builder(creatorOfClass, "CREATOR", Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC)
         .initializer(CodeBlock.builder()
             .beginControlFlow("new $T()", ParameterizedTypeName.get(creator, className))
-            .beginControlFlow("@$T public $T createFromParcel($T in)", ClassName.get(Override.class), className,
-                ClassName.get(Parcel.class))
+            .beginControlFlow("@$T public $T createFromParcel($T in)", ClassName.get(Override.class), className, PARCEL)
             .addStatement("return new $T(in)", className)
             .endControlFlow()
             .beginControlFlow("@$T public $T[] newArray($T size)", ClassName.get(Override.class), className, int.class)
