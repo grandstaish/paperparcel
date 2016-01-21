@@ -36,7 +36,7 @@ val example = parcel.getContents()
 
 ## Data classes inside data classes
 
-This works too. Note you only need the @DataParcel annotation on the root data object, e.g.:
+This works too. Note you only need the @DataParcel annotation on the root data object (although there is nothing wrong with putting it on both), e.g.:
 
 ```
 @DataParcel
