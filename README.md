@@ -6,7 +6,7 @@ This is currently in beta until proven stable.
 
 An annotation processor to automatically generate Parcelable wrappers for Kotlin [Data Classes](https://kotlinlang.org/docs/reference/data-classes.html).
 
-Annotated data classes can contain any type that would normally be able to be parcelled. This includes all the basic Kotlin types, Lists, Maps, Arrays, SparseArrays, and many more. In addition to the regular types, Data classes can contain other data classes, or they can have data class Arrays, or even data class type parameters. DataParcel tries to have as little restriction as possible into how you write your data classes, so if you think anything is missing then please raise an issue.
+Annotated data classes can contain any type that would normally be able to be parcelled. This includes all the basic Kotlin types, Lists, Maps, Arrays, SparseArrays, and [many more](https://github.com/grandstaish/DataParcel/tree/master/dataparcel-compiler/src/test/java/nz/bradcampbell/dataparcel). In addition to the regular types, Data classes can contain other data classes, or they can have data class Arrays, or even data class type parameters. DataParcel tries to have as little restriction as possible into how you write your data classes, so if you think anything is missing then please raise an issue.
 
 ## Usage
 
