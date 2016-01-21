@@ -1,7 +1,5 @@
 # DataParcel
 
-Do not use this. It is incomplete. 
-
 ## Overview
 
 An annotation processor to automatically generate Parcelable wrappers for Kotlin [Data Classes](https://kotlinlang.org/docs/reference/data-classes.html).
@@ -47,7 +45,21 @@ data class ExampleChild(var someValue: Int)
 
 ## Limitations
 
-Currently this annotation can _only_ be used with Kotlin data objects. These data objects must only hold either more data objects, or objects that can already be parceled by Android. 
+The @DataParcel annotation cannot be put directly on a data class with type parameters, e.g.:
+
+This is wrong:
+```
+@DataParcel
+data class BadExample<T>(val child: T)
+```
+
+However, it is OK to use data classes with typed parameters inside of your annotated data class, e.g.:
+
+This is OK:
+```
+@DataParcel
+data class GoodExample(val child: BadExample<Int>)
+```
 
 Please file a bug for anything you see is missing or not handled correctly.
 
