@@ -219,6 +219,17 @@ public class Utils {
     return null;
   }
 
+  public static boolean hasTypeArguments(TypeMirror type) {
+    if (type instanceof DeclaredType) {
+      DeclaredType declaredType = (DeclaredType) type;
+      List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
+      if (typeArguments.size() > 0) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public static boolean requiresClassLoader(TypeName parcelableTypeName) {
     return REQUIRES_CLASS_LOADER.contains(parcelableTypeName);
   }

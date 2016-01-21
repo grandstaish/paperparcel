@@ -64,13 +64,9 @@ public class DataParcelProcessor extends AbstractProcessor {
       TypeMirror elementTypeMirror = element.asType();
 
       // Ensure the root element isn't parameterized
-      if (elementTypeMirror instanceof DeclaredType) {
-        DeclaredType declaredType = (DeclaredType) elementTypeMirror;
-        List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
-        if (typeArguments.size() > 0) {
-          error(processingEnv, "@DataParcel cannot be used directly on generic data classes.", element);
-          continue;
-        }
+      if (hasTypeArguments(elementTypeMirror)) {
+        error(processingEnv, "@DataParcel cannot be used directly on generic data classes.", element);
+        continue;
       }
 
       createParcel(elementTypeMirror);
@@ -97,7 +93,6 @@ public class DataParcelProcessor extends AbstractProcessor {
     TypeElement typeElement = (TypeElement) typeUtil.asElement(typeMirror);
 
     String classPackage = getPackageName(typeElement);
-    String className = typeElement.getQualifiedName().toString();
     String wrappedClassName = generateWrappedTypeName(typeElement, typeMirror);
 
     // Exit early if we have already created a parcel for this data class
@@ -138,14 +133,17 @@ public class DataParcelProcessor extends AbstractProcessor {
   }
 
   private String generateWrappedTypeName(TypeElement typeElement, TypeMirror typeMirror) {
-    StringBuilder sb = new StringBuilder();
-    typeToString(typeMirror, sb, '$');
-    String ss = sb.toString();
-    String inner = "";
-    if (!typeElement.toString().equals(ss)) {
-      inner = Long.toString(ss.hashCode()).replace('-', '_');
+    String innerHash = "";
+
+    // Add a hashcode of the full string type name in between "{ClassName}" and "Parcel"
+    if (hasTypeArguments(typeMirror)) {
+      StringBuilder sb = new StringBuilder();
+      typeToString(typeMirror, sb, '$');
+      String typeString = sb.toString();
+      innerHash = Long.toString(typeString.hashCode()).replace('-', '_');
     }
-    return typeElement.getSimpleName().toString() + inner + "Parcel";
+
+    return typeElement.getSimpleName().toString() + innerHash + "Parcel";
   }
 
   /**
