@@ -68,8 +68,19 @@ public class DataParcelProcessor extends AbstractProcessor {
         continue;
       }
 
-      TypeElement el = (TypeElement) element;
-      createParcel(el.asType());
+      TypeMirror elementTypeMirror = element.asType();
+
+      // Ensure the root element isn't parameterized
+      if (elementTypeMirror instanceof DeclaredType) {
+        DeclaredType declaredType = (DeclaredType) elementTypeMirror;
+        List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
+        if (typeArguments != null && typeArguments.size() > 0) {
+          error("@DataParcel cannot be used directly on generic data classes.", element);
+          continue;
+        }
+      }
+
+      createParcel(elementTypeMirror);
     }
 
     // Generate java files for every data class found
