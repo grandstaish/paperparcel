@@ -5,7 +5,7 @@ import android.text.TextUtils;
 import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.Property;
 
-import static nz.bradcampbell.dataparcel.internal.Sources.literal;
+import static nz.bradcampbell.dataparcel.internal.Utils.literal;
 
 public class CharSequenceProperty extends Property {
   public CharSequenceProperty(Property.Type propertyType, boolean isNullable, String name) {

@@ -4,9 +4,9 @@ import android.support.annotation.Nullable;
 import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.Property;
 
-import static nz.bradcampbell.dataparcel.internal.Properties.createProperty;
-import static nz.bradcampbell.dataparcel.internal.Sources.getRawTypeName;
-import static nz.bradcampbell.dataparcel.internal.Sources.literal;
+import static nz.bradcampbell.dataparcel.internal.Utils.createProperty;
+import static nz.bradcampbell.dataparcel.internal.Utils.getRawTypeName;
+import static nz.bradcampbell.dataparcel.internal.Utils.literal;
 
 public class ArrayProperty extends Property {
   public ArrayProperty(Property.Type propertyType, boolean isNullable, String name) {

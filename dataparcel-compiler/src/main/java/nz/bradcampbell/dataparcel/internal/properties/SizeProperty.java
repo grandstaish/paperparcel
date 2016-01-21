@@ -6,7 +6,7 @@ import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
 import nz.bradcampbell.dataparcel.internal.Property;
 
-import static nz.bradcampbell.dataparcel.internal.Sources.literal;
+import static nz.bradcampbell.dataparcel.internal.Utils.literal;
 
 public class SizeProperty extends Property {
   public SizeProperty(Property.Type propertyType, boolean isNullable, String name) {

@@ -1,27 +1,25 @@
 package nz.bradcampbell.dataparcel.internal;
 
 import com.google.common.collect.ImmutableSet;
-import com.squareup.javapoet.ArrayTypeName;
-import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.ParameterizedTypeName;
-import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.properties.*;
 
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.ArrayType;
-import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.*;
+import javax.lang.model.type.*;
+import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
-
+import javax.tools.Diagnostic;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import static com.squareup.javapoet.TypeName.*;
-import static com.squareup.javapoet.TypeName.SHORT;
+import static com.squareup.javapoet.TypeName.get;
+import static javax.lang.model.element.Modifier.STATIC;
 
-/**
- * Property utilities class
- */
-public class Properties {
+public class Utils {
+  private static final String NULLABLE_ANNOTATION_NAME = "Nullable";
 
   private static final TypeName STRING = ClassName.get("java.lang", "String");
   private static final TypeName MAP = ClassName.get("java.util", "Map");
@@ -62,6 +60,10 @@ public class Properties {
       SHORT, BOXED_SHORT);
 
   private static final Set<TypeName> REQUIRES_CLASS_LOADER = ImmutableSet.of(BUNDLE, PERSISTABLE_BUNDLE);
+
+  private Utils() {
+    // No instances.
+  }
 
   /**
    * Creates a new Property object
@@ -219,5 +221,184 @@ public class Properties {
 
   public static boolean requiresClassLoader(TypeName parcelableTypeName) {
     return REQUIRES_CLASS_LOADER.contains(parcelableTypeName);
+  }
+
+  public static CodeBlock literal(String literal, Object... args) {
+    CodeBlock code = CodeBlock.builder().add(literal, args).build();
+
+    // Validation
+    return CodeBlock.builder().add("$L", code).build();
+  }
+
+  public static TypeName getRawTypeName(Property.Type type, boolean wrapped) {
+    TypeName typeName = wrapped ? type.getWrappedTypeName() : type.getTypeName();
+    while (typeName instanceof ParameterizedTypeName) {
+      typeName = ((ParameterizedTypeName) typeName).rawType;
+    }
+    return typeName;
+  }
+
+  public static String capitalizeFirstCharacter(String s) {
+    if (s == null || s.length() == 0) {
+      return s;
+    }
+    return s.substring(0, 1).toUpperCase() + s.substring(1);
+  }
+
+  public static void rawTypeToString(StringBuilder result, TypeElement type,
+                                      char innerClassSeparator) {
+    String packageName = getPackage(type).getQualifiedName().toString();
+    String qualifiedName = type.getQualifiedName().toString();
+    if (packageName.isEmpty()) {
+      result.append(qualifiedName.replace('.', innerClassSeparator));
+    } else {
+      result.append(packageName);
+      result.append('.');
+      result.append(
+          qualifiedName.substring(packageName.length() + 1).replace('.', innerClassSeparator));
+    }
+  }
+
+  public static PackageElement getPackage(Element type) {
+    while (type.getKind() != ElementKind.PACKAGE) {
+      type = type.getEnclosingElement();
+    }
+    return (PackageElement) type;
+  }
+
+  /**
+   * Print an error message to the console so that the user can see something went wrong.
+   *
+   * @param message The message the user will see
+   * @param element The element to use as a position hint
+   */
+  public static void error(ProcessingEnvironment processingEnv, String message, Element element) {
+    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
+  }
+
+  public static String getPackageName(TypeElement type) {
+    return getPackage(type).getQualifiedName().toString();
+  }
+
+  public static boolean hasAnnotationWithName(Element element, String simpleName) {
+    for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
+      String annotationName = mirror.getAnnotationType().asElement().getSimpleName().toString();
+      if (simpleName.equals(annotationName)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public static boolean isFieldRequired(Element element) {
+    return !hasAnnotationWithName(element, NULLABLE_ANNOTATION_NAME);
+  }
+
+  /**
+   * Gets a list of all non-static member variables of a TypeElement
+   *
+   * @param el The data class
+   * @return A list of non-static member variables. Cannot be null.
+   */
+  public static List<VariableElement> getFields(TypeElement el) {
+    List<? extends Element> enclosedElements = el.getEnclosedElements();
+    List<VariableElement> variables = new ArrayList<VariableElement>();
+    for (Element e : enclosedElements) {
+      if (e instanceof VariableElement && !e.getModifiers().contains(STATIC)) {
+        variables.add((VariableElement) e);
+      }
+    }
+    return variables;
+  }
+
+  /**
+   * Appends a string for {@code type} to {@code result}. Primitive types are
+   * always boxed.
+   *
+   * @param innerClassSeparator either '.' or '$', which will appear in a
+   *     class name like "java.lang.Map.Entry" or "java.lang.Map$Entry".
+   *     Use '.' for references to existing types in code. Use '$' to define new
+   *     class names and for strings that will be used by runtime reflection.
+   */
+  public static void typeToString(final TypeMirror type, final StringBuilder result,
+                                  final char innerClassSeparator) {
+    type.accept(new SimpleTypeVisitor6<Void, Void>() {
+      @Override public Void visitDeclared(DeclaredType declaredType, Void v) {
+        TypeElement typeElement = (TypeElement) declaredType.asElement();
+        rawTypeToString(result, typeElement, innerClassSeparator);
+        List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
+        if (!typeArguments.isEmpty()) {
+          result.append("<");
+          for (int i = 0; i < typeArguments.size(); i++) {
+            if (i != 0) {
+              result.append(", ");
+            }
+            typeToString(typeArguments.get(i), result, innerClassSeparator);
+          }
+          result.append(">");
+        }
+        return null;
+      }
+      @Override public Void visitPrimitive(PrimitiveType primitiveType, Void v) {
+        result.append(box((PrimitiveType) type));
+        return null;
+      }
+      @Override public Void visitArray(ArrayType arrayType, Void v) {
+        TypeMirror type = arrayType.getComponentType();
+        if (type instanceof PrimitiveType) {
+          result.append(type.toString()); // Don't box, since this is an array.
+        } else {
+          typeToString(arrayType.getComponentType(), result, innerClassSeparator);
+        }
+        result.append("[]");
+        return null;
+      }
+      @Override public Void visitTypeVariable(TypeVariable typeVariable, Void v) {
+        result.append(typeVariable.asElement().getSimpleName());
+        return null;
+      }
+      @Override public Void visitError(ErrorType errorType, Void v) {
+        // Error type found, a type may not yet have been generated, but we need the type
+        // so we can generate the correct code in anticipation of the type being available
+        // to the compiler.
+
+        // Paramterized types which don't exist are returned as an error type whose name is "<any>"
+        if ("<any>".equals(errorType.toString())) {
+          throw new RuntimeException(
+              "Type reported as <any> is likely a not-yet generated parameterized type.");
+        }
+        result.append(errorType.toString());
+        return null;
+      }
+      @Override protected Void defaultAction(TypeMirror typeMirror, Void v) {
+        throw new UnsupportedOperationException(
+            "Unexpected TypeKind " + typeMirror.getKind() + " for "  + typeMirror);
+      }
+    }, null);
+  }
+
+  static TypeName box(PrimitiveType primitiveType) {
+    switch (primitiveType.getKind()) {
+      case BYTE:
+        return ClassName.get(Byte.class);
+      case SHORT:
+        return ClassName.get(Short.class);
+      case INT:
+        return ClassName.get(Integer.class);
+      case LONG:
+        return ClassName.get(Long.class);
+      case FLOAT:
+        return ClassName.get(Float.class);
+      case DOUBLE:
+        return ClassName.get(Double.class);
+      case BOOLEAN:
+        return ClassName.get(Boolean.class);
+      case CHAR:
+        return ClassName.get(Character.class);
+      case VOID:
+        return ClassName.get(Void.class);
+      default:
+        throw new AssertionError();
+    }
   }
 }

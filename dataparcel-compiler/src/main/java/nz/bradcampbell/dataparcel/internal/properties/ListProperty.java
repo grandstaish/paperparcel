@@ -6,8 +6,8 @@ import nz.bradcampbell.dataparcel.internal.Property;
 
 import java.util.ArrayList;
 
-import static nz.bradcampbell.dataparcel.internal.Properties.createProperty;
-import static nz.bradcampbell.dataparcel.internal.Sources.literal;
+import static nz.bradcampbell.dataparcel.internal.Utils.createProperty;
+import static nz.bradcampbell.dataparcel.internal.Utils.literal;
 
 public class ListProperty extends Property {
   public ListProperty(Property.Type propertyType, boolean isNullable, String name) {

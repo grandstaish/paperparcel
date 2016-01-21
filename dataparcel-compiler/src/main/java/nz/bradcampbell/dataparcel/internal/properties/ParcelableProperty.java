@@ -4,8 +4,8 @@ import android.support.annotation.Nullable;
 import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.Property;
 
-import static nz.bradcampbell.dataparcel.internal.Sources.getRawTypeName;
-import static nz.bradcampbell.dataparcel.internal.Sources.literal;
+import static nz.bradcampbell.dataparcel.internal.Utils.getRawTypeName;
+import static nz.bradcampbell.dataparcel.internal.Utils.literal;
 
 public class ParcelableProperty extends Property {
   public ParcelableProperty(Property.Type propertyType, boolean isNullable, String name) {

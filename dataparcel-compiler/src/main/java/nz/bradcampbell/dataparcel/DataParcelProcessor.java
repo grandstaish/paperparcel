@@ -5,39 +5,31 @@ import com.google.auto.service.AutoService;
 import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.DataClass;
 import nz.bradcampbell.dataparcel.internal.Property;
-import nz.bradcampbell.dataparcel.internal.Properties;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
-import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import javax.tools.Diagnostic;
 import java.io.IOException;
 import java.util.*;
 
 import static javax.lang.model.element.Modifier.*;
-import static nz.bradcampbell.dataparcel.internal.Properties.createProperty;
-import static nz.bradcampbell.dataparcel.internal.Sources.literal;
+import static nz.bradcampbell.dataparcel.internal.Utils.*;
 
 /**
  * An annotation processor that creates Parcelable wrappers for all Kotlin data classes annotated with @DataParcel
  */
 @AutoService(Processor.class)
 public class DataParcelProcessor extends AbstractProcessor {
-  private static final String NULLABLE_ANNOTATION_NAME = "Nullable";
-
   public static final String DATA_VARIABLE_NAME = "data";
 
-  private Elements elementUtils;
   private Filer filer;
   private Types typeUtil;
   private Map<String, DataClass> parcels = new HashMap<String, DataClass>();
 
   @Override public synchronized void init(ProcessingEnvironment env) {
     super.init(env);
-    elementUtils = env.getElementUtils();
     filer = env.getFiler();
     typeUtil = env.getTypeUtils();
   }
@@ -64,7 +56,8 @@ public class DataParcelProcessor extends AbstractProcessor {
 
       // Ensure we are dealing with a TypeElement
       if (!(element instanceof TypeElement)) {
-        error("@DataParcel applies to a type, " + element.getSimpleName() + " is a " + element.getKind(), element);
+        error(processingEnv, "@DataParcel applies to a type, " + element.getSimpleName() + " is a " + element.getKind(),
+            element);
         continue;
       }
 
@@ -74,8 +67,8 @@ public class DataParcelProcessor extends AbstractProcessor {
       if (elementTypeMirror instanceof DeclaredType) {
         DeclaredType declaredType = (DeclaredType) elementTypeMirror;
         List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
-        if (typeArguments != null && typeArguments.size() > 0) {
-          error("@DataParcel cannot be used directly on generic data classes.", element);
+        if (typeArguments.size() > 0) {
+          error(processingEnv, "@DataParcel cannot be used directly on generic data classes.", element);
           continue;
         }
       }
@@ -103,15 +96,12 @@ public class DataParcelProcessor extends AbstractProcessor {
   private void createParcel(TypeMirror typeMirror) {
     TypeElement typeElement = (TypeElement) typeUtil.asElement(typeMirror);
 
-    // Exit early if we have already created a parcel for this data class
-    String className = typeElement.getQualifiedName().toString();
-    if (parcels.containsKey(className)) return;
-
-    // Needs to be in the same package as the data class
     String classPackage = getPackageName(typeElement);
+    String className = typeElement.getQualifiedName().toString();
+    String wrappedClassName = generateWrappedTypeName(typeElement, typeMirror);
 
-    // Name is always {className}(typeArgs}Parcel
-    String wrappedClassName = getWrappedTypeSimpleNamePrefix(typeMirror) + "Parcel";
+    // Exit early if we have already created a parcel for this data class
+    if (parcels.containsKey(wrappedClassName)) return;
 
     List<Property> properties = new ArrayList<Property>();
     List<TypeMirror> variableDataParcelDependencies = new ArrayList<TypeMirror>();
@@ -145,6 +135,17 @@ public class DataParcelProcessor extends AbstractProcessor {
     for (TypeMirror requiredParcel : variableDataParcelDependencies) {
       createParcel(requiredParcel);
     }
+  }
+
+  private String generateWrappedTypeName(TypeElement typeElement, TypeMirror typeMirror) {
+    StringBuilder sb = new StringBuilder();
+    typeToString(typeMirror, sb, '$');
+    String ss = sb.toString();
+    String inner = "";
+    if (!typeElement.toString().equals(ss)) {
+      inner = Long.toString(ss.hashCode()).replace('-', '_');
+    }
+    return typeElement.getSimpleName().toString() + inner + "Parcel";
   }
 
   /**
@@ -181,7 +182,7 @@ public class DataParcelProcessor extends AbstractProcessor {
     List<Property.Type> childTypes = null;
 
     // The variable that allows this variable to be parcelable, or null
-    TypeName parcelableTypeName = Properties.getParcelableType(typeUtil, erasedType);
+    TypeName parcelableTypeName = getParcelableType(typeUtil, erasedType);
     boolean isParcelable = parcelableTypeName != null;
 
     TypeName typeName = ClassName.get(erasedType);
@@ -258,13 +259,13 @@ public class DataParcelProcessor extends AbstractProcessor {
       // This is (one of) the reason(s) it is not parcelable. Assume it contains a data object as a parameter
       TypeElement requiredElement = (TypeElement) typeElement;
       String packageName = getPackageName(requiredElement);
-      String className = getWrappedTypeSimpleNamePrefix(noWildCardType) + "Parcel";
+      String className = generateWrappedTypeName(requiredElement, noWildCardType);
       parcelableTypeName = wrappedTypeName = ClassName.get(packageName, className);
     }
 
     boolean isInterface = typeElement != null && typeElement.getKind() == ElementKind.INTERFACE;
 
-    boolean requiresClassLoader = Properties.requiresClassLoader(parcelableTypeName);
+    boolean requiresClassLoader = requiresClassLoader(parcelableTypeName);
     if (childTypes != null) {
       for (Property.Type childProperty : childTypes) {
         requiresClassLoader |= childProperty.requiresClassLoader();
@@ -273,77 +274,6 @@ public class DataParcelProcessor extends AbstractProcessor {
 
     return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, wildcardTypeName, isInterface,
         requiresClassLoader);
-  }
-
-  private String getWrappedTypeSimpleNamePrefix(TypeMirror type) {
-    TypeMirror noWildCardType = type;
-    if (type instanceof WildcardType) {
-
-      // Properties using Kotlin's @JvmWildcard will fall into here
-      noWildCardType = ((WildcardType) type).getExtendsBound();
-    }
-
-    String result = typeUtil.asElement(typeUtil.erasure(noWildCardType)).getSimpleName().toString();
-
-    if (noWildCardType instanceof DeclaredType) {
-
-      DeclaredType declaredType = (DeclaredType) noWildCardType;
-      List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
-
-      int numTypeArgs = typeArguments.size();
-      if (numTypeArgs > 0) {
-        for (TypeMirror typeArgument : typeArguments) {
-          result += getWrappedTypeSimpleNamePrefix(typeArgument);
-        }
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * Gets a list of all non-static member variables of a TypeElement
-   *
-   * @param el The data class
-   * @return A list of non-static member variables. Cannot be null.
-   */
-  private List<VariableElement> getFields(TypeElement el) {
-    List<? extends Element> enclosedElements = el.getEnclosedElements();
-    List<VariableElement> variables = new ArrayList<VariableElement>();
-    for (Element e : enclosedElements) {
-      if (e instanceof VariableElement && !e.getModifiers().contains(STATIC)) {
-        variables.add((VariableElement) e);
-      }
-    }
-    return variables;
-  }
-
-  /**
-   * Print an error message to the console so that the user can see something went wrong.
-   *
-   * @param message The message the user will see
-   * @param element The element to use as a position hint
-   */
-  private void error(String message, Element element) {
-    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
-  }
-
-  private String getPackageName(TypeElement type) {
-    return elementUtils.getPackageOf(type).getQualifiedName().toString();
-  }
-
-  public static boolean hasAnnotationWithName(Element element, String simpleName) {
-    for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
-      String annotationName = mirror.getAnnotationType().asElement().getSimpleName().toString();
-      if (simpleName.equals(annotationName)) {
-        return true;
-      }
-    }
-    return false;
-  }
-
-  public static boolean isFieldRequired(Element element) {
-    return !hasAnnotationWithName(element, NULLABLE_ANNOTATION_NAME);
   }
 
   private JavaFile generateJavaFileFor(DataClass dataClass) {

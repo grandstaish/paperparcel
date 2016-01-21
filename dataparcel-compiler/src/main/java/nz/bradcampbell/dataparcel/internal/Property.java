@@ -6,8 +6,8 @@ import com.squareup.javapoet.*;
 import java.util.List;
 
 import static com.squareup.javapoet.TypeName.OBJECT;
-import static nz.bradcampbell.dataparcel.internal.Sources.literal;
-import static nz.bradcampbell.dataparcel.internal.Strings.capitalizeFirstCharacter;
+import static nz.bradcampbell.dataparcel.internal.Utils.capitalizeFirstCharacter;
+import static nz.bradcampbell.dataparcel.internal.Utils.literal;
 
 /**
  * A model object that can generate a code block for both reading and writing itself to/from a Parcel

@@ -7,8 +7,8 @@ import nz.bradcampbell.dataparcel.internal.Property;
 import java.util.HashMap;
 import java.util.Map;
 
-import static nz.bradcampbell.dataparcel.internal.Properties.createProperty;
-import static nz.bradcampbell.dataparcel.internal.Sources.literal;
+import static nz.bradcampbell.dataparcel.internal.Utils.createProperty;
+import static nz.bradcampbell.dataparcel.internal.Utils.literal;
 
 public class MapProperty extends Property {
   public MapProperty(Property.Type propertyType, boolean isNullable, String name) {

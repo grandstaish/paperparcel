@@ -1,15 +1,14 @@
 package nz.bradcampbell.dataparcel.internal.properties;
 
 import android.support.annotation.Nullable;
-import android.util.SparseArray;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import nz.bradcampbell.dataparcel.internal.Property;
 
-import static nz.bradcampbell.dataparcel.internal.Properties.createProperty;
-import static nz.bradcampbell.dataparcel.internal.Sources.literal;
+import static nz.bradcampbell.dataparcel.internal.Utils.createProperty;
+import static nz.bradcampbell.dataparcel.internal.Utils.literal;
 
 public class SparseArrayProperty extends Property {
   public SparseArrayProperty(Property.Type propertyType, boolean isNullable, String name) {
