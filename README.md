@@ -63,6 +63,20 @@ data class GoodExample(val child: BadExample<Int>)
 
 Please file a bug for anything you see is missing or not handled correctly.
 
+## Download
+
+Gradle:
+
+```
+repositories {
+    maven { url = 'https://jitpack.io' }
+}
+dependencies {
+    compile 'nz.bradcampbell:dataparcel-annotations:0.9'
+    kapt 'nz.bradcampbell:dataparcel-compiler:0.9'
+}
+```
+
 ## License
 
     Licensed under the Apache License, Version 2.0 (the "License");
