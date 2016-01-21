@@ -16,7 +16,7 @@ public class ParcelableTests {
         "package test;",
         "import android.graphics.Bitmap;",
         "import android.os.Parcelable;",
-        "import android.support.annotation.Nullable;",
+        "import nz.bradcampbell.dataparcel.Nullable;",
         "import nz.bradcampbell.dataparcel.DataParcel;",
         "@DataParcel",
         "public final class Test {",

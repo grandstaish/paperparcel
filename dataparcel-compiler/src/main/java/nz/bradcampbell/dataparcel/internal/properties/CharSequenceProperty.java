@@ -1,6 +1,6 @@
 package nz.bradcampbell.dataparcel.internal.properties;
 
-import android.support.annotation.Nullable;
+import nz.bradcampbell.dataparcel.Nullable;
 import android.text.TextUtils;
 import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.Property;

@@ -14,7 +14,7 @@ public class EnumTests {
   @Test public void nullableEnumTest() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
-        "import android.support.annotation.Nullable;",
+        "import nz.bradcampbell.dataparcel.Nullable;",
         "import nz.bradcampbell.dataparcel.DataParcel;",
         "import java.util.List;",
         "@DataParcel",

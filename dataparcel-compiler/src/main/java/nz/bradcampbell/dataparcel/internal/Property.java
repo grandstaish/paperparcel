@@ -1,7 +1,7 @@
 package nz.bradcampbell.dataparcel.internal;
 
-import android.support.annotation.Nullable;
 import com.squareup.javapoet.*;
+import nz.bradcampbell.dataparcel.Nullable;
 
 import java.util.List;
 

@@ -1,5 +1,6 @@
 package nz.bradcampbell.dataparcel;
 
+import android.os.Parcel;
 import android.os.Parcelable;
 import com.google.auto.service.AutoService;
 import com.squareup.javapoet.*;
@@ -314,7 +315,7 @@ public class DataParcelProcessor extends AbstractProcessor {
         .initializer(CodeBlock.builder()
             .beginControlFlow("new $T()", ParameterizedTypeName.get(creator, className))
             .beginControlFlow("@$T public $T createFromParcel($T in)", ClassName.get(Override.class), className,
-                ClassName.get(android.os.Parcel.class))
+                ClassName.get(Parcel.class))
             .addStatement("return new $T(in)", className)
             .endControlFlow()
             .beginControlFlow("@$T public $T[] newArray($T size)", ClassName.get(Override.class), className, int.class)

@@ -1,24 +1,8 @@
-import com.android.build.gradle.internal.LoggerWrapper
-import com.android.build.gradle.internal.SdkHandler
 import org.gradle.internal.jvm.Jvm
-
-def logger = new LoggerWrapper(project.logger)
-def sdkHandler = new SdkHandler(project, logger)
-for (File file : sdkHandler.sdkLoader.repositories) {
-    repositories.maven {
-        url = file.toURI()
-    }
-}
 
 configurations {
     provided
     compile.extendsFrom provided
-}
-
-task fatJar(type: Jar) {
-    baseName = project.name + '-all'
-    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-    with jar
 }
 
 dependencies {
@@ -26,13 +10,11 @@ dependencies {
 
     provided files('libs/android.jar')
 
-    compile 'com.google.auto.service:auto-service:1.0-rc2'
-    compile 'com.squareup:javapoet:1.1.0'
-    provided 'com.android.support:support-annotations:23.0.1'
+    compile deps.autoservice
+    compile deps.javapoet
 
-    testCompile 'junit:junit:4.12'
-    testCompile 'com.google.truth:truth:0.27'
-    testCompile 'org.robolectric:robolectric:2.2'
-    testCompile 'com.google.testing.compile:compile-testing:0.7'
+    testCompile deps.junit
+    testCompile deps.truth
+    testCompile deps.compiletesting
     testCompile files(Jvm.current().getToolsJar())
 }

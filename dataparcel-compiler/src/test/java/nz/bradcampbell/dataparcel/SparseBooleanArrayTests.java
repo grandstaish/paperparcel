@@ -15,7 +15,7 @@ public class SparseBooleanArrayTests {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
         "import android.util.SparseBooleanArray;",
-        "import android.support.annotation.Nullable;",
+        "import nz.bradcampbell.dataparcel.Nullable;",
         "import nz.bradcampbell.dataparcel.DataParcel;",
         "@DataParcel",
         "public final class Test {",
