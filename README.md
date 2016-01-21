@@ -1,5 +1,7 @@
 # DataParcel
 
+This is currently in beta until proven stable. 
+
 ## Overview
 
 An annotation processor to automatically generate Parcelable wrappers for Kotlin [Data Classes](https://kotlinlang.org/docs/reference/data-classes.html).
