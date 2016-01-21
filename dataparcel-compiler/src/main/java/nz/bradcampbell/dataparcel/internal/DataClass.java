@@ -1,6 +1,7 @@
 package nz.bradcampbell.dataparcel.internal;
 
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.TypeName;
 
 import java.util.List;
 
@@ -10,7 +11,7 @@ import java.util.List;
 public class DataClass {
   private final String classPackage;
   private final List<Property> properties;
-  private final ClassName className;
+  private final TypeName className;
   private final ClassName wrapperClassName;
   private final boolean requiresClassLoader;
 
@@ -22,7 +23,7 @@ public class DataClass {
    * @param className The data class type name
    * @param requiresClassLoader True if a ClassLoader field is required, false otherwise
    */
-  public DataClass(List<Property> properties, String classPackage, String wrapperTypeName, ClassName className,
+  public DataClass(List<Property> properties, String classPackage, String wrapperTypeName, TypeName className,
                    boolean requiresClassLoader) {
     this.properties = properties;
     this.classPackage = classPackage;
@@ -43,7 +44,7 @@ public class DataClass {
     return wrapperClassName;
   }
 
-  public ClassName getClassName() {
+  public TypeName getClassName() {
     return className;
   }
 

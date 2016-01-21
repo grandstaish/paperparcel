@@ -69,7 +69,7 @@ public class DataParcelProcessor extends AbstractProcessor {
       }
 
       TypeElement el = (TypeElement) element;
-      createParcel(el);
+      createParcel(el.asType());
     }
 
     // Generate java files for every data class found
@@ -87,9 +87,10 @@ public class DataParcelProcessor extends AbstractProcessor {
   /**
    * Create a Parcel wrapper for the given data class
    *
-   * @param typeElement The data class
+   * @param typeMirror The data class
    */
-  private void createParcel(TypeElement typeElement) {
+  private void createParcel(TypeMirror typeMirror) {
+    TypeElement typeElement = (TypeElement) typeUtil.asElement(typeMirror);
 
     // Exit early if we have already created a parcel for this data class
     String className = typeElement.getQualifiedName().toString();
@@ -98,11 +99,11 @@ public class DataParcelProcessor extends AbstractProcessor {
     // Needs to be in the same package as the data class
     String classPackage = getPackageName(typeElement);
 
-    // Name is always {className}Parcel
-    String wrappedClassName = ClassName.get(typeElement).simpleName() + "Parcel";
+    // Name is always {className}(typeArgs}Parcel
+    String wrappedClassName = getWrappedTypeSimpleNamePrefix(typeMirror) + "Parcel";
 
     List<Property> properties = new ArrayList<Property>();
-    List<TypeElement> variableDataParcelDependencies = new ArrayList<TypeElement>();
+    List<TypeMirror> variableDataParcelDependencies = new ArrayList<TypeMirror>();
 
     // Get all member variable elements in the data class
     List<VariableElement> variableElements = getFields(typeElement);
@@ -116,13 +117,10 @@ public class DataParcelProcessor extends AbstractProcessor {
       boolean isNullable = !isFieldRequired(variableElement);
 
       // Parse the property type into a Property.Type object and find all recursive data class dependencies
-      Property.Type propertyType = parsePropertyType(variableElement.asType(), variableDataParcelDependencies);
+      Property.Type propertyType = parsePropertyType(variableElement.asType(), typeMirror, variableDataParcelDependencies);
 
-      // Validate data class has a method for retrieving the member variable
+      // TODO: Validation of data class
       String getterMethodName = "component" + (i + 1);
-      if (!canFindGetterMethodForProperty(typeElement, propertyType, getterMethodName)) {
-        error(typeElement.getSimpleName() + " is not a supported type.", typeElement);
-      }
 
       Property property = createProperty(propertyType, isNullable, getterMethodName);
       properties.add(property);
@@ -130,62 +128,48 @@ public class DataParcelProcessor extends AbstractProcessor {
       requiresClassLoader |= property.requiresClassLoader();
     }
 
-    parcels.put(className, new DataClass(properties, classPackage, wrappedClassName, ClassName.get(typeElement), requiresClassLoader));
+    parcels.put(wrappedClassName, new DataClass(properties, classPackage, wrappedClassName, TypeName.get(typeMirror), requiresClassLoader));
 
     // Build parcel dependencies
-    for (TypeElement requiredParcel : variableDataParcelDependencies) {
+    for (TypeMirror requiredParcel : variableDataParcelDependencies) {
       createParcel(requiredParcel);
     }
-  }
-
-  /**
-   * Ensures the data class has a getter method that we can use to access the property
-   *
-   * @param typeElement The data class
-   * @param propertyType A property in the data class
-   * @param getterMethodName The expected name for the property getter method
-   * @return true if a getter method is found, false otherwise
-   */
-  private boolean canFindGetterMethodForProperty(TypeElement typeElement, Property.Type propertyType, String getterMethodName) {
-    for (Element enclosedElement : typeElement.getEnclosedElements()) {
-
-      // Find all enclosing methods
-      if (enclosedElement instanceof ExecutableElement) {
-        ExecutableElement method = (ExecutableElement) enclosedElement;
-
-        // Check this method returns the property type
-        TypeName returnType = TypeName.get(method.getReturnType());
-        if (returnType.equals(propertyType.getWildcardTypeName())) {
-
-          // Check the method name matches what we're expecting
-          if (method.getSimpleName().toString().equals(getterMethodName)) {
-
-            // Property is valid
-            return true;
-          }
-        }
-      }
-    }
-
-    // Could not find an appropriate getter method for the property
-    return false;
   }
 
   /**
    * Parses a TypeMirror into a Property.Type object. While doing so, this method will find all DataParcel
    * dependencies and append them to variableDataParcelDependencies.
    *
-   * @param type The member variable type
+   * @param variable The member variable variable
    * @param variableDataParcelDependencies A list to hold all recursive dependencies
-   * @return The parsed type
+   * @return The parsed variable
    */
-  private Property.Type parsePropertyType(TypeMirror type, List<TypeElement> variableDataParcelDependencies) {
-    TypeMirror erasedType = typeUtil.erasure(type);
+  private Property.Type parsePropertyType(TypeMirror variable, TypeMirror dataClass, List<TypeMirror> variableDataParcelDependencies) {
 
-    // List of type arguments for this property
+    // The element associated, or null
+    Element element = typeUtil.asElement(variable);
+
+    // Find and replace type parameter arguments with the provided type in the data class. e.g. a variable defined
+    // as ExampleClass<Integer>, this will replace type T with Integer when processing ExampleClassIntegerParcel.java.
+    if (element != null && element.getKind() == ElementKind.TYPE_PARAMETER) {
+      TypeElement dataClassElement = (TypeElement) typeUtil.asElement(dataClass);
+      List<? extends TypeParameterElement> typeParameterElements = dataClassElement.getTypeParameters();
+      int numTypeParams = typeParameterElements.size();
+      for (int i = 0; i < numTypeParams; i++) {
+        TypeParameterElement p = typeParameterElements.get(i);
+        if (p.equals(element)) {
+          variable = ((DeclaredType) dataClass).getTypeArguments().get(i);
+          break;
+        }
+      }
+    }
+
+    TypeMirror erasedType = typeUtil.erasure(variable);
+
+    // List of variable arguments for this property
     List<Property.Type> childTypes = null;
 
-    // The type that allows this type to be parcelable, or null
+    // The variable that allows this variable to be parcelable, or null
     TypeName parcelableTypeName = Properties.getParcelableType(typeUtil, erasedType);
     boolean isParcelable = parcelableTypeName != null;
 
@@ -193,25 +177,25 @@ public class DataParcelProcessor extends AbstractProcessor {
     TypeName wrappedTypeName = typeName;
     TypeName wildcardTypeName = typeName;
 
-    // The type element associated, or null
+    // The variable element associated, or null
     Element typeElement = typeUtil.asElement(erasedType);
+
+    TypeMirror noWildCardType = variable;
+    if (variable instanceof WildcardType) {
+
+      // Properties using Kotlin's @JvmWildcard will fall into here
+      noWildCardType = ((WildcardType) variable).getExtendsBound();
+    }
 
     if (isParcelable) {
 
-      TypeMirror noWildCardType = type;
-      if (type instanceof WildcardType) {
-
-        // Properties using Kotlin's @JvmWildcard will fall into here
-        noWildCardType = ((WildcardType) type).getExtendsBound();
-      }
-
       if (noWildCardType instanceof DeclaredType) {
 
-        // Parse type arguments
+        // Parse variable arguments
         DeclaredType declaredType = (DeclaredType) noWildCardType;
         List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
 
-        // Parse a "child type" for each type argument
+        // Parse a "child variable" for each variable argument
         int numTypeArgs = typeArguments.size();
         if (numTypeArgs > 0) {
 
@@ -221,7 +205,7 @@ public class DataParcelProcessor extends AbstractProcessor {
           TypeName[] wrappedParameterArray = new TypeName[numTypeArgs];
 
           for (int i = 0; i < numTypeArgs; i++) {
-            Property.Type argType = parsePropertyType(typeArguments.get(i), variableDataParcelDependencies);
+            Property.Type argType = parsePropertyType(typeArguments.get(i), dataClass, variableDataParcelDependencies);
             childTypes.add(argType);
             parameterArray[i] = argType.getTypeName();
             wildcardParameterArray[i] = argType.getWildcardTypeName();
@@ -237,9 +221,9 @@ public class DataParcelProcessor extends AbstractProcessor {
       if (noWildCardType instanceof ArrayType) {
         ArrayType arrayType = (ArrayType) noWildCardType;
 
-        // Array types will always have 1 "child type" which is the component type
+        // Array types will always have 1 "child variable" which is the component variable
         childTypes = new ArrayList<Property.Type>(1);
-        Property.Type componentType = parsePropertyType(arrayType.getComponentType(), variableDataParcelDependencies);
+        Property.Type componentType = parsePropertyType(arrayType.getComponentType(), dataClass, variableDataParcelDependencies);
         childTypes.add(componentType);
 
         wrappedTypeName = ArrayTypeName.of(componentType.getWrappedTypeName());
@@ -248,21 +232,22 @@ public class DataParcelProcessor extends AbstractProcessor {
       }
 
       // Add the wildcard back if it existed
-      if (type instanceof WildcardType) {
+      if (variable instanceof WildcardType) {
         wildcardTypeName = WildcardTypeName.subtypeOf(wildcardTypeName);
       }
 
     } else {
 
       // Update wildcard and typename to include wildcards and generics
-      wildcardTypeName = TypeName.get(type);
-      typeName = TypeName.get(type);
+      wildcardTypeName = TypeName.get(variable);
+      typeName = TypeName.get(noWildCardType);
+
+      variableDataParcelDependencies.add(noWildCardType);
 
       // This is (one of) the reason(s) it is not parcelable. Assume it contains a data object as a parameter
       TypeElement requiredElement = (TypeElement) typeElement;
-      variableDataParcelDependencies.add(requiredElement);
       String packageName = getPackageName(requiredElement);
-      String className = requiredElement.getSimpleName().toString() + "Parcel";
+      String className = getWrappedTypeSimpleNamePrefix(noWildCardType) + "Parcel";
       parcelableTypeName = wrappedTypeName = ClassName.get(packageName, className);
     }
 
@@ -277,6 +262,32 @@ public class DataParcelProcessor extends AbstractProcessor {
 
     return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, wildcardTypeName, isInterface,
         requiresClassLoader);
+  }
+
+  private String getWrappedTypeSimpleNamePrefix(TypeMirror type) {
+    TypeMirror noWildCardType = type;
+    if (type instanceof WildcardType) {
+
+      // Properties using Kotlin's @JvmWildcard will fall into here
+      noWildCardType = ((WildcardType) type).getExtendsBound();
+    }
+
+    String result = typeUtil.asElement(typeUtil.erasure(noWildCardType)).getSimpleName().toString();
+
+    if (noWildCardType instanceof DeclaredType) {
+
+      DeclaredType declaredType = (DeclaredType) noWildCardType;
+      List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
+
+      int numTypeArgs = typeArguments.size();
+      if (numTypeArgs > 0) {
+        for (TypeMirror typeArgument : typeArguments) {
+          result += getWrappedTypeSimpleNamePrefix(typeArgument);
+        }
+      }
+    }
+
+    return result;
   }
 
   /**
