@@ -16,7 +16,7 @@ public class MapTests {
   @Test public void nullableMapOfParcelableTypesTest() throws Exception {
     JavaFileObject dataClass = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
-        "import nz.bradcampbell.dataparcel.Nullable;",
+        "import org.jetbrains.annotations.Nullable;",
         "import nz.bradcampbell.dataparcel.DataParcel;",
         "import java.util.Map;",
         "@DataParcel",

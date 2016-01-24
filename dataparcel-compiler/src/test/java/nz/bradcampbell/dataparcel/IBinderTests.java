@@ -15,7 +15,7 @@ public class IBinderTests {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
         "import android.os.IBinder;",
-        "import nz.bradcampbell.dataparcel.Nullable;",
+        "import org.jetbrains.annotations.Nullable;",
         "import nz.bradcampbell.dataparcel.DataParcel;",
         "@DataParcel",
         "public final class Test {",

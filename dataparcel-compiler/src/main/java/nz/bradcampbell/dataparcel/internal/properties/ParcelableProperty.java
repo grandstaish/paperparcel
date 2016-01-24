@@ -1,8 +1,8 @@
 package nz.bradcampbell.dataparcel.internal.properties;
 
-import nz.bradcampbell.dataparcel.Nullable;
 import com.squareup.javapoet.*;
 import nz.bradcampbell.dataparcel.internal.Property;
+import org.jetbrains.annotations.Nullable;
 
 import static nz.bradcampbell.dataparcel.internal.Utils.getRawTypeName;
 import static nz.bradcampbell.dataparcel.internal.Utils.literal;

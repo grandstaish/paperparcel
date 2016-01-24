@@ -3,8 +3,8 @@ package nz.bradcampbell.dataparcel.internal.properties;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
-import nz.bradcampbell.dataparcel.Nullable;
 import nz.bradcampbell.dataparcel.internal.Property;
+import org.jetbrains.annotations.Nullable;
 
 import static nz.bradcampbell.dataparcel.internal.Utils.literal;
 

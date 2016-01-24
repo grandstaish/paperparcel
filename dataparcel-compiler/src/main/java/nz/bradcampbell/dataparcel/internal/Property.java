@@ -1,7 +1,7 @@
 package nz.bradcampbell.dataparcel.internal;
 
 import com.squareup.javapoet.*;
-import nz.bradcampbell.dataparcel.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 

@@ -4,8 +4,8 @@ import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
-import nz.bradcampbell.dataparcel.Nullable;
 import nz.bradcampbell.dataparcel.internal.Property;
+import org.jetbrains.annotations.Nullable;
 
 import static nz.bradcampbell.dataparcel.internal.Utils.literal;
 

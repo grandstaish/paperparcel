@@ -16,7 +16,7 @@ public class NonParcelableTests {
   @Test public void nullableNestedDataTypeTest() {
     JavaFileObject dataClassRoot = JavaFileObjects.forSourceString("test.Root", Joiner.on('\n').join(
         "package test;",
-        "import nz.bradcampbell.dataparcel.Nullable;",
+        "import org.jetbrains.annotations.Nullable;",
         "import nz.bradcampbell.dataparcel.DataParcel;",
         "import java.util.List;",
         "@DataParcel",

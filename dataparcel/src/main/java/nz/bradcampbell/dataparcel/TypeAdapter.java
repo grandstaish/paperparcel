@@ -1,6 +1,7 @@
 package nz.bradcampbell.dataparcel;
 
 import android.os.Parcel;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * A custom method for reading/writing a Type
@@ -9,17 +10,17 @@ import android.os.Parcel;
 public interface TypeAdapter<T> {
 
   /**
-   * Creates a new instance of the desired Type by reading values from the Parcel {@code in}
-   * @param in The {@link Parcel} which contains the values of {@code T}
-   * @return A new object based on the values in {@code in}.
+   * Creates a new instance of the desired Type by reading values from the Parcel {@code inParcel}
+   * @param inParcel The {@link Parcel} which contains the values of {@code T}
+   * @return A new object based on the values in {@code inParcel}.
    */
-  T readFromParcel(Parcel in);
+  @NotNull T readFromParcel(@NotNull Parcel inParcel);
 
   /**
-   * Writes {@code value} to the Parcel {@code dest}
+   * Writes {@code value} to the Parcel {@code outParcel}
    * @param value The object to be written to the {@link Parcel}
-   * @param dest The {@link Parcel} which will contain the value of {@code T}
+   * @param outParcel The {@link Parcel} which will contain the value of {@code T}
    */
-  void writeToParcel(T value, Parcel dest);
+  void writeToParcel(@NotNull T value, @NotNull Parcel outParcel);
 
 }

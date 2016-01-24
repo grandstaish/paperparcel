@@ -18,7 +18,7 @@ public class ListTests {
   @Test public void nullableListOfParcelableTypesTest() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
-        "import nz.bradcampbell.dataparcel.Nullable;",
+        "import org.jetbrains.annotations.Nullable;",
         "import nz.bradcampbell.dataparcel.DataParcel;",
         "import java.util.List;",
         "@DataParcel",
@@ -103,7 +103,7 @@ public class ListTests {
   @Test public void nullableListOfNonParcelableTypesTest() throws Exception {
     JavaFileObject dataClassRoot = JavaFileObjects.forSourceString("test.Root", Joiner.on('\n').join(
         "package test;",
-        "import nz.bradcampbell.dataparcel.Nullable;",
+        "import org.jetbrains.annotations.Nullable;",
         "import nz.bradcampbell.dataparcel.DataParcel;",
         "import java.util.List;",
         "@DataParcel",
