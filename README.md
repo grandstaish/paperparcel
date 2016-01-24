@@ -76,8 +76,8 @@ repositories {
     maven { url = 'https://jitpack.io' }
 }
 dependencies {
-    compile 'com.github.grandstaish.DataParcel:dataparcel-annotations:0.9.2'
-    kapt 'com.github.grandstaish.DataParcel:dataparcel-compiler:0.9.2'
+    compile 'com.github.grandstaish.DataParcel:dataparcel:0.9.3'
+    kapt 'com.github.grandstaish.DataParcel:dataparcel-compiler:0.9.3'
 }
 ```
 
