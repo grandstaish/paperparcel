@@ -1,5 +1,7 @@
 import org.gradle.internal.jvm.Jvm
 
+apply plugin: 'nebula.provided-base'
+
 task fatJar(type: Jar) {
     baseName = project.name + '-all'
     from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
@@ -8,6 +10,8 @@ task fatJar(type: Jar) {
 
 dependencies {
     compile project(':dataparcel')
+
+    provided deps.intellijAnnotations
 
     compile deps.autoservice
     compile deps.javapoet
