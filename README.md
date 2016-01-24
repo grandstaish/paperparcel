@@ -47,6 +47,31 @@ data class ExampleRoot(var child: ExampleChild)
 data class ExampleChild(var someValue: Int)
 ```
 
+## Type Adapters
+
+Occasionally when using DataParcel you might find the need to parcel an unknown type, or modify how an object is read/written to a parcel. TypeAdapters allow you to do this.
+
+A good example of when you might want this functionality is with java.util.Date objects. By default, DataParcel will recognise Date as Serializable, and use Serialization as the Parcel reading/writing mechanism. Serialization is slow, so you might want to write a custom TypeAdapter for a Date object:
+
+```
+class DateTypeAdapter : TypeAdapter<Date> {
+    override fun writeToParcel(value: Date, outParcel: Parcel) {
+        outParcel.writeLong(value.time)
+    }
+
+    override fun readFromParcel(inParcel: Parcel): Date {
+        return Date(inParcel.readLong())
+    }
+}
+```
+
+The TypeAdapter can be applied to the DataParcel annotation like so:
+
+```
+@DataParcel(typeAdapters = arrayOf(DateTypeAdapter::class))
+data class Example(val a: Date)
+```
+
 ## Limitations
 
 The @DataParcel annotation cannot be put directly on a data class with type parameters, e.g.:
@@ -76,8 +101,8 @@ repositories {
     maven { url = 'https://jitpack.io' }
 }
 dependencies {
-    compile 'com.github.grandstaish.DataParcel:dataparcel:0.9.3'
-    kapt 'com.github.grandstaish.DataParcel:dataparcel-compiler:0.9.3'
+    compile 'com.github.grandstaish.DataParcel:dataparcel:0.9.4'
+    kapt 'com.github.grandstaish.DataParcel:dataparcel-compiler:0.9.4'
 }
 ```
 
