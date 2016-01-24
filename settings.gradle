@@ -1,2 +1,2 @@
-include ':dataparcel-annotations', 'dataparcel-compiler'
+include ':dataparcel', 'dataparcel-compiler'
 

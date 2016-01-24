@@ -3,7 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/DataParcel.iml" filepath="$PROJECT_DIR$/DataParcel.iml" />
-      <module fileurl="file://$PROJECT_DIR$/dataparcel-annotations/dataparcel-annotations.iml" filepath="$PROJECT_DIR$/dataparcel-annotations/dataparcel-annotations.iml" />
+      <module fileurl="file://$PROJECT_DIR$/dataparcel/dataparcel.iml" filepath="$PROJECT_DIR$/dataparcel/dataparcel.iml" />
       <module fileurl="file://$PROJECT_DIR$/dataparcel-compiler/dataparcel-compiler.iml" filepath="$PROJECT_DIR$/dataparcel-compiler/dataparcel-compiler.iml" />
     </modules>
   </component>

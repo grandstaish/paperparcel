@@ -13,7 +13,7 @@ import static nz.bradcampbell.dataparcel.internal.Utils.literal;
  * A model object that can generate a code block for both reading and writing itself to/from a Parcel
  */
 public abstract class Property {
-  private final static Type NO_TYPE = new Type(null, OBJECT, OBJECT, OBJECT, OBJECT, false, false);
+  private final static Type NO_TYPE = new Type(null, OBJECT, OBJECT, OBJECT, OBJECT, false, false, null);
 
   /**
    * A model object that holds all parsed information about the property type
@@ -30,8 +30,11 @@ public abstract class Property {
     private final boolean isInterface;
     private final boolean requiresClassLoader;
 
+    private final TypeName typeAdapter;
+
     public Type(@Nullable List<Type> childTypes, TypeName parcelableTypeName, TypeName typeName,
-                TypeName wrappedTypeName, TypeName wildcardTypeName, boolean isInterface, boolean requiresClassLoader) {
+                TypeName wrappedTypeName, TypeName wildcardTypeName, boolean isInterface, boolean requiresClassLoader,
+                @Nullable TypeName typeAdapter) {
 
       this.childTypes = childTypes;
 
@@ -42,6 +45,8 @@ public abstract class Property {
 
       this.isInterface = isInterface;
       this.requiresClassLoader = requiresClassLoader;
+
+      this.typeAdapter = typeAdapter;
     }
 
     public Type getChildType(int index) {
@@ -73,6 +78,10 @@ public abstract class Property {
 
     public boolean requiresClassLoader() {
       return requiresClassLoader;
+    }
+
+    @Nullable public TypeName getTypeAdapter() {
+      return typeAdapter;
     }
   }
 

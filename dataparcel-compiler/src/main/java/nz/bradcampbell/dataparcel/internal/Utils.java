@@ -2,17 +2,18 @@ package nz.bradcampbell.dataparcel.internal;
 
 import com.google.common.collect.ImmutableSet;
 import com.squareup.javapoet.*;
+import nz.bradcampbell.dataparcel.TypeAdapter;
 import nz.bradcampbell.dataparcel.internal.properties.*;
 
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.*;
 import javax.lang.model.type.*;
+import javax.lang.model.util.SimpleAnnotationValueVisitor6;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.lang.reflect.Method;
+import java.util.*;
 
 import static com.squareup.javapoet.TypeName.*;
 import static com.squareup.javapoet.TypeName.get;
@@ -51,13 +52,14 @@ public class Utils {
   private static final TypeName BOXED_CHAR = CHAR.box();
   private static final TypeName BOXED_DOUBLE = DOUBLE.box();
   private static final TypeName BOXED_SHORT = SHORT.box();
+  private static final TypeName TYPE_ADAPTER = TypeName.get(TypeAdapter.class);
 
   private static final Set<TypeName> VALID_TYPES = ImmutableSet.of(STRING, MAP, LIST, BOOLEAN_ARRAY,
       BYTE_ARRAY, INT_ARRAY, LONG_ARRAY, STRING_ARRAY, SPARSE_ARRAY, SPARSE_BOOLEAN_ARRAY, BUNDLE,
       PARCELABLE, PARCELABLE_ARRAY, CHAR_SEQUENCE, CHAR_SEQUENCE_ARRAY, IBINDER, OBJECT_ARRAY,
       SERIALIZABLE, PERSISTABLE_BUNDLE, SIZE, SIZEF, ENUM, INT, BOXED_INT, LONG, BOXED_LONG, BYTE,
       BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT, CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE,
-      SHORT, BOXED_SHORT);
+      SHORT, BOXED_SHORT, TYPE_ADAPTER);
 
   private static final Set<TypeName> REQUIRES_CLASS_LOADER = ImmutableSet.of(BUNDLE, PERSISTABLE_BUNDLE);
 
@@ -75,7 +77,7 @@ public class Utils {
    */
   public static Property createProperty(Property.Type propertyType, boolean isNullable, String name) {
 
-    TypeName parcelableType = propertyType.getParcelableTypeName();
+    TypeName parcelableType = propertyType.getTypeAdapter() == null ? propertyType.getParcelableTypeName() : TYPE_ADAPTER;
 
     if (STRING.equals(parcelableType)) {
       return new StringProperty(propertyType, isNullable, name);
@@ -153,6 +155,8 @@ public class Utils {
       return new SizeFProperty(propertyType, isNullable, name);
     } else if (ENUM.equals(parcelableType)) {
       return new SerializableProperty(propertyType, isNullable, name);
+    } else if (TYPE_ADAPTER.equals(parcelableType)) {
+      return new TypeAdapterProperty(propertyType, isNullable, name);
     } else {
       return new NonParcelableProperty(propertyType, isNullable, name);
     }
@@ -254,6 +258,17 @@ public class Utils {
       return s;
     }
     return s.substring(0, 1).toUpperCase() + s.substring(1);
+  }
+
+  /** Returns a string for the raw type of {@code type}. Primitive types are always boxed. */
+  public static String rawTypeToString(TypeMirror type, char innerClassSeparator) {
+    if (!(type instanceof DeclaredType)) {
+      throw new IllegalArgumentException("Unexpected type: " + type);
+    }
+    StringBuilder result = new StringBuilder();
+    DeclaredType declaredType = (DeclaredType) type;
+    rawTypeToString(result, (TypeElement) declaredType.asElement(), innerClassSeparator);
+    return result.toString();
   }
 
   public static void rawTypeToString(StringBuilder result, TypeElement type,
@@ -411,5 +426,100 @@ public class Utils {
       default:
         throw new AssertionError();
     }
+  }
+
+  private static final AnnotationValueVisitor<Object, Void> VALUE_EXTRACTOR =
+      new SimpleAnnotationValueVisitor6<Object, Void>() {
+        @Override public Object visitString(String s, Void p) {
+          if ("<error>".equals(s)) {
+            throw new RuntimeException("Unknown type returned as <error>.");
+          } else if ("<any>".equals(s)) {
+            throw new RuntimeException("Unknown type returned as <any>.");
+          }
+          return s;
+        }
+        @Override public Object visitType(TypeMirror t, Void p) {
+          return t;
+        }
+        @Override protected Object defaultAction(Object o, Void v) {
+          return o;
+        }
+        @Override public Object visitArray(List<? extends AnnotationValue> values, Void v) {
+          Object[] result = new Object[values.size()];
+          for (int i = 0; i < values.size(); i++) {
+            result[i] = values.get(i).accept(this, null);
+          }
+          return result;
+        }
+      };
+
+  /**
+   * Returns the annotation on {@code element} formatted as a Map. This returns
+   * a Map rather than an instance of the annotation interface to work-around
+   * the fact that Class and Class[] fields won't work at code generation time.
+   * See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=5089128
+   */
+  public static Map<String, Object> getAnnotation(Class<?> annotationType, Element element) {
+    for (AnnotationMirror annotation : element.getAnnotationMirrors()) {
+      if (!rawTypeToString(annotation.getAnnotationType(), '$')
+          .equals(annotationType.getName())) {
+        continue;
+      }
+
+      Map<String, Object> result = new LinkedHashMap<String, Object>();
+      for (Method m : annotationType.getMethods()) {
+        result.put(m.getName(), m.getDefaultValue());
+      }
+      for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e
+          : annotation.getElementValues().entrySet()) {
+        String name = e.getKey().getSimpleName().toString();
+        Object value = e.getValue().accept(VALUE_EXTRACTOR, null);
+        Object defaultValue = result.get(name);
+        if (!lenientIsInstance(defaultValue.getClass(), value)) {
+          throw new IllegalStateException(String.format(
+              "Value of %s.%s is a %s but expected a %s\n    value: %s",
+              annotationType, name, value.getClass().getName(), defaultValue.getClass().getName(),
+              value instanceof Object[] ? Arrays.toString((Object[]) value) : value));
+        }
+        result.put(name, value);
+      }
+      return result;
+    }
+    return null; // Annotation not found.
+  }
+
+  /**
+   * Returns true if {@code value} can be assigned to {@code expectedClass}.
+   * Like {@link Class#isInstance} but more lenient for {@code Class<?>} values.
+   */
+  private static boolean lenientIsInstance(Class<?> expectedClass, Object value) {
+    if (expectedClass.isArray()) {
+      Class<?> componentType = expectedClass.getComponentType();
+      if (!(value instanceof Object[])) {
+        return false;
+      }
+      for (Object element : (Object[]) value) {
+        if (!lenientIsInstance(componentType, element)) return false;
+      }
+      return true;
+    } else if (expectedClass == Class.class) {
+      return value instanceof TypeMirror;
+    } else {
+      return expectedClass == value.getClass();
+    }
+  }
+
+  public static TypeName getTypeAdapterType(Types typeUtil, DeclaredType typeAdapter) {
+    List<? extends TypeMirror> interfaces = ((TypeElement)typeUtil.asElement(typeAdapter)).getInterfaces();
+    for (TypeMirror intf : interfaces) {
+      TypeName typeName = TypeName.get(intf);
+      if (typeName instanceof ParameterizedTypeName) {
+        ParameterizedTypeName paramTypeName = (ParameterizedTypeName) typeName;
+        if (paramTypeName.rawType.equals(TYPE_ADAPTER)) {
+          return paramTypeName.typeArguments.get(0);
+        }
+      }
+    }
+    return null;
   }
 }

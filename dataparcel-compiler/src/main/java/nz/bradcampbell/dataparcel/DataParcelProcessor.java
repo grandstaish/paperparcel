@@ -71,7 +71,7 @@ public class DataParcelProcessor extends AbstractProcessor {
         continue;
       }
 
-      createParcel(elementTypeMirror);
+      createParcel(elementTypeMirror, new HashMap<TypeName, TypeName>());
     }
 
     // Generate java files for every data class found
@@ -91,7 +91,7 @@ public class DataParcelProcessor extends AbstractProcessor {
    *
    * @param typeMirror The data class
    */
-  private void createParcel(TypeMirror typeMirror) {
+  private void createParcel(TypeMirror typeMirror, Map<TypeName, TypeName> typeAdapters) {
     TypeElement typeElement = (TypeElement) typeUtil.asElement(typeMirror);
 
     String classPackage = getPackageName(typeElement);
@@ -108,6 +108,17 @@ public class DataParcelProcessor extends AbstractProcessor {
 
     boolean requiresClassLoader = false;
 
+    // Override the type adapters with the current element preferences
+    Map<String, Object> annotation = getAnnotation(DataParcel.class, typeElement);
+    if (annotation != null) {
+      Object[] typeAdaptersArray = (Object[]) annotation.get("typeAdapters");
+      for (Object o : typeAdaptersArray) {
+        DeclaredType ta = (DeclaredType) o;
+        TypeName typeAdapterType = getTypeAdapterType(typeUtil, ta);
+        typeAdapters.put(typeAdapterType, TypeName.get(ta));
+      }
+    }
+
     for (int i = 0; i < variableElements.size(); i++) {
       VariableElement variableElement = variableElements.get(i);
 
@@ -115,7 +126,7 @@ public class DataParcelProcessor extends AbstractProcessor {
       boolean isNullable = !isFieldRequired(variableElement);
 
       // Parse the property type into a Property.Type object and find all recursive data class dependencies
-      Property.Type propertyType = parsePropertyType(variableElement.asType(), typeMirror, variableDataParcelDependencies);
+      Property.Type propertyType = parsePropertyType(variableElement.asType(), typeMirror, typeAdapters, variableDataParcelDependencies);
 
       // TODO: Validation of data class
       String getterMethodName = "component" + (i + 1);
@@ -130,7 +141,7 @@ public class DataParcelProcessor extends AbstractProcessor {
 
     // Build parcel dependencies
     for (TypeMirror requiredParcel : variableDataParcelDependencies) {
-      createParcel(requiredParcel);
+      createParcel(requiredParcel, typeAdapters);
     }
   }
 
@@ -156,7 +167,9 @@ public class DataParcelProcessor extends AbstractProcessor {
    * @param variableDataParcelDependencies A list to hold all recursive dependencies
    * @return The parsed variable
    */
-  private Property.Type parsePropertyType(TypeMirror variable, TypeMirror dataClass, List<TypeMirror> variableDataParcelDependencies) {
+  private Property.Type parsePropertyType(TypeMirror variable, TypeMirror dataClass,
+                                          Map<TypeName, TypeName> typeAdapters,
+                                          List<TypeMirror> variableDataParcelDependencies) {
 
     // The element associated, or null
     Element element = typeUtil.asElement(variable);
@@ -189,6 +202,8 @@ public class DataParcelProcessor extends AbstractProcessor {
     TypeName wrappedTypeName = typeName;
     TypeName wildcardTypeName = typeName;
 
+    TypeName typeAdapter = typeAdapters.get(typeName);
+
     // The variable element associated, or null
     Element typeElement = typeUtil.asElement(erasedType);
 
@@ -217,7 +232,7 @@ public class DataParcelProcessor extends AbstractProcessor {
           TypeName[] wrappedParameterArray = new TypeName[numTypeArgs];
 
           for (int i = 0; i < numTypeArgs; i++) {
-            Property.Type argType = parsePropertyType(typeArguments.get(i), dataClass, variableDataParcelDependencies);
+            Property.Type argType = parsePropertyType(typeArguments.get(i), dataClass, typeAdapters, variableDataParcelDependencies);
             childTypes.add(argType);
             parameterArray[i] = argType.getTypeName();
             wildcardParameterArray[i] = argType.getWildcardTypeName();
@@ -235,7 +250,7 @@ public class DataParcelProcessor extends AbstractProcessor {
 
         // Array types will always have 1 "child variable" which is the component variable
         childTypes = new ArrayList<Property.Type>(1);
-        Property.Type componentType = parsePropertyType(arrayType.getComponentType(), dataClass, variableDataParcelDependencies);
+        Property.Type componentType = parsePropertyType(arrayType.getComponentType(), dataClass, typeAdapters, variableDataParcelDependencies);
         childTypes.add(componentType);
 
         wrappedTypeName = ArrayTypeName.of(componentType.getWrappedTypeName());
@@ -273,7 +288,7 @@ public class DataParcelProcessor extends AbstractProcessor {
     }
 
     return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, wildcardTypeName, isInterface,
-        requiresClassLoader);
+        requiresClassLoader, typeAdapter);
   }
 
   private JavaFile generateJavaFileFor(DataClass dataClass) {

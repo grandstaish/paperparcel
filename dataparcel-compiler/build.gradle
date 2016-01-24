@@ -1,17 +1,11 @@
 import org.gradle.internal.jvm.Jvm
 
-configurations {
-    provided
-    compile.extendsFrom provided
-}
-
 dependencies {
-    compile project(':dataparcel-annotations')
+    compile project(':dataparcel')
 
     compile deps.autoservice
     compile deps.javapoet
 
-    testCompile files('libs/android.jar')
     testCompile deps.junit
     testCompile deps.truth
     testCompile deps.compiletesting
