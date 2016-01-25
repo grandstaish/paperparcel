@@ -24,14 +24,14 @@ val example = Example(42)
 val parcelableWrapper = ExampleParcel.wrap(example)
 
 // e.g. use in a bundle
-someBundle.putParcelable("example", parcelableWrapper)
+savedInstanceState.putParcelable("example", parcelableWrapper)
 ```
 
 Unwrap the bundled data object
 
 ```
 // e.g. read from bundle
-val parcelableWrapper = someBundle.getParcelable<ExampleParcel>("example")
+val parcelableWrapper = savedInstanceState.getParcelable<ExampleParcel>("example")
 
 val example = parcelableWrapper.contents
 ```
