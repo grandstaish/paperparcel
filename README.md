@@ -21,19 +21,19 @@ Use generated class to wrap the data object. The generated class is always {Clas
 
 ```
 val example = Example(42)
-val parcel = ExampleParcel.wrap(example)
+val parcelableWrapper = ExampleParcel.wrap(example)
 
 // e.g. use in a bundle
-someBundle.putParcelable("example", parcel)
+someBundle.putParcelable("example", parcelableWrapper)
 ```
 
 Unwrap the bundled data object
 
 ```
 // e.g. read from bundle
-val parcel = someBundle.getParcelable<ExampleParcel>("example")
+val parcelableWrapper = someBundle.getParcelable<ExampleParcel>("example")
 
-val example = parcel.getContents()
+val example = parcelableWrapper.contents
 ```
 
 ## Data classes inside data classes
