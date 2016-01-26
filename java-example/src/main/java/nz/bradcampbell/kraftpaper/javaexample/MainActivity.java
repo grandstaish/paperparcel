@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void updateText() {
         TextView counter = (TextView) findViewById(R.id.counter);
-        counter.setText(state.getCount() + " (updated at " + dateFormat.format(state.getModificationDate()) + ")");
+        counter.setText(state.getCount() + " (updated at " + dateFormat.format(state.customGetterMethodName()) + ")");
     }
 
     @Override
