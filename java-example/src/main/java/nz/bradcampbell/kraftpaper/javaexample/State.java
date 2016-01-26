@@ -29,7 +29,7 @@ public final class State {
     }
 
     // NOTE: equals and hashcode automatically created by Intellij by pressing Ctrl + Enter anywhere in the class and
-    // selecting the "equals() and hashcode()" option
+    // selecting the "equals() and hashcode()" option. These methods are not required by KraftPaper
 
     @Override
     public boolean equals(Object o) {
