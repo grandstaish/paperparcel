@@ -2,7 +2,7 @@
 
 ## Overview
 
-KraftPaper is an annotation processor to automatically generate type-safe [Parcelable](http://developer.android.com/intl/es/reference/android/os/Parcelable.html) wrappers for Kotlin and Java. KraftPaper is unique in that it supports Kotlin [Data Classes](https://kotlinlang.org/docs/reference/data-classes.html).
+KraftPaper is an annotation processor that automatically generates type-safe [Parcelable](http://developer.android.com/intl/es/reference/android/os/Parcelable.html) wrappers for Kotlin and Java. KraftPaper is unique in that it supports Kotlin [Data Classes](https://kotlinlang.org/docs/reference/data-classes.html).
 
 Annotated data classes can contain any type that would normally be able to be parcelled. This includes all the basic Kotlin types, Lists, Maps, Arrays, SparseArrays, and [many more](https://github.com/grandstaish/KraftPaper/tree/master/compiler/src/test/java/nz/bradcampbell/kraftpaper). In addition to the regular types, Data classes can contain other data classes, or they can have data class Arrays, or even data class type parameters. KraftPaper tries to have as little restriction as possible into how you write your data classes, so if you think anything is missing then please raise an issue.
 
