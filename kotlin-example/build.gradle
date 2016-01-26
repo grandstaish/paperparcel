@@ -48,10 +48,6 @@ dependencies {
 }
 
 buildscript {
-    repositories {
-        jcenter()
-    }
-
     dependencies {
         classpath 'com.android.tools.build:gradle:1.5.0'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"

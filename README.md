@@ -1,10 +1,10 @@
 # KraftPaper
 
-This is currently in beta until proven stable. 
+v0.9.5 BETA. Safe Android Parcelable packaging for Java and Kotlin types data types.
 
 ## Overview
 
-An annotation processor to automatically generate Parcelable wrappers for Kotlin [Data Classes](https://kotlinlang.org/docs/reference/data-classes.html).
+An annotation processor to automatically generate Parcelable wrappers for Kotlin nad Java. KraftPaper is unique in that it supports Kotlin [Data Classes](https://kotlinlang.org/docs/reference/data-classes.html).
 
 Annotated data classes can contain any type that would normally be able to be parcelled. This includes all the basic Kotlin types, Lists, Maps, Arrays, SparseArrays, and [many more](https://github.com/grandstaish/KraftPaper/tree/master/compiler/src/test/java/nz/bradcampbell/kraftpaper). In addition to the regular types, Data classes can contain other data classes, or they can have data class Arrays, or even data class type parameters. KraftPaper tries to have as little restriction as possible into how you write your data classes, so if you think anything is missing then please raise an issue.
 

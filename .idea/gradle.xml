@@ -10,7 +10,8 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/compiler" />
-            <option value="$PROJECT_DIR$/example" />
+            <option value="$PROJECT_DIR$/java-example" />
+            <option value="$PROJECT_DIR$/kotlin-example" />
             <option value="$PROJECT_DIR$/kraftpaper" />
           </set>
         </option>
@@ -18,7 +19,8 @@
           <set>
             <option value="$PROJECT_DIR$" />
             <option value="$PROJECT_DIR$/compiler" />
-            <option value="$PROJECT_DIR$/example" />
+            <option value="$PROJECT_DIR$/java-example" />
+            <option value="$PROJECT_DIR$/kotlin-example" />
             <option value="$PROJECT_DIR$/kraftpaper" />
           </set>
         </option>

@@ -1,4 +1,4 @@
-package nz.bradcampbell.kraftpaper.example
+package nz.bradcampbell.kraftpaper.kotlinexample
 
 import nz.bradcampbell.kraftpaper.KraftPaper
 import java.util.*

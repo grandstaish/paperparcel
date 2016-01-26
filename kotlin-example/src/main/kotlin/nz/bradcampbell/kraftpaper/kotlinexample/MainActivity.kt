@@ -1,4 +1,4 @@
-package nz.bradcampbell.kraftpaper.example
+package nz.bradcampbell.kraftpaper.kotlinexample
 
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
