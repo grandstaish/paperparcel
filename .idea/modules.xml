@@ -3,7 +3,6 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/compiler/compiler.iml" filepath="$PROJECT_DIR$/compiler/compiler.iml" />
-      <module fileurl="file://$PROJECT_DIR$/kotlin-example/example.iml" filepath="$PROJECT_DIR$/kotlin-example/example.iml" />
       <module fileurl="file://$PROJECT_DIR$/java-example/java-example.iml" filepath="$PROJECT_DIR$/java-example/java-example.iml" />
       <module fileurl="file://$PROJECT_DIR$/kotlin-example/kotlin-example.iml" filepath="$PROJECT_DIR$/kotlin-example/kotlin-example.iml" />
       <module fileurl="file://$PROJECT_DIR$/kraftpaper/kraftpaper.iml" filepath="$PROJECT_DIR$/kraftpaper/kraftpaper.iml" />

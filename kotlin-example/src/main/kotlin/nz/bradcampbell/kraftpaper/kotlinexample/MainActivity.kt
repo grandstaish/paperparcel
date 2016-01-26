@@ -16,7 +16,7 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         if (savedInstanceState != null) {
-            state = savedInstanceState.getParcelable<StateParcel>("state").contents
+//            state = savedInstanceState.getParcelable<StateParcel>("state").contents
         }
 
         val toolbar = findViewById(R.id.toolbar) as Toolbar
@@ -44,6 +44,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onSaveInstanceState(outState: Bundle?) {
         super.onSaveInstanceState(outState)
-        outState?.putParcelable("state", StateParcel.wrap(state))
+//        outState?.putParcelable("state", StateParcel.wrap(state))
     }
 }

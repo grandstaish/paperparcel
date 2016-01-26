@@ -13,7 +13,7 @@
             tools:ignore="UnusedAttribute">
 
         <activity
-            android:name="nz.bradcampbell.kraftpaper.kotlinexample.MainActivity"
+            android:name=".MainActivity"
             android:label="@string/app_name"
             android:theme="@style/AppTheme.NoActionBar">
             <intent-filter>
