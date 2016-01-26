@@ -21,7 +21,7 @@ public class StringArrayTests {
         "public Test(String[] child) {",
         "this.child = child;",
         "}",
-        "public String[] component1() {",
+        "public String[] getChild() {",
         "return this.child;",
         "}",
         "}"
@@ -47,8 +47,8 @@ public class StringArrayTests {
         "this.data = data;",
         "}",
         "private TestParcel(Parcel in) {",
-        "String[] component1 = in.createStringArray();",
-        "this.data = new Test(component1);",
+        "String[] child = in.createStringArray();",
+        "this.data = new Test(child);",
         "}",
         "public static final TestParcel wrap(Test data) {",
         "return new TestParcel(data);",
@@ -60,8 +60,8 @@ public class StringArrayTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "String[] component1 = data.component1();",
-        "dest.writeStringArray(component1);",
+        "String[] child = data.getChild();",
+        "dest.writeStringArray(child);",
         "}",
         "}"
     ));

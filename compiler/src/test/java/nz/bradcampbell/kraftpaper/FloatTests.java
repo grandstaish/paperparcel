@@ -21,7 +21,7 @@ public class FloatTests {
         "public Test(float child) {",
         "this.child = child;",
         "}",
-        "public float component1() {",
+        "public float getChild() {",
         "return this.child;",
         "}",
         "}"
@@ -46,8 +46,8 @@ public class FloatTests {
         "this.data = data;",
         "}",
         "private TestParcel(Parcel in) {",
-        "float component1 = in.readFloat();",
-        "this.data = new Test(component1);",
+        "float child = in.readFloat();",
+        "this.data = new Test(child);",
         "}",
         "public static final TestParcel wrap(Test data) {",
         "return new TestParcel(data);",
@@ -59,8 +59,8 @@ public class FloatTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "float component1 = data.component1();",
-        "dest.writeFloat(component1);",
+        "float child = data.getChild();",
+        "dest.writeFloat(child);",
         "}",
         "}"
     ));

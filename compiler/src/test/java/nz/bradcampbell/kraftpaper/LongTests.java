@@ -21,7 +21,7 @@ public class LongTests {
         "public Test(long child) {",
         "this.child = child;",
         "}",
-        "public long component1() {",
+        "public long getChild() {",
         "return this.child;",
         "}",
         "}"
@@ -46,8 +46,8 @@ public class LongTests {
         "this.data = data;",
         "}",
         "private TestParcel(Parcel in) {",
-        "long component1 = in.readLong();",
-        "this.data = new Test(component1);",
+        "long child = in.readLong();",
+        "this.data = new Test(child);",
         "}",
         "public static final TestParcel wrap(Test data) {",
         "return new TestParcel(data);",
@@ -59,8 +59,8 @@ public class LongTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "long component1 = data.component1();",
-        "dest.writeLong(component1);",
+        "long child = data.getChild();",
+        "dest.writeLong(child);",
         "}",
         "}"
     ));

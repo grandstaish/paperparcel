@@ -1,5 +1,6 @@
 package nz.bradcampbell.kraftpaper.javaexample;
 
+import nz.bradcampbell.kraftpaper.GetterMethodName;
 import nz.bradcampbell.kraftpaper.KraftPaper;
 
 import java.util.Date;
@@ -7,6 +8,8 @@ import java.util.Date;
 @KraftPaper(typeAdapters = DateTypeAdapter.class)
 public final class State {
     private final int count;
+
+    @GetterMethodName("customGetterMethodName")
     private final Date modificationDate;
 
     public State(int count, Date modificationDate) {
@@ -18,22 +21,15 @@ public final class State {
         return count;
     }
 
-    public Date getModificationDate() {
+    // NOTE: able to use a custom getter name as per the @GetterMethodName tag. By default, if "x" is the property name,
+    // KraftPaper will search for a method named "x()", "getX()", or "isX()"
+
+    public Date customGetterMethodName() {
         return modificationDate;
     }
 
-    // NOTE: component1() and component2() are requirements of KraftPaper, but will not be in a future release
-
-    public int component1() {
-        return count;
-    }
-
-    public Date component2() {
-        return modificationDate;
-    }
-
-    // NOTE: equals and hashcode automatically created by Intellij by pressing Ctrl + Enter and selecting
-    // equals() and hashcode().
+    // NOTE: equals and hashcode automatically created by Intellij by pressing Ctrl + Enter anywhere in the class and
+    // selecting the "equals() and hashcode()" option
 
     @Override
     public boolean equals(Object o) {

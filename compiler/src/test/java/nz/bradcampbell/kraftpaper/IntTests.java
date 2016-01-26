@@ -21,7 +21,7 @@ public class IntTests {
         "public Test(int child) {",
         "this.child = child;",
         "}",
-        "public int component1() {",
+        "public int getChild() {",
         "return this.child;",
         "}",
         "}"
@@ -46,8 +46,8 @@ public class IntTests {
         "this.data = data;",
         "}",
         "private TestParcel(Parcel in) {",
-        "int component1 = in.readInt();",
-        "this.data = new Test(component1);",
+        "int child = in.readInt();",
+        "this.data = new Test(child);",
         "}",
         "public static final TestParcel wrap(Test data) {",
         "return new TestParcel(data);",
@@ -59,8 +59,8 @@ public class IntTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "int component1 = data.component1();",
-        "dest.writeInt(component1);",
+        "int child = data.getChild();",
+        "dest.writeInt(child);",
         "}",
         "}"
     ));

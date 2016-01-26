@@ -106,6 +106,8 @@ public class KraftPaperProcessor extends AbstractProcessor {
     // Get all member variable elements in the data class
     List<VariableElement> variableElements = getFields(typeElement);
 
+    Map<String, String> getterMethodMap = new HashMap<>(variableElements.size());
+
     boolean requiresClassLoader = false;
 
     // Override the type adapters with the current element preferences
@@ -128,21 +130,63 @@ public class KraftPaperProcessor extends AbstractProcessor {
       // Parse the property type into a Property.Type object and find all recursive data class dependencies
       Property.Type propertyType = parsePropertyType(variableElement.asType(), typeMirror, typeAdapters, variableDependencies);
 
-      // TODO: Validation of data class
-      String getterMethodName = "component" + (i + 1);
+      String name = variableElement.getSimpleName().toString();
+      String getterMethodName = getMethodNameForVariable(typeElement, variableElement);
+      if (getterMethodName == null) {
+        continue;
+      }
 
-      Property property = createProperty(propertyType, isNullable, getterMethodName);
+      getterMethodMap.put(name, getterMethodName);
+
+      Property property = createProperty(propertyType, isNullable, name);
       properties.add(property);
 
       requiresClassLoader |= property.requiresClassLoader();
     }
 
-    parcels.put(wrappedClassName, new DataClass(properties, classPackage, wrappedClassName, TypeName.get(typeMirror), requiresClassLoader));
+    parcels.put(wrappedClassName, new DataClass(properties, classPackage, wrappedClassName, getterMethodMap, TypeName.get(typeMirror), requiresClassLoader));
 
     // Build parcel dependencies
     for (TypeMirror requiredParcel : variableDependencies) {
       createParcel(requiredParcel, typeAdapters);
     }
+  }
+
+  private String getMethodNameForVariable(TypeElement typeElement, VariableElement variableElement) {
+    String variableName = variableElement.getSimpleName().toString().toLowerCase();
+
+    // If the name is custom, return this straight away
+    GetterMethodName getterMethodName = variableElement.getAnnotation(GetterMethodName.class);
+    if (getterMethodName != null) {
+      return getterMethodName.value();
+    }
+
+    for (Element enclosedElement : typeElement.getEnclosedElements()) {
+
+      // Find all enclosing methods
+      if (enclosedElement instanceof ExecutableElement) {
+        ExecutableElement method = (ExecutableElement) enclosedElement;
+
+        String result = method.getSimpleName().toString();
+        String name = result.toLowerCase();
+
+        // Check the method name is equal to the variable name, "get" + variable name, or "is" + variable name
+        if (name.equals(variableName) || name.equals("get" + variableName) || name.equals("is" + variableName)) {
+
+          // Check this method returns something
+          TypeName returnType = TypeName.get(method.getReturnType());
+          if (!returnType.equals(TypeName.VOID)) {
+            return result;
+          }
+        }
+      }
+    }
+
+    error(processingEnv, "Could not find getter method for variable " + variableName + ". Try annotating your " +
+            "variable with " + GetterMethodName.class.getCanonicalName() + " or renaming your variable to follow " +
+            "the documented conventions.", typeElement);
+
+    return null;
   }
 
   private String generateWrappedTypeName(TypeElement typeElement, TypeMirror typeMirror) {
@@ -249,7 +293,7 @@ public class KraftPaperProcessor extends AbstractProcessor {
         ArrayType arrayType = (ArrayType) noWildCardType;
 
         // Array types will always have 1 "child variable" which is the component variable
-        childTypes = new ArrayList<Property.Type>(1);
+        childTypes = new ArrayList<>(1);
         Property.Type componentType = parsePropertyType(arrayType.getComponentType(), dataClass, typeAdapters, variableDependencies);
         childTypes.add(componentType);
 
@@ -432,8 +476,9 @@ public class KraftPaperProcessor extends AbstractProcessor {
 
     CodeBlock.Builder block = CodeBlock.builder();
     for (Property p : dataClass.getProperties()) {
+      String getterMethodName = dataClass.getterMethodNameFor(p.getName());
       TypeName wildCardTypeName = p.getPropertyType().getWildcardTypeName();
-      block.addStatement("$T $N = $N.$N()", wildCardTypeName, p.getName(), DATA_VARIABLE_NAME, p.getName());
+      block.addStatement("$T $N = $N.$N()", wildCardTypeName, p.getName(), DATA_VARIABLE_NAME, getterMethodName);
       CodeBlock sourceLiteral = literal("$N", p.getName());
       p.writeToParcel(block, dest, sourceLiteral);
     }

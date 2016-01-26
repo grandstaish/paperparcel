@@ -21,7 +21,7 @@ public class BooleanTests {
         "public Test(boolean child) {",
         "this.child = child;",
         "}",
-        "public boolean component1() {",
+        "public boolean getChild() {",
         "return this.child;",
         "}",
         "}"
@@ -46,8 +46,8 @@ public class BooleanTests {
         "this.data = data;",
         "}",
         "private TestParcel(Parcel in) {",
-        "boolean component1 = in.readInt() == 1;",
-        "this.data = new Test(component1);",
+        "boolean child = in.readInt() == 1;",
+        "this.data = new Test(child);",
         "}",
         "public static final TestParcel wrap(Test data) {",
         "return new TestParcel(data);",
@@ -59,8 +59,8 @@ public class BooleanTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "boolean component1 = data.component1();",
-        "dest.writeInt(component1 ? 1 : 0);",
+        "boolean child = data.getChild();",
+        "dest.writeInt(child ? 1 : 0);",
         "}",
         "}"
     ));

@@ -21,7 +21,7 @@ public class CharTests {
         "public Test(char child) {",
         "this.child = child;",
         "}",
-        "public char component1() {",
+        "public char getChild() {",
         "return this.child;",
         "}",
         "}"
@@ -46,8 +46,8 @@ public class CharTests {
         "this.data = data;",
         "}",
         "private TestParcel(Parcel in) {",
-        "char component1 = (char) in.readInt();",
-        "this.data = new Test(component1);",
+        "char child = (char) in.readInt();",
+        "this.data = new Test(child);",
         "}",
         "public static final TestParcel wrap(Test data) {",
         "return new TestParcel(data);",
@@ -59,8 +59,8 @@ public class CharTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "char component1 = data.component1();",
-        "dest.writeInt(component1);",
+        "char child = data.getChild();",
+        "dest.writeInt(child);",
         "}",
         "}"
     ));

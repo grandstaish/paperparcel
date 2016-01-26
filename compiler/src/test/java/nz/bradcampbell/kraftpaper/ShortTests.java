@@ -21,7 +21,7 @@ public class ShortTests {
         "public Test(short child) {",
         "this.child = child;",
         "}",
-        "public short component1() {",
+        "public short getChild() {",
         "return this.child;",
         "}",
         "}"
@@ -46,8 +46,8 @@ public class ShortTests {
         "this.data = data;",
         "}",
         "private TestParcel(Parcel in) {",
-        "short component1 = (short) in.readInt();",
-        "this.data = new Test(component1);",
+        "short child = (short) in.readInt();",
+        "this.data = new Test(child);",
         "}",
         "public static final TestParcel wrap(Test data) {",
         "return new TestParcel(data);",
@@ -59,8 +59,8 @@ public class ShortTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "short component1 = data.component1();",
-        "dest.writeInt(component1);",
+        "short child = data.getChild();",
+        "dest.writeInt(child);",
         "}",
         "}"
     ));

@@ -21,7 +21,7 @@ public class DoubleTests {
         "public Test(double child) {",
         "this.child = child;",
         "}",
-        "public double component1() {",
+        "public double getChild() {",
         "return this.child;",
         "}",
         "}"
@@ -46,8 +46,8 @@ public class DoubleTests {
         "this.data = data;",
         "}",
         "private TestParcel(Parcel in) {",
-        "double component1 = in.readDouble();",
-        "this.data = new Test(component1);",
+        "double child = in.readDouble();",
+        "this.data = new Test(child);",
         "}",
         "public static final TestParcel wrap(Test data) {",
         "return new TestParcel(data);",
@@ -59,8 +59,8 @@ public class DoubleTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "double component1 = data.component1();",
-        "dest.writeDouble(component1);",
+        "double child = data.getChild();",
+        "dest.writeDouble(child);",
         "}",
         "}"
     ));

@@ -22,7 +22,7 @@ public class PersistableBundleTests {
         "public Test(PersistableBundle child) {",
         "this.child = child;",
         "}",
-        "public PersistableBundle component1() {",
+        "public PersistableBundle getChild() {",
         "return this.child;",
         "}",
         "}"
@@ -50,8 +50,8 @@ public class PersistableBundleTests {
         "this.data = data;",
         "}",
         "private TestParcel(Parcel in) {",
-        "PersistableBundle component1 = in.readPersistableBundle(CLASS_LOADER);",
-        "this.data = new Test(component1);",
+        "PersistableBundle child = in.readPersistableBundle(CLASS_LOADER);",
+        "this.data = new Test(child);",
         "}",
         "public static final TestParcel wrap(Test data) {",
         "return new TestParcel(data);",
@@ -63,8 +63,8 @@ public class PersistableBundleTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "PersistableBundle component1 = data.component1();",
-        "dest.writePersistableBundle(component1);",
+        "PersistableBundle child = data.getChild();",
+        "dest.writePersistableBundle(child);",
         "}",
         "}"
     ));

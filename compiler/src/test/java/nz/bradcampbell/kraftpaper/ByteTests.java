@@ -21,7 +21,7 @@ public class ByteTests {
         "public Test(byte child) {",
         "this.child = child;",
         "}",
-        "public byte component1() {",
+        "public byte getChild() {",
         "return this.child;",
         "}",
         "}"
@@ -46,8 +46,8 @@ public class ByteTests {
         "this.data = data;",
         "}",
         "private TestParcel(Parcel in) {",
-        "byte component1 = in.readByte();",
-        "this.data = new Test(component1);",
+        "byte child = in.readByte();",
+        "this.data = new Test(child);",
         "}",
         "public static final TestParcel wrap(Test data) {",
         "return new TestParcel(data);",
@@ -59,8 +59,8 @@ public class ByteTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "byte component1 = data.component1();",
-        "dest.writeByte(component1);",
+        "byte child = data.getChild();",
+        "dest.writeByte(child);",
         "}",
         "}"
     ));

@@ -20,9 +20,9 @@ public class InvalidTypeTest {
         "import nz.bradcampbell.kraftpaper.KraftPaper;",
         "@KraftPaper",
         "public final class Test {",
-        "private final String testString;",
-        "public Test(String testString) {",
-        "this.testString = testString;",
+        "private final String child;",
+        "public Test(String child) {",
+        "this.child = child;",
         "}",
         "}"
     ));
@@ -38,9 +38,9 @@ public class InvalidTypeTest {
         "import nz.bradcampbell.kraftpaper.KraftPaper;",
         "@KraftPaper",
         "public final class Test<T> {",
-        "private final T test;",
-        "public Test(T test) {",
-        "this.test = test;",
+        "private final T child;",
+        "public Test(T child) {",
+        "this.child = child;",
         "}",
         "}"
     ));
@@ -50,9 +50,9 @@ public class InvalidTypeTest {
         "import nz.bradcampbell.kraftpaper.KraftPaper;",
         "@KraftPaper",
         "public final class Test1 {",
-        "private final String testString;",
-        "public Test1(String testString) {",
-        "this.testString = testString;",
+        "private final String child;",
+        "public Test1(String child) {",
+        "this.child = child;",
         "}",
         "}"
     ));

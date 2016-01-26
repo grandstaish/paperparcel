@@ -22,7 +22,7 @@ public class SizeFTests {
         "public Test(SizeF child) {",
         "this.child = child;",
         "}",
-        "public SizeF component1() {",
+        "public SizeF getChild() {",
         "return this.child;",
         "}",
         "}"
@@ -48,8 +48,8 @@ public class SizeFTests {
         "this.data = data;",
         "}",
         "private TestParcel(Parcel in) {",
-        "SizeF component1 = in.readSizeF();",
-        "this.data = new Test(component1);",
+        "SizeF child = in.readSizeF();",
+        "this.data = new Test(child);",
         "}",
         "public static final TestParcel wrap(Test data) {",
         "return new TestParcel(data);",
@@ -61,8 +61,8 @@ public class SizeFTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "SizeF component1 = data.component1();",
-        "dest.writeSizeF(component1);",
+        "SizeF child = data.getChild();",
+        "dest.writeSizeF(child);",
         "}",
         "}"
     ));
