@@ -108,7 +108,7 @@ dependencies {
 
 ## Contributing
 
-I would love contributions to this project if you think of anything you would like to see in the project or find any bugs. If you would like to contribute raise a GitHub issue to start the discussion about what you would like to add. 
+I would love contributions to this project if you think of anything you would like to see in the project or find any bugs. If you would like to contribute, first raise a GitHub issue so we can discuss the change you want to make. 
 
 The best way to contribute is to [fork the project on github](https://help.github.com/articles/fork-a-repo/) then send me a [pull request](https://help.github.com/articles/using-pull-requests/) via [github](https://github.com/).
 
