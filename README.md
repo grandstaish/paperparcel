@@ -101,8 +101,8 @@ repositories {
     maven { url = 'https://jitpack.io' }
 }
 dependencies {
-    compile 'com.github.grandstaish.kraftpaper:kraftpaper:0.9.5'
-    kapt 'com.github.grandstaish.kraftpaper:compiler:0.9.5'
+    compile 'com.github.grandstaish.kraftpaper:kraftpaper:0.9.6'
+    kapt 'com.github.grandstaish.kraftpaper:compiler:0.9.6'
 }
 ```
 
