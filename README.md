@@ -1,4 +1,4 @@
-# DataParcel
+# KraftPaper
 
 This is currently in beta until proven stable. 
 
@@ -6,14 +6,14 @@ This is currently in beta until proven stable.
 
 An annotation processor to automatically generate Parcelable wrappers for Kotlin [Data Classes](https://kotlinlang.org/docs/reference/data-classes.html).
 
-Annotated data classes can contain any type that would normally be able to be parcelled. This includes all the basic Kotlin types, Lists, Maps, Arrays, SparseArrays, and [many more](https://github.com/grandstaish/DataParcel/tree/master/dataparcel-compiler/src/test/java/nz/bradcampbell/dataparcel). In addition to the regular types, Data classes can contain other data classes, or they can have data class Arrays, or even data class type parameters. DataParcel tries to have as little restriction as possible into how you write your data classes, so if you think anything is missing then please raise an issue.
+Annotated data classes can contain any type that would normally be able to be parcelled. This includes all the basic Kotlin types, Lists, Maps, Arrays, SparseArrays, and [many more](https://github.com/grandstaish/KraftPaper/tree/master/compiler/src/test/java/nz/bradcampbell/kraftpaper). In addition to the regular types, Data classes can contain other data classes, or they can have data class Arrays, or even data class type parameters. KraftPaper tries to have as little restriction as possible into how you write your data classes, so if you think anything is missing then please raise an issue.
 
 ## Usage
 
-Annotate your data class with @DataParcel
+Annotate your data class with @KraftPaper
 
 ```
-@DataParcel
+@KraftPaper
 data class Example(var test: Int)
 ```
 
@@ -38,10 +38,10 @@ val example = parcelableWrapper.contents
 
 ## Data classes inside data classes
 
-As mentioned in the Overview section, this is perfectly valid. Note you only need the @DataParcel annotation on the root data object (although there is nothing wrong with putting it on both), e.g.:
+As mentioned in the Overview section, this is perfectly valid. Note you only need the @KraftPaper annotation on the root data object (although there is nothing wrong with putting it on both), e.g.:
 
 ```
-@DataParcel
+@KraftPaper
 data class ExampleRoot(var child: ExampleChild)
 
 data class ExampleChild(var someValue: Int)
@@ -49,9 +49,9 @@ data class ExampleChild(var someValue: Int)
 
 ## Type Adapters
 
-Occasionally when using DataParcel you might find the need to parcel an unknown type, or modify how an object is read/written to a parcel. TypeAdapters allow you to do this.
+Occasionally when using KraftPaper you might find the need to parcel an unknown type, or modify how an object is read/written to a parcel. TypeAdapters allow you to do this.
 
-A good example of when you might want this functionality is with java.util.Date objects. By default, DataParcel will recognise Date as Serializable, and use Serialization as the Parcel reading/writing mechanism. Serialization is slow, so you might want to write a custom TypeAdapter for a Date object:
+A good example of when you might want this functionality is with java.util.Date objects. By default, KraftPaper will recognise Date as Serializable, and use Serialization as the Parcel reading/writing mechanism. Serialization is slow, so you might want to write a custom TypeAdapter for a Date object:
 
 ```
 class DateTypeAdapter : TypeAdapter<Date> {
@@ -65,20 +65,20 @@ class DateTypeAdapter : TypeAdapter<Date> {
 }
 ```
 
-The TypeAdapter can be applied to the DataParcel annotation like so:
+The TypeAdapter can be applied to the KraftPaper annotation like so:
 
 ```
-@DataParcel(typeAdapters = arrayOf(DateTypeAdapter::class))
+@KraftPaper(typeAdapters = arrayOf(DateTypeAdapter::class))
 data class Example(val a: Date)
 ```
 
 ## Limitations
 
-The @DataParcel annotation cannot be put directly on a data class with type parameters, e.g.:
+The @KraftPaper annotation cannot be put directly on a data class with type parameters, e.g.:
 
 This is wrong:
 ```
-@DataParcel
+@KraftPaper
 data class BadExample<T>(val child: T)
 ```
 
@@ -86,7 +86,7 @@ However, it is OK to use data classes with typed parameters inside of your annot
 
 This is OK:
 ```
-@DataParcel
+@KraftPaper
 data class GoodExample(val child: BadExample<Int>)
 ```
 
@@ -101,8 +101,8 @@ repositories {
     maven { url = 'https://jitpack.io' }
 }
 dependencies {
-    compile 'com.github.grandstaish.DataParcel:dataparcel:0.9.4'
-    kapt 'com.github.grandstaish.DataParcel:dataparcel-compiler:0.9.4'
+    compile 'com.github.grandstaish.kraftpaper:kraftpaper:0.9.4'
+    kapt 'com.github.grandstaish.kraftpaper:compiler:0.9.4'
 }
 ```
 

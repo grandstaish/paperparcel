@@ -1,0 +1,39 @@
+import org.gradle.internal.jvm.Jvm
+
+apply plugin: 'java'
+apply plugin: 'nebula.provided-base'
+
+sourceCompatibility = JavaVersion.VERSION_1_7
+targetCompatibility = JavaVersion.VERSION_1_7
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.netflix.nebula:gradle-extra-configurations-plugin:3.0.3'
+    }
+}
+
+task fatJar(type: Jar) {
+    baseName = project.name + '-all'
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
+
+dependencies {
+    compile project(':kraftpaper')
+
+    provided deps.intellijAnnotations
+
+    compile deps.autoservice
+    compile deps.javapoet
+
+    testCompile deps.junit
+    testCompile deps.truth
+    testCompile deps.compiletesting
+    testCompile files(Jvm.current().getToolsJar())
+}
+
+apply from: rootProject.file('gradle/jitpack-push.gradle')

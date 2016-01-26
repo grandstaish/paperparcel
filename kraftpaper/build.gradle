@@ -1,0 +1,22 @@
+apply plugin: 'java'
+apply plugin: 'nebula.provided-base'
+
+sourceCompatibility = JavaVersion.VERSION_1_7
+targetCompatibility = JavaVersion.VERSION_1_7
+
+buildscript {
+    repositories {
+        jcenter()
+    }
+
+    dependencies {
+        classpath 'com.netflix.nebula:gradle-extra-configurations-plugin:3.0.3'
+    }
+}
+
+dependencies {
+    provided files('libs/android.jar')
+    provided deps.intellijAnnotations
+}
+
+apply from: rootProject.file('gradle/jitpack-push.gradle')

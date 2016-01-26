@@ -1,6 +1,0 @@
-apply plugin: 'nebula.provided-base'
-
-dependencies {
-    provided files('libs/android.jar')
-    provided deps.intellijAnnotations
-}

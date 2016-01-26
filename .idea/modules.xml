@@ -2,9 +2,10 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/DataParcel.iml" filepath="$PROJECT_DIR$/DataParcel.iml" />
-      <module fileurl="file://$PROJECT_DIR$/dataparcel/dataparcel.iml" filepath="$PROJECT_DIR$/dataparcel/dataparcel.iml" />
-      <module fileurl="file://$PROJECT_DIR$/dataparcel-compiler/dataparcel-compiler.iml" filepath="$PROJECT_DIR$/dataparcel-compiler/dataparcel-compiler.iml" />
+      <module fileurl="file://$PROJECT_DIR$/compiler/compiler.iml" filepath="$PROJECT_DIR$/compiler/compiler.iml" />
+      <module fileurl="file://$PROJECT_DIR$/example/example.iml" filepath="$PROJECT_DIR$/example/example.iml" />
+      <module fileurl="file://$PROJECT_DIR$/kraftpaper/kraftpaper.iml" filepath="$PROJECT_DIR$/kraftpaper/kraftpaper.iml" />
+      <module fileurl="file://$PROJECT_DIR$/kraftpaper-parent.iml" filepath="$PROJECT_DIR$/kraftpaper-parent.iml" />
     </modules>
   </component>
 </project>

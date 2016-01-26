@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">KraftPaper Example</string>
+    <string name="add_button">+</string>
+    <string name="subtract_button">-</string>
+</resources>

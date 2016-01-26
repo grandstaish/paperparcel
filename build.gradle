@@ -1,53 +1,18 @@
 allprojects {
-    version = "0.9"
-
     repositories {
         jcenter()
     }
 }
 
-subprojects {
-    apply plugin: 'java'
-    apply plugin: 'maven'
-
-    group = 'nz.bradcampbell'
-
-    sourceCompatibility = JavaVersion.VERSION_1_7
-    targetCompatibility = JavaVersion.VERSION_1_7
-
-    javadoc {
-        failOnError = false
-    }
-
-    task sourcesJar(type: Jar, dependsOn: classes) {
-        classifier = 'sources'
-        from sourceSets.main.allSource
-    }
-
-    task javadocJar(type: Jar, dependsOn: javadoc) {
-        classifier = 'javadoc'
-        from javadoc.destinationDir
-    }
-
-    artifacts {
-        archives sourcesJar
-        archives javadocJar
-    }
-
-    buildscript {
-        repositories {
-            jcenter()
-        }
-
-        dependencies {
-            classpath 'com.netflix.nebula:gradle-extra-configurations-plugin:3.0.3'
-        }
-    }
-}
+ext.kotlin_version = '1.0.0-beta-4589'
 
 ext.deps = [
     // Intellij
     intellijAnnotations: 'com.intellij:annotations:+@jar',
+
+    // Android
+    appCompat: 'com.android.support:appcompat-v7:23.1.1',
+    design: 'com.android.support:design:23.1.1',
 
     // Square
     javapoet: 'com.squareup:javapoet:1.4.0',
@@ -60,3 +25,7 @@ ext.deps = [
     truth: 'com.google.truth:truth:0.27',
     compiletesting: 'com.google.testing.compile:compile-testing:0.7',
 ]
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
