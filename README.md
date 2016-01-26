@@ -1,6 +1,6 @@
 # KraftPaper
 
-v0.9.5 BETA. Safe Android Parcelable packaging for Java and Kotlin types data types.
+v0.9.5 BETA. Safe Android Parcelable wrappers for Java and Kotlin data types.
 
 ## Overview
 
