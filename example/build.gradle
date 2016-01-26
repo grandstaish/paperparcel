@@ -39,7 +39,7 @@ dependencies {
     compile deps.design 
 
     compile project(':kraftpaper')
-    kapt 'nz.bradcampbell.kraftpaper:compiler:0.9.4-SNAPSHOT'
+//    kapt 'nz.bradcampbell.kraftpaper:compiler:0.9.4'
 
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version" 
 
