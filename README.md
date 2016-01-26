@@ -106,8 +106,18 @@ dependencies {
 }
 ```
 
-## License
+## Contributing
 
+I would love contributions to this project if you think of anything you would like to see in the project or find any bugs. If you would like to contribute raise a GitHub issue to start the discussion about what you would like to add. 
+
+The best way to contribute is to [fork the project on github](https://help.github.com/articles/fork-a-repo/) then send me a [pull request](https://help.github.com/articles/using-pull-requests/) via [github](https://github.com/).
+
+If you create your own fork, it might help to enable rebase by default when you pull by executing git config --global pull.rebase true. This will avoid your local repo having too many merge commits which will help keep your pull request simple and easy to apply.
+
+
+## License
+    Copyright 2015 Bradley Campbell.
+    
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
     You may obtain a copy of the License at
