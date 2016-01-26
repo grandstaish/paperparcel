@@ -39,7 +39,8 @@ dependencies {
     compile deps.design 
 
     compile project(':kraftpaper')
-//    kapt 'nz.bradcampbell.kraftpaper:compiler:0.9.4'
+    // project(':compiler') does not seem to work with kapt
+    kapt 'com.github.grandstaish.kraftpaper:compiler:-SNAPSHOT'
 
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version" 
 
