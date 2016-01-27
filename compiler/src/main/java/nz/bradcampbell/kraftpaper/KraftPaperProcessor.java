@@ -28,7 +28,7 @@ public class KraftPaperProcessor extends AbstractProcessor {
 
   private Filer filer;
   private Types typeUtil;
-  private Map<String, DataClass> parcels = new HashMap<String, DataClass>();
+  private Map<String, DataClass> parcels = new HashMap<>();
 
   @Override public synchronized void init(ProcessingEnvironment env) {
     super.init(env);
@@ -100,7 +100,7 @@ public class KraftPaperProcessor extends AbstractProcessor {
     // Exit early if we have already created a parcel for this data class
     if (parcels.containsKey(wrappedClassName)) return;
 
-    List<Property> properties = new ArrayList<Property>();
+    List<Property> properties = new ArrayList<>();
     List<TypeMirror> variableDependencies = new ArrayList<>();
 
     // Get all member variable elements in the data class
@@ -121,20 +121,26 @@ public class KraftPaperProcessor extends AbstractProcessor {
       }
     }
 
-    for (int i = 0; i < variableElements.size(); i++) {
-      VariableElement variableElement = variableElements.get(i);
+    for (VariableElement variableElement : variableElements) {
+
+      // Determine how we will access this property and in doing so, validate the property
+      String getterMethodName;
+      try {
+        getterMethodName = getMethodNameForVariable(typeElement, variableElement);
+      } catch (PropertyValidationException e) {
+        error(processingEnv, e.getMessage(), e.source);
+        continue;
+      } catch (IrrelevantPropertyException e) {
+        continue;
+      }
+
+      String name = variableElement.getSimpleName().toString();
 
       // A field is only "nullable" when annotated with @Nullable
       boolean isNullable = !isFieldRequired(variableElement);
 
       // Parse the property type into a Property.Type object and find all recursive data class dependencies
       Property.Type propertyType = parsePropertyType(variableElement.asType(), typeMirror, typeAdapters, variableDependencies);
-
-      String name = variableElement.getSimpleName().toString();
-      String getterMethodName = getMethodNameForVariable(typeElement, variableElement);
-      if (getterMethodName == null) {
-        continue;
-      }
 
       getterMethodMap.put(name, getterMethodName);
 
@@ -152,13 +158,27 @@ public class KraftPaperProcessor extends AbstractProcessor {
     }
   }
 
-  private String getMethodNameForVariable(TypeElement typeElement, VariableElement variableElement) {
+  private String getMethodNameForVariable(TypeElement typeElement, VariableElement variableElement) throws PropertyValidationException,
+          IrrelevantPropertyException {
+
     String variableName = variableElement.getSimpleName().toString().toLowerCase();
 
     // If the name is custom, return this straight away
     GetterMethodName getterMethodName = variableElement.getAnnotation(GetterMethodName.class);
     if (getterMethodName != null) {
       return getterMethodName.value();
+    }
+
+    Set<Modifier> modifiers = variableElement.getModifiers();
+
+    // If the property is transient, ignore it
+    if (modifiers.contains(TRANSIENT)) {
+      throw new IrrelevantPropertyException();
+    }
+
+    // If the property visibility is package default or public, then we don't need a "getter" method
+    if (!(modifiers.contains(PRIVATE) || modifiers.contains(PROTECTED))) {
+      return null;
     }
 
     for (Element enclosedElement : typeElement.getEnclosedElements()) {
@@ -175,18 +195,21 @@ public class KraftPaperProcessor extends AbstractProcessor {
 
           // Check this method returns something
           TypeName returnType = TypeName.get(method.getReturnType());
-          if (!returnType.equals(TypeName.VOID)) {
-            return result;
+          if (returnType.equals(TypeName.get(variableElement.asType()))) {
+
+            // Check this method takes no parameters
+            if (method.getParameters().size() == 0) {
+
+              return result;
+            }
           }
         }
       }
     }
 
-    error(processingEnv, "Could not find getter method for variable " + variableName + ". Try annotating your " +
-            "variable with " + GetterMethodName.class.getCanonicalName() + " or renaming your variable to follow " +
-            "the documented conventions.", typeElement);
-
-    return null;
+    throw new PropertyValidationException("Could not find getter method for variable '" + variableName + "'.\nTry annotating your " +
+            "variable with '" + GetterMethodName.class.getCanonicalName() + "' or renaming your variable to follow " +
+            "the documented conventions.\nAlternatively your property can be have default or public visibility.", variableElement);
   }
 
   private String generateWrappedTypeName(TypeElement typeElement, TypeMirror typeMirror) {
@@ -270,7 +293,7 @@ public class KraftPaperProcessor extends AbstractProcessor {
         int numTypeArgs = typeArguments.size();
         if (numTypeArgs > 0) {
 
-          childTypes = new ArrayList<Property.Type>(numTypeArgs);
+          childTypes = new ArrayList<>(numTypeArgs);
           TypeName[] parameterArray = new TypeName[numTypeArgs];
           TypeName[] wildcardParameterArray = new TypeName[numTypeArgs];
           TypeName[] wrappedParameterArray = new TypeName[numTypeArgs];
@@ -477,12 +500,25 @@ public class KraftPaperProcessor extends AbstractProcessor {
     CodeBlock.Builder block = CodeBlock.builder();
     for (Property p : dataClass.getProperties()) {
       String getterMethodName = dataClass.getterMethodNameFor(p.getName());
+      String accessorStrategy = getterMethodName == null ? p.getName() : getterMethodName + "()";
       TypeName wildCardTypeName = p.getPropertyType().getWildcardTypeName();
-      block.addStatement("$T $N = $N.$N()", wildCardTypeName, p.getName(), DATA_VARIABLE_NAME, getterMethodName);
+      block.addStatement("$T $N = $N.$N", wildCardTypeName, p.getName(), DATA_VARIABLE_NAME, accessorStrategy);
       CodeBlock sourceLiteral = literal("$N", p.getName());
       p.writeToParcel(block, dest, sourceLiteral);
     }
 
     return builder.addCode(block.build()).build();
+  }
+
+  static class PropertyValidationException extends IllegalStateException {
+    final VariableElement source;
+
+    public PropertyValidationException(String message, VariableElement source) {
+      super(message);
+      this.source = source;
+    }
+  }
+
+  static class IrrelevantPropertyException extends Exception {
   }
 }

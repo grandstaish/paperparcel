@@ -9,80 +9,87 @@ import javax.tools.JavaFileObject;
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 
-public class CustomMethodNameTests {
+public class InvalidPropertyTests {
 
-    @Test public void customMethodNameTest() throws Exception {
+    @Test public void getterHasAParameterTest() throws Exception {
         JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
                 "package test;",
                 "import nz.bradcampbell.kraftpaper.KraftPaper;",
-                "import nz.bradcampbell.kraftpaper.GetterMethodName;",
                 "@KraftPaper",
                 "public final class Test {",
-                "@GetterMethodName(\"customGetterMethod\")",
                 "private final int child;",
                 "public Test(int child) {",
                 "this.child = child;",
                 "}",
-                "public int customGetterMethod() {",
+                "public int getChild(int x) {",
                 "return this.child;",
-                "}",
-                "}"
-        ));
-
-        JavaFileObject expectedSource = JavaFileObjects.forSourceString("test/TestParcel", Joiner.on('\n').join(
-                "package test;",
-                "import android.os.Parcel;",
-                "import android.os.Parcelable;",
-                "import java.lang.Override;",
-                "public class TestParcel implements Parcelable {",
-                "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
-                "@Override public TestParcel createFromParcel(Parcel in) {",
-                "return new TestParcel(in);",
-                "}",
-                "@Override public TestParcel[] newArray(int size) {",
-                "return new TestParcel[size];",
-                "}",
-                "};",
-                "private final Test data;",
-                "private TestParcel(Test data) {",
-                "this.data = data;",
-                "}",
-                "private TestParcel(Parcel in) {",
-                "int child = in.readInt();",
-                "this.data = new Test(child);",
-                "}",
-                "public static final TestParcel wrap(Test data) {",
-                "return new TestParcel(data);",
-                "}",
-                "public Test getContents() {",
-                "return data;",
-                "}",
-                "@Override public int describeContents() {",
-                "return 0;",
-                "}",
-                "@Override public void writeToParcel(Parcel dest, int flags) {",
-                "int child = data.customGetterMethod();",
-                "dest.writeInt(child);",
                 "}",
                 "}"
         ));
 
         assertAbout(javaSource()).that(source)
                 .processedWith(new KraftPaperProcessor())
-                .compilesWithoutError()
-                .and()
-                .generatesSources(expectedSource);
+                .failsToCompile();
     }
 
-    @Test public void packageVisiblePropertyTest() throws Exception {
+    @Test public void getterHasWrongReturnTypeTest() throws Exception {
         JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
                 "package test;",
                 "import nz.bradcampbell.kraftpaper.KraftPaper;",
                 "@KraftPaper",
                 "public final class Test {",
-                "final int child;",
+                "private final int child;",
                 "public Test(int child) {",
                 "this.child = child;",
+                "}",
+                "public long getChild() {",
+                "return this.child;",
+                "}",
+                "}"
+        ));
+
+        assertAbout(javaSource()).that(source)
+                .processedWith(new KraftPaperProcessor())
+                .failsToCompile();
+    }
+
+    @Test public void getterHasWrongNameTest() throws Exception {
+        JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+                "package test;",
+                "import nz.bradcampbell.kraftpaper.KraftPaper;",
+                "@KraftPaper",
+                "public final class Test {",
+                "private final int child;",
+                "public Test(int child) {",
+                "this.child = child;",
+                "}",
+                "public int getKid() {",
+                "return this.child;",
+                "}",
+                "}"
+        ));
+
+        assertAbout(javaSource()).that(source)
+                .processedWith(new KraftPaperProcessor())
+                .failsToCompile();
+    }
+
+    @Test public void transientPropertyTest() throws Exception {
+        JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+                "package test;",
+                "import nz.bradcampbell.kraftpaper.KraftPaper;",
+                "@KraftPaper",
+                "public final class Test {",
+                "private transient final int child1 = 0;",
+                "private final int child2;",
+                "public Test(int child2) {",
+                "this.child2 = child2;",
+                "}",
+                "public int getChild1() {",
+                "return this.child1;",
+                "}",
+                "public int getChild2() {",
+                "return this.child2;",
                 "}",
                 "}"
         ));
@@ -106,8 +113,8 @@ public class CustomMethodNameTests {
                 "this.data = data;",
                 "}",
                 "private TestParcel(Parcel in) {",
-                "int child = in.readInt();",
-                "this.data = new Test(child);",
+                "int child2 = in.readInt();",
+                "this.data = new Test(child2);",
                 "}",
                 "public static final TestParcel wrap(Test data) {",
                 "return new TestParcel(data);",
@@ -119,8 +126,8 @@ public class CustomMethodNameTests {
                 "return 0;",
                 "}",
                 "@Override public void writeToParcel(Parcel dest, int flags) {",
-                "int child = data.child;",
-                "dest.writeInt(child);",
+                "int child2 = data.getChild2();",
+                "dest.writeInt(child2);",
                 "}",
                 "}"
         ));
