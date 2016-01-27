@@ -1,1 +1,1 @@
-include ':compiler', ':kotlin-example', ':java-example', ':kraftpaper'
+include ':compiler', ':kotlin-example', ':java-example', ':paperparcel'

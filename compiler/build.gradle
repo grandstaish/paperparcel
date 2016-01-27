@@ -23,7 +23,7 @@ task fatJar(type: Jar) {
 }
 
 dependencies {
-    compile project(':kraftpaper')
+    compile project(':paperparcel')
 
     provided deps.intellijAnnotations
 

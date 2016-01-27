@@ -6,7 +6,7 @@ android {
     buildToolsVersion "23.0.2"
 
     defaultConfig {
-        applicationId "nz.bradcampbell.kraftpaper.javaexample"
+        applicationId "nz.bradcampbell.paperparcel.javaexample"
         minSdkVersion 16
         targetSdkVersion 23
         versionCode 1
@@ -32,7 +32,7 @@ dependencies {
     compile deps.appCompat 
     compile deps.design 
 
-    compile project(':kraftpaper')
+    compile project(':paperparcel')
     apt project(':compiler')
 
     testCompile deps.junit

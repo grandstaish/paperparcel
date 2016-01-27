@@ -12,7 +12,7 @@
             <option value="$PROJECT_DIR$/compiler" />
             <option value="$PROJECT_DIR$/java-example" />
             <option value="$PROJECT_DIR$/kotlin-example" />
-            <option value="$PROJECT_DIR$/kraftpaper" />
+            <option value="$PROJECT_DIR$/paperparcel" />
           </set>
         </option>
         <option name="myModules">
@@ -21,7 +21,7 @@
             <option value="$PROJECT_DIR$/compiler" />
             <option value="$PROJECT_DIR$/java-example" />
             <option value="$PROJECT_DIR$/kotlin-example" />
-            <option value="$PROJECT_DIR$/kraftpaper" />
+            <option value="$PROJECT_DIR$/paperparcel" />
           </set>
         </option>
       </GradleProjectSettings>

@@ -6,7 +6,7 @@ android {
     buildToolsVersion "23.0.2"
 
     defaultConfig {
-        applicationId "nz.bradcampbell.kraftpaper.example"
+        applicationId "nz.bradcampbell.paperparcel.example"
         minSdkVersion 16
         targetSdkVersion 23
         versionCode 1
@@ -38,9 +38,8 @@ dependencies {
     compile deps.appCompat 
     compile deps.design 
 
-    compile project(':kraftpaper')
-    // project(':compiler') does not seem to work with kapt
-    kapt 'com.github.grandstaish.kraftpaper:compiler:0.9.6'
+    compile project(':paperparcel')
+    kapt project(':compiler')
 
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version" 
 

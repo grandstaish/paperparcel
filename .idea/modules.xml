@@ -5,8 +5,8 @@
       <module fileurl="file://$PROJECT_DIR$/compiler/compiler.iml" filepath="$PROJECT_DIR$/compiler/compiler.iml" />
       <module fileurl="file://$PROJECT_DIR$/java-example/java-example.iml" filepath="$PROJECT_DIR$/java-example/java-example.iml" />
       <module fileurl="file://$PROJECT_DIR$/kotlin-example/kotlin-example.iml" filepath="$PROJECT_DIR$/kotlin-example/kotlin-example.iml" />
-      <module fileurl="file://$PROJECT_DIR$/kraftpaper/kraftpaper.iml" filepath="$PROJECT_DIR$/kraftpaper/kraftpaper.iml" />
-      <module fileurl="file://$PROJECT_DIR$/kraftpaper-parent.iml" filepath="$PROJECT_DIR$/kraftpaper-parent.iml" />
+      <module fileurl="file://$PROJECT_DIR$/paperparcel/paperparcel.iml" filepath="$PROJECT_DIR$/paperparcel/paperparcel.iml" />
+      <module fileurl="file://$PROJECT_DIR$/paperparcel-parent.iml" filepath="$PROJECT_DIR$/paperparcel-parent.iml" />
     </modules>
   </component>
 </project>
