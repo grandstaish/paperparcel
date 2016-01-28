@@ -22,7 +22,7 @@ public class ArrayProperty extends Property {
 
     // Create array to read into
     String arrayName = getName();
-    block.add("$T ", propertyType.getTypeName());
+    block.add("$T ", propertyType.getWildcardTypeName());
     block.add(generateArrayInitializer(arrayName, false, arraySize));
 
     // Write a loop to iterate through each component
@@ -34,7 +34,7 @@ public class ArrayProperty extends Property {
 
     // Read in the component. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    CodeBlock componentLiteral = createProperty(componentPropertyType, true, componentName)
+    CodeBlock componentLiteral = createProperty(componentPropertyType, componentName)
         .readFromParcel(block, in, classLoader);
 
     // Add the parameter to the output array
@@ -75,7 +75,7 @@ public class ArrayProperty extends Property {
 
     // Write in the component. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    createProperty(componentPropertyType, true, componentName).writeToParcel(block, dest, componentSource);
+    createProperty(componentPropertyType, componentName).writeToParcel(block, dest, componentSource);
 
     block.endControlFlow();
   }

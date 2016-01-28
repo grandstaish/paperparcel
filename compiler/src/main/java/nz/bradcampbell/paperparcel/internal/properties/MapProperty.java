@@ -26,12 +26,33 @@ public class MapProperty extends Property {
 
     // Create map to read into
     String mapName = getName();
-    TypeName typeName = propertyType.getTypeName();
+
+    TypeName typeName = propertyType.getWildcardTypeName();
+    if (typeName instanceof WildcardTypeName) {
+      typeName = ((WildcardTypeName) typeName).upperBounds.get(0);
+    }
+
+    boolean patchedTypeName = false;
+
+    TypeName keyTypeName = keyType.getWildcardTypeName();
+    if (keyTypeName instanceof WildcardTypeName) {
+      keyTypeName = ((WildcardTypeName) keyTypeName).upperBounds.get(0);
+      patchedTypeName = true;
+    }
+
+    TypeName valueTypeName = valueType.getWildcardTypeName();
+    if (valueTypeName instanceof WildcardTypeName) {
+      valueTypeName = ((WildcardTypeName) valueTypeName).upperBounds.get(0);
+      patchedTypeName = true;
+    }
+
+    if (patchedTypeName) {
+      ParameterizedTypeName originalType = (ParameterizedTypeName) typeName;
+      typeName = ParameterizedTypeName.get(originalType.rawType, keyTypeName, valueTypeName);
+    }
+
     if (propertyType.isInterface()) {
-      TypeName keyTypeName = keyType.getTypeName();
-      TypeName valueTypeName = valueType.getTypeName();
-      block.addStatement("$T $N = new $T<$T, $T>($N)", typeName, mapName, HashMap.class, keyTypeName, valueTypeName,
-          mapSize);
+      block.addStatement("$T $N = new $T<$T, $T>($N)", typeName, mapName, HashMap.class, keyTypeName, valueTypeName, mapSize);
     } else {
       block.addStatement("$T $N = new $T()", typeName, mapName, typeName);
     }
@@ -45,11 +66,11 @@ public class MapProperty extends Property {
 
     // Read in the key. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    CodeBlock keyLiteral = createProperty(keyType, true, keyName).readFromParcel(block, in, classLoader);
+    CodeBlock keyLiteral = createProperty(keyType, keyName).readFromParcel(block, in, classLoader);
 
     // Read in the value. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    CodeBlock valueLiteral = createProperty(valueType, true, valueName).readFromParcel(block, in, classLoader);
+    CodeBlock valueLiteral = createProperty(valueType, valueName).readFromParcel(block, in, classLoader);
 
     // Add the parameter to the output map
     block.addStatement("$N.put($L, $L)", mapName, keyLiteral, valueLiteral);
@@ -82,11 +103,11 @@ public class MapProperty extends Property {
 
     // Write in the key. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    createProperty(keyType, true, keyName).writeToParcel(block, dest, keySourceLiteral);
+    createProperty(keyType, keyName).writeToParcel(block, dest, keySourceLiteral);
 
     // Write in the value. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    createProperty(valueType, true, valueName).writeToParcel(block, dest, valueSourceLiteral);
+    createProperty(valueType, valueName).writeToParcel(block, dest, valueSourceLiteral);
 
     block.endControlFlow();
   }

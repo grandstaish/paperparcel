@@ -22,7 +22,18 @@ public class SparseArrayProperty extends Property {
 
     // Create SparseArray to read into
     String sparseArrayName = getName();
-    TypeName typeName = propertyType.getTypeName();
+    TypeName typeName = propertyType.getWildcardTypeName();
+    if (typeName instanceof WildcardTypeName) {
+      typeName = ((WildcardTypeName) typeName).upperBounds.get(0);
+    }
+
+    TypeName parameterTypeName = parameterPropertyType.getWildcardTypeName();
+    if (parameterTypeName instanceof WildcardTypeName) {
+      ParameterizedTypeName originalType = (ParameterizedTypeName) typeName;
+      parameterTypeName = ((WildcardTypeName) parameterTypeName).upperBounds.get(0);
+      typeName = ParameterizedTypeName.get(originalType.rawType, parameterTypeName);
+    }
+
     block.addStatement("$T $N = new $T($N)", typeName, sparseArrayName, typeName, sparseArraySize);
 
     // Write a loop to iterate through each parameter
@@ -37,7 +48,7 @@ public class SparseArrayProperty extends Property {
 
     // Read in the value. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    CodeBlock parameterLiteral = createProperty(parameterPropertyType, true, valueName)
+    CodeBlock parameterLiteral = createProperty(parameterPropertyType, valueName)
         .readFromParcel(block, in, classLoader);
 
     // Add the parameter to the output list
@@ -82,7 +93,7 @@ public class SparseArrayProperty extends Property {
 
     // Write in the parameter. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    createProperty(parameterPropertyType, true, parameterName).writeToParcel(block, dest, parameterSource);
+    createProperty(parameterPropertyType, parameterName).writeToParcel(block, dest, parameterSource);
 
     block.endControlFlow();
   }

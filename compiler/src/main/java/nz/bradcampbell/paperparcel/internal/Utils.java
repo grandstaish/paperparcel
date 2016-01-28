@@ -67,6 +67,10 @@ public class Utils {
     // No instances.
   }
 
+  public static Property createProperty(Property.Type propertyType, String name) {
+    return createProperty(propertyType, true, name);
+  }
+
   /**
    * Creates a new Property object
    *
@@ -84,35 +88,35 @@ public class Utils {
     } else if (INT.equals(parcelableType)) {
       return new IntProperty(propertyType, isNullable, name);
     } else if (BOXED_INT.equals(parcelableType)) {
-      return new ValueProperty(propertyType, isNullable, name);
+      return new ValueProperty(propertyType, name);
     } else if (LONG.equals(parcelableType)) {
       return new LongProperty(propertyType, isNullable, name);
     } else if (BOXED_LONG.box().equals(parcelableType)) {
-      return new ValueProperty(propertyType, isNullable, name);
+      return new ValueProperty(propertyType, name);
     } else if (BYTE.equals(parcelableType)) {
       return new ByteProperty(propertyType, isNullable, name);
     } else if (BOXED_BYTE.equals(parcelableType)) {
-      return new ValueProperty(propertyType, isNullable, name);
+      return new ValueProperty(propertyType, name);
     } else if (BOOLEAN.equals(parcelableType)) {
       return new BooleanProperty(propertyType, isNullable, name);
     } else if (BOXED_BOOLEAN.equals(parcelableType)) {
-      return new ValueProperty(propertyType, isNullable, name);
+      return new ValueProperty(propertyType, name);
     } else if (FLOAT.equals(parcelableType)) {
       return new FloatProperty(propertyType, isNullable, name);
     } else if (BOXED_FLOAT.equals(parcelableType)) {
-      return new ValueProperty(propertyType, isNullable, name);
+      return new ValueProperty(propertyType, name);
     } else if (CHAR.equals(parcelableType)) {
       return new CharProperty(propertyType, isNullable, name);
     } else if (BOXED_CHAR.equals(parcelableType)) {
-      return new ValueProperty(propertyType, isNullable, name);
+      return new ValueProperty(propertyType, name);
     } else if (DOUBLE.equals(parcelableType)) {
       return new DoubleProperty(propertyType, isNullable, name);
     } else if (BOXED_DOUBLE.equals(parcelableType)) {
-      return new ValueProperty(propertyType, isNullable, name);
+      return new ValueProperty(propertyType, name);
     } else if (SHORT.equals(parcelableType)) {
       return new ShortProperty(propertyType, isNullable, name);
     } else if (BOXED_SHORT.equals(parcelableType)) {
-      return new ValueProperty(propertyType, isNullable, name);
+      return new ValueProperty(propertyType, name);
     } else if (MAP.equals(parcelableType)) {
       return new MapProperty(propertyType, isNullable, name);
     } else if (LIST.equals(parcelableType)) {
@@ -140,7 +144,7 @@ public class Utils {
     } else if (CHAR_SEQUENCE.equals(parcelableType)) {
       return new CharSequenceProperty(propertyType, isNullable, name);
     } else if (CHAR_SEQUENCE_ARRAY.equals(parcelableType)) {
-      return new ValueProperty(propertyType, isNullable, name);
+      return new ValueProperty(propertyType, name);
     } else if (IBINDER.equals(parcelableType)) {
       return new IBinderProperty(propertyType, isNullable, name);
     } else if (OBJECT_ARRAY.equals(parcelableType)) {
@@ -328,7 +332,7 @@ public class Utils {
    */
   public static List<VariableElement> getFields(TypeElement el) {
     List<? extends Element> enclosedElements = el.getEnclosedElements();
-    List<VariableElement> variables = new ArrayList<VariableElement>();
+    List<VariableElement> variables = new ArrayList<>();
     for (Element e : enclosedElements) {
       if (e instanceof VariableElement && !e.getModifiers().contains(STATIC)) {
         variables.add((VariableElement) e);
@@ -466,7 +470,7 @@ public class Utils {
         continue;
       }
 
-      Map<String, Object> result = new LinkedHashMap<String, Object>();
+      Map<String, Object> result = new LinkedHashMap<>();
       for (Method m : annotationType.getMethods()) {
         result.put(m.getName(), m.getDefaultValue());
       }

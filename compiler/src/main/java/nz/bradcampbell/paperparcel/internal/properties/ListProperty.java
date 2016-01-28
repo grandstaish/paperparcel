@@ -24,9 +24,20 @@ public class ListProperty extends Property {
 
     // Create list to read into
     String listName = getName();
-    TypeName typeName = propertyType.getTypeName();
+
+    TypeName typeName = propertyType.getWildcardTypeName();
+    if (typeName instanceof WildcardTypeName) {
+      typeName = ((WildcardTypeName) typeName).upperBounds.get(0);
+    }
+
+    TypeName parameterTypeName = parameterPropertyType.getWildcardTypeName();
+    if (parameterTypeName instanceof WildcardTypeName) {
+      ParameterizedTypeName originalType = (ParameterizedTypeName) typeName;
+      parameterTypeName = ((WildcardTypeName) parameterTypeName).upperBounds.get(0);
+      typeName = ParameterizedTypeName.get(originalType.rawType, parameterTypeName);
+    }
+
     if (propertyType.isInterface()) {
-      TypeName parameterTypeName = parameterPropertyType.getTypeName();
       block.addStatement("$T $N = new $T<$T>($N)", typeName, listName, ArrayList.class, parameterTypeName, listSize);
     } else {
       block.addStatement("$T $N = new $T()", typeName, listName, typeName);
@@ -40,7 +51,7 @@ public class ListProperty extends Property {
 
     // Read in the parameter. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    CodeBlock parameterLiteral = createProperty(parameterPropertyType, true, parameterName)
+    CodeBlock parameterLiteral = createProperty(parameterPropertyType, parameterName)
         .readFromParcel(block, in, classLoader);
 
     // Add the parameter to the output list
@@ -63,13 +74,10 @@ public class ListProperty extends Property {
 
     Property.Type propertyType = getPropertyType();
     Property.Type parameterPropertyType = propertyType.getChildType(0);
-    TypeName parameterTypeName = parameterPropertyType.getTypeName();
+    TypeName parameterTypeName = parameterPropertyType.getWildcardTypeName();
     String parameterItemName = getName() + "Item";
 
     // Handle wildcard types
-    if (parameterTypeName instanceof ParameterizedTypeName) {
-      parameterTypeName = parameterPropertyType.getWildcardTypeName();
-    }
     if (parameterTypeName instanceof WildcardTypeName) {
       parameterTypeName = ((WildcardTypeName) parameterTypeName).upperBounds.get(0);
     }
@@ -81,7 +89,7 @@ public class ListProperty extends Property {
 
     // Write in the parameter. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    createProperty(parameterPropertyType, true, parameterName).writeToParcel(block, dest, parameterSource);
+    createProperty(parameterPropertyType, parameterName).writeToParcel(block, dest, parameterSource);
 
     block.endControlFlow();
   }

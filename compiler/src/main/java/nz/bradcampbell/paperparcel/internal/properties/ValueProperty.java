@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import static nz.bradcampbell.paperparcel.internal.Utils.literal;
 
 public class ValueProperty extends Property {
-  public ValueProperty(Property.Type propertyType, boolean isNullable, String name) {
+  public ValueProperty(Property.Type propertyType, String name) {
     // We can ignore isNullable here because readValue/writeValue handles null internally
     super(propertyType, false, name);
   }

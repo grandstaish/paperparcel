@@ -50,7 +50,7 @@ public abstract class Property {
     }
 
     public Type getChildType(int index) {
-      if (childTypes == null || index > childTypes.size()) {
+      if (childTypes == null || index >= childTypes.size()) {
         return NO_TYPE;
       }
       return childTypes.get(index);
@@ -119,7 +119,11 @@ public abstract class Property {
    * @param classLoader ClassLoader to use for reading data
    */
   public final CodeBlock readFromParcel(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
-    TypeName typeName = propertyType.getTypeName();
+    TypeName typeName = propertyType.getWildcardTypeName();
+    if (typeName instanceof WildcardTypeName) {
+      typeName = ((WildcardTypeName) typeName).upperBounds.get(0);
+    }
+
     CodeBlock defaultLiteral = literal("$N", name);
     CodeBlock nullableLiteral = literal("$N", "out" + capitalizeFirstCharacter(name));
 
