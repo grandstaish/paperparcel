@@ -13,7 +13,7 @@ import java.util.Date;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
-    private State state = new State(0, new Date());
+    private State state = new State(0, new Date(), null);
     private DateFormat dateFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
 
     @Override
@@ -35,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
         plusButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                state = new State(state.getCount() + 1, new Date());
+                state = new State(state.getCount() + 1, new Date(), null);
                 updateText();
             }
         });
@@ -44,7 +44,7 @@ public class MainActivity extends AppCompatActivity {
         subtractButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                state = new State(state.getCount() - 1, new Date());
+                state = new State(state.getCount() - 1, new Date(), null);
                 updateText();
             }
         });
