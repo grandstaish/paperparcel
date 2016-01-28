@@ -1,9 +1,6 @@
 package nz.bradcampbell.paperparcel.internal.properties;
 
-import com.squareup.javapoet.CodeBlock;
-import com.squareup.javapoet.FieldSpec;
-import com.squareup.javapoet.ParameterSpec;
-import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.*;
 import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
 
@@ -63,7 +60,15 @@ public class SparseArrayProperty extends Property {
 
     Property.Type propertyType = getPropertyType();
     Property.Type parameterPropertyType = propertyType.getChildType(0);
-    TypeName parameterTypeName = parameterPropertyType.getTypeName();
+    TypeName parameterTypeName = parameterPropertyType.getWildcardTypeName();
+
+    // Handle wildcard types
+    if (parameterTypeName instanceof ParameterizedTypeName) {
+      parameterTypeName = parameterPropertyType.getWildcardTypeName();
+    }
+    if (parameterTypeName instanceof WildcardTypeName) {
+      parameterTypeName = ((WildcardTypeName) parameterTypeName).upperBounds.get(0);
+    }
 
     String keyName = getName() + "Key";
     block.addStatement("$T $N = $L.keyAt($N)", int.class, keyName, sourceLiteral, indexName);

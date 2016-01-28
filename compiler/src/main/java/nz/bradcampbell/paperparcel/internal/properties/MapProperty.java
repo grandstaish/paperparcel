@@ -66,9 +66,9 @@ public class MapProperty extends Property {
     block.addStatement("$N.writeInt($L.size())", dest, sourceLiteral);
 
     Property.Type keyType = propertyType.getChildType(0);
-    TypeName keyTypeName = keyType.getTypeName();
+    TypeName keyTypeName = keyType.getWildcardTypeName();
     Property.Type valueType = propertyType.getChildType(1);
-    TypeName valueTypeName = valueType.getTypeName();
+    TypeName valueTypeName = valueType.getWildcardTypeName();
 
     // Write a loop to iterate through each entry
     String entryName = getName() + "Entry";

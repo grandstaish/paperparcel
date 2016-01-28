@@ -36,7 +36,6 @@ public class ListProperty extends Property {
     String indexName = getName() + "Index";
     block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, listSize, indexName);
 
-
     String parameterName = getName() + "Item";
 
     // Read in the parameter. Set isNullable to true as I don't know how to tell if a parameter is
@@ -66,6 +65,14 @@ public class ListProperty extends Property {
     Property.Type parameterPropertyType = propertyType.getChildType(0);
     TypeName parameterTypeName = parameterPropertyType.getTypeName();
     String parameterItemName = getName() + "Item";
+
+    // Handle wildcard types
+    if (parameterTypeName instanceof ParameterizedTypeName) {
+      parameterTypeName = parameterPropertyType.getWildcardTypeName();
+    }
+    if (parameterTypeName instanceof WildcardTypeName) {
+      parameterTypeName = ((WildcardTypeName) parameterTypeName).upperBounds.get(0);
+    }
 
     block.addStatement("$T $N = $L.get($N)", parameterTypeName, parameterItemName, sourceLiteral, indexName);
 

@@ -57,8 +57,16 @@ public class ArrayProperty extends Property {
 
     Property.Type propertyType = getPropertyType();
     Property.Type componentPropertyType = propertyType.getChildType(0);
-    TypeName componentTypeName = componentPropertyType.getTypeName();
+    TypeName componentTypeName = componentPropertyType.getWildcardTypeName();
     String componentItemName = getName() + "Item";
+
+    // Handle wildcard types
+    if (componentTypeName instanceof ParameterizedTypeName) {
+      componentTypeName = componentPropertyType.getWildcardTypeName();
+    }
+    if (componentTypeName instanceof WildcardTypeName) {
+      componentTypeName = ((WildcardTypeName) componentTypeName).upperBounds.get(0);
+    }
 
     block.addStatement("$T $N = $L[$N]", componentTypeName, componentItemName, sourceLiteral, indexName);
 
