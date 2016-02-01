@@ -2,7 +2,8 @@ package nz.bradcampbell.autovalueexample;
 
 import com.google.auto.value.AutoValue;
 import android.os.Parcelable;
-import android.support.annotation.Nullable;
+
+import org.jetbrains.annotations.Nullable;
 
 import java.util.Date;
 

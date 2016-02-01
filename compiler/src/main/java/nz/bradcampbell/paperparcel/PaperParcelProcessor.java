@@ -199,9 +199,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
     for (VariableElement variableElement : variableElements) {
 
       // Determine how we will access this property and in doing so, validate the property
-      String getterMethodName;
+      ExecutableElement accessorMethod;
       try {
-        getterMethodName = getMethodNameForVariable(typeElement, variableElement);
+        accessorMethod = getAccessorMethod(typeElement, variableElement);
       } catch (PropertyValidationException e) {
         error(processingEnv, e.getMessage(), e.source);
         continue;
@@ -212,12 +212,13 @@ public class PaperParcelProcessor extends AbstractProcessor {
       String name = variableElement.getSimpleName().toString();
 
       // A field is only "nullable" when annotated with @Nullable
-      boolean isNullable = !AnnotationUtils.isFieldRequired(variableElement);
+      boolean isNullable = accessorMethod != null ? !AnnotationUtils.isFieldRequired(accessorMethod) :
+          !AnnotationUtils.isFieldRequired(variableElement);
 
       // Parse the property type into a Property.Type object and find all recursive data class dependencies
       Property.Type propertyType = parsePropertyType(variableElement.asType(), typeMirror, typeAdapters, variableDependencies);
 
-      getterMethodMap.put(name, getterMethodName);
+      getterMethodMap.put(name, accessorMethod ==  null ? null : accessorMethod.getSimpleName().toString());
 
       Property property = PropertyUtils.createProperty(propertyType, isNullable, name);
       properties.add(property);
@@ -235,7 +236,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     }
   }
 
-  private String getMethodNameForVariable(TypeElement typeElement, VariableElement variableElement) throws PropertyValidationException,
+  private ExecutableElement getAccessorMethod(TypeElement typeElement, VariableElement variableElement) throws PropertyValidationException,
       IrrelevantPropertyException {
 
     String variableName = variableElement.getSimpleName().toString().toLowerCase();
@@ -243,7 +244,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     // If the name is custom, return this straight away
     GetterMethodName getterMethodName = variableElement.getAnnotation(GetterMethodName.class);
     if (getterMethodName != null) {
-      return getterMethodName.value();
+      variableName = getterMethodName.value().toLowerCase();
     }
 
     Set<Modifier> modifiers = variableElement.getModifiers();
@@ -277,7 +278,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
             // Check this method takes no parameters
             if (method.getParameters().size() == 0) {
 
-              return result;
+              return method;
             }
           }
         }
