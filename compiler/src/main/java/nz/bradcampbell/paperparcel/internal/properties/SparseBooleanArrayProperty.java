@@ -6,7 +6,7 @@ import com.squareup.javapoet.ParameterSpec;
 import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
 
-import static nz.bradcampbell.paperparcel.internal.Utils.literal;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
 
 public class SparseBooleanArrayProperty extends Property {
   public SparseBooleanArrayProperty(Property.Type propertyType, boolean isNullable, String name) {

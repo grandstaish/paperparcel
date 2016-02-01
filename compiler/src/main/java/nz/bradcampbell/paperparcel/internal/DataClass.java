@@ -36,8 +36,8 @@ public class DataClass {
     this.className = className;
   }
 
-  public String getterMethodNameFor(String variableName) {
-    return getterMethodMap.get(variableName);
+  public Map<String, String> getGetterMethodMap() {
+    return getterMethodMap;
   }
 
   public List<Property> getProperties() {

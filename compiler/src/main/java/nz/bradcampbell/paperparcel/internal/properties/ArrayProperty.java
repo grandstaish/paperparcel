@@ -1,12 +1,18 @@
 package nz.bradcampbell.paperparcel.internal.properties;
 
-import com.squareup.javapoet.*;
-import nz.bradcampbell.paperparcel.internal.Property;
-import org.jetbrains.annotations.Nullable;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.getRawTypeName;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
 
-import static nz.bradcampbell.paperparcel.internal.Utils.createProperty;
-import static nz.bradcampbell.paperparcel.internal.Utils.getRawTypeName;
-import static nz.bradcampbell.paperparcel.internal.Utils.literal;
+import com.squareup.javapoet.ArrayTypeName;
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.WildcardTypeName;
+import nz.bradcampbell.paperparcel.internal.Property;
+import nz.bradcampbell.paperparcel.internal.utils.PropertyUtils;
+import org.jetbrains.annotations.Nullable;
 
 public class ArrayProperty extends Property {
   public ArrayProperty(Property.Type propertyType, boolean isNullable, String name) {
@@ -34,7 +40,7 @@ public class ArrayProperty extends Property {
 
     // Read in the component. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    CodeBlock componentLiteral = createProperty(componentPropertyType, componentName)
+    CodeBlock componentLiteral = PropertyUtils.createProperty(componentPropertyType, componentName)
         .readFromParcel(block, in, classLoader);
 
     // Add the parameter to the output array
@@ -75,7 +81,7 @@ public class ArrayProperty extends Property {
 
     // Write in the component. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    createProperty(componentPropertyType, componentName).writeToParcel(block, dest, componentSource);
+    PropertyUtils.createProperty(componentPropertyType, componentName).writeToParcel(block, dest, componentSource);
 
     block.endControlFlow();
   }

@@ -7,7 +7,7 @@ import com.squareup.javapoet.TypeName;
 import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
 
-import static nz.bradcampbell.paperparcel.internal.Utils.literal;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
 
 public class ShortProperty extends Property {
   public ShortProperty(Property.Type propertyType, boolean isNullable, String name) {

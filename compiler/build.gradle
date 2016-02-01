@@ -27,7 +27,10 @@ dependencies {
 
     provided deps.intellijAnnotations
 
+    provided deps.autovalue
+
     compile deps.autoservice
+    compile deps.autocommon
     compile deps.javapoet
 
     testCompile deps.junit

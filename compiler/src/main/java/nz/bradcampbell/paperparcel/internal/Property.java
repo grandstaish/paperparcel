@@ -1,13 +1,17 @@
 package nz.bradcampbell.paperparcel.internal;
 
-import com.squareup.javapoet.*;
+import static com.squareup.javapoet.TypeName.OBJECT;
+import static nz.bradcampbell.paperparcel.internal.utils.StringUtils.capitalizeFirstCharacter;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
+
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.WildcardTypeName;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
-
-import static com.squareup.javapoet.TypeName.OBJECT;
-import static nz.bradcampbell.paperparcel.internal.Utils.capitalizeFirstCharacter;
-import static nz.bradcampbell.paperparcel.internal.Utils.literal;
 
 /**
  * A model object that can generate a code block for both reading and writing itself to/from a Parcel

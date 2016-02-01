@@ -1,39 +1,87 @@
 package nz.bradcampbell.paperparcel;
 
+import static javax.lang.model.element.Modifier.FINAL;
+import static javax.lang.model.element.Modifier.PRIVATE;
+import static javax.lang.model.element.Modifier.PROTECTED;
+import static javax.lang.model.element.Modifier.PUBLIC;
+import static javax.lang.model.element.Modifier.STATIC;
+import static javax.lang.model.element.Modifier.TRANSIENT;
+import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.generateWrappedTypeName;
+import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.getFields;
+import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.getPackageName;
+import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.hasTypeArguments;
+
+import com.google.auto.common.MoreElements;
 import com.google.auto.service.AutoService;
-import com.squareup.javapoet.*;
+import com.google.auto.value.AutoValue;
+
+import com.squareup.javapoet.ArrayTypeName;
+import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.JavaFile;
+import com.squareup.javapoet.MethodSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.TypeSpec;
+import com.squareup.javapoet.WildcardTypeName;
 import nz.bradcampbell.paperparcel.internal.DataClass;
 import nz.bradcampbell.paperparcel.internal.Property;
+import nz.bradcampbell.paperparcel.internal.utils.AnnotationUtils;
+import nz.bradcampbell.paperparcel.internal.utils.PropertyUtils;
 
-import javax.annotation.processing.*;
-import javax.lang.model.SourceVersion;
-import javax.lang.model.element.*;
-import javax.lang.model.type.*;
-import javax.lang.model.util.Types;
 import java.io.IOException;
-import java.util.*;
-
-import static javax.lang.model.element.Modifier.*;
-import static nz.bradcampbell.paperparcel.internal.Utils.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import javax.annotation.processing.AbstractProcessor;
+import javax.annotation.processing.Filer;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.annotation.processing.Processor;
+import javax.annotation.processing.RoundEnvironment;
+import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.WildcardType;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
+import javax.tools.Diagnostic;
 
 /**
  * An annotation processor that creates Parcelable wrappers for all Kotlin data classes annotated with @PaperParcel
  */
 @AutoService(Processor.class)
 public class PaperParcelProcessor extends AbstractProcessor {
-  public static final String DATA_VARIABLE_NAME = "data";
+  private static final String DATA_VARIABLE_NAME = "data";
 
-  private static final TypeName PARCELABLE = ClassName.get("android.os", "Parcelable");
   private static final TypeName PARCEL = ClassName.get("android.os", "Parcel");
+  private static final TypeName PARCELABLE = ClassName.get("android.os", "Parcelable");
 
   private Filer filer;
   private Types typeUtil;
-  private Map<String, DataClass> parcels = new HashMap<>();
+  private Elements elementUtils;
+
+  private Set<String> processedParcels = new HashSet<>();
+  private Set<DataClass> requiredParcels = new HashSet<>();
 
   @Override public synchronized void init(ProcessingEnvironment env) {
     super.init(env);
-    filer = env.getFiler();
     typeUtil = env.getTypeUtils();
+    elementUtils = env.getElementUtils();
+    filer = env.getFiler();
   }
 
   @Override
@@ -58,7 +106,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
       // Ensure we are dealing with a TypeElement
       if (!(element instanceof TypeElement)) {
-        error(processingEnv, "@PaperParcel applies to a type, " + element.getSimpleName() + " is a " + element.getKind(),
+        error(processingEnv,
+            "@PaperParcel applies to a type, " + element.getSimpleName() + " is a " + element.getKind(),
             element);
         continue;
       }
@@ -75,15 +124,41 @@ public class PaperParcelProcessor extends AbstractProcessor {
     }
 
     // Generate java files for every data class found
-    for (DataClass p : parcels.values()) {
+    for (DataClass p : requiredParcels) {
       try {
-        generateJavaFileFor(p).writeTo(filer);
+        generateParcelableWrapper(p).writeTo(filer);
       } catch (IOException e) {
-        throw new RuntimeException("An error occurred while writing to filer.", e);
+        throw new RuntimeException("An error occurred while writing to filer." + e.getMessage(), e);
       }
     }
 
+    requiredParcels.clear();
+
     return true;
+  }
+
+  private JavaFile generateParcelableWrapper(DataClass dataClass) throws IOException {
+    TypeSpec.Builder wrapperBuilder = TypeSpec.classBuilder(dataClass.getWrapperClassName().simpleName())
+        .addModifiers(PUBLIC)
+        .addSuperinterface(PARCELABLE);
+
+    FieldSpec classLoader = null;
+    if (dataClass.requiresClassLoader()) {
+      classLoader = generateClassLoaderField(dataClass.getClassName());
+      wrapperBuilder.addField(classLoader);
+    }
+
+    wrapperBuilder.addField(generateCreator(dataClass.getWrapperClassName()))
+        .addField(generateContentsField(dataClass.getClassName()))
+        .addMethod(generateWrapMethod(dataClass))
+        .addMethod(generateContentsConstructor(dataClass.getClassName()))
+        .addMethod(generateParcelConstructor(dataClass.getProperties(), dataClass.getClassName(), classLoader))
+        .addMethod(generateGetter(dataClass.getClassName()))
+        .addMethod(generateDescribeContents())
+        .addMethod(generateWriteToParcel(dataClass.getProperties(), dataClass.getGetterMethodMap()));
+
+    // Build the java file
+    return JavaFile.builder(dataClass.getClassPackage(), wrapperBuilder.build()).build();
   }
 
   /**
@@ -98,25 +173,25 @@ public class PaperParcelProcessor extends AbstractProcessor {
     String wrappedClassName = generateWrappedTypeName(typeElement, typeMirror);
 
     // Exit early if we have already created a parcel for this data class
-    if (parcels.containsKey(wrappedClassName)) return;
+    if (processedParcels.contains(wrappedClassName)) return;
 
     List<Property> properties = new ArrayList<>();
     List<TypeMirror> variableDependencies = new ArrayList<>();
 
     // Get all member variable elements in the data class
-    List<VariableElement> variableElements = getFields(typeElement);
+    List<VariableElement> variableElements = getFields(typeUtil, typeElement);
 
     Map<String, String> getterMethodMap = new HashMap<>(variableElements.size());
 
     boolean requiresClassLoader = false;
 
     // Override the type adapters with the current element preferences
-    Map<String, Object> annotation = getAnnotation(PaperParcel.class, typeElement);
+    Map<String, Object> annotation = AnnotationUtils.getAnnotation(PaperParcel.class, typeElement);
     if (annotation != null) {
       Object[] typeAdaptersArray = (Object[]) annotation.get("typeAdapters");
       for (Object o : typeAdaptersArray) {
         DeclaredType ta = (DeclaredType) o;
-        TypeName typeAdapterType = getTypeAdapterType(typeUtil, ta);
+        TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, ta);
         typeAdapters.put(typeAdapterType, TypeName.get(ta));
       }
     }
@@ -137,20 +212,22 @@ public class PaperParcelProcessor extends AbstractProcessor {
       String name = variableElement.getSimpleName().toString();
 
       // A field is only "nullable" when annotated with @Nullable
-      boolean isNullable = !isFieldRequired(variableElement);
+      boolean isNullable = !AnnotationUtils.isFieldRequired(variableElement);
 
       // Parse the property type into a Property.Type object and find all recursive data class dependencies
       Property.Type propertyType = parsePropertyType(variableElement.asType(), typeMirror, typeAdapters, variableDependencies);
 
       getterMethodMap.put(name, getterMethodName);
 
-      Property property = createProperty(propertyType, isNullable, name);
+      Property property = PropertyUtils.createProperty(propertyType, isNullable, name);
       properties.add(property);
 
       requiresClassLoader |= property.requiresClassLoader();
     }
 
-    parcels.put(wrappedClassName, new DataClass(properties, classPackage, wrappedClassName, getterMethodMap, TypeName.get(typeMirror), requiresClassLoader));
+    requiredParcels.add(new DataClass(properties, classPackage, wrappedClassName, getterMethodMap,
+        TypeName.get(typeMirror), requiresClassLoader));
+    processedParcels.add(wrappedClassName);
 
     // Build parcel dependencies
     for (TypeMirror requiredParcel : variableDependencies) {
@@ -159,7 +236,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
   }
 
   private String getMethodNameForVariable(TypeElement typeElement, VariableElement variableElement) throws PropertyValidationException,
-          IrrelevantPropertyException {
+      IrrelevantPropertyException {
 
     String variableName = variableElement.getSimpleName().toString().toLowerCase();
 
@@ -181,7 +258,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
       return null;
     }
 
-    for (Element enclosedElement : typeElement.getEnclosedElements()) {
+    for (Element enclosedElement : MoreElements.getLocalAndInheritedMethods(typeElement, elementUtils)) {
 
       // Find all enclosing methods
       if (enclosedElement instanceof ExecutableElement) {
@@ -208,22 +285,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
     }
 
     throw new PropertyValidationException("Could not find getter method for variable '" + variableName + "'.\nTry annotating your " +
-            "variable with '" + GetterMethodName.class.getCanonicalName() + "' or renaming your variable to follow " +
-            "the documented conventions.\nAlternatively your property can be have default or public visibility.", variableElement);
-  }
-
-  private String generateWrappedTypeName(TypeElement typeElement, TypeMirror typeMirror) {
-    String innerHash = "";
-
-    // Add a hashcode of the full string type name in between "{ClassName}" and "Parcel"
-    if (hasTypeArguments(typeMirror)) {
-      StringBuilder sb = new StringBuilder();
-      typeToString(typeMirror, sb, '$');
-      String typeString = sb.toString();
-      innerHash = Long.toString(typeString.hashCode()).replace('-', '_');
-    }
-
-    return typeElement.getSimpleName().toString() + innerHash + "Parcel";
+                                          "variable with '" + GetterMethodName.class.getCanonicalName() + "' or renaming your variable to follow " +
+                                          "the documented conventions.\nAlternatively your property can be have default or public visibility.", variableElement);
   }
 
   /**
@@ -235,8 +298,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
    * @return The parsed variable
    */
   private Property.Type parsePropertyType(TypeMirror variable, TypeMirror dataClass,
-                                          Map<TypeName, TypeName> typeAdapters,
-                                          List<TypeMirror> variableDependencies) {
+      Map<TypeName, TypeName> typeAdapters,
+      List<TypeMirror> variableDependencies) {
 
     // The element associated, or null
     Element element = typeUtil.asElement(variable);
@@ -262,7 +325,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     List<Property.Type> childTypes = null;
 
     // The variable that allows this variable to be parcelable, or null
-    TypeName parcelableTypeName = getParcelableType(typeUtil, erasedType);
+    TypeName parcelableTypeName = PropertyUtils.getParcelableType(typeUtil, erasedType);
     boolean isParcelable = parcelableTypeName != null;
 
     TypeName typeName = ClassName.get(erasedType);
@@ -347,10 +410,20 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
     boolean isInterface = typeElement != null && typeElement.getKind() == ElementKind.INTERFACE;
 
-    boolean requiresClassLoader = requiresClassLoader(parcelableTypeName);
+    boolean requiresClassLoader = PropertyUtils.requiresClassLoader(parcelableTypeName);
     if (childTypes != null) {
       for (Property.Type childProperty : childTypes) {
         requiresClassLoader |= childProperty.requiresClassLoader();
+      }
+    }
+
+    // Use the AutoValue generated name as the "wrapped" type name so that the generated CREATOR object can be
+    // found when un-parcelling the AutoParcel object
+    if (typeElement != null) {
+      AutoValue autoValue = typeElement.getAnnotation(AutoValue.class);
+      if (autoValue != null) {
+        TypeElement requiredElement = (TypeElement) typeElement;
+        wrappedTypeName = ClassName.bestGuess(autoValueClassName(requiredElement));
       }
     }
 
@@ -358,38 +431,24 @@ public class PaperParcelProcessor extends AbstractProcessor {
         requiresClassLoader, typeAdapter);
   }
 
-  private JavaFile generateJavaFileFor(DataClass dataClass) {
-    TypeSpec.Builder wrapperBuilder = TypeSpec.classBuilder(dataClass.getWrapperClassName().simpleName())
-        .addModifiers(PUBLIC)
-        .addSuperinterface(PARCELABLE);
-
-    FieldSpec classLoader = null;
-    if (dataClass.requiresClassLoader()) {
-      classLoader = generateClassLoaderField(dataClass);
-      wrapperBuilder.addField(classLoader);
+  private String autoValueClassName(TypeElement type) {
+    String name = type.getSimpleName().toString();
+    while (type.getEnclosingElement() instanceof TypeElement) {
+      type = (TypeElement) type.getEnclosingElement();
+      name = type.getSimpleName() + "_" + name;
     }
-
-    wrapperBuilder.addField(generateCreator(dataClass))
-        .addField(generateContentsField(dataClass))
-        .addMethod(generateWrapMethod(dataClass))
-        .addMethod(generateContentsConstructor(dataClass))
-        .addMethod(generateParcelConstructor(dataClass, classLoader))
-        .addMethod(generateGetter(dataClass))
-        .addMethod(generateDescribeContents())
-        .addMethod(generateWriteToParcel(dataClass));
-
-    // Build the java file
-    return JavaFile.builder(dataClass.getClassPackage(), wrapperBuilder.build()).build();
+    String pkg = getPackageName(type);
+    String dot = pkg.isEmpty() ? "" : ".";
+    return pkg + dot + "AutoValue_" + name;
   }
 
-  private FieldSpec generateClassLoaderField(DataClass dataClass) {
-    return FieldSpec.builder(ClassLoader.class, "CLASS_LOADER",  Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
-        .initializer("$T.class.getClassLoader()", dataClass.getClassName())
+  private FieldSpec generateClassLoaderField(TypeName className) {
+    return FieldSpec.builder(ClassLoader.class, "CLASS_LOADER", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
+        .initializer("$T.class.getClassLoader()", className)
         .build();
   }
 
-  private FieldSpec generateCreator(DataClass dataClass) {
-    ClassName className = dataClass.getWrapperClassName();
+  private FieldSpec generateCreator(ClassName className) {
     ClassName creator = ClassName.get("android.os", "Parcelable", "Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, className);
 
@@ -409,8 +468,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .build();
   }
 
-  private FieldSpec generateContentsField(DataClass dataClass) {
-    return FieldSpec.builder(dataClass.getClassName(), DATA_VARIABLE_NAME, PRIVATE, FINAL).build();
+  private FieldSpec generateContentsField(TypeName className) {
+    return FieldSpec.builder(className, DATA_VARIABLE_NAME, PRIVATE, FINAL).build();
   }
 
   private MethodSpec generateWrapMethod(DataClass dataClass) {
@@ -423,15 +482,15 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .build();
   }
 
-  private MethodSpec generateContentsConstructor(DataClass dataClass) {
+  private MethodSpec generateContentsConstructor(TypeName className) {
     return MethodSpec.constructorBuilder()
         .addModifiers(PRIVATE)
-        .addParameter(dataClass.getClassName(), DATA_VARIABLE_NAME)
+        .addParameter(className, DATA_VARIABLE_NAME)
         .addStatement("this.$N = $N", DATA_VARIABLE_NAME, DATA_VARIABLE_NAME)
         .build();
   }
 
-  private MethodSpec generateParcelConstructor(DataClass dataClass, FieldSpec classLoader) {
+  private MethodSpec generateParcelConstructor(List<Property> properties, TypeName className, FieldSpec classLoader) {
     ParameterSpec in = ParameterSpec
         .builder(ClassName.get("android.os", "Parcel"), "in")
         .build();
@@ -440,14 +499,13 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .addModifiers(PRIVATE)
         .addParameter(in);
 
-    List<Property> properties = dataClass.getProperties();
     if (properties != null) {
 
       String initializer = "this.$N = new $T(";
       int paramsOffset = 2;
       Object[] params = new Object[properties.size() + paramsOffset];
       params[0] = DATA_VARIABLE_NAME;
-      params[1] = dataClass.getClassName();
+      params[1] = className;
 
       CodeBlock.Builder block = CodeBlock.builder();
 
@@ -469,10 +527,10 @@ public class PaperParcelProcessor extends AbstractProcessor {
     return builder.build();
   }
 
-  private MethodSpec generateGetter(DataClass dataClass) {
+  private MethodSpec generateGetter(TypeName className) {
     return MethodSpec.methodBuilder("getContents")
         .addModifiers(PUBLIC)
-        .returns(dataClass.getClassName())
+        .returns(className)
         .addStatement("return $N", DATA_VARIABLE_NAME)
         .build();
   }
@@ -486,9 +544,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .build();
   }
 
-  private MethodSpec generateWriteToParcel(DataClass dataClass) {
+  private MethodSpec generateWriteToParcel(List<Property> properties, Map<String, String> getterMethods) {
     ParameterSpec dest = ParameterSpec
-        .builder(ClassName.get("android.os", "Parcel"), "dest")
+        .builder(PARCEL, "dest")
         .build();
 
     MethodSpec.Builder builder = MethodSpec.methodBuilder("writeToParcel")
@@ -498,16 +556,20 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .addParameter(int.class, "flags");
 
     CodeBlock.Builder block = CodeBlock.builder();
-    for (Property p : dataClass.getProperties()) {
-      String getterMethodName = dataClass.getterMethodNameFor(p.getName());
+    for (Property p : properties) {
+      String getterMethodName = getterMethods == null ? null : getterMethods.get(p.getName());
       String accessorStrategy = getterMethodName == null ? p.getName() : getterMethodName + "()";
       TypeName wildCardTypeName = p.getPropertyType().getWildcardTypeName();
       block.addStatement("$T $N = $N.$N", wildCardTypeName, p.getName(), DATA_VARIABLE_NAME, accessorStrategy);
-      CodeBlock sourceLiteral = literal("$N", p.getName());
+      CodeBlock sourceLiteral = PropertyUtils.literal("$N", p.getName());
       p.writeToParcel(block, dest, sourceLiteral);
     }
 
     return builder.addCode(block.build()).build();
+  }
+
+  private static void error(ProcessingEnvironment processingEnv, String message, Element element) {
+    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
   }
 
   static class PropertyValidationException extends IllegalStateException {

@@ -1,11 +1,14 @@
 package nz.bradcampbell.paperparcel.internal.properties;
 
-import com.squareup.javapoet.*;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.getRawTypeName;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
+
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.TypeName;
 import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
-
-import static nz.bradcampbell.paperparcel.internal.Utils.getRawTypeName;
-import static nz.bradcampbell.paperparcel.internal.Utils.literal;
 
 public class ParcelableProperty extends Property {
   public ParcelableProperty(Property.Type propertyType, boolean isNullable, String name) {

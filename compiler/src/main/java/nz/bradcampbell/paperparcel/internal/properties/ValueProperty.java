@@ -6,7 +6,7 @@ import com.squareup.javapoet.ParameterSpec;
 import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
 
-import static nz.bradcampbell.paperparcel.internal.Utils.literal;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
 
 public class ValueProperty extends Property {
   public ValueProperty(Property.Type propertyType, String name) {

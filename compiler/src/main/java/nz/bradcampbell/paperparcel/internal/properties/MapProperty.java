@@ -2,13 +2,14 @@ package nz.bradcampbell.paperparcel.internal.properties;
 
 import com.squareup.javapoet.*;
 import nz.bradcampbell.paperparcel.internal.Property;
+import nz.bradcampbell.paperparcel.internal.utils.PropertyUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
 import java.util.Map;
 
-import static nz.bradcampbell.paperparcel.internal.Utils.createProperty;
-import static nz.bradcampbell.paperparcel.internal.Utils.literal;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.createProperty;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
 
 public class MapProperty extends Property {
   public MapProperty(Property.Type propertyType, boolean isNullable, String name) {
@@ -66,11 +67,11 @@ public class MapProperty extends Property {
 
     // Read in the key. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    CodeBlock keyLiteral = createProperty(keyType, keyName).readFromParcel(block, in, classLoader);
+    CodeBlock keyLiteral = PropertyUtils.createProperty(keyType, keyName).readFromParcel(block, in, classLoader);
 
     // Read in the value. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    CodeBlock valueLiteral = createProperty(valueType, valueName).readFromParcel(block, in, classLoader);
+    CodeBlock valueLiteral = PropertyUtils.createProperty(valueType, valueName).readFromParcel(block, in, classLoader);
 
     // Add the parameter to the output map
     block.addStatement("$N.put($L, $L)", mapName, keyLiteral, valueLiteral);
@@ -103,11 +104,11 @@ public class MapProperty extends Property {
 
     // Write in the key. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    createProperty(keyType, keyName).writeToParcel(block, dest, keySourceLiteral);
+    PropertyUtils.createProperty(keyType, keyName).writeToParcel(block, dest, keySourceLiteral);
 
     // Write in the value. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    createProperty(valueType, valueName).writeToParcel(block, dest, valueSourceLiteral);
+    PropertyUtils.createProperty(valueType, valueName).writeToParcel(block, dest, valueSourceLiteral);
 
     block.endControlFlow();
   }

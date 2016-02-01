@@ -2,12 +2,13 @@ package nz.bradcampbell.paperparcel.internal.properties;
 
 import com.squareup.javapoet.*;
 import nz.bradcampbell.paperparcel.internal.Property;
+import nz.bradcampbell.paperparcel.internal.utils.PropertyUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 
-import static nz.bradcampbell.paperparcel.internal.Utils.createProperty;
-import static nz.bradcampbell.paperparcel.internal.Utils.literal;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.createProperty;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
 
 public class ListProperty extends Property {
   public ListProperty(Property.Type propertyType, boolean isNullable, String name) {
@@ -51,7 +52,7 @@ public class ListProperty extends Property {
 
     // Read in the parameter. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    CodeBlock parameterLiteral = createProperty(parameterPropertyType, parameterName)
+    CodeBlock parameterLiteral = PropertyUtils.createProperty(parameterPropertyType, parameterName)
         .readFromParcel(block, in, classLoader);
 
     // Add the parameter to the output list
@@ -89,7 +90,7 @@ public class ListProperty extends Property {
 
     // Write in the parameter. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    createProperty(parameterPropertyType, parameterName).writeToParcel(block, dest, parameterSource);
+    PropertyUtils.createProperty(parameterPropertyType, parameterName).writeToParcel(block, dest, parameterSource);
 
     block.endControlFlow();
   }
