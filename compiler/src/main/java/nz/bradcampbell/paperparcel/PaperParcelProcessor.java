@@ -13,7 +13,6 @@ import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.hasTypeArgume
 
 import com.google.auto.common.MoreElements;
 import com.google.auto.service.AutoService;
-import com.google.auto.value.AutoValue;
 
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
@@ -32,6 +31,7 @@ import nz.bradcampbell.paperparcel.internal.utils.AnnotationUtils;
 import nz.bradcampbell.paperparcel.internal.utils.PropertyUtils;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -421,10 +421,15 @@ public class PaperParcelProcessor extends AbstractProcessor {
     // Use the AutoValue generated name as the "wrapped" type name so that the generated CREATOR object can be
     // found when un-parcelling the AutoParcel object
     if (typeElement != null) {
-      AutoValue autoValue = typeElement.getAnnotation(AutoValue.class);
-      if (autoValue != null) {
-        TypeElement requiredElement = (TypeElement) typeElement;
-        wrappedTypeName = ClassName.bestGuess(autoValueClassName(requiredElement));
+      try {
+        //noinspection unchecked
+        Class<? extends Annotation> autoValueAnnotation = (Class<? extends Annotation>) Class.forName("com.google.auto.value.AutoValue");
+        Annotation autoValue = typeElement.getAnnotation(autoValueAnnotation);
+        if (autoValue != null) {
+          TypeElement requiredElement = (TypeElement) typeElement;
+          wrappedTypeName = ClassName.bestGuess(autoValueClassName(requiredElement));
+        }
+      } catch (ClassNotFoundException ignored) {
       }
     }
 
