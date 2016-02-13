@@ -12,14 +12,14 @@ Annotated data classes can contain any type that would normally be able to be pa
 
 Annotate your data class with @PaperParcel
 
-```
+``` java
 @PaperParcel
 data class Example(var test: Int)
 ```
 
 Use generated class to wrap the data object. The generated class is always {ClassName}Parcel. In this example, it is ExampleParcel.
 
-```
+``` java
 val example = Example(42)
 val parcelableWrapper = ExampleParcel.wrap(example)
 
@@ -29,7 +29,7 @@ outState.putParcelable("example", parcelableWrapper)
 
 Unwrap the bundled data object
 
-```
+``` java
 // e.g. read from bundle
 val parcelableWrapper = savedInstanceState.getParcelable<ExampleParcel>("example")
 
@@ -40,7 +40,7 @@ val example = parcelableWrapper.contents
 
 As mentioned in the Overview section, this is perfectly valid. Note you only need the @PaperParcel annotation on the root data object (although there is nothing wrong with putting it on both), e.g.:
 
-```
+``` java
 @PaperParcel
 data class ExampleRoot(var child: ExampleChild)
 
@@ -53,7 +53,7 @@ Occasionally when using PaperParcel you might find the need to parcel an unknown
 
 A good example of when you might want this functionality is with java.util.Date objects. By default, PaperParcel will recognise Date as Serializable, and use Serialization as the Parcel reading/writing mechanism. Serialization is slow, so you might want to write a custom TypeAdapter for a Date object:
 
-```
+``` java
 class DateTypeAdapter : TypeAdapter<Date> {
     override fun writeToParcel(value: Date, outParcel: Parcel) {
         outParcel.writeLong(value.time)
@@ -67,7 +67,7 @@ class DateTypeAdapter : TypeAdapter<Date> {
 
 The TypeAdapter can be applied to the PaperParcel annotation like so:
 
-```
+``` java
 @PaperParcel(typeAdapters = arrayOf(DateTypeAdapter::class))
 data class Example(val a: Date)
 ```
@@ -77,7 +77,7 @@ data class Example(val a: Date)
 The @PaperParcel annotation cannot be put directly on a data class with type parameters, e.g.:
 
 This is wrong:
-```
+``` java
 @PaperParcel
 data class BadExample<T>(val child: T)
 ```
@@ -85,7 +85,7 @@ data class BadExample<T>(val child: T)
 However, it is OK to use data classes with typed parameters inside of your annotated data class, e.g.:
 
 This is OK:
-```
+``` java
 @PaperParcel
 data class GoodExample(val child: BadExample<Int>)
 ```
@@ -96,7 +96,7 @@ Please file a bug for anything you see is missing or not handled correctly.
 
 Gradle:
 
-```
+``` groovy
 repositories {
     maven { url = 'https://jitpack.io' }
 }
