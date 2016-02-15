@@ -65,11 +65,37 @@ class DateTypeAdapter : TypeAdapter<Date> {
 }
 ```
 
-The TypeAdapter can be applied to the PaperParcel annotation like so:
+The TypeAdapters can be applied in multiple ways:
+
+#### Global TypeAdapters
+
+Annotate your type adapter with @GlobalTypeAdapter:
+
+``` java
+@GlobalTypeAdapter
+class DateTypeAdapter : TypeAdapter<Date> {
+  // ... 
+}
+```
+
+In this example, PaperParcel will automatically use this TypeAdapter for any Date type unless a more explicit TypeAdapter is defined later.
+
+#### Class TypeAdapters
+
+Add the list of specific TypeAdapters to the PaperParcel annotation. This will take precedence over global TypeAdapters and will apply to all variables in this class.
 
 ``` java
 @PaperParcel(typeAdapters = arrayOf(DateTypeAdapter::class))
 data class Example(val a: Date)
+```
+
+#### Variable TypeAdapters
+
+Add the specific TypeAdapter directly on the variable. This will take precedence over both global and class-scoped TypeAdapters and will only apply to the annotated variable.
+
+``` java
+@PaperParcel
+data class Example(@FieldTypeAdapter(DateTypeAdapter::class) val a: Date)
 ```
 
 ## Limitations
@@ -101,8 +127,8 @@ repositories {
     maven { url = 'https://jitpack.io' }
 }
 dependencies {
-    compile 'com.github.grandstaish.paperparcel:paperparcel:0.9.9'
-    kapt 'com.github.grandstaish.paperparcel:compiler:0.9.9'
+    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-beta1'
+    kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-beta1'
 }
 ```
 
