@@ -13,50 +13,50 @@ import java.util.Date;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
-    private State state = State.create(0, new Date(), null);
-    private DateFormat dateFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
+  private State state = State.create(0, new Date(), null);
+  private DateFormat dateFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
 
-    @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+  @Override
+  protected void onCreate(@Nullable Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
 
-        if (savedInstanceState != null) {
-            state = savedInstanceState.getParcelable("state");
-        }
+    if (savedInstanceState != null) {
+      state = savedInstanceState.getParcelable("state");
+    }
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+    Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+    setSupportActionBar(toolbar);
 
-        View plusButton = findViewById(R.id.add_button);
-        plusButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                state = State.create(state.count() + 1, new Date(), null);
-                updateText();
-            }
-        });
-
-        View subtractButton = findViewById(R.id.subtract_button);
-        subtractButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                state = State.create(state.count() - 1, new Date(), null);
-                updateText();
-            }
-        });
-
+    View plusButton = findViewById(R.id.add_button);
+    plusButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        state = State.create(state.count() + 1, new Date(), null);
         updateText();
-    }
+      }
+    });
 
-    private void updateText() {
-        TextView counter = (TextView) findViewById(R.id.counter);
-        counter.setText(state.count() + " (updated at " + dateFormat.format(state.modificationDate()) + ")");
-    }
+    View subtractButton = findViewById(R.id.subtract_button);
+    subtractButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        state = State.create(state.count() - 1, new Date(), null);
+        updateText();
+      }
+    });
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putParcelable("state", state);
-    }
+    updateText();
+  }
+
+  private void updateText() {
+    TextView counter = (TextView) findViewById(R.id.counter);
+    counter.setText(state.count() + " (updated at " + dateFormat.format(state.modificationDate()) + ")");
+  }
+
+  @Override
+  protected void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    outState.putParcelable("state", state);
+  }
 }

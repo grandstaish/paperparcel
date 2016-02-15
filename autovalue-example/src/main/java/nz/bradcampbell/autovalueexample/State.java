@@ -9,11 +9,11 @@ import java.util.Date;
 
 @AutoValue
 public abstract class State implements Parcelable {
-    public abstract int count();
-    public abstract Date modificationDate();
-    @Nullable public abstract String nullableString();
+  public abstract int count();
+  public abstract Date modificationDate();
+  @Nullable public abstract String nullableString();
 
-    public static State create(int count, Date modificationDate, String nullableString) {
-        return new AutoValue_State(count, modificationDate, nullableString);
-    }
+  public static State create(int count, Date modificationDate, String nullableString) {
+    return new AutoValue_State(count, modificationDate, nullableString);
+  }
 }
