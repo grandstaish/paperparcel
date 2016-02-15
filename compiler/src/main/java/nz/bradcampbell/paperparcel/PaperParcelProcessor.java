@@ -33,9 +33,9 @@ import nz.bradcampbell.paperparcel.internal.utils.PropertyUtils;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,6 +54,7 @@ import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Elements;
@@ -74,6 +75,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
   private Types typeUtil;
   private Elements elementUtils;
 
+  private Map<TypeName, TypeName> globalTypeAdapters = new HashMap<>();
+
   private Set<String> processedParcels = new HashSet<>();
   private Set<DataClass> requiredParcels = new HashSet<>();
 
@@ -90,7 +93,11 @@ public class PaperParcelProcessor extends AbstractProcessor {
   }
 
   @Override public Set<String> getSupportedAnnotationTypes() {
-    return Collections.singleton(PaperParcel.class.getCanonicalName());
+    Set<String> types = new LinkedHashSet<>();
+    types.add(PaperParcel.class.getCanonicalName());
+    types.add(GlobalTypeAdapter.class.getCanonicalName());
+    types.add(FieldTypeAdapter.class.getCanonicalName());
+    return types;
   }
 
   @Override
@@ -99,6 +106,30 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
       // Nothing to do
       return true;
+    }
+
+    // Find all global-scoped TypeAdapters
+    for (Element element : roundEnvironment.getElementsAnnotatedWith(GlobalTypeAdapter.class)) {
+
+      // Ensure we are dealing with a TypeElement
+      if (!(element instanceof TypeElement)) {
+        error(processingEnv,
+            "@GlobalTypeAdapter applies to a type, " + element.getSimpleName() + " is a " + element.getKind(),
+            element);
+        continue;
+      }
+
+      // Ensure we are dealing with a TypeAdapter
+      TypeMirror elementMirror = element.asType();
+      TypeMirror typeAdapterMirror = typeUtil.erasure(elementUtils.getTypeElement(TypeAdapter.class.getCanonicalName()).asType());
+      if (!(typeUtil.isAssignable(elementMirror, typeAdapterMirror))) {
+        error(processingEnv, element.getSimpleName() + " needs to implement TypeAdapter", element);
+        continue;
+      }
+
+      DeclaredType ta = (DeclaredType) element.asType();
+      TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, ta);
+      globalTypeAdapters.put(typeAdapterType, TypeName.get(ta));
     }
 
     // Create a DataClass models for all classes annotated with @PaperParcel
@@ -209,6 +240,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
         continue;
       }
 
+      Map<TypeName, TypeName> variableScopedTypeAdapters = getTypeAdapterMapForVariable(
+          typeAdapters, variableElement, accessorMethod);
+
       String name = variableElement.getSimpleName().toString();
 
       // A field is only "nullable" when annotated with @Nullable
@@ -216,7 +250,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
           !AnnotationUtils.isFieldRequired(variableElement);
 
       // Parse the property type into a Property.Type object and find all recursive data class dependencies
-      Property.Type propertyType = parsePropertyType(variableElement.asType(), typeMirror, typeAdapters, variableDependencies);
+      Property.Type propertyType = parsePropertyType(variableElement.asType(), typeMirror, variableScopedTypeAdapters,
+          variableDependencies);
 
       getterMethodMap.put(name, accessorMethod ==  null ? null : accessorMethod.getSimpleName().toString());
 
@@ -236,8 +271,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
     }
   }
 
-  private ExecutableElement getAccessorMethod(TypeElement typeElement, VariableElement variableElement) throws PropertyValidationException,
-      IrrelevantPropertyException {
+  private ExecutableElement getAccessorMethod(TypeElement typeElement, VariableElement variableElement)
+      throws PropertyValidationException, IrrelevantPropertyException {
 
     String variableName = variableElement.getSimpleName().toString().toLowerCase();
 
@@ -290,6 +325,40 @@ public class PaperParcelProcessor extends AbstractProcessor {
                                           "the documented conventions.\nAlternatively your property can be have default or public visibility.", variableElement);
   }
 
+  private Map<TypeName, TypeName> getTypeAdapterMapForVariable(
+      Map<TypeName, TypeName> classScopedTypeAdapters,
+      VariableElement variableElement,
+      ExecutableElement accessorMethod) {
+
+    // Find a field-scoped adapter if it exists
+    Map<TypeName, TypeName> tempTypeAdapters = classScopedTypeAdapters;
+    FieldTypeAdapter variableAdapter = variableElement.getAnnotation(FieldTypeAdapter.class);
+
+    // Check the accessor method for the annotation too (AutoValue support)
+    if (variableAdapter == null && accessorMethod != null) {
+      variableAdapter = accessorMethod.getAnnotation(FieldTypeAdapter.class);
+    }
+
+    // http://blog.retep.org/2009/02/13/getting-class-values-from-annotations-in-an-annotationprocessor/
+    DeclaredType fieldAdapter = null;
+    if (variableAdapter != null) {
+      try {
+        variableAdapter.value();
+      } catch (MirroredTypeException mte) {
+        fieldAdapter = (DeclaredType) mte.getTypeMirror();
+      }
+    }
+
+    // Temporarily override the type adapters map with the new type adapter (for the scope of this property)
+    if (fieldAdapter != null) {
+      tempTypeAdapters = new HashMap<>(classScopedTypeAdapters);
+      TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, fieldAdapter);
+      tempTypeAdapters.put(typeAdapterType, TypeName.get(fieldAdapter));
+    }
+
+    return tempTypeAdapters;
+  }
+
   /**
    * Parses a TypeMirror into a Property.Type object. While doing so, this method will find all PaperParcel
    * dependencies and append them to variableDependencies.
@@ -334,6 +403,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
     TypeName wildcardTypeName = typeName;
 
     TypeName typeAdapter = typeAdapters.get(typeName);
+    if (typeAdapter == null) {
+      typeAdapter = globalTypeAdapters.get(typeName);
+    }
 
     // The variable element associated, or null
     Element typeElement = typeUtil.asElement(erasedType);
