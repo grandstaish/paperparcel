@@ -1,13 +1,14 @@
 package nz.bradcampbell.paperparcel;
 
+import static com.google.common.truth.Truth.assertAbout;
+import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
+
 import com.google.common.base.Joiner;
 import com.google.testing.compile.JavaFileObjects;
+
 import org.junit.Test;
 
 import javax.tools.JavaFileObject;
-
-import static com.google.common.truth.Truth.assertAbout;
-import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 
 public class BundleTests {
 
@@ -36,7 +37,7 @@ public class BundleTests {
         "import android.os.Parcelable;",
         "import java.lang.ClassLoader;",
         "import java.lang.Override;",
-        "public class TestParcel implements Parcelable {",
+        "public final class TestParcel implements Parcelable {",
         "private static final ClassLoader CLASS_LOADER = Test.class.getClassLoader();",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
         "@Override public TestParcel createFromParcel(Parcel in) {",
@@ -109,7 +110,7 @@ public class BundleTests {
         "import android.os.Parcelable;",
         "import java.lang.ClassLoader;",
         "import java.lang.Override;",
-        "public class TestParcel implements Parcelable {",
+        "public final class TestParcel implements Parcelable {",
         "private static final ClassLoader CLASS_LOADER = Test.class.getClassLoader();",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
         "@Override public TestParcel createFromParcel(Parcel in) {",

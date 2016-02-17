@@ -1,15 +1,16 @@
 package nz.bradcampbell.paperparcel;
 
-import com.google.common.base.Joiner;
-import com.google.testing.compile.JavaFileObjects;
-import org.junit.Test;
-
-import javax.tools.JavaFileObject;
-
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
 import static java.util.Arrays.asList;
+
+import com.google.common.base.Joiner;
+import com.google.testing.compile.JavaFileObjects;
+
+import org.junit.Test;
+
+import javax.tools.JavaFileObject;
 
 public class ArrayTests {
 
@@ -36,7 +37,7 @@ public class ArrayTests {
         "import android.os.Parcelable;",
         "import java.lang.Boolean;",
         "import java.lang.Override;",
-        "public class TestParcel implements Parcelable {",
+        "public final class TestParcel implements Parcelable {",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
         "@Override public TestParcel createFromParcel(Parcel in) {",
         "return new TestParcel(in);",
@@ -132,7 +133,7 @@ public class ArrayTests {
         "import java.lang.Override;",
         "import java.util.ArrayList;",
         "import java.util.List;",
-        "public class TestParcel implements Parcelable {",
+        "public final class TestParcel implements Parcelable {",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
         "@Override public TestParcel createFromParcel(Parcel in) {",
         "return new TestParcel(in);",
@@ -246,7 +247,7 @@ public class ArrayTests {
         "import android.os.Parcel;",
         "import android.os.Parcelable;",
         "import java.lang.Override;",
-        "public class TestParcel implements Parcelable {",
+        "public final class TestParcel implements Parcelable {",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
         "@Override public TestParcel createFromParcel(Parcel in) {",
         "return new TestParcel(in);",
@@ -348,7 +349,7 @@ public class ArrayTests {
         "import android.os.Parcel;",
         "import android.os.Parcelable;",
         "import java.lang.Override;",
-        "public class TestParcel implements Parcelable {",
+        "public final class TestParcel implements Parcelable {",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
         "@Override public TestParcel createFromParcel(Parcel in) {",
         "return new TestParcel(in);",
@@ -429,7 +430,7 @@ public class ArrayTests {
         "import android.os.Parcel;",
         "import android.os.Parcelable;",
         "import java.lang.Override;",
-        "public class TestParcel implements Parcelable {",
+        "public final class TestParcel implements Parcelable {",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
         "@Override public TestParcel createFromParcel(Parcel in) {",
         "return new TestParcel(in);",
@@ -521,7 +522,7 @@ public class ArrayTests {
         "import android.os.Parcel;",
         "import android.os.Parcelable;",
         "import java.lang.Override;",
-        "public class TestParcel implements Parcelable {",
+        "public final class TestParcel implements Parcelable {",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
         "@Override public TestParcel createFromParcel(Parcel in) {",
         "return new TestParcel(in);",
@@ -623,7 +624,7 @@ public class ArrayTests {
         "import java.lang.Integer;",
         "import java.lang.Long;",
         "import java.lang.Override;",
-        "public class TestParcel implements Parcelable {",
+        "public final class TestParcel implements Parcelable {",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
         "@Override public TestParcel createFromParcel(Parcel in) {",
         "return new TestParcel(in);",
@@ -666,7 +667,7 @@ public class ArrayTests {
         "import java.lang.Integer;",
         "import java.lang.Long;",
         "import java.lang.Override;",
-        "public class Child_2075967058Parcel implements Parcelable {",
+        "public final class Child_2075967058Parcel implements Parcelable {",
         "public static final Parcelable.Creator<Child_2075967058Parcel> CREATOR = new Parcelable.Creator<Child_2075967058Parcel>() {",
         "@Override public Child_2075967058Parcel createFromParcel(Parcel in) {",
         "return new Child_2075967058Parcel(in);",
@@ -711,7 +712,7 @@ public class ArrayTests {
         "import java.lang.Integer;",
         "import java.lang.Long;",
         "import java.lang.Override;",
-        "public class Child_669715220Parcel implements Parcelable {",
+        "public final class Child_669715220Parcel implements Parcelable {",
         "public static final Parcelable.Creator<Child_669715220Parcel> CREATOR = new Parcelable.Creator<Child_669715220Parcel>() {",
         "@Override public Child_669715220Parcel createFromParcel(Parcel in) {",
         "return new Child_669715220Parcel(in);",

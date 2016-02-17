@@ -1,13 +1,14 @@
 package nz.bradcampbell.paperparcel;
 
+import static com.google.common.truth.Truth.assertAbout;
+import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
+
 import com.google.common.base.Joiner;
 import com.google.testing.compile.JavaFileObjects;
+
 import org.junit.Test;
 
 import javax.tools.JavaFileObject;
-
-import static com.google.common.truth.Truth.assertAbout;
-import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 
 public class StringTests {
 
@@ -34,7 +35,7 @@ public class StringTests {
         "import android.os.Parcelable;",
         "import java.lang.Override;",
         "import java.lang.String;",
-        "public class TestParcel implements Parcelable {",
+        "public final class TestParcel implements Parcelable {",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
         "@Override public TestParcel createFromParcel(Parcel in) {",
         "return new TestParcel(in);",
@@ -104,7 +105,7 @@ public class StringTests {
         "import android.os.Parcelable;",
         "import java.lang.Override;",
         "import java.lang.String;",
-        "public class TestParcel implements Parcelable {",
+        "public final class TestParcel implements Parcelable {",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
         "@Override public TestParcel createFromParcel(Parcel in) {",
         "return new TestParcel(in);",

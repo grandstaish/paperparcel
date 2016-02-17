@@ -1,16 +1,16 @@
 package nz.bradcampbell.paperparcel;
 
-import com.google.common.base.Joiner;
-import com.google.testing.compile.JavaFileObjects;
-import org.junit.Test;
-
-import javax.tools.JavaFileObject;
-
-import java.util.Arrays;
-
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
+
+import com.google.common.base.Joiner;
+import com.google.testing.compile.JavaFileObjects;
+
+import org.junit.Test;
+
+import java.util.Arrays;
+import javax.tools.JavaFileObject;
 
 public class SerializableTests {
 
@@ -38,7 +38,7 @@ public class SerializableTests {
         "import android.os.Parcelable;",
         "import java.io.Serializable;",
         "import java.lang.Override;",
-        "public class TestParcel implements Parcelable {",
+        "public final class TestParcel implements Parcelable {",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
         "@Override public TestParcel createFromParcel(Parcel in) {",
         "return new TestParcel(in);",
@@ -109,7 +109,7 @@ public class SerializableTests {
         "import android.os.Parcelable;",
         "import java.io.Serializable;",
         "import java.lang.Override;",
-        "public class TestParcel implements Parcelable {",
+        "public final class TestParcel implements Parcelable {",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
         "@Override public TestParcel createFromParcel(Parcel in) {",
         "return new TestParcel(in);",
@@ -177,7 +177,7 @@ public class SerializableTests {
         "import android.os.Parcel;",
         "import android.os.Parcelable;",
         "import java.lang.Override;",
-        "public class TestParcel implements Parcelable {",
+        "public final class TestParcel implements Parcelable {",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
         "@Override public TestParcel createFromParcel(Parcel in) {",
         "return new TestParcel(in);",
