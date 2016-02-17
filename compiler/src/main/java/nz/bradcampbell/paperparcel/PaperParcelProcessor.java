@@ -77,8 +77,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
   private Map<TypeName, TypeName> globalTypeAdapters = new HashMap<>();
 
-  private Set<String> processedParcels = new HashSet<>();
-  private Set<DataClass> requiredParcels = new HashSet<>();
+  private Set<TypeMirror> allWrapperTypes = new HashSet<>();
 
   @Override public synchronized void init(ProcessingEnvironment env) {
     super.init(env);
@@ -102,9 +101,19 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnvironment) {
-    if (annotations.isEmpty()) {
 
-      // Nothing to do
+    // Processing is over. Generate java files for every data class found
+    if (roundEnvironment.processingOver()) {
+
+      for (TypeMirror paperParcelType : allWrapperTypes) {
+        DataClass dataClass = createParcel(paperParcelType);
+        try {
+          generateParcelableWrapper(dataClass).writeTo(filer);
+        } catch (IOException e) {
+          throw new RuntimeException("An error occurred while writing to filer." + e.getMessage(), e);
+        }
+      }
+
       return true;
     }
 
@@ -151,19 +160,14 @@ public class PaperParcelProcessor extends AbstractProcessor {
         continue;
       }
 
-      createParcel(elementTypeMirror, new HashMap<TypeName, TypeName>());
-    }
+      allWrapperTypes.add(elementTypeMirror);
 
-    // Generate java files for every data class found
-    for (DataClass p : requiredParcels) {
-      try {
-        generateParcelableWrapper(p).writeTo(filer);
-      } catch (IOException e) {
-        throw new RuntimeException("An error occurred while writing to filer." + e.getMessage(), e);
+      // Find all non-parcelable variables contained in this data class
+      for (VariableElement variableElement : getFields(typeUtil, (TypeElement) element)) {
+        TypeMirror variableMirror = variableElement.asType();
+        findNonParcelableDependencies(variableMirror);
       }
     }
-
-    requiredParcels.clear();
 
     return true;
   }
@@ -197,17 +201,13 @@ public class PaperParcelProcessor extends AbstractProcessor {
    *
    * @param typeMirror The data class
    */
-  private void createParcel(TypeMirror typeMirror, Map<TypeName, TypeName> typeAdapters) {
+  private DataClass createParcel(TypeMirror typeMirror) {
     TypeElement typeElement = (TypeElement) typeUtil.asElement(typeMirror);
 
     String classPackage = getPackageName(typeElement);
     String wrappedClassName = generateWrappedTypeName(typeElement, typeMirror);
 
-    // Exit early if we have already created a parcel for this data class
-    if (processedParcels.contains(wrappedClassName)) return;
-
     List<Property> properties = new ArrayList<>();
-    List<TypeMirror> variableDependencies = new ArrayList<>();
 
     // Get all member variable elements in the data class
     List<VariableElement> variableElements = getFields(typeUtil, typeElement);
@@ -215,6 +215,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
     Map<String, String> getterMethodMap = new HashMap<>(variableElements.size());
 
     boolean requiresClassLoader = false;
+
+    Map<TypeName, TypeName> typeAdapters = new HashMap<>();
 
     // Override the type adapters with the current element preferences
     Map<String, Object> annotation = AnnotationUtils.getAnnotation(PaperParcel.class, typeElement);
@@ -250,8 +252,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
           !AnnotationUtils.isFieldRequired(variableElement);
 
       // Parse the property type into a Property.Type object and find all recursive data class dependencies
-      Property.Type propertyType = parsePropertyType(variableElement.asType(), typeMirror, variableScopedTypeAdapters,
-          variableDependencies);
+      Property.Type propertyType = parsePropertyType(variableElement.asType(), typeMirror, variableScopedTypeAdapters);
 
       getterMethodMap.put(name, accessorMethod ==  null ? null : accessorMethod.getSimpleName().toString());
 
@@ -261,14 +262,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
       requiresClassLoader |= property.requiresClassLoader();
     }
 
-    requiredParcels.add(new DataClass(properties, classPackage, wrappedClassName, getterMethodMap,
-        TypeName.get(typeMirror), requiresClassLoader));
-    processedParcels.add(wrappedClassName);
-
-    // Build parcel dependencies
-    for (TypeMirror requiredParcel : variableDependencies) {
-      createParcel(requiredParcel, typeAdapters);
-    }
+    return new DataClass(properties, classPackage, wrappedClassName, getterMethodMap, TypeName.get(typeMirror),
+        requiresClassLoader);
   }
 
   private ExecutableElement getAccessorMethod(TypeElement typeElement, VariableElement variableElement)
@@ -364,12 +359,10 @@ public class PaperParcelProcessor extends AbstractProcessor {
    * dependencies and append them to variableDependencies.
    *
    * @param variable The member variable variable
-   * @param variableDependencies A list to hold all recursive dependencies
+   * @param dataClass The class that owns this property
    * @return The parsed variable
    */
-  private Property.Type parsePropertyType(TypeMirror variable, TypeMirror dataClass,
-      Map<TypeName, TypeName> typeAdapters,
-      List<TypeMirror> variableDependencies) {
+  private Property.Type parsePropertyType(TypeMirror variable, TypeMirror dataClass, Map<TypeName, TypeName> typeAdapters) {
 
     // The element associated, or null
     Element element = typeUtil.asElement(variable);
@@ -395,7 +388,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     List<Property.Type> childTypes = null;
 
     // The variable that allows this variable to be parcelable, or null
-    TypeName parcelableTypeName = PropertyUtils.getParcelableType(typeUtil, erasedType);
+    TypeName parcelableTypeName = allWrapperTypes.contains(variable) ? null : PropertyUtils.getParcelableType(typeUtil, erasedType);
     boolean isParcelable = parcelableTypeName != null;
 
     TypeName typeName = ClassName.get(erasedType);
@@ -435,7 +428,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
           TypeName[] wrappedParameterArray = new TypeName[numTypeArgs];
 
           for (int i = 0; i < numTypeArgs; i++) {
-            Property.Type argType = parsePropertyType(typeArguments.get(i), dataClass, typeAdapters, variableDependencies);
+            Property.Type argType = parsePropertyType(typeArguments.get(i), dataClass, typeAdapters);
             childTypes.add(argType);
             parameterArray[i] = argType.getTypeName();
             wildcardParameterArray[i] = argType.getWildcardTypeName();
@@ -453,7 +446,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
         // Array types will always have 1 "child variable" which is the component variable
         childTypes = new ArrayList<>(1);
-        Property.Type componentType = parsePropertyType(arrayType.getComponentType(), dataClass, typeAdapters, variableDependencies);
+        Property.Type componentType = parsePropertyType(arrayType.getComponentType(), dataClass, typeAdapters);
         childTypes.add(componentType);
 
         wrappedTypeName = ArrayTypeName.of(componentType.getWrappedTypeName());
@@ -471,8 +464,6 @@ public class PaperParcelProcessor extends AbstractProcessor {
       // Update wildcard and typename to include wildcards and generics
       wildcardTypeName = TypeName.get(variable);
       typeName = TypeName.get(noWildCardType);
-
-      variableDependencies.add(noWildCardType);
 
       // This is (one of) the reason(s) it is not parcelable. Assume it contains a data object as a parameter
       TypeElement requiredElement = (TypeElement) typeElement;
@@ -520,7 +511,36 @@ public class PaperParcelProcessor extends AbstractProcessor {
     return pkg + dot + "AutoValue_" + name;
   }
 
+  private void findNonParcelableDependencies(TypeMirror childType) {
+    TypeMirror noWildCardType = childType;
+    if (childType instanceof WildcardType) {
+
+      // Properties using Kotlin's @JvmWildcard will fall into here
+      noWildCardType = ((WildcardType) childType).getExtendsBound();
+    }
+
+    if (PropertyUtils.getParcelableType(typeUtil, noWildCardType) == null) {
+      // This type is not parcelable, it needs a wrapper. Add it to the set.
+      allWrapperTypes.add(noWildCardType);
+    }
+
+    if (noWildCardType instanceof DeclaredType) {
+      DeclaredType declaredType = (DeclaredType) noWildCardType;
+      for (TypeMirror parameterType : declaredType.getTypeArguments()) {
+        findNonParcelableDependencies(parameterType);
+      }
+    }
+
+    if (noWildCardType instanceof ArrayType) {
+      ArrayType arrayType = (ArrayType) noWildCardType;
+      findNonParcelableDependencies(arrayType.getComponentType());
+    }
+  }
+
   private FieldSpec generateClassLoaderField(TypeName className) {
+    if (className instanceof ParameterizedTypeName) {
+      className = ((ParameterizedTypeName) className).rawType;
+    }
     return FieldSpec.builder(ClassLoader.class, "CLASS_LOADER", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
         .initializer("$T.class.getClassLoader()", className)
         .build();
