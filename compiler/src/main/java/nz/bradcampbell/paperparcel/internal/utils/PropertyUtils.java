@@ -49,7 +49,6 @@ import nz.bradcampbell.paperparcel.internal.properties.SparseBooleanArrayPropert
 import nz.bradcampbell.paperparcel.internal.properties.StringArrayProperty;
 import nz.bradcampbell.paperparcel.internal.properties.StringProperty;
 import nz.bradcampbell.paperparcel.internal.properties.TypeAdapterProperty;
-import nz.bradcampbell.paperparcel.internal.properties.ValueProperty;
 
 import java.util.List;
 import java.util.Set;
@@ -76,7 +75,6 @@ public class PropertyUtils {
   private static final TypeName PARCELABLE = ClassName.get("android.os", "Parcelable");
   private static final TypeName PARCELABLE_ARRAY = ArrayTypeName.of(PARCELABLE);
   private static final TypeName CHAR_SEQUENCE = ClassName.get("java.lang", "CharSequence");
-  private static final TypeName CHAR_SEQUENCE_ARRAY = ArrayTypeName.of(CHAR_SEQUENCE);
   private static final TypeName IBINDER = ClassName.get("android.os", "IBinder");
   private static final TypeName OBJECT_ARRAY = ArrayTypeName.of(OBJECT);
   private static final TypeName SERIALIZABLE = ClassName.get("java.io", "Serializable");
@@ -96,9 +94,9 @@ public class PropertyUtils {
 
   private static final Set<TypeName> VALID_TYPES = ImmutableSet.of(STRING, MAP, LIST, BOOLEAN_ARRAY, BYTE_ARRAY,
       INT_ARRAY, LONG_ARRAY, STRING_ARRAY, SPARSE_ARRAY, SPARSE_BOOLEAN_ARRAY, BUNDLE, PARCELABLE, PARCELABLE_ARRAY,
-      CHAR_SEQUENCE, CHAR_SEQUENCE_ARRAY, IBINDER, OBJECT_ARRAY, SERIALIZABLE, PERSISTABLE_BUNDLE, SIZE, SIZEF, ENUM,
-      INT, BOXED_INT, LONG, BOXED_LONG, BYTE, BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT, CHAR, BOXED_CHAR,
-      DOUBLE, BOXED_DOUBLE, SHORT, BOXED_SHORT, TYPE_ADAPTER);
+      CHAR_SEQUENCE, IBINDER, OBJECT_ARRAY, SERIALIZABLE, PERSISTABLE_BUNDLE, SIZE, SIZEF, ENUM, INT, BOXED_INT,
+      LONG, BOXED_LONG, BYTE, BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT, CHAR, BOXED_CHAR, DOUBLE,
+      BOXED_DOUBLE, SHORT, BOXED_SHORT, TYPE_ADAPTER);
 
   private static final Set<TypeName> REQUIRES_CLASS_LOADER = ImmutableSet.of(BUNDLE, PERSISTABLE_BUNDLE);
 
@@ -120,38 +118,22 @@ public class PropertyUtils {
 
     if (STRING.equals(parcelableType)) {
       return new StringProperty(propertyType, isNullable, name);
-    } else if (INT.equals(parcelableType)) {
+    } else if (INT.equals(parcelableType) || BOXED_INT.equals(parcelableType)) {
       return new IntProperty(propertyType, isNullable, name);
-    } else if (BOXED_INT.equals(parcelableType)) {
-      return new ValueProperty(propertyType, name);
-    } else if (LONG.equals(parcelableType)) {
+    } else if (LONG.equals(parcelableType) || BOXED_LONG.box().equals(parcelableType)) {
       return new LongProperty(propertyType, isNullable, name);
-    } else if (BOXED_LONG.box().equals(parcelableType)) {
-      return new ValueProperty(propertyType, name);
-    } else if (BYTE.equals(parcelableType)) {
+    } else if (BYTE.equals(parcelableType) || BOXED_BYTE.equals(parcelableType)) {
       return new ByteProperty(propertyType, isNullable, name);
-    } else if (BOXED_BYTE.equals(parcelableType)) {
-      return new ValueProperty(propertyType, name);
-    } else if (BOOLEAN.equals(parcelableType)) {
+    } else if (BOOLEAN.equals(parcelableType) || BOXED_BOOLEAN.equals(parcelableType)) {
       return new BooleanProperty(propertyType, isNullable, name);
-    } else if (BOXED_BOOLEAN.equals(parcelableType)) {
-      return new ValueProperty(propertyType, name);
-    } else if (FLOAT.equals(parcelableType)) {
+    } else if (FLOAT.equals(parcelableType) || BOXED_FLOAT.equals(parcelableType)) {
       return new FloatProperty(propertyType, isNullable, name);
-    } else if (BOXED_FLOAT.equals(parcelableType)) {
-      return new ValueProperty(propertyType, name);
-    } else if (CHAR.equals(parcelableType)) {
+    } else if (CHAR.equals(parcelableType) || BOXED_CHAR.equals(parcelableType)) {
       return new CharProperty(propertyType, isNullable, name);
-    } else if (BOXED_CHAR.equals(parcelableType)) {
-      return new ValueProperty(propertyType, name);
-    } else if (DOUBLE.equals(parcelableType)) {
+    } else if (DOUBLE.equals(parcelableType) || BOXED_DOUBLE.equals(parcelableType)) {
       return new DoubleProperty(propertyType, isNullable, name);
-    } else if (BOXED_DOUBLE.equals(parcelableType)) {
-      return new ValueProperty(propertyType, name);
-    } else if (SHORT.equals(parcelableType)) {
+    } else if (SHORT.equals(parcelableType) || BOXED_SHORT.equals(parcelableType)) {
       return new ShortProperty(propertyType, isNullable, name);
-    } else if (BOXED_SHORT.equals(parcelableType)) {
-      return new ValueProperty(propertyType, name);
     } else if (MAP.equals(parcelableType)) {
       return new MapProperty(propertyType, isNullable, name);
     } else if (LIST.equals(parcelableType)) {
@@ -178,8 +160,6 @@ public class PropertyUtils {
       return new ArrayProperty(propertyType, isNullable, name);
     } else if (CHAR_SEQUENCE.equals(parcelableType)) {
       return new CharSequenceProperty(propertyType, isNullable, name);
-    } else if (CHAR_SEQUENCE_ARRAY.equals(parcelableType)) {
-      return new ValueProperty(propertyType, name);
     } else if (IBINDER.equals(parcelableType)) {
       return new IBinderProperty(propertyType, isNullable, name);
     } else if (OBJECT_ARRAY.equals(parcelableType)) {

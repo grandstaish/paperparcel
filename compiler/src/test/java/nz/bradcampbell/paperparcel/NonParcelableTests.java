@@ -113,7 +113,7 @@ public class NonParcelableTests {
         "this.data = data;",
         "}",
         "private ChildParcel(Parcel in) {",
-        "Integer child = (Integer) in.readValue(null);",
+        "Integer child = in.readInt();",
         "this.data = new Child(child);",
         "}",
         "public static final ChildParcel wrap(Child data) {",
@@ -127,7 +127,7 @@ public class NonParcelableTests {
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
         "Integer child = data.getChild();",
-        "dest.writeValue(child);",
+        "dest.writeInt(child);",
         "}",
         "}"
     ));
@@ -374,7 +374,7 @@ public class NonParcelableTests {
         "this.data = data;",
         "}",
         "private ChildParcel(Parcel in) {",
-        "Integer child = (Integer) in.readValue(null);",
+        "Integer child = in.readInt();",
         "this.data = new Child(child);",
         "}",
         "public static final ChildParcel wrap(Child data) {",
@@ -388,7 +388,7 @@ public class NonParcelableTests {
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
         "Integer child = data.getChild();",
-        "dest.writeValue(child);",
+        "dest.writeInt(child);",
         "}",
         "}"
     ));

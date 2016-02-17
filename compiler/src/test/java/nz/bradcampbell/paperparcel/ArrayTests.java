@@ -56,8 +56,11 @@ public class ArrayTests {
         "int childSize = in.readInt();",
         "Boolean[] child = new Boolean[childSize];",
         "for (int childIndex = 0; childIndex < childSize; childIndex++) {",
-        "Boolean childItem = (Boolean) in.readValue(null);",
-        "child[childIndex] = childItem;",
+        "Boolean outChildItem = null;",
+        "if (in.readInt() == 0) {",
+        "outChildItem = in.readInt() == 1;",
+        "}",
+        "child[childIndex] = outChildItem;",
         "}",
         "outChild = child;",
         "}",
@@ -82,7 +85,12 @@ public class ArrayTests {
         "dest.writeInt(childSize);",
         "for (int childIndex = 0; childIndex < childSize; childIndex++) {",
         "Boolean childItem = child[childIndex];",
-        "dest.writeValue(childItem);",
+        "if (childItem == null) {",
+        "dest.writeInt(1);",
+        "} else {",
+        "dest.writeInt(0);",
+        "dest.writeInt(childItem ? 1 : 0);",
+        "}",
         "}",
         "}",
         "}",
@@ -683,7 +691,7 @@ public class ArrayTests {
         "private Child_2075967058Parcel(Parcel in) {",
         "Child_669715220Parcel child1Parcel = Child_669715220Parcel.CREATOR.createFromParcel(in);",
         "Child<Integer, Long> child1 = child1Parcel.getContents();",
-        "Boolean child2 = (Boolean) in.readValue(null);",
+        "Boolean child2 = in.readInt() == 1;",
         "this.data = new Child<Child<Integer, Long>, Boolean>(child1, child2);",
         "}",
         "public static final Child_2075967058Parcel wrap(Child<Child<Integer, Long>, Boolean> data) {",
@@ -700,7 +708,7 @@ public class ArrayTests {
         "Child_669715220Parcel child1Parcel = Child_669715220Parcel.wrap(child1);",
         "child1Parcel.writeToParcel(dest, 0);",
         "Boolean child2 = data.getChild2();",
-        "dest.writeValue(child2);",
+        "dest.writeInt(child2 ? 1 : 0);",
         "}",
         "}"
     ));
@@ -726,8 +734,8 @@ public class ArrayTests {
         "this.data = data;",
         "}",
         "private Child_669715220Parcel(Parcel in) {",
-        "Integer child1 = (Integer) in.readValue(null);",
-        "Long child2 = (Long) in.readValue(null);",
+        "Integer child1 = in.readInt();",
+        "Long child2 = in.readLong();",
         "this.data = new Child<Integer, Long>(child1, child2);",
         "}",
         "public static final Child_669715220Parcel wrap(Child<Integer, Long> data) {",
@@ -741,9 +749,9 @@ public class ArrayTests {
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
         "Integer child1 = data.getChild1();",
-        "dest.writeValue(child1);",
+        "dest.writeInt(child1);",
         "Long child2 = data.getChild2();",
-        "dest.writeValue(child2);",
+        "dest.writeLong(child2);",
         "}",
         "}"
     ));
@@ -753,5 +761,86 @@ public class ArrayTests {
         .compilesWithoutError()
         .and()
         .generatesSources(expectedSource1, expectedSource2, expectedSource3);
+  }
+
+  @Test public void charSequenceArrayTest() throws Exception {
+    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+        "package test;",
+        "import nz.bradcampbell.paperparcel.PaperParcel;",
+        "@PaperParcel",
+        "public final class Test {",
+        "private final CharSequence[] child;",
+        "public Test(CharSequence[] child) {",
+        "this.child = child;",
+        "}",
+        "public CharSequence[] getChild() {",
+        "return this.child;",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject expectedSource = JavaFileObjects.forSourceString("test/TestParcel", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
+        "import android.text.TextUtils;",
+        "import java.lang.CharSequence;",
+        "import java.lang.Override;",
+        "public final class TestParcel implements Parcelable {",
+        "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
+        "@Override public TestParcel createFromParcel(Parcel in) {",
+        "return new TestParcel(in);",
+        "}",
+        "@Override public TestParcel[] newArray(int size) {",
+        "return new TestParcel[size];",
+        "}",
+        "};",
+        "private final Test data;",
+        "private TestParcel(Test data) {",
+        "this.data = data;",
+        "}",
+        "private TestParcel(Parcel in) {",
+        "int childSize = in.readInt();",
+        "CharSequence[] child = new CharSequence[childSize];",
+        "for (int childIndex = 0; childIndex < childSize; childIndex++) {",
+        "CharSequence outChildItem = null;",
+        "if (in.readInt() == 0) {",
+        "outChildItem = TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in);",
+        "}",
+        "child[childIndex] = outChildItem;",
+        "}",
+        "this.data = new Test(child);",
+        "}",
+        "public static final TestParcel wrap(Test data) {",
+        "return new TestParcel(data);",
+        "}",
+        "public Test getContents() {",
+        "return data;",
+        "}",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "CharSequence[] child = data.getChild();",
+        "int childSize = child.length;",
+        "dest.writeInt(childSize);",
+        "for (int childIndex = 0; childIndex < childSize; childIndex++) {",
+        "CharSequence childItem = child[childIndex];",
+        "if (childItem == null) {",
+        "dest.writeInt(1);",
+        "} else {",
+        "dest.writeInt(0);",
+        "TextUtils.writeToParcel(childItem, dest, 0);",
+        "}",
+        "}",
+        "}",
+        "}"
+    ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expectedSource);
   }
 }
