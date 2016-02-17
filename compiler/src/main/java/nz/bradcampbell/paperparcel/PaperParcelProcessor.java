@@ -579,7 +579,14 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
     if (properties != null) {
 
-      String initializer = "this.$N = new $T(";
+      String initializer;
+      if (className instanceof ParameterizedTypeName) {
+        className = ((ParameterizedTypeName) className).rawType;
+        initializer = "this.$N = new $T<>(";
+      } else {
+        initializer = "this.$N = new $T(";
+      }
+
       int paramsOffset = 2;
       Object[] params = new Object[properties.size() + paramsOffset];
       params[0] = DATA_VARIABLE_NAME;
@@ -638,6 +645,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
       String getterMethodName = getterMethods == null ? null : getterMethods.get(p.getName());
       String accessorStrategy = getterMethodName == null ? p.getName() : getterMethodName + "()";
       TypeName wildCardTypeName = p.getPropertyType().getWildcardTypeName();
+      if (wildCardTypeName instanceof WildcardTypeName) {
+        wildCardTypeName = ((WildcardTypeName) wildCardTypeName).upperBounds.get(0);
+      }
       block.addStatement("$T $N = $N.$N", wildCardTypeName, p.getName(), DATA_VARIABLE_NAME, accessorStrategy);
       CodeBlock sourceLiteral = PropertyUtils.literal("$N", p.getName());
       p.writeToParcel(block, dest, sourceLiteral);

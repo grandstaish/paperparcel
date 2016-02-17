@@ -19,6 +19,7 @@ import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
+import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
 
@@ -164,6 +165,10 @@ public class TypeUtils {
               "Type reported as <any> is likely a not-yet generated parameterized type.");
         }
         result.append(errorType.toString());
+        return null;
+      }
+      @Override public Void visitWildcard(WildcardType t, Void aVoid) {
+        result.append(t.getExtendsBound().toString());
         return null;
       }
       @Override protected Void defaultAction(TypeMirror typeMirror, Void v) {
