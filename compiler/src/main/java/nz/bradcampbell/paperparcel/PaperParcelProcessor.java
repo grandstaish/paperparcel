@@ -103,8 +103,6 @@ public class PaperParcelProcessor extends AbstractProcessor {
     // Processing is over. Generate java files for every data class found
     if (roundEnvironment.processingOver()) {
 
-      processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, "TYPE!!!! " + allWrapperTypes.size());
-
       Set<DataClass> dataClasses = new LinkedHashSet<>();
       for (TypeMirror paperParcelType : allWrapperTypes.values()) {
         DataClass dataClass = createParcel(paperParcelType);
