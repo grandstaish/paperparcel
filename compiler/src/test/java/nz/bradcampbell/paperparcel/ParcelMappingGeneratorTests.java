@@ -1,10 +1,9 @@
 package nz.bradcampbell.paperparcel;
 
-import static com.google.common.truth.Truth.assertThat;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
 import static java.util.Arrays.asList;
-import static nz.bradcampbell.paperparcel.CentralLookupGenerator.findLowestCommonPackageName;
+import static nz.bradcampbell.paperparcel.ParcelMappingGenerator.PACKAGE_NAME;
 
 import com.google.common.base.Joiner;
 import com.google.common.truth.Truth;
@@ -14,7 +13,7 @@ import javax.tools.JavaFileObject;
 
 import org.junit.Test;
 
-public class CentralLookupGeneratorTests {
+public class ParcelMappingGeneratorTests {
   @Test public void singleParcelable() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
@@ -31,17 +30,18 @@ public class CentralLookupGeneratorTests {
         "}"
     ));
 
-    JavaFileObject centralLookup = JavaFileObjects.forSourceString("test.PaperParcels", Joiner.on("\n").join(
-        "package test;",
-        "import android.os.Parcelable;",
+    JavaFileObject centralLookup = JavaFileObjects.forSourceString(PACKAGE_NAME + ".PaperParcelMapping", Joiner.on("\n").join(
+        "package " + PACKAGE_NAME + ";",
         "import java.lang.Class;",
         "import java.util.LinkedHashMap;",
         "import java.util.Map;",
-        "public final class PaperParcels {",
-        "private static final Map<Class, Delegator> FROM_ORIGINAL = new LinkedHashMap<>();",
-        "private static final Map<Class, Delegator> FROM_PARCELABLE = new LinkedHashMap<>();",
+        "import test.Test;",
+        "import test.TestParcel;",
+        "public final class PaperParcelMapping {",
+        "private static final Map<Class, PaperParcels.Delegator> FROM_ORIGINAL = new LinkedHashMap<>();",
+        "private static final Map<Class, PaperParcels.Delegator> FROM_PARCELABLE = new LinkedHashMap<>();",
         "static {",
-        "Delegator<Test, TestParcel> delegator0 = new Delegator<Test, TestParcel>() {",
+        "PaperParcels.Delegator<Test, TestParcel> delegator0 = new PaperParcels.Delegator<Test, TestParcel>() {",
         "@Override public Test unwrap(TestParcel wrapper) {",
         "return wrapper.getContents();",
         "}",
@@ -52,21 +52,6 @@ public class CentralLookupGeneratorTests {
         "FROM_ORIGINAL.put(Test.class, delegator0);",
         "FROM_PARCELABLE.put(TestParcel.class, delegator0);",
         "}", // End of static block
-        "public static <ORIG, PARCELABLE extends Parcelable> PARCELABLE wrap(ORIG originalObj) {",
-        "Class<?> type = originalObj.getClass();",
-        "Delegator<ORIG, PARCELABLE> delegator = FROM_ORIGINAL.get(type);",
-        "return delegator.wrap(originalObj);",
-        "}",
-        "",
-        "public static <ORIG, PARCELABLE extends Parcelable> ORIG unwrap(PARCELABLE parcelableObj) {",
-        "Class<?> type = parcelableObj.getClass();",
-        "Delegator<ORIG, PARCELABLE> delegator = FROM_PARCELABLE.get(type);",
-        "return delegator.unwrap(parcelableObj);",
-        "}",
-        "interface Delegator<ORIG, PARCELABLE extends Parcelable> {",
-        "ORIG unwrap(PARCELABLE parcelableObj);",
-        "PARCELABLE wrap(ORIG originalObj);",
-        "}", // End of Delegator interface
         "}" // End of PaperParcels class
         ));
     Truth.assertAbout(javaSource())
@@ -107,19 +92,20 @@ public class CentralLookupGeneratorTests {
         "}",
         "}"
     ));
-    JavaFileObject centralLookup = JavaFileObjects.forSourceString("test.PaperParcels", Joiner.on("\n").join(
-        "package test;",
-        "import android.os.Parcelable;",
+    JavaFileObject centralLookup = JavaFileObjects.forSourceString(PACKAGE_NAME + ".PaperParcels", Joiner.on("\n").join(
+        "package " + PACKAGE_NAME + ";",
         "import java.lang.Class;",
         "import java.util.LinkedHashMap;",
         "import java.util.Map;",
+        "import test.Test;",
+        "import test.TestParcel;",
         "import test.bar.Test2;",
         "import test.bar.Test2Parcel;",
-        "public final class PaperParcels {",
-        "private static final Map<Class, Delegator> FROM_ORIGINAL = new LinkedHashMap<>();",
-        "private static final Map<Class, Delegator> FROM_PARCELABLE = new LinkedHashMap<>();",
+        "public final class PaperParcelMapping {",
+        "private static final Map<Class, PaperParcels.Delegator> FROM_ORIGINAL = new LinkedHashMap<>();",
+        "private static final Map<Class, PaperParcels.Delegator> FROM_PARCELABLE = new LinkedHashMap<>();",
         "static {",
-        "Delegator<Test2, Test2Parcel> delegator0 = new Delegator<Test2, Test2Parcel>() {",
+        "PaperParcels.Delegator<Test2, Test2Parcel> delegator0 = new PaperParcels.Delegator<Test2, Test2Parcel>() {",
         "@Override public Test2 unwrap(Test2Parcel wrapper) {",
         "return wrapper.getContents();",
         "}",
@@ -129,7 +115,7 @@ public class CentralLookupGeneratorTests {
         "};",
         "FROM_ORIGINAL.put(Test2.class, delegator0);",
         "FROM_PARCELABLE.put(Test2Parcel.class, delegator0);",
-        "Delegator<Test, TestParcel> delegator1 = new Delegator<Test, TestParcel>() {",
+        "PaperParcels.Delegator<Test, TestParcel> delegator1 = new PaperParcels.Delegator<Test, TestParcel>() {",
         "@Override public Test unwrap(TestParcel wrapper) {",
         "return wrapper.getContents();",
         "}",
@@ -140,21 +126,6 @@ public class CentralLookupGeneratorTests {
         "FROM_ORIGINAL.put(Test.class, delegator1);",
         "FROM_PARCELABLE.put(TestParcel.class, delegator1);",
         "}", // End of static block
-        "public static <ORIG, PARCELABLE extends Parcelable> PARCELABLE wrap(ORIG originalObj) {",
-        "Class<?> type = originalObj.getClass();",
-        "Delegator<ORIG, PARCELABLE> delegator = FROM_ORIGINAL.get(type);",
-        "return delegator.wrap(originalObj);",
-        "}",
-        "",
-        "public static <ORIG, PARCELABLE extends Parcelable> ORIG unwrap(PARCELABLE parcelableObj) {",
-        "Class<?> type = parcelableObj.getClass();",
-        "Delegator<ORIG, PARCELABLE> delegator = FROM_PARCELABLE.get(type);",
-        "return delegator.unwrap(parcelableObj);",
-        "}",
-        "interface Delegator<ORIG, PARCELABLE extends Parcelable> {",
-        "ORIG unwrap(PARCELABLE parcelableObj);",
-        "PARCELABLE wrap(ORIG originalObj);",
-        "}", // End of Delegator interface
         "}" // End of PaperParcels class
     ));
     Truth.assertAbout(javaSources())
@@ -204,14 +175,5 @@ public class CentralLookupGeneratorTests {
           "}",
           "}"
       ));
-  }
-
-  @SuppressWarnings("ArraysAsListWithZeroOrOneArgument")
-  @Test public void commonPackageName() throws Exception {
-    assertThat(findLowestCommonPackageName(asList("foo"))).isEqualTo("foo");
-    assertThat(findLowestCommonPackageName(asList("foo", "foo.bar"))).isEqualTo("foo");
-    assertThat(findLowestCommonPackageName(asList("foo.bar", "foo"))).isEqualTo("foo");
-    assertThat(findLowestCommonPackageName(asList("foo.bar", "foo.baz"))).isEqualTo("foo");
-    assertThat(findLowestCommonPackageName(asList("foo.bar", "foo.baz", "foo.troll"))).isEqualTo("foo");
   }
 }

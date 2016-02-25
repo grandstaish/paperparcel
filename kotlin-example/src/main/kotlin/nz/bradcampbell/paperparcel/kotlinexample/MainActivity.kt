@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.Toolbar
 import android.widget.TextView
+import nz.bradcampbell.paperparcel.PaperParcels
 import java.text.SimpleDateFormat
 import java.util.*
 

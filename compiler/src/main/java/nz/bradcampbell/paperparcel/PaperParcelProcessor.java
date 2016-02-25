@@ -114,7 +114,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
         }
       }
       try {
-        CentralLookupGenerator.generateParcelableLookup(dataClasses).writeTo(filer);
+        ParcelMappingGenerator.generateParcelableMapping(dataClasses).writeTo(filer);
       } catch (IOException e) {
         throw new RuntimeException("An error occurred while writing Lookup to filer." + e.getMessage(), e);
       }
