@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -76,8 +75,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
   private Elements elementUtils;
 
   private Map<TypeName, TypeName> globalTypeAdapters = new HashMap<>();
-
-  private Set<TypeMirror> allWrapperTypes = new HashSet<>();
+  private Map<String, TypeMirror> allWrapperTypes = new HashMap<>();
 
   @Override public synchronized void init(ProcessingEnvironment env) {
     super.init(env);
@@ -105,7 +103,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
     // Processing is over. Generate java files for every data class found
     if (roundEnvironment.processingOver()) {
 
-      for (TypeMirror paperParcelType : allWrapperTypes) {
+      processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, "TYPE!!!! " + allWrapperTypes.size());
+
+      for (TypeMirror paperParcelType : allWrapperTypes.values()) {
         DataClass dataClass = createParcel(paperParcelType);
         try {
           generateParcelableWrapper(dataClass).writeTo(filer);
@@ -160,7 +160,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
         continue;
       }
 
-      allWrapperTypes.add(elementTypeMirror);
+      allWrapperTypes.put(elementTypeMirror.toString(), elementTypeMirror);
 
       // Find all non-parcelable variables contained in this data class
       for (VariableElement variableElement : getFields(typeUtil, (TypeElement) element)) {
@@ -388,7 +388,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     List<Property.Type> childTypes = null;
 
     // The variable that allows this variable to be parcelable, or null
-    TypeName parcelableTypeName = allWrapperTypes.contains(variable) ? null : PropertyUtils.getParcelableType(typeUtil, erasedType);
+    TypeName parcelableTypeName = allWrapperTypes.containsKey(variable.toString()) ? null : PropertyUtils.getParcelableType(typeUtil, erasedType);
     boolean isParcelable = parcelableTypeName != null;
 
     TypeName typeName = ClassName.get(erasedType);
@@ -521,7 +521,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
     if (PropertyUtils.getParcelableType(typeUtil, noWildCardType) == null) {
       // This type is not parcelable, it needs a wrapper. Add it to the set.
-      allWrapperTypes.add(noWildCardType);
+      allWrapperTypes.put(noWildCardType.toString(), noWildCardType);
     }
 
     if (noWildCardType instanceof DeclaredType) {
