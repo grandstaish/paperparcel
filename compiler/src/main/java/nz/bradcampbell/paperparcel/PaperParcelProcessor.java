@@ -105,13 +105,20 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
       processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, "TYPE!!!! " + allWrapperTypes.size());
 
+      Set<DataClass> dataClasses = new LinkedHashSet<>();
       for (TypeMirror paperParcelType : allWrapperTypes.values()) {
         DataClass dataClass = createParcel(paperParcelType);
+        dataClasses.add(dataClass);
         try {
           generateParcelableWrapper(dataClass).writeTo(filer);
         } catch (IOException e) {
           throw new RuntimeException("An error occurred while writing to filer." + e.getMessage(), e);
         }
+      }
+      try {
+        CentralLookupGenerator.generateParcelableLookup(dataClasses).writeTo(filer);
+      } catch (IOException e) {
+        throw new RuntimeException("An error occurred while writing Lookup to filer." + e.getMessage(), e);
       }
 
       return true;
