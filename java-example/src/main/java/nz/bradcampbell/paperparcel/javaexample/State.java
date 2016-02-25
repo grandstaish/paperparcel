@@ -42,4 +42,23 @@ public final class State {
     public String getNullableString() {
         return nullableString;
     }
+
+    @Override public int hashCode() {
+        int result = count;
+        result = 31 * result + modificationDate.hashCode();
+        result = 31 * result + (nullableString != null ? nullableString.hashCode() : 0);
+        return result;
+    }
+
+    @Override public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        State state = (State) o;
+
+        if (count != state.count) return false;
+        if (!modificationDate.equals(state.modificationDate)) return false;
+        return nullableString != null ? nullableString.equals(state.nullableString)
+            : state.nullableString == null;
+    }
 }

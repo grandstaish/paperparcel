@@ -18,13 +18,13 @@ import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
 import nz.bradcampbell.paperparcel.internal.DataClass;
 
+import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
 public final class CentralLookupGenerator {
-  static final String PACKAGE_NAME = "nz.bradcampbell.paperparcel.generated";
-
   public static JavaFile generateParcelableLookup(Set<DataClass> dataClasses) {
     TypeSpec.Builder wrapperBuilder =
         TypeSpec.classBuilder("PaperParcels").addModifiers(PUBLIC, FINAL);
@@ -52,6 +52,7 @@ public final class CentralLookupGenerator {
 
     CodeBlock.Builder staticBlockBuilder = CodeBlock.builder();
     int index = 0;
+    Set<String> packageNames = new LinkedHashSet<>();
     for (DataClass dataClass : dataClasses) {
       // Parameterized types don't need to be dynamically wrapped/unwrapped: ignore.
       TypeName original = dataClass.getClassName();
@@ -65,6 +66,7 @@ public final class CentralLookupGenerator {
         staticBlockBuilder.add("// AutoValue class ignored: $N\n", ((ClassName) original).simpleName());
         continue;
       }
+      packageNames.add(dataClass.getClassPackage());
       TypeName parcelable = dataClass.getWrapperClassName();
       String varName = "delegator" + index++;
       staticBlockBuilder.add("Delegator<$T, $T> $N = new Delegator<$T, $T>() {\n", original, parcelable, varName, original, parcelable)
@@ -103,7 +105,52 @@ public final class CentralLookupGenerator {
         .addCode("return delegator.unwrap(parcelableObj);\n")
         .build());
 
-    return JavaFile.builder(PACKAGE_NAME, wrapperBuilder.build()).build();
+    String packageName = findLowestCommonPackageName(packageNames);
+    return JavaFile.builder(packageName, wrapperBuilder.build()).build();
+  }
+
+  static String findLowestCommonPackageName(Collection<String> packageNames) {
+    String commonParts[] = null;
+    for (String packageName : packageNames) {
+      String[] parts = packageName.split("\\.");
+      if (commonParts == null) {
+        commonParts = parts;
+      } else {
+        commonParts = findCommonParts(commonParts, parts);
+      }
+    }
+    if (commonParts == null) {
+      return "";
+    }
+    StringBuilder packageName = new StringBuilder();
+    for (int i = 0; i < commonParts.length; i++) {
+      if (i != 0) {
+        packageName.append(".");
+      }
+      packageName.append(commonParts[i]);
+    }
+    return packageName.toString();
+  }
+
+  private static String[] findCommonParts(String[] commonParts, String[] parts) {
+    if (parts.length < commonParts.length) {
+      commonParts = shrinkArray(commonParts, parts.length);
+    }
+    for (int i = 0; i < parts.length; i++) {
+      if (i >= commonParts.length) {
+        return commonParts;
+      }
+      if (!parts[i].equals(commonParts[i])) {
+        commonParts = shrinkArray(commonParts, i);
+      }
+    }
+    return commonParts;
+  }
+
+  private static String[] shrinkArray(String[] commonParts, int newSize) {
+    String[] newCommonParts = new String[newSize];
+    System.arraycopy(commonParts, 0, newCommonParts, 0, newSize);
+    return newCommonParts;
   }
 
   private static FieldSpec buildClassToWrapperMap(String name) {
