@@ -5,6 +5,10 @@ import android.os.Parcelable;
 import java.lang.reflect.Field;
 import java.util.Map;
 
+/**
+ * Central mechanism for {@link #wrap(Object)}ing/{@link #unwrap(Parcelable)}ping arbitrary
+ * PaperParcel objects.
+ */
 public final class PaperParcels {
   static final Map<Class, Delegator> FROM_ORIGINAL;
   static final Map<Class, Delegator> FROM_PARCELABLE;
@@ -24,6 +28,7 @@ public final class PaperParcels {
     }
   }
 
+  // TODO make the generated FooParcel classes implement an interface so we can be more typesafe?
   public static <ORIG, PARCELABLE extends Parcelable> PARCELABLE wrap(ORIG originalObj) {
     Class<?> type = originalObj.getClass();
     //noinspection unchecked
@@ -31,6 +36,7 @@ public final class PaperParcels {
     return delegator.wrap(originalObj);
   }
 
+  // TODO make the generated FooParcel classes implement an interface so we can be more typesafe?
   public static <ORIG, PARCELABLE extends Parcelable> ORIG unwrap(PARCELABLE parcelableObj) {
     Class<?> type = parcelableObj.getClass();
     //noinspection unchecked
