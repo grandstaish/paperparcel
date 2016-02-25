@@ -60,8 +60,7 @@ public final class ParcelMappingGenerator {
       TypeName parcelable = dataClass.getWrapperClassName();
       String varName = "delegator" + index++;
       Class<PaperParcels.Delegator> delegator = PaperParcels.Delegator.class;
-      staticBlockBuilder.add("$T<$T, $T> $N = new $T<$T, $T>() {\n", delegator, original,
-          parcelable, varName, delegator, original, parcelable)
+      staticBlockBuilder.add("$1T<$2T, $3T> $4N = new $1T<$2T, $3T>() {\n", delegator, original, parcelable, varName)
           .add("    @Override public $T unwrap($T wrapper) {\n", original, parcelable)
           .add("      return wrapper.getContents();\n")
           .add("    }\n")
