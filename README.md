@@ -36,6 +36,19 @@ val parcelableWrapper = savedInstanceState.getParcelable<ExampleParcel>("example
 val example = parcelableWrapper.contents
 ```
 
+Alternatively, a convenience class `PaperParcels` can be used to wrap/unwrap all generated types. E.g.:
+
+``` java
+val example = Example(42)
+val parcelableWrapper = PaperParcels.wrap(example)
+parcel.putParcelable("example", parcelableWrapper)
+
+// ...
+
+val parcelableWrapper = savedInstanceState.getParcelable<ExampleParcel>("example")
+val example = PaperParcels.unwrap(parcelableWrapper)
+```
+
 ## Data classes inside data classes
 
 As mentioned in the Overview section, this is perfectly valid. Note you only need the @PaperParcel annotation on the root data object (although there is nothing wrong with putting it on both), e.g.:
@@ -127,8 +140,8 @@ repositories {
     maven { url = 'https://jitpack.io' }
 }
 dependencies {
-    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-beta1'
-    kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-beta1'
+    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-beta2'
+    kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-beta2'
 }
 ```
 
