@@ -21,6 +21,17 @@ allprojects {
     tasks.withType(JavaCompile) { options.fork = true }
 }
 
+// Skip pre-dexing when running on Travis CI or when disabled via -Dpre-dex=false.
+project.ext.isCi = "true".equals(System.getenv("CI"))
+project.ext.preDexEnabled = "true".equals(System.getProperty("pre-dex", "true"))
+project.plugins.whenPluginAdded { plugin ->
+    if ("com.android.build.gradle.AppPlugin".equals(plugin.class.name)) {
+        project.android.dexOptions.preDexLibraries = rootProject.ext.preDexEnabled && !rootProject.ext.isCi
+    } else if ("com.android.build.gradle.LibraryPlugin".equals(plugin.class.name)) {
+        project.android.dexOptions.preDexLibraries = rootProject.ext.preDexEnabled && !rootProject.ext.isCi
+    }
+}
+
 ext.kotlin_version = '1.0.0'
 
 ext.deps = [
