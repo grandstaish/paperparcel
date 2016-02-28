@@ -1,1 +1,19 @@
-language: java
+language: android
+
+android:
+  components:
+    - build-tools-23.0.2
+    - android-23
+    - extra-android-m2repository
+  licenses:
+    - android-sdk-license-5be876d5
+
+jdk:
+  - oraclejdk7
+  - oraclejdk8
+
+sudo: false
+
+cache:
+  directories:
+    - $HOME/.m2
