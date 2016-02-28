@@ -47,7 +47,7 @@ parcel.putParcelable("example", parcelableWrapper)
 
 // ...
 
-val parcelableWrapper = savedInstanceState.getParcelable<ExampleParcel>("example")
+val parcelableWrapper = savedInstanceState.getParcelable<Parcelable>("example")
 val example = PaperParcels.unwrap(parcelableWrapper)
 ```
 
