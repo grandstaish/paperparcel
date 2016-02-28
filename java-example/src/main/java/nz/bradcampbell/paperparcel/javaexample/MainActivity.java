@@ -11,6 +11,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import nz.bradcampbell.paperparcel.PaperParcels;
 
 public class MainActivity extends AppCompatActivity {
     private State state = new State(0, new Date(), null);
@@ -25,6 +26,11 @@ public class MainActivity extends AppCompatActivity {
             StateParcel wrapped = savedInstanceState.getParcelable("state");
             if (wrapped != null) {
                 state = wrapped.getContents();
+            }
+            StateParcel state2parcel = savedInstanceState.getParcelable("state_2");
+            State state2 = PaperParcels.unwrap(state2parcel);
+            if (!state2.equals(state)) {
+                throw new IllegalStateException("Got different object back from PaperParcels!");
             }
         }
 
@@ -61,5 +67,6 @@ public class MainActivity extends AppCompatActivity {
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         outState.putParcelable("state", StateParcel.wrap(state));
+        outState.putParcelable("state_2", PaperParcels.wrap(state));
     }
 }

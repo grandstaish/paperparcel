@@ -103,13 +103,20 @@ public class PaperParcelProcessor extends AbstractProcessor {
     // Processing is over. Generate java files for every data class found
     if (roundEnvironment.processingOver()) {
 
+      Set<DataClass> dataClasses = new LinkedHashSet<>();
       for (TypeMirror paperParcelType : allWrapperTypes.values()) {
         DataClass dataClass = createParcel(paperParcelType);
+        dataClasses.add(dataClass);
         try {
           generateParcelableWrapper(dataClass).writeTo(filer);
         } catch (IOException e) {
           throw new RuntimeException("An error occurred while writing to filer." + e.getMessage(), e);
         }
+      }
+      try {
+        ParcelMappingGenerator.generateParcelableMapping(dataClasses).writeTo(filer);
+      } catch (IOException e) {
+        throw new RuntimeException("An error occurred while writing Lookup to filer." + e.getMessage(), e);
       }
 
       return true;
