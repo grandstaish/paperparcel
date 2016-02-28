@@ -1,5 +1,7 @@
 # PaperParcel
 
+[![Build Status](https://travis-ci.org/grandstaish/paperparcel.svg?branch=master)](https://travis-ci.org/grandstaish/paperparcel)
+
 http://blog.bradcampbell.nz/introducing-paperparcel/
 
 ## Overview
