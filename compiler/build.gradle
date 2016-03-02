@@ -40,3 +40,9 @@ dependencies {
 }
 
 apply from: rootProject.file('gradle/jitpack-push.gradle')
+
+tasks.withType(Test) {
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}

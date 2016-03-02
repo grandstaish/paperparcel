@@ -53,3 +53,9 @@ buildscript {
 repositories {
     maven { url "https://jitpack.io" }
 }
+
+tasks.withType(Test) {
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}

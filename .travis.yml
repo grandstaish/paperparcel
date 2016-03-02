@@ -17,3 +17,5 @@ sudo: false
 cache:
   directories:
     - $HOME/.m2
+
+script: ./gradlew test
