@@ -178,9 +178,10 @@ public class PaperParcelProcessor extends AbstractProcessor {
   }
 
   private JavaFile generateParcelableWrapper(DataClass dataClass) throws IOException {
+    // TODO how do we get the AutoValue abstract class name to use as the TypedParcelable type param?
     TypeSpec.Builder wrapperBuilder = TypeSpec.classBuilder(dataClass.getWrapperClassName().simpleName())
         .addModifiers(PUBLIC, FINAL)
-        .addSuperinterface(PARCELABLE);
+        .addSuperinterface(dataClass.isClassParameterized() ? PARCELABLE : ParameterizedTypeName.get(ClassName.get(TypedParcelable.class), dataClass.getClassName()));
 
     FieldSpec classLoader = null;
     if (dataClass.requiresClassLoader()) {

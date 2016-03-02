@@ -33,6 +33,7 @@ dependencies {
     apt project(':compiler')
 
     testCompile deps.junit
+    testCompile deps.compiletesting
 }
 
 buildscript {

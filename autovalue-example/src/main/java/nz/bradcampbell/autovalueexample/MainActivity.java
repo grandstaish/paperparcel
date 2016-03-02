@@ -13,6 +13,8 @@ import java.util.Date;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
+  private static final String STATE_KEY = "state";
+
   private State state = State.create(0, new Date(), null);
   private DateFormat dateFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
 
@@ -22,7 +24,7 @@ public class MainActivity extends AppCompatActivity {
     setContentView(R.layout.activity_main);
 
     if (savedInstanceState != null) {
-      state = savedInstanceState.getParcelable("state");
+      state = savedInstanceState.getParcelable(STATE_KEY);
     }
 
     Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -57,6 +59,6 @@ public class MainActivity extends AppCompatActivity {
   @Override
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
-    outState.putParcelable("state", state);
+    outState.putParcelable(STATE_KEY, state);
   }
 }

@@ -1,6 +1,7 @@
 package nz.bradcampbell.paperparcel.internal;
 
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 
 import java.util.List;
@@ -58,5 +59,14 @@ public class DataClass {
 
   public boolean requiresClassLoader() {
     return requiresClassLoader;
+  }
+
+  public boolean isClassParameterized() {
+    return className instanceof ParameterizedTypeName;
+  }
+
+  public boolean isAutoValue() {
+    return className instanceof ClassName
+        && ((ClassName) className).simpleName().startsWith("AutoValue_");
   }
 }

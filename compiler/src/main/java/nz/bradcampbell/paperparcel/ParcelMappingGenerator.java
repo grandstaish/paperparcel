@@ -45,18 +45,16 @@ public final class ParcelMappingGenerator {
     int index = 0;
     for (DataClass dataClass : dataClasses) {
       // Parameterized types don't need to be dynamically wrapped/unwrapped: ignore.
+      if (dataClass.isClassParameterized()) {
+        staticBlockBuilder.add("// Parameterized class ignored: $N\n", dataClass.getClassName().toString());
+        continue;
+      }
+      // AutoValue classes don't need a centralized lookup: they are Parcelable without wrapping.
+      if (dataClass.isAutoValue()) {
+        staticBlockBuilder.add("// AutoValue class ignored: $N\n", ((ClassName) dataClass.getClassName()).simpleName());
+        continue;
+      }
       TypeName original = dataClass.getClassName();
-      if (original instanceof ParameterizedTypeName) {
-        staticBlockBuilder.add("// Parameterized class ignored: $N\n", original.toString());
-        continue;
-      }
-      // TODO Not sure what to do with autovalue...ignore for now.
-      if (original instanceof ClassName && ((ClassName) original).simpleName()
-          .startsWith("AutoValue_")) {
-        staticBlockBuilder.add("// AutoValue class ignored: $N\n",
-            ((ClassName) original).simpleName());
-        continue;
-      }
       TypeName parcelable = dataClass.getWrapperClassName();
       String varName = "delegator" + index++;
       Class<PaperParcels.Delegator> delegator = PaperParcels.Delegator.class;
