@@ -7,59 +7,69 @@ import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.TextView;
 
+import nz.bradcampbell.paperparcel.PaperParcels;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
-    private State state = new State(0, new Date(), null);
-    private DateFormat dateFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
+  private State state = new State(0, new Date(), null);
+  private DateFormat dateFormat = new SimpleDateFormat("HH:mm", Locale.getDefault());
 
-    @Override
-    protected void onCreate(@Nullable Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+  @Override
+  protected void onCreate(@Nullable Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    setContentView(R.layout.activity_main);
 
-        if (savedInstanceState != null) {
-            StateParcel wrapped = savedInstanceState.getParcelable("state");
-            if (wrapped != null) {
-                state = wrapped.getContents();
-            }
-        }
+    if (savedInstanceState != null) {
+      state = PaperParcels.unsafeUnwrap(savedInstanceState.getParcelable("state"));
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
-        setSupportActionBar(toolbar);
+      // or:
+      // TypedParcelable<State> wrapped = savedInstanceState.getParcelable("state");
+      // state = PaperParcels.unwrap(wrapped);
 
-        View plusButton = findViewById(R.id.add_button);
-        plusButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                state = new State(state.getCount() + 1, new Date(), null);
-                updateText();
-            }
-        });
+      // or:
+      // StateParcel wrapped = savedInstanceState.getParcelable("state");
+      // state = wrapped != null ? wrapped.getContents() : null;
+    }
 
-        View subtractButton = findViewById(R.id.subtract_button);
-        subtractButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                state = new State(state.getCount() - 1, new Date(), null);
-                updateText();
-            }
-        });
+    Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+    setSupportActionBar(toolbar);
 
+    View plusButton = findViewById(R.id.add_button);
+    plusButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        state = new State(state.getCount() + 1, new Date(), null);
         updateText();
-    }
+      }
+    });
 
-    private void updateText() {
-        TextView counter = (TextView) findViewById(R.id.counter);
-        counter.setText(state.getCount() + " (updated at " + dateFormat.format(state.customGetterMethodName()) + ")");
-    }
+    View subtractButton = findViewById(R.id.subtract_button);
+    subtractButton.setOnClickListener(new View.OnClickListener() {
+      @Override
+      public void onClick(View v) {
+        state = new State(state.getCount() - 1, new Date(), null);
+        updateText();
+      }
+    });
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putParcelable("state", StateParcel.wrap(state));
-    }
+    updateText();
+  }
+
+  private void updateText() {
+    TextView counter = (TextView) findViewById(R.id.counter);
+    counter.setText(state.getCount() + " (updated at " + dateFormat.format(state.customGetterMethodName()) + ")");
+  }
+
+  @Override
+  protected void onSaveInstanceState(Bundle outState) {
+    super.onSaveInstanceState(outState);
+    outState.putParcelable("state", PaperParcels.wrap(state));
+
+    // or:
+    // outState.putParcelable("state", StateParcel.wrap(state));
+  }
 }

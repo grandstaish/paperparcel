@@ -47,7 +47,7 @@ parcel.putParcelable("example", parcelableWrapper)
 
 // ...
 
-val parcelableWrapper = savedInstanceState.getParcelable<Parcelable>("example")
+val parcelableWrapper = savedInstanceState.getParcelable<TypedParcelable<Example>>("example")
 val example = PaperParcels.unwrap(parcelableWrapper)
 ```
 
@@ -142,8 +142,8 @@ repositories {
     maven { url = 'https://jitpack.io' }
 }
 dependencies {
-    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-beta2'
-    kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-beta2'
+    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-beta3'
+    kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-beta3'
 }
 ```
 
