@@ -147,6 +147,16 @@ dependencies {
 }
 ```
 
+Note the use of `kapt` instead of `compile` for the compiler. For java projects, [android-apt ](https://bitbucket.org/hvisser/android-apt) should be used instead of Kotlin's `kapt`. 
+
+When using `kapt`, be sure to include the following in your `build.gradle` file:
+
+```
+kapt {
+    generateStubs = true
+}
+```
+
 ## Contributing
 
 I would love contributions to this project if you think of anything you would like to see in the project or find any bugs. If you would like to contribute, first raise a GitHub issue so we can discuss the change you want to make. 
