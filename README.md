@@ -142,8 +142,8 @@ repositories {
     maven { url = 'https://jitpack.io' }
 }
 dependencies {
-    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-beta3'
-    kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-beta3'
+    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-beta4'
+    kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-beta4'
 }
 ```
 
