@@ -67,8 +67,9 @@ import javax.tools.Diagnostic;
 public class PaperParcelProcessor extends AbstractProcessor {
   private static final String DATA_VARIABLE_NAME = "data";
 
-  private static final TypeName PARCEL = ClassName.get("android.os", "Parcel");
-  private static final TypeName PARCELABLE = ClassName.get("android.os", "Parcelable");
+  private static final ClassName PARCEL = ClassName.get("android.os", "Parcel");
+  private static final ClassName PARCELABLE = ClassName.get("android.os", "Parcelable");
+  private static final ClassName TYPED_PARCELABLE = ClassName.get("nz.bradcampbell.paperparcel", "TypedParcelable");
 
   private Filer filer;
   private Types typeUtil;
@@ -167,21 +168,18 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
       allWrapperTypes.put(elementTypeMirror.toString(), elementTypeMirror);
 
-      // Find all non-parcelable variables contained in this data class
-      for (VariableElement variableElement : getFields(typeUtil, (TypeElement) element)) {
-        TypeMirror variableMirror = variableElement.asType();
-        findNonParcelableDependencies(variableMirror);
-      }
+      findNonParcelableDependencies(elementTypeMirror);
     }
 
     return true;
   }
 
   private JavaFile generateParcelableWrapper(DataClass dataClass) throws IOException {
-    // TODO how do we get the AutoValue abstract class name to use as the TypedParcelable type param?
     TypeSpec.Builder wrapperBuilder = TypeSpec.classBuilder(dataClass.getWrapperClassName().simpleName())
         .addModifiers(PUBLIC, FINAL)
-        .addSuperinterface(dataClass.isClassParameterized() ? PARCELABLE : ParameterizedTypeName.get(ClassName.get(TypedParcelable.class), dataClass.getClassName()));
+        .addSuperinterface(dataClass.isClassParameterized()
+                           ? PARCELABLE
+                           : ParameterizedTypeName.get(TYPED_PARCELABLE, dataClass.getClassName()));
 
     FieldSpec classLoader = null;
     if (dataClass.requiresClassLoader()) {
@@ -369,24 +367,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
    * @return The parsed variable
    */
   private Property.Type parsePropertyType(TypeMirror variable, TypeMirror dataClass, Map<TypeName, TypeName> typeAdapters) {
-
-    // The element associated, or null
-    Element element = typeUtil.asElement(variable);
-
-    // Find and replace type parameter arguments with the provided type in the data class. e.g. a variable defined
-    // as ExampleClass<Integer>, this will replace type T with Integer when processing ExampleClassIntegerParcel.java.
-    if (element != null && element.getKind() == ElementKind.TYPE_PARAMETER) {
-      TypeElement dataClassElement = (TypeElement) typeUtil.asElement(dataClass);
-      List<? extends TypeParameterElement> typeParameterElements = dataClassElement.getTypeParameters();
-      int numTypeParams = typeParameterElements.size();
-      for (int i = 0; i < numTypeParams; i++) {
-        TypeParameterElement p = typeParameterElements.get(i);
-        if (p.equals(element)) {
-          variable = ((DeclaredType) dataClass).getTypeArguments().get(i);
-          break;
-        }
-      }
-    }
+    variable = getActualTypeParameter(variable, dataClass);
 
     TypeMirror erasedType = typeUtil.erasure(variable);
 
@@ -517,30 +498,65 @@ public class PaperParcelProcessor extends AbstractProcessor {
     return pkg + dot + "AutoValue_" + name;
   }
 
-  private void findNonParcelableDependencies(TypeMirror childType) {
-    TypeMirror noWildCardType = childType;
-    if (childType instanceof WildcardType) {
+  private void findNonParcelableDependencies(TypeMirror typeMirror) {
+    TypeElement typeElement = (TypeElement) typeUtil.asElement(typeMirror);
+    for (VariableElement variableElement : getFields(typeUtil, typeElement)) {
+      TypeMirror variableMirror = variableElement.asType();
+      findNonParcelableDependencies(variableMirror, typeMirror);
+    }
+  }
 
+  private void findNonParcelableDependencies(TypeMirror variable, TypeMirror dataClass) {
+    variable = getActualTypeParameter(variable, dataClass);
+
+    if (variable instanceof WildcardType) {
       // Properties using Kotlin's @JvmWildcard will fall into here
-      noWildCardType = ((WildcardType) childType).getExtendsBound();
+      variable = ((WildcardType) variable).getExtendsBound();
     }
 
-    if (PropertyUtils.getParcelableType(typeUtil, noWildCardType) == null) {
-      // This type is not parcelable, it needs a wrapper. Add it to the set.
-      allWrapperTypes.put(noWildCardType.toString(), noWildCardType);
+    boolean isParcelable = PropertyUtils.getParcelableType(typeUtil, variable) != null;
+    if (!isParcelable) {
+      allWrapperTypes.put(variable.toString(), variable);
     }
 
-    if (noWildCardType instanceof DeclaredType) {
-      DeclaredType declaredType = (DeclaredType) noWildCardType;
+    if (variable instanceof DeclaredType) {
+      DeclaredType declaredType = (DeclaredType) variable;
       for (TypeMirror parameterType : declaredType.getTypeArguments()) {
-        findNonParcelableDependencies(parameterType);
+        findNonParcelableDependencies(parameterType, dataClass);
       }
     }
 
-    if (noWildCardType instanceof ArrayType) {
-      ArrayType arrayType = (ArrayType) noWildCardType;
-      findNonParcelableDependencies(arrayType.getComponentType());
+    if (variable instanceof ArrayType) {
+      ArrayType arrayType = (ArrayType) variable;
+      findNonParcelableDependencies(arrayType.getComponentType(), dataClass);
     }
+
+    Element childElement = typeUtil.asElement(variable);
+    if (!isParcelable && childElement instanceof TypeElement) {
+      findNonParcelableDependencies(variable);
+    }
+  }
+
+  private TypeMirror getActualTypeParameter(TypeMirror variable, TypeMirror dataClass) {
+    // The element associated, or null
+    Element element = typeUtil.asElement(variable);
+
+    // Find and replace type parameter arguments with the provided type in the data class. e.g. a variable defined
+    // as ExampleClass<Integer>, this will replace type T with Integer when processing ExampleClassIntegerParcel.java.
+    if (element != null && element.getKind() == ElementKind.TYPE_PARAMETER) {
+      TypeElement dataClassElement = (TypeElement) typeUtil.asElement(dataClass);
+      List<? extends TypeParameterElement> typeParameterElements = dataClassElement.getTypeParameters();
+      int numTypeParams = typeParameterElements.size();
+      for (int i = 0; i < numTypeParams; i++) {
+        TypeParameterElement p = typeParameterElements.get(i);
+        if (p.equals(element)) {
+          variable = ((DeclaredType) dataClass).getTypeArguments().get(i);
+          break;
+        }
+      }
+    }
+
+    return variable;
   }
 
   private FieldSpec generateClassLoaderField(TypeName className) {
