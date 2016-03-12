@@ -9,7 +9,6 @@ import static com.squareup.javapoet.TypeName.INT;
 import static com.squareup.javapoet.TypeName.LONG;
 import static com.squareup.javapoet.TypeName.OBJECT;
 import static com.squareup.javapoet.TypeName.SHORT;
-import static com.squareup.javapoet.TypeName.get;
 
 import com.google.common.collect.ImmutableSet;
 
@@ -50,6 +49,7 @@ import nz.bradcampbell.paperparcel.internal.properties.StringArrayProperty;
 import nz.bradcampbell.paperparcel.internal.properties.StringProperty;
 import nz.bradcampbell.paperparcel.internal.properties.TypeAdapterProperty;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import javax.lang.model.element.TypeElement;
@@ -197,7 +197,7 @@ public class PropertyUtils {
     while (typeMirror.getKind() != TypeKind.NONE) {
 
       // first, check if the class is valid.
-      TypeName typeName = get(typeMirror);
+      TypeName typeName = TypeName.get(typeMirror);
       if (typeName instanceof ParameterizedTypeName) {
         typeName = ((ParameterizedTypeName) typeName).rawType;
       }
@@ -215,8 +215,10 @@ public class PropertyUtils {
       }
 
       // then check if it implements valid interfaces
-      for (TypeMirror iface : type.getInterfaces()) {
-        TypeName ifaceName = get(iface);
+      List<TypeMirror> allInterfaces = new ArrayList<>();
+      findAllInterfaceTypeMirrors(types, type, allInterfaces);
+      for (TypeMirror iface : allInterfaces) {
+        TypeName ifaceName = TypeName.get(iface);
 
         if (ifaceName instanceof ParameterizedTypeName) {
           ifaceName = ((ParameterizedTypeName) ifaceName).rawType;
@@ -242,6 +244,14 @@ public class PropertyUtils {
     return null;
   }
 
+  private static void findAllInterfaceTypeMirrors(Types types, TypeElement typeElement, List<TypeMirror> outInterfaces) {
+    for (TypeMirror iface : typeElement.getInterfaces()) {
+      TypeElement interfaceElement = (TypeElement) types.asElement(iface);
+      findAllInterfaceTypeMirrors(types, interfaceElement, outInterfaces);
+      outInterfaces.add(iface);
+    }
+  }
+
   public static boolean requiresClassLoader(TypeName parcelableTypeName) {
     return REQUIRES_CLASS_LOADER.contains(parcelableTypeName);
   }
@@ -264,7 +274,7 @@ public class PropertyUtils {
   public static TypeName getTypeAdapterType(Types typeUtil, DeclaredType typeAdapter) {
     List<? extends TypeMirror> interfaces = ((TypeElement)typeUtil.asElement(typeAdapter)).getInterfaces();
     for (TypeMirror intf : interfaces) {
-      TypeName typeName = get(intf);
+      TypeName typeName = TypeName.get(intf);
       if (typeName instanceof ParameterizedTypeName) {
         ParameterizedTypeName paramTypeName = (ParameterizedTypeName) typeName;
         if (paramTypeName.rawType.equals(TYPE_ADAPTER)) {

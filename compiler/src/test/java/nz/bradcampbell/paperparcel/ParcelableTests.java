@@ -2,6 +2,8 @@ package nz.bradcampbell.paperparcel;
 
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
+import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
+import static java.util.Arrays.asList;
 
 import com.google.common.base.Joiner;
 import com.google.testing.compile.JavaFileObjects;
@@ -148,5 +150,107 @@ public class ParcelableTests {
         .compilesWithoutError()
         .and()
         .generatesSources(expectedSource);
+  }
+
+  @Test public void extendsParcelableTest() throws Exception {
+    JavaFileObject dataClassRoot = JavaFileObjects.forSourceString("test.Root", Joiner.on('\n').join(
+        "package test;",
+        "import nz.bradcampbell.paperparcel.PaperParcel;",
+        "import java.util.List;",
+        "@PaperParcel",
+        "public final class Root {",
+        "private final Child child;",
+        "public Root(Child child) {",
+        "this.child = child;",
+        "}",
+        "public Child getChild() {",
+        "return this.child;",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject customParcelable = JavaFileObjects.forSourceString("test.CustomParcelable", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcelable;",
+        "public interface CustomParcelable extends Parcelable {",
+        "}"
+    ));
+
+    JavaFileObject dataClassChild = JavaFileObjects.forSourceString("test.Child", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
+        "public final class Child implements CustomParcelable {",
+        "private final Integer child;",
+        "public Child(Integer child) {",
+        "this.child = child;",
+        "}",
+        "public Integer getChild() {",
+        "return this.child;",
+        "}",
+        "public static final Parcelable.Creator<Child> CREATOR = new Parcelable.Creator<Child>() {",
+        "@Override public Child createFromParcel(Parcel in) {",
+        "return new Child(in);",
+        "}",
+        "@Override public Child[] newArray(int size) {",
+        "return new Child[size];",
+        "}",
+        "};",
+        "private Child(Parcel in) {",
+        "child = in.readInt();",
+        "}",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "dest.writeInt(child);",
+        "}",
+        "}"
+    ));
+
+    JavaFileObject rootParcel = JavaFileObjects.forSourceString("test/RootParcel", Joiner.on('\n').join(
+        "package test;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
+        "import java.lang.Override;",
+        "import nz.bradcampbell.paperparcel.TypedParcelable;",
+        "public final class RootParcel implements TypedParcelable<Root> {",
+        "public static final Parcelable.Creator<RootParcel> CREATOR = new Parcelable.Creator<RootParcel>() {",
+        "@Override public RootParcel createFromParcel(Parcel in) {",
+        "return new RootParcel(in);",
+        "}",
+        "@Override public RootParcel[] newArray(int size) {",
+        "return new RootParcel[size];",
+        "}",
+        "};",
+        "private final Root data;",
+        "private RootParcel(Root data) {",
+        "this.data = data;",
+        "}",
+        "private RootParcel(Parcel in) {",
+        "Child child = Child.CREATOR.createFromParcel(in);",
+        "this.data = new Root(child);",
+        "}",
+        "public static final RootParcel wrap(Root data) {",
+        "return new RootParcel(data);",
+        "}",
+        "public Root getContents() {",
+        "return data;",
+        "}",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "Child child = data.getChild();",
+        "child.writeToParcel(dest, 0);",
+        "}",
+        "}"
+    ));
+
+    assertAbout(javaSources()).that(asList(dataClassRoot, customParcelable, dataClassChild))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(rootParcel);
   }
 }
