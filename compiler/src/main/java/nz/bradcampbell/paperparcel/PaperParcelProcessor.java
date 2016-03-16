@@ -5,7 +5,6 @@ import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PROTECTED;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
-import static javax.lang.model.element.Modifier.TRANSIENT;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.generateWrappedTypeName;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.getFields;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.getPackageName;
@@ -35,6 +34,7 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -216,8 +216,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     String classPackage = getPackageName(typeElement);
     String wrappedClassName = generateWrappedTypeName(typeElement, typeMirror);
     List<Property> properties = new ArrayList<>();
-    List<VariableElement> variableElements = getFields(typeUtil, typeElement);
-    Map<String, String> getterMethodMap = new HashMap<>(variableElements.size());
+    Map<String, String> getterMethodMap = new HashMap<>();
     boolean requiresClassLoader = false;
     Map<TypeName, TypeName> typeAdapters = new HashMap<>();
     boolean isSingleton = TypeUtils.isSingleton(typeUtil, typeElement);
@@ -236,6 +235,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
         }
       }
 
+      List<VariableElement> variableElements = getFields(typeUtil, typeElement);
+      variableElements = filterNonConstructorFields(variableElements, typeElement);
+
       for (VariableElement variableElement : variableElements) {
 
         // Determine how we will access this property and in doing so, validate the property
@@ -244,8 +246,6 @@ public class PaperParcelProcessor extends AbstractProcessor {
           accessorMethod = getAccessorMethod(typeElement, variableElement);
         } catch (PropertyValidationException e) {
           error(processingEnv, e.getMessage(), e.source);
-          continue;
-        } catch (IrrelevantPropertyException e) {
           continue;
         }
 
@@ -278,8 +278,44 @@ public class PaperParcelProcessor extends AbstractProcessor {
         requiresClassLoader, isSingleton);
   }
 
+  private List<VariableElement> filterNonConstructorFields(List<VariableElement> variableElements,
+      TypeElement typeElement) {
+    for (Element e : typeElement.getEnclosedElements()) {
+      if (e instanceof ExecutableElement) {
+        if (e.getSimpleName().toString().equals("<init>")) {
+          ExecutableElement constructor = (ExecutableElement) e;
+          List<VariableElement> params = new ArrayList<>(constructor.getParameters());
+          List<VariableElement> result = new ArrayList<>();
+          Iterator<VariableElement> iterator = params.iterator();
+          if (iterator.hasNext()) {
+            VariableElement currentParam = iterator.next();
+            for (VariableElement field : variableElements) {
+              if (typeUtil.isSameType(field.asType(), currentParam.asType())) {
+                iterator.remove();
+                result.add(field);
+                if (iterator.hasNext()) {
+                  currentParam = iterator.next();
+                } else {
+                  // No more params, ignore all other fields
+                  break;
+                }
+              }
+            }
+          }
+          // If params.size() returns 0, then we can construct the object using the fields in result
+          if (params.size() == 0) {
+            return result;
+          }
+        }
+      }
+    }
+    throw new NoValidConstructorFoundException("No valid constructor found while processing " +
+                                               typeElement.getQualifiedName() + ". The constructor parameters and " +
+                                               "member variables need to be in the same order.");
+  }
+
   private ExecutableElement getAccessorMethod(TypeElement typeElement, VariableElement variableElement)
-      throws PropertyValidationException, IrrelevantPropertyException {
+      throws PropertyValidationException {
 
     String variableName = variableElement.getSimpleName().toString().toLowerCase();
 
@@ -290,11 +326,6 @@ public class PaperParcelProcessor extends AbstractProcessor {
     }
 
     Set<Modifier> modifiers = variableElement.getModifiers();
-
-    // If the property is transient, ignore it
-    if (modifiers.contains(TRANSIENT)) {
-      throw new IrrelevantPropertyException();
-    }
 
     // If the property visibility is package default or public, then we don't need a "getter" method
     if (!(modifiers.contains(PRIVATE) || modifiers.contains(PROTECTED))) {
@@ -508,7 +539,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
   private void findNonParcelableDependencies(TypeMirror typeMirror) {
     TypeElement typeElement = (TypeElement) typeUtil.asElement(typeMirror);
-    for (VariableElement variableElement : getFields(typeUtil, typeElement)) {
+    List<VariableElement> variableElements = getFields(typeUtil, typeElement);
+    variableElements = filterNonConstructorFields(variableElements, typeElement);
+    for (VariableElement variableElement : variableElements) {
       TypeMirror variableMirror = variableElement.asType();
       findNonParcelableDependencies(variableMirror, typeMirror);
     }
@@ -717,6 +750,12 @@ public class PaperParcelProcessor extends AbstractProcessor {
     processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
   }
 
+  static class NoValidConstructorFoundException extends IllegalStateException {
+    public NoValidConstructorFoundException(String s) {
+      super(s);
+    }
+  }
+
   static class PropertyValidationException extends IllegalStateException {
     final VariableElement source;
 
@@ -724,8 +763,5 @@ public class PaperParcelProcessor extends AbstractProcessor {
       super(message);
       this.source = source;
     }
-  }
-
-  static class IrrelevantPropertyException extends Exception {
   }
 }

@@ -3,6 +3,7 @@ package nz.bradcampbell.paperparcel.internal.utils;
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
+import static javax.lang.model.element.Modifier.TRANSIENT;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeName;
@@ -96,13 +97,14 @@ public class TypeUtils {
    * Gets a list of all non-static member variables of a TypeElement
    *
    * @param el The data class
-   * @return A list of non-static member variables. Cannot be null.
+   * @return A list of non-static, non-transient member variables. Cannot be null.
    */
   public static List<VariableElement> getFields(Types typeUtils, TypeElement el) {
     List<? extends Element> enclosedElements = el.getEnclosedElements();
     List<VariableElement> variables = new ArrayList<>();
     for (Element e : enclosedElements) {
-      if (e instanceof VariableElement && !e.getModifiers().contains(STATIC)) {
+      Set<Modifier> modifiers = e.getModifiers();
+      if (e instanceof VariableElement && !modifiers.contains(STATIC) && !modifiers.contains(TRANSIENT)) {
         variables.add((VariableElement) e);
       }
     }
