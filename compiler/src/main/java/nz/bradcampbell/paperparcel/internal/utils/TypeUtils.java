@@ -1,5 +1,7 @@
 package nz.bradcampbell.paperparcel.internal.utils;
 
+import static javax.lang.model.element.Modifier.FINAL;
+import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
 import com.squareup.javapoet.ClassName;
@@ -7,8 +9,10 @@ import com.squareup.javapoet.TypeName;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -107,6 +111,31 @@ public class TypeUtils {
       variables.addAll(getFields(typeUtils, (TypeElement) typeUtils.asElement(superType)));
     }
     return variables;
+  }
+
+  /**
+   * A singleton is defined by a class with a public static final field named "INSTANCE" with a type assignable from
+   * the class itself
+   *
+   * @param typeUtils Type utils
+   * @param el The data class
+   * @return true if the class is a singleton, false otherwise
+   */
+  public static boolean isSingleton(Types typeUtils, TypeElement el) {
+    List<? extends Element> enclosedElements = el.getEnclosedElements();
+    for (Element e : enclosedElements) {
+      Set<Modifier> modifiers = e.getModifiers();
+      if (e instanceof VariableElement
+          && modifiers.contains(STATIC)
+          && modifiers.contains(PUBLIC)
+          && modifiers.contains(FINAL)) {
+        VariableElement variableElement = (VariableElement) e;
+        if (variableElement.getSimpleName().contentEquals("INSTANCE")) {
+          return typeUtils.isAssignable(el.asType(), e.asType());
+        }
+      }
+    }
+    return false;
   }
 
   /**

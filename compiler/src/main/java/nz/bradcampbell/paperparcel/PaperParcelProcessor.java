@@ -29,6 +29,7 @@ import nz.bradcampbell.paperparcel.internal.DataClass;
 import nz.bradcampbell.paperparcel.internal.Property;
 import nz.bradcampbell.paperparcel.internal.utils.AnnotationUtils;
 import nz.bradcampbell.paperparcel.internal.utils.PropertyUtils;
+import nz.bradcampbell.paperparcel.internal.utils.TypeUtils;
 
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -187,12 +188,16 @@ public class PaperParcelProcessor extends AbstractProcessor {
       wrapperBuilder.addField(classLoader);
     }
 
-    wrapperBuilder.addField(generateCreator(dataClass.getWrapperClassName()))
+    wrapperBuilder.addField(generateCreator(dataClass.getClassName(), dataClass.getWrapperClassName(), dataClass.isSingleton()))
         .addField(generateContentsField(dataClass.getClassName()))
         .addMethod(generateWrapMethod(dataClass))
-        .addMethod(generateContentsConstructor(dataClass.getClassName()))
-        .addMethod(generateParcelConstructor(dataClass.getProperties(), dataClass.getClassName(), classLoader))
-        .addMethod(generateGetter(dataClass.getClassName()))
+        .addMethod(generateContentsConstructor(dataClass.getClassName()));
+
+    if (!dataClass.isSingleton()) {
+      wrapperBuilder.addMethod(generateParcelConstructor(dataClass.getProperties(), dataClass.getClassName(), classLoader));
+    }
+
+    wrapperBuilder.addMethod(generateGetter(dataClass.getClassName()))
         .addMethod(generateDescribeContents())
         .addMethod(generateWriteToParcel(dataClass.getProperties(), dataClass.getGetterMethodMap()));
 
@@ -210,64 +215,64 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
     String classPackage = getPackageName(typeElement);
     String wrappedClassName = generateWrappedTypeName(typeElement, typeMirror);
-
     List<Property> properties = new ArrayList<>();
-
-    // Get all member variable elements in the data class
     List<VariableElement> variableElements = getFields(typeUtil, typeElement);
-
     Map<String, String> getterMethodMap = new HashMap<>(variableElements.size());
-
     boolean requiresClassLoader = false;
-
     Map<TypeName, TypeName> typeAdapters = new HashMap<>();
+    boolean isSingleton = TypeUtils.isSingleton(typeUtil, typeElement);
 
-    // Override the type adapters with the current element preferences
-    Map<String, Object> annotation = AnnotationUtils.getAnnotation(PaperParcel.class, typeElement);
-    if (annotation != null) {
-      Object[] typeAdaptersArray = (Object[]) annotation.get("typeAdapters");
-      for (Object o : typeAdaptersArray) {
-        DeclaredType ta = (DeclaredType) o;
-        TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, ta);
-        typeAdapters.put(typeAdapterType, TypeName.get(ta));
-      }
-    }
+    // If the class is a singleton, we don't need to read/write variables. We can just use the static instance.
+    if (!isSingleton) {
 
-    for (VariableElement variableElement : variableElements) {
-
-      // Determine how we will access this property and in doing so, validate the property
-      ExecutableElement accessorMethod;
-      try {
-        accessorMethod = getAccessorMethod(typeElement, variableElement);
-      } catch (PropertyValidationException e) {
-        error(processingEnv, e.getMessage(), e.source);
-        continue;
-      } catch (IrrelevantPropertyException e) {
-        continue;
+      // Override the type adapters with the current element preferences
+      Map<String, Object> annotation = AnnotationUtils.getAnnotation(PaperParcel.class, typeElement);
+      if (annotation != null) {
+        Object[] typeAdaptersArray = (Object[]) annotation.get("typeAdapters");
+        for (Object o : typeAdaptersArray) {
+          DeclaredType ta = (DeclaredType) o;
+          TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, ta);
+          typeAdapters.put(typeAdapterType, TypeName.get(ta));
+        }
       }
 
-      Map<TypeName, TypeName> variableScopedTypeAdapters = getTypeAdapterMapForVariable(
-          typeAdapters, variableElement, accessorMethod);
+      for (VariableElement variableElement : variableElements) {
 
-      String name = variableElement.getSimpleName().toString();
+        // Determine how we will access this property and in doing so, validate the property
+        ExecutableElement accessorMethod;
+        try {
+          accessorMethod = getAccessorMethod(typeElement, variableElement);
+        } catch (PropertyValidationException e) {
+          error(processingEnv, e.getMessage(), e.source);
+          continue;
+        } catch (IrrelevantPropertyException e) {
+          continue;
+        }
 
-      // A field is only "nullable" when annotated with @Nullable
-      boolean isNullable = accessorMethod != null ? !AnnotationUtils.isFieldRequired(accessorMethod) :
-          !AnnotationUtils.isFieldRequired(variableElement);
+        Map<TypeName, TypeName> variableScopedTypeAdapters = getTypeAdapterMapForVariable(
+            typeAdapters, variableElement, accessorMethod);
 
-      // Parse the property type into a Property.Type object and find all recursive data class dependencies
-      Property.Type propertyType = parsePropertyType(variableElement.asType(), typeMirror, variableScopedTypeAdapters);
+        String name = variableElement.getSimpleName().toString();
 
-      getterMethodMap.put(name, accessorMethod ==  null ? null : accessorMethod.getSimpleName().toString());
+        // A field is only "nullable" when annotated with @Nullable
+        boolean isNullable = accessorMethod != null ? !AnnotationUtils.isFieldRequired(accessorMethod) :
+                             !AnnotationUtils.isFieldRequired(variableElement);
 
-      Property property = PropertyUtils.createProperty(propertyType, isNullable, name);
-      properties.add(property);
+        // Parse the property type into a Property.Type object and find all recursive data class dependencies
+        Property.Type propertyType =
+            parsePropertyType(variableElement.asType(), typeMirror, variableScopedTypeAdapters);
 
-      requiresClassLoader |= property.requiresClassLoader();
+        getterMethodMap.put(name, accessorMethod == null ? null : accessorMethod.getSimpleName().toString());
+
+        Property property = PropertyUtils.createProperty(propertyType, isNullable, name);
+        properties.add(property);
+
+        requiresClassLoader |= property.requiresClassLoader();
+      }
     }
 
     return new DataClass(properties, classPackage, wrappedClassName, getterMethodMap, TypeName.get(typeMirror),
-        requiresClassLoader);
+        requiresClassLoader, isSingleton);
   }
 
   private ExecutableElement getAccessorMethod(TypeElement typeElement, VariableElement variableElement)
@@ -568,23 +573,30 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .build();
   }
 
-  private FieldSpec generateCreator(ClassName className) {
+  private FieldSpec generateCreator(TypeName typeName, ClassName wrapperClassName, boolean isSingleton) {
     ClassName creator = ClassName.get("android.os", "Parcelable", "Creator");
-    TypeName creatorOfClass = ParameterizedTypeName.get(creator, className);
+    TypeName creatorOfClass = ParameterizedTypeName.get(creator, wrapperClassName);
+
+    CodeBlock.Builder initializer = CodeBlock.builder()
+        .beginControlFlow("new $T()", ParameterizedTypeName.get(creator, wrapperClassName))
+        .beginControlFlow("@$T public $T createFromParcel($T in)", ClassName.get(Override.class), wrapperClassName, PARCEL);
+
+    if (isSingleton) {
+      initializer.addStatement("return new $T($T.INSTANCE)", wrapperClassName, typeName);
+    } else {
+      initializer.addStatement("return new $T(in)", wrapperClassName);
+    }
+
+    initializer.endControlFlow()
+        .beginControlFlow("@$T public $T[] newArray($T size)", ClassName.get(Override.class), wrapperClassName, int.class)
+        .addStatement("return new $T[size]", wrapperClassName)
+        .endControlFlow()
+        .unindent()
+        .add("}");
 
     return FieldSpec
         .builder(creatorOfClass, "CREATOR", Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC)
-        .initializer(CodeBlock.builder()
-            .beginControlFlow("new $T()", ParameterizedTypeName.get(creator, className))
-            .beginControlFlow("@$T public $T createFromParcel($T in)", ClassName.get(Override.class), className, PARCEL)
-            .addStatement("return new $T(in)", className)
-            .endControlFlow()
-            .beginControlFlow("@$T public $T[] newArray($T size)", ClassName.get(Override.class), className, int.class)
-            .addStatement("return new $T[size]", className)
-            .endControlFlow()
-            .unindent()
-            .add("}")
-            .build())
+        .initializer(initializer.build())
         .build();
   }
 

@@ -17,6 +17,7 @@ public class DataClass {
   private final TypeName className;
   private final ClassName wrapperClassName;
   private final boolean requiresClassLoader;
+  private final boolean singleton;
 
   /**
    * Constructor.
@@ -26,15 +27,18 @@ public class DataClass {
    * @param getterMethodMap Map from variable name to getter method
    * @param className The data class type name
    * @param requiresClassLoader True if a ClassLoader field is required, false otherwise
+   * @param singleton True if the class is a singleton object
    */
   public DataClass(List<Property> properties, String classPackage, String wrapperTypeName,
-                   Map<String, String> getterMethodMap, TypeName className, boolean requiresClassLoader) {
+                   Map<String, String> getterMethodMap, TypeName className, boolean requiresClassLoader,
+                   boolean singleton) {
     this.properties = properties;
     this.classPackage = classPackage;
     this.getterMethodMap = getterMethodMap;
     this.requiresClassLoader = requiresClassLoader;
     this.wrapperClassName = ClassName.get(classPackage, wrapperTypeName);
     this.className = className;
+    this.singleton = singleton;
   }
 
   public Map<String, String> getGetterMethodMap() {
@@ -68,5 +72,9 @@ public class DataClass {
   public boolean isAutoValue() {
     return className instanceof ClassName
         && ((ClassName) className).simpleName().startsWith("AutoValue_");
+  }
+
+  public boolean isSingleton() {
+    return singleton;
   }
 }
