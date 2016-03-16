@@ -1,21 +1,16 @@
 language: android
 
-android:
-  components:
-    - tools
-    - build-tools-23.0.2
-    - android-23
-    - extra-android-m2repository
-  licenses:
-    - android-sdk-license-5be876d5
-
 jdk:
   - oraclejdk7
+  
+android:
+  components:
+    - platform-tools
+    - tools
+    - android-23
+    - build-tools-23.0.2
+    - extra-android-m2repository
 
 sudo: false
-
-cache:
-  directories:
-    - $HOME/.m2
 
 script: ./gradlew test
