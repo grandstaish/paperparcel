@@ -10,20 +10,20 @@ import org.junit.Test;
 
 import javax.tools.JavaFileObject;
 
-public class PersistableBundleTests {
+public class NonNullTests {
 
-  @Test public void persistableBundleTest() throws Exception {
+  @Test public void notNullIntTest() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
-        "import android.os.PersistableBundle;",
+        "import org.jetbrains.annotations.NotNull;",
         "import nz.bradcampbell.paperparcel.PaperParcel;",
         "@PaperParcel",
         "public final class Test {",
-        "private final PersistableBundle child;",
-        "public Test(PersistableBundle child) {",
+        "@NotNull private final Integer child;",
+        "public Test(@NotNull Integer child) {",
         "this.child = child;",
         "}",
-        "public PersistableBundle getChild() {",
+        "@NotNull public Integer getChild() {",
         "return this.child;",
         "}",
         "}"
@@ -33,12 +33,10 @@ public class PersistableBundleTests {
         "package test;",
         "import android.os.Parcel;",
         "import android.os.Parcelable;",
-        "import android.os.PersistableBundle;",
-        "import java.lang.ClassLoader;",
+        "import java.lang.Integer;",
         "import java.lang.Override;",
         "import nz.bradcampbell.paperparcel.TypedParcelable;",
         "public final class TestParcel implements TypedParcelable<Test> {",
-        "private static final ClassLoader CLASS_LOADER = Test.class.getClassLoader();",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
         "@Override public TestParcel createFromParcel(Parcel in) {",
         "return new TestParcel(in);",
@@ -52,11 +50,8 @@ public class PersistableBundleTests {
         "this.data = data;",
         "}",
         "private TestParcel(Parcel in) {",
-        "PersistableBundle outChild = null;",
-        "if (in.readInt() == 0) {",
-        "outChild = in.readPersistableBundle(CLASS_LOADER);",
-        "}",
-        "this.data = new Test(outChild);",
+        "Integer child = in.readInt();",
+        "this.data = new Test(child);",
         "}",
         "public static final TestParcel wrap(Test data) {",
         "return new TestParcel(data);",
@@ -68,13 +63,8 @@ public class PersistableBundleTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "PersistableBundle child = data.getChild();",
-        "if (child == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "dest.writePersistableBundle(child);",
-        "}",
+        "Integer child = data.getChild();",
+        "dest.writeInt(child);",
         "}",
         "}"
     ));

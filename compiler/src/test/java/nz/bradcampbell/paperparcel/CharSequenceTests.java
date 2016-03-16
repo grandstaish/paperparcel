@@ -12,18 +12,17 @@ import javax.tools.JavaFileObject;
 
 public class CharSequenceTests {
 
-  @Test public void nullableCharSequenceTest() throws Exception {
+  @Test public void charSequenceTest() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
-        "import org.jetbrains.annotations.Nullable;",
         "import nz.bradcampbell.paperparcel.PaperParcel;",
         "@PaperParcel",
         "public final class Test {",
-        "@Nullable private final CharSequence child;",
-        "public Test(@Nullable CharSequence child) {",
+        "private final CharSequence child;",
+        "public Test(CharSequence child) {",
         "this.child = child;",
         "}",
-        "@Nullable public CharSequence getChild() {",
+        "public CharSequence getChild() {",
         "return this.child;",
         "}",
         "}"
@@ -74,70 +73,6 @@ public class CharSequenceTests {
         "dest.writeInt(0);",
         "TextUtils.writeToParcel(child, dest, 0);",
         "}",
-        "}",
-        "}"
-    ));
-
-    assertAbout(javaSource()).that(source)
-        .processedWith(new PaperParcelProcessor())
-        .compilesWithoutError()
-        .and()
-        .generatesSources(expectedSource);
-  }
-
-  @Test public void charSequenceTest() throws Exception {
-    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
-        "package test;",
-        "import nz.bradcampbell.paperparcel.PaperParcel;",
-        "@PaperParcel",
-        "public final class Test {",
-        "private final CharSequence child;",
-        "public Test(CharSequence child) {",
-        "this.child = child;",
-        "}",
-        "public CharSequence getChild() {",
-        "return this.child;",
-        "}",
-        "}"
-    ));
-
-    JavaFileObject expectedSource = JavaFileObjects.forSourceString("test/TestParcel", Joiner.on('\n').join(
-        "package test;",
-        "import android.os.Parcel;",
-        "import android.os.Parcelable;",
-        "import android.text.TextUtils;",
-        "import java.lang.CharSequence;",
-        "import java.lang.Override;",
-        "import nz.bradcampbell.paperparcel.TypedParcelable;",
-        "public final class TestParcel implements TypedParcelable<Test> {",
-        "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
-        "@Override public TestParcel createFromParcel(Parcel in) {",
-        "return new TestParcel(in);",
-        "}",
-        "@Override public TestParcel[] newArray(int size) {",
-        "return new TestParcel[size];",
-        "}",
-        "};",
-        "private final Test data;",
-        "private TestParcel(Test data) {",
-        "this.data = data;",
-        "}",
-        "private TestParcel(Parcel in) {",
-        "CharSequence child = TextUtils.CHAR_SEQUENCE_CREATOR.createFromParcel(in);",
-        "this.data = new Test(child);",
-        "}",
-        "public static final TestParcel wrap(Test data) {",
-        "return new TestParcel(data);",
-        "}",
-        "public Test getContents() {",
-        "return data;",
-        "}",
-        "@Override public int describeContents() {",
-        "return 0;",
-        "}",
-        "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "CharSequence child = data.getChild();",
-        "TextUtils.writeToParcel(child, dest, 0);",
         "}",
         "}"
     ));

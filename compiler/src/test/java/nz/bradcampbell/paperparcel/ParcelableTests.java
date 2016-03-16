@@ -14,20 +14,19 @@ import javax.tools.JavaFileObject;
 
 public class ParcelableTests {
 
-  @Test public void nullableBitmapTest() throws Exception {
+  @Test public void bitmapTest() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
         "import android.graphics.Bitmap;",
         "import android.os.Parcelable;",
-        "import org.jetbrains.annotations.Nullable;",
         "import nz.bradcampbell.paperparcel.PaperParcel;",
         "@PaperParcel",
         "public final class Test {",
-        "@Nullable private final Bitmap child;",
-        "public Test(@Nullable Bitmap child) {",
+        "private final Bitmap child;",
+        "public Test(Bitmap child) {",
         "this.child = child;",
         "}",
-        "@Nullable public Bitmap getChild() {",
+        "public Bitmap getChild() {",
         "return this.child;",
         "}",
         "}"
@@ -77,70 +76,6 @@ public class ParcelableTests {
         "dest.writeInt(0);",
         "child.writeToParcel(dest, 0);",
         "}",
-        "}",
-        "}"
-    ));
-
-    assertAbout(javaSource()).that(source)
-        .processedWith(new PaperParcelProcessor())
-        .compilesWithoutError()
-        .and()
-        .generatesSources(expectedSource);
-  }
-
-  @Test public void bitmapTest() throws Exception {
-    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
-        "package test;",
-        "import android.graphics.Bitmap;",
-        "import nz.bradcampbell.paperparcel.PaperParcel;",
-        "@PaperParcel",
-        "public final class Test {",
-        "private final Bitmap child;",
-        "public Test(Bitmap child) {",
-        "this.child = child;",
-        "}",
-        "public Bitmap getChild() {",
-        "return this.child;",
-        "}",
-        "}"
-    ));
-
-    JavaFileObject expectedSource = JavaFileObjects.forSourceString("test/TestParcel", Joiner.on('\n').join(
-        "package test;",
-        "import android.graphics.Bitmap;",
-        "import android.os.Parcel;",
-        "import android.os.Parcelable;",
-        "import java.lang.Override;",
-        "import nz.bradcampbell.paperparcel.TypedParcelable;",
-        "public final class TestParcel implements TypedParcelable<Test> {",
-        "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
-        "@Override public TestParcel createFromParcel(Parcel in) {",
-        "return new TestParcel(in);",
-        "}",
-        "@Override public TestParcel[] newArray(int size) {",
-        "return new TestParcel[size];",
-        "}",
-        "};",
-        "private final Test data;",
-        "private TestParcel(Test data) {",
-        "this.data = data;",
-        "}",
-        "private TestParcel(Parcel in) {",
-        "Bitmap child = Bitmap.CREATOR.createFromParcel(in);",
-        "this.data = new Test(child);",
-        "}",
-        "public static final TestParcel wrap(Test data) {",
-        "return new TestParcel(data);",
-        "}",
-        "public Test getContents() {",
-        "return data;",
-        "}",
-        "@Override public int describeContents() {",
-        "return 0;",
-        "}",
-        "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "Bitmap child = data.getChild();",
-        "child.writeToParcel(dest, 0);",
         "}",
         "}"
     ));
@@ -228,8 +163,11 @@ public class ParcelableTests {
         "this.data = data;",
         "}",
         "private RootParcel(Parcel in) {",
-        "Child child = Child.CREATOR.createFromParcel(in);",
-        "this.data = new Root(child);",
+        "Child outChild = null;",
+        "if (in.readInt() == 0) {",
+        "outChild = Child.CREATOR.createFromParcel(in);",
+        "}",
+        "this.data = new Root(outChild);",
         "}",
         "public static final RootParcel wrap(Root data) {",
         "return new RootParcel(data);",
@@ -242,7 +180,12 @@ public class ParcelableTests {
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
         "Child child = data.getChild();",
+        "if (child == null) {",
+        "dest.writeInt(1);",
+        "} else {",
+        "dest.writeInt(0);",
         "child.writeToParcel(dest, 0);",
+        "}",
         "}",
         "}"
     ));

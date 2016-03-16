@@ -14,7 +14,8 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.SimpleAnnotationValueVisitor6;
 
 public class AnnotationUtils {
-  private static final String NULLABLE_ANNOTATION_NAME = "Nullable";
+  private static final String NON_NULL_ANNOTATION_NAME = "NonNull";
+  private static final String NOT_NULL_ANNOTATION_NAME = "NotNull";
 
   private static final AnnotationValueVisitor<Object, Void> VALUE_EXTRACTOR =
       new SimpleAnnotationValueVisitor6<Object, Void>() {
@@ -52,7 +53,8 @@ public class AnnotationUtils {
   }
 
   public static boolean isFieldRequired(Element element) {
-    return !hasAnnotationWithName(element, NULLABLE_ANNOTATION_NAME);
+    return hasAnnotationWithName(element, NOT_NULL_ANNOTATION_NAME)
+           || hasAnnotationWithName(element, NON_NULL_ANNOTATION_NAME);
   }
 
   /**

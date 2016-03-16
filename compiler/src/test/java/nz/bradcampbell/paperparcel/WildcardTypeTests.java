@@ -15,16 +15,15 @@ public class WildcardTypeTests {
   @Test public void wildcardTypeTest() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
-        "import org.jetbrains.annotations.Nullable;",
         "import nz.bradcampbell.paperparcel.PaperParcel;",
         "import java.util.List;",
         "@PaperParcel",
         "public final class Test {",
-        "@Nullable private final List<List<? extends Integer>> child;",
-        "public Test(@Nullable List<List<? extends Integer>> child) {",
+        "private final List<List<? extends Integer>> child;",
+        "public Test(List<List<? extends Integer>> child) {",
         "this.child = child;",
         "}",
-        "@Nullable public List<List<? extends Integer>> getChild() {",
+        "public List<List<? extends Integer>> getChild() {",
         "return this.child;",
         "}",
         "}"

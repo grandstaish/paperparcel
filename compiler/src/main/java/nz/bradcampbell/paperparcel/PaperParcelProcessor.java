@@ -254,9 +254,12 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
         String name = variableElement.getSimpleName().toString();
 
-        // A field is only "nullable" when annotated with @Nullable
-        boolean isNullable = accessorMethod != null ? !AnnotationUtils.isFieldRequired(accessorMethod) :
-                             !AnnotationUtils.isFieldRequired(variableElement);
+        // A field is considered "nullable" when it is a non-primitive and not annotated with @NonNull or @NotNull
+        boolean isPrimitive = variableElement.asType().getKind().isPrimitive();
+        boolean annotatedWithNonNull = accessorMethod != null
+                                       ? AnnotationUtils.isFieldRequired(accessorMethod)
+                                       : AnnotationUtils.isFieldRequired(variableElement);
+        boolean isNullable = !isPrimitive && !annotatedWithNonNull;
 
         // Parse the property type into a Property.Type object and find all recursive data class dependencies
         Property.Type propertyType =

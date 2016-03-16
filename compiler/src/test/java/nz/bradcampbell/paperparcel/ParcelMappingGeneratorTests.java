@@ -9,11 +9,12 @@ import com.google.common.base.Joiner;
 import com.google.common.truth.Truth;
 import com.google.testing.compile.JavaFileObjects;
 
-import javax.tools.JavaFileObject;
-
 import org.junit.Test;
 
+import javax.tools.JavaFileObject;
+
 public class ParcelMappingGeneratorTests {
+
   @Test public void singleParcelable() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
