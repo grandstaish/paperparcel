@@ -1,17 +1,19 @@
 package nz.bradcampbell.paperparcel.javaexample;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import android.os.Parcel;
 import android.os.Parcelable;
-import java.util.Date;
+
 import nz.bradcampbell.paperparcel.PaperParcels;
 import nz.bradcampbell.paperparcel.TypedParcelable;
 import org.junit.Test;
 
-import static com.google.common.truth.Truth.assertThat;
+import java.util.Date;
 
 public final class PaperParcelsTest {
   @Test public void wrapToConcreteType() throws Exception {
-    State originalObj = new State(1, new Date(), "taco");
+    State originalObj = new State(1, new Date());
     StateParcel stateParcel = PaperParcels.wrap(originalObj);
     State unwrapped = PaperParcels.unwrap(stateParcel);
     assertThat(originalObj).isEqualTo(unwrapped);
@@ -21,7 +23,7 @@ public final class PaperParcelsTest {
   }
 
   @Test public void wrapToGenericType() throws Exception {
-    State originalObj = new State(1, new Date(), "taco");
+    State originalObj = new State(1, new Date());
     TypedParcelable<State> stateParcel = PaperParcels.wrap(originalObj);
     State unwrapped = PaperParcels.unwrap(stateParcel);
     assertThat(originalObj).isEqualTo(unwrapped);
@@ -31,7 +33,7 @@ public final class PaperParcelsTest {
   }
 
   @Test public void wrapToRawParcelable() throws Exception {
-    State originalObj = new State(1, new Date(), "taco");
+    State originalObj = new State(1, new Date());
     //noinspection unchecked
     Parcelable stateParcel = PaperParcels.wrap(originalObj);
     //noinspection unchecked

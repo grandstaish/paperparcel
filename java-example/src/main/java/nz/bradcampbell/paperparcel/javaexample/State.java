@@ -1,7 +1,5 @@
 package nz.bradcampbell.paperparcel.javaexample;
 
-import android.support.annotation.Nullable;
-
 import nz.bradcampbell.paperparcel.GetterMethodName;
 import nz.bradcampbell.paperparcel.PaperParcel;
 
@@ -18,17 +16,9 @@ public final class State {
   @GetterMethodName("customGetterMethodName")
   private final Date modificationDate;
 
-  /**
-   * PaperParcel will do a null-check for this variable. This can be any Nullable annotation, it does not
-   * need to be the one from the Android support library
-   */
-  @Nullable
-  private final String nullableString;
-
-  public State(int count, Date modificationDate, @Nullable String nullableString) {
+  public State(int count, Date modificationDate) {
     this.count = count;
     this.modificationDate = modificationDate;
-    this.nullableString = nullableString;
   }
 
   public int getCount() {
@@ -37,18 +27,6 @@ public final class State {
 
   public Date customGetterMethodName() {
     return modificationDate;
-  }
-
-  @Nullable
-  public String getNullableString() {
-    return nullableString;
-  }
-
-  @Override public int hashCode() {
-    int result = count;
-    result = 31 * result + modificationDate.hashCode();
-    result = 31 * result + (nullableString != null ? nullableString.hashCode() : 0);
-    return result;
   }
 
   @Override public boolean equals(Object o) {
@@ -64,10 +42,13 @@ public final class State {
     if (count != state.count) {
       return false;
     }
-    if (!modificationDate.equals(state.modificationDate)) {
-      return false;
-    }
-    return nullableString != null ? nullableString.equals(state.nullableString)
-                                  : state.nullableString == null;
+    return modificationDate != null ? modificationDate.equals(state.modificationDate) : state.modificationDate == null;
+
+  }
+
+  @Override public int hashCode() {
+    int result = count;
+    result = 31 * result + (modificationDate != null ? modificationDate.hashCode() : 0);
+    return result;
   }
 }
