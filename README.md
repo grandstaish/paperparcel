@@ -45,7 +45,7 @@ A simple example can be found in the [autovalue-example](https://github.com/gran
 
 This is a little more manual. If your library doesn't use Kotlin or AutoValue, you might consider [Parceler](https://github.com/johncarl81/parceler) or one of the other great alternatives to PaperParcel.
 
-For an example on how to do this, see the [java-example](https://github.com/grandstaish/paperparcel/tree/master/java-example) module.
+However, if you use kotlin and java objects in the same project, you might still want to use PaperParcel. For an example on how to structure your model classes in java for PaperParcel to process them, see the [java-example](https://github.com/grandstaish/paperparcel/tree/master/java-example) module.
 
 ## Type Adapters
 
