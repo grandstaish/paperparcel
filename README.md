@@ -10,57 +10,40 @@ PaperParcel is an annotation processor that automatically generates type-safe [P
 
 Annotated data classes can contain any type that would normally be able to be parcelled. This includes all the basic Kotlin types, Lists, Maps, Arrays, SparseArrays, and [many more](https://github.com/grandstaish/PaperParcel/tree/master/compiler/src/test/java/nz/bradcampbell/paperparcel). In addition to the regular types, Data classes can contain other data classes, or they can have data class Arrays, or even data class type parameters. PaperParcel tries to have as little restriction as possible into how you write your data classes, so if you think anything is missing then please raise an issue.
 
-## Usage
+## Usage (Kotlin)
 
-Annotate your data class with @PaperParcel
-
-``` java
-@PaperParcel
-data class Example(var test: Int)
-```
-
-Use generated class to wrap the data object. The generated class is always {ClassName}Parcel. In this example, it is ExampleParcel.
-
-``` java
-val example = Example(42)
-val parcelableWrapper = ExampleParcel.wrap(example)
-
-// e.g. use in a bundle
-outState.putParcelable("example", parcelableWrapper)
-```
-
-Unwrap the bundled data object
-
-``` java
-// e.g. read from bundle
-val parcelableWrapper = savedInstanceState.getParcelable<ExampleParcel>("example")
-
-val example = parcelableWrapper.contents
-```
-
-Alternatively, a convenience class `PaperParcels` can be used to wrap/unwrap all generated types. E.g.:
-
-``` java
-val example = Example(42)
-val parcelableWrapper = PaperParcels.wrap(example)
-parcel.putParcelable("example", parcelableWrapper)
-
-// ...
-
-val parcelableWrapper = savedInstanceState.getParcelable<TypedParcelable<Example>>("example")
-val example = PaperParcels.unwrap(parcelableWrapper)
-```
-
-## Data classes inside data classes
-
-As mentioned in the Overview section, this is perfectly valid. Note you only need the @PaperParcel annotation on the root data object (although there is nothing wrong with putting it on both), e.g.:
+Annotate your data class with `@PaperParcel` and implement `PaperParcelable`, e.g.:
 
 ``` java
 @PaperParcel
-data class ExampleRoot(var child: ExampleChild)
-
-data class ExampleChild(var someValue: Int)
+data class Example(var test: Int) : PaperParcelable
 ```
+
+Now your data class is `Parcelable` and can be passed directly to a `Bundle` or `Intent`
+
+A simple example can be found in the kotlin-example module. For a more real-world example, see [here](https://github.com/grandstaish/four-letters-redux/blob/master/app/src/main/kotlin/nz/bradcampbell/fourletters/redux/state/State.kt).
+
+## Usage (AutoValue) 
+
+Simply implement `Parcelable` on your AutoValue class and PaperParcel's AutoValue extension will take care of the rest, e.g.:
+
+``` java
+@AutoValue
+public abstract class Example implements Parcelable {
+    public abstract int test();
+    public static State create(int test) {
+        return new AutoValue_Example(test);
+    }
+}
+```
+
+Now your AutoValue class can be passed directly to a `Bundle` or `Intent` 
+
+## Usage (Java)
+
+This is a little more manual. If your library doesn't use Kotlin or AutoValue, you might consider [Parceler](https://github.com/johncarl81/parceler) or one of the other great alternatives to PaperParcel.
+
+For an example on how to do this, see the java-example module.
 
 ## Type Adapters
 
@@ -133,21 +116,19 @@ data class GoodExample(val child: BadExample<Int>)
 
 Please file a bug for anything you see is missing or not handled correctly.
 
-## Download
-
-Gradle:
+## Download (Kotlin)
 
 ``` groovy
 repositories {
-    maven { url = 'https://jitpack.io' }
+    maven { url 'https://jitpack.io' }
 }
 dependencies {
-    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-beta5'
-    kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-beta5'
+    compile 'com.github.grandstaish.paperparcel:paperparcel-kotlin:1.0.0-beta6'
+    kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-beta6'
 }
 ```
 
-Note the use of `kapt` instead of `compile` for the compiler. For java projects, [android-apt ](https://bitbucket.org/hvisser/android-apt) should be used instead of Kotlin's `kapt`. 
+Note the use of `kapt` instead of `compile` for the compiler.
 
 When using `kapt`, be sure to include the following in your `build.gradle` file:
 
@@ -156,6 +137,22 @@ kapt {
     generateStubs = true
 }
 ```
+
+## Download (AutoValue)
+
+``` groovy
+repositories {
+    maven { url 'http://oss.sonatype.org/content/repositories/snapshots' }
+    maven { url 'https://jitpack.io' }
+}
+dependencies {
+    compile 'com.google.auto.value:auto-value:1.2-SNAPSHOT'
+    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-beta6'
+    apt 'com.github.grandstaish.paperparcel:compiler:1.0.0-beta6'
+}
+```
+
+Note that the [android-apt](https://bitbucket.org/hvisser/android-apt) plugin must be applied. 
 
 ## Contributing
 
