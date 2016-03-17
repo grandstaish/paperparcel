@@ -4,8 +4,6 @@ import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.Toolbar
 import android.widget.TextView
-import nz.bradcampbell.paperparcel.PaperParcels
-import nz.bradcampbell.paperparcel.TypedParcelable
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -18,13 +16,7 @@ class MainActivity : AppCompatActivity() {
     setContentView(R.layout.activity_main)
 
     savedInstanceState?.let {
-      state = PaperParcels.unwrap(it.getParcelable<TypedParcelable<State>>("state"))
-
-      // or:
-      // state = PaperParcels.unsafeUnwrap(it.getParcelable<Parcelable>("state"))
-
-      // or:
-      // state = it.getParcelable<StateParcel>("state").contents;
+      state = it.getParcelable<State>("state")
     }
 
     val toolbar = findViewById(R.id.toolbar) as Toolbar
@@ -50,11 +42,8 @@ class MainActivity : AppCompatActivity() {
     counter.text = state.count.toString() + " (updated at " + dateFormat.format(state.modificationDate) + ")"
   }
 
-  override fun onSaveInstanceState(outState: Bundle?) {
+  override fun onSaveInstanceState(outState: Bundle) {
     super.onSaveInstanceState(outState)
-    outState?.putParcelable("state", PaperParcels.wrap(state))
-
-    // or:
-    // outState?.putParcelable("state", StateParcel.wrap(state))
+    outState.putParcelable("state", state)
   }
 }

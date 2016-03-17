@@ -1,1 +1,1 @@
-include ':compiler', ':kotlin-example', ':java-example', ':paperparcel', ':autovalue-example'
+include ':compiler', ':kotlin-example', ':java-example', ':paperparcel', ':autovalue-example', ':paperparcel-kotlin'

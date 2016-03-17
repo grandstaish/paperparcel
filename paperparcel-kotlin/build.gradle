@@ -1,0 +1,12 @@
+apply plugin: 'kotlin'
+
+dependencies {
+    compile project(":paperparcel")
+    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+}
+
+buildscript {
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+}
