@@ -10,3 +10,5 @@ buildscript {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
+
+apply from: rootProject.file('gradle/jitpack-push.gradle')
