@@ -86,7 +86,7 @@ Add the list of specific TypeAdapters to the PaperParcel annotation. This will t
 
 ``` java
 @PaperParcel(typeAdapters = arrayOf(DateTypeAdapter::class))
-data class Example(val a: Date)
+data class Example(val a: Date) : PaperParcelable
 ```
 
 #### Variable TypeAdapters
@@ -95,7 +95,7 @@ Add the specific TypeAdapter directly on the variable. This will take precedence
 
 ``` java
 @PaperParcel
-data class Example(@FieldTypeAdapter(DateTypeAdapter::class) val a: Date)
+data class Example(@FieldTypeAdapter(DateTypeAdapter::class) val a: Date) : PaperParcelable
 ```
 
 ## Limitations
@@ -105,7 +105,7 @@ The @PaperParcel annotation cannot be put directly on a data class with type par
 This is wrong:
 ``` java
 @PaperParcel
-data class BadExample<T>(val child: T)
+data class BadExample<T>(val child: T) : PaperParcelable
 ```
 
 However, it is OK to use data classes with typed parameters inside of your annotated data class, e.g.:
@@ -113,7 +113,7 @@ However, it is OK to use data classes with typed parameters inside of your annot
 This is OK:
 ``` java
 @PaperParcel
-data class GoodExample(val child: BadExample<Int>)
+data class GoodExample(val child: BadExample<Int>) : PaperParcelable
 ```
 
 Please file a bug for anything you see is missing or not handled correctly.
