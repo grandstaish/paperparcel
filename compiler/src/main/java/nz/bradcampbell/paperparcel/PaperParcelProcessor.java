@@ -188,16 +188,12 @@ public class PaperParcelProcessor extends AbstractProcessor {
       wrapperBuilder.addField(classLoader);
     }
 
-    wrapperBuilder.addField(generateCreator(dataClass.getClassName(), dataClass.getWrapperClassName(), dataClass.isSingleton()))
+    wrapperBuilder.addField(generateCreator(dataClass.getClassName(), dataClass.getWrapperClassName(),
+            dataClass.isSingleton(), dataClass.getProperties(), classLoader))
         .addField(generateContentsField(dataClass.getClassName()))
         .addMethod(generateWrapMethod(dataClass))
-        .addMethod(generateContentsConstructor(dataClass.getClassName()));
-
-    if (!dataClass.isSingleton()) {
-      wrapperBuilder.addMethod(generateParcelConstructor(dataClass.getProperties(), dataClass.getClassName(), classLoader));
-    }
-
-    wrapperBuilder.addMethod(generateGetter(dataClass.getClassName()))
+        .addMethod(generateContentsConstructor(dataClass.getClassName()))
+        .addMethod(generateGetter(dataClass.getClassName()))
         .addMethod(generateDescribeContents())
         .addMethod(generateWriteToParcel(dataClass.getProperties(), dataClass.getGetterMethodMap()));
 
@@ -609,21 +605,57 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .build();
   }
 
-  private FieldSpec generateCreator(TypeName typeName, ClassName wrapperClassName, boolean isSingleton) {
+  private FieldSpec generateCreator(TypeName typeName, ClassName wrapperClassName, boolean isSingleton,
+      List<Property> properties, FieldSpec classLoader) {
+
     ClassName creator = ClassName.get("android.os", "Parcelable", "Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, wrapperClassName);
 
-    CodeBlock.Builder initializer = CodeBlock.builder()
+    ParameterSpec in = ParameterSpec.builder(ClassName.get("android.os", "Parcel"), "in").build();
+
+    CodeBlock.Builder creatorInitializer = CodeBlock.builder()
         .beginControlFlow("new $T()", ParameterizedTypeName.get(creator, wrapperClassName))
-        .beginControlFlow("@$T public $T createFromParcel($T in)", ClassName.get(Override.class), wrapperClassName, PARCEL);
+        .beginControlFlow("@$T public $T createFromParcel($T $N)", ClassName.get(Override.class), wrapperClassName, PARCEL, in);
 
     if (isSingleton) {
-      initializer.addStatement("return new $T($T.INSTANCE)", wrapperClassName, typeName);
+      creatorInitializer.addStatement("return new $T($T.INSTANCE)", wrapperClassName, typeName);
     } else {
-      initializer.addStatement("return new $T(in)", wrapperClassName);
+      String dataInitializer;
+      TypeName rawTypeName;
+
+      if (typeName instanceof ParameterizedTypeName) {
+        rawTypeName = ((ParameterizedTypeName) typeName).rawType;
+        dataInitializer = "$T $N = new $T<>(";
+      } else {
+        rawTypeName = typeName;
+        dataInitializer = "$T $N = new $T(";
+      }
+
+      int paramsOffset = 3;
+      Object[] params = new Object[properties.size() + paramsOffset];
+      params[0] = typeName;
+      params[1] = DATA_VARIABLE_NAME;
+      params[2] = rawTypeName;
+
+      CodeBlock.Builder block = CodeBlock.builder();
+
+      for (int i = 0; i < properties.size(); i++) {
+        Property p = properties.get(i);
+        params[i + paramsOffset] = p.readFromParcel(block, in, classLoader);
+        dataInitializer += "$L";
+        if (i != properties.size() - 1) {
+          dataInitializer += ", ";
+        }
+      }
+
+      creatorInitializer.add(block.build());
+
+      dataInitializer += ")";
+      creatorInitializer.addStatement(dataInitializer, params);
+      creatorInitializer.addStatement("return new $T($N)", wrapperClassName, DATA_VARIABLE_NAME);
     }
 
-    initializer.endControlFlow()
+    creatorInitializer.endControlFlow()
         .beginControlFlow("@$T public $T[] newArray($T size)", ClassName.get(Override.class), wrapperClassName, int.class)
         .addStatement("return new $T[size]", wrapperClassName)
         .endControlFlow()
@@ -632,7 +664,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
     return FieldSpec
         .builder(creatorOfClass, "CREATOR", Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC)
-        .initializer(initializer.build())
+        .initializer(creatorInitializer.build())
         .build();
   }
 
@@ -656,50 +688,6 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .addParameter(className, DATA_VARIABLE_NAME)
         .addStatement("this.$N = $N", DATA_VARIABLE_NAME, DATA_VARIABLE_NAME)
         .build();
-  }
-
-  private MethodSpec generateParcelConstructor(List<Property> properties, TypeName className, FieldSpec classLoader) {
-    ParameterSpec in = ParameterSpec
-        .builder(ClassName.get("android.os", "Parcel"), "in")
-        .build();
-
-    MethodSpec.Builder builder = MethodSpec.constructorBuilder()
-        .addModifiers(PRIVATE)
-        .addParameter(in);
-
-    if (properties != null) {
-
-      String initializer;
-      if (className instanceof ParameterizedTypeName) {
-        className = ((ParameterizedTypeName) className).rawType;
-        initializer = "this.$N = new $T<>(";
-      } else {
-        initializer = "this.$N = new $T(";
-      }
-
-      int paramsOffset = 2;
-      Object[] params = new Object[properties.size() + paramsOffset];
-      params[0] = DATA_VARIABLE_NAME;
-      params[1] = className;
-
-      CodeBlock.Builder block = CodeBlock.builder();
-
-      for (int i = 0; i < properties.size(); i++) {
-        Property p = properties.get(i);
-        params[i + paramsOffset] = p.readFromParcel(block, in, classLoader);
-        initializer += "$L";
-        if (i != properties.size() - 1) {
-          initializer += ", ";
-        }
-      }
-
-      builder.addCode(block.build());
-
-      initializer += ")";
-      builder.addStatement(initializer, params);
-    }
-
-    return builder.build();
   }
 
   private MethodSpec generateGetter(TypeName className) {
