@@ -166,6 +166,8 @@ In addition to the default Android rules set by proguard-android.txt in the SDK,
   static ** FROM_ORIGINAL;
   static ** FROM_PARCELABLE;
 }
+
+# This is only needed if you are using paperparcel-kotlin
 -keepclassmembers interface * extends android.os.Parcelable {
   static ** CREATOR;
 }
