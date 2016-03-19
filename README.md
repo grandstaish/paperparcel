@@ -156,6 +156,19 @@ dependencies {
 
 Note that the [android-apt](https://bitbucket.org/hvisser/android-apt) plugin must be applied. 
 
+## Proguard
+
+```
+-dontwarn org.jetbrains.annotations.**
+-keepclassmembers class nz.bradcampbell.paperparcel.PaperParcelMapping {
+  static ** FROM_ORIGINAL;
+  static ** FROM_PARCELABLE;
+}
+-keepclassmembers interface * extends android.os.Parcelable {
+  static ** CREATOR;
+}
+```
+
 ## Contributing
 
 I would love contributions to this project if you think of anything you would like to see in the project or find any bugs. If you would like to contribute, first raise a GitHub issue so we can discuss the change you want to make. 
