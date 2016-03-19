@@ -158,6 +158,8 @@ Note that the [android-apt](https://bitbucket.org/hvisser/android-apt) plugin mu
 
 ## Proguard
 
+In addition to the default Android rules set by proguard-android.txt in the SDK, add the following rules to your project proguard file:
+
 ```
 -dontwarn org.jetbrains.annotations.**
 -keepclassmembers class nz.bradcampbell.paperparcel.PaperParcelMapping {
