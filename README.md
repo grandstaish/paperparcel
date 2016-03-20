@@ -125,8 +125,8 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 dependencies {
-    compile 'com.github.grandstaish.paperparcel:paperparcel-kotlin:1.0.0-beta6'
-    kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-beta6'
+    compile 'com.github.grandstaish.paperparcel:paperparcel-kotlin:1.0.0-beta7'
+    kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-beta7'
 }
 ```
 
@@ -149,8 +149,8 @@ repositories {
 }
 dependencies {
     compile 'com.google.auto.value:auto-value:1.2-SNAPSHOT'
-    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-beta6'
-    apt 'com.github.grandstaish.paperparcel:compiler:1.0.0-beta6'
+    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-beta7'
+    apt 'com.github.grandstaish.paperparcel:compiler:1.0.0-beta7'
 }
 ```
 
