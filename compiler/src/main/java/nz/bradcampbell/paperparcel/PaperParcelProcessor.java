@@ -286,7 +286,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
           if (iterator.hasNext()) {
             VariableElement currentParam = iterator.next();
             for (VariableElement field : variableElements) {
-              if (typeUtil.isSameType(field.asType(), currentParam.asType())) {
+              if (typeUtil.isAssignable(field.asType(), currentParam.asType())) {
                 iterator.remove();
                 result.add(field);
                 if (iterator.hasNext()) {
