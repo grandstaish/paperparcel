@@ -223,9 +223,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
       // Ensure we are dealing with a TypeElement
       if (!(element instanceof TypeElement)) {
-        error(processingEnv,
-              "@PaperParcel applies to a type, " + element.getSimpleName() + " is a " + element.getKind(),
-              element);
+        error(processingEnv, "@PaperParcel applies to a type, " + element.getSimpleName() + " is a "
+                             + element.getKind(), element);
         continue;
       }
 
@@ -632,11 +631,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .build();
   }
 
-  private FieldSpec generateCreator(TypeName typeName,
-                                    ClassName wrapperClassName,
-                                    boolean isSingleton,
-                                    List<Property> properties,
-                                    FieldSpec classLoader) {
+  private FieldSpec generateCreator(TypeName typeName, ClassName wrapperClassName, boolean isSingleton,
+                                    List<Property> properties, FieldSpec classLoader) {
 
     ClassName creator = ClassName.get("android.os", "Parcelable", "Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, wrapperClassName);
