@@ -1,5 +1,6 @@
 package nz.bradcampbell.paperparcel;
 
+import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PUBLIC;
 
 import com.google.auto.service.AutoService;
@@ -52,7 +53,7 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
 
     FieldSpec classLoader = generateClassLoaderField(thisClass);
     TypeSpec.Builder subclass = TypeSpec.classBuilder(className)
-        .addModifiers(Modifier.FINAL)
+        .addModifiers(PUBLIC, FINAL)
         .superclass(TypeVariableName.get(classToExtend))
         .addMethod(generateSuperConstructor(context.properties()))
         .addAnnotation(PaperParcel.class)
@@ -102,7 +103,7 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
         .unindent()
         .add("}");
 
-    return FieldSpec.builder(creatorOfClass, "CREATOR", Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC)
+    return FieldSpec.builder(creatorOfClass, "CREATOR", Modifier.PUBLIC, FINAL, Modifier.STATIC)
         .initializer(initializer.build())
         .build();
   }
@@ -136,7 +137,7 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
     if (className instanceof ParameterizedTypeName) {
       className = ((ParameterizedTypeName) className).rawType;
     }
-    return FieldSpec.builder(ClassLoader.class, "CLASS_LOADER", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
+    return FieldSpec.builder(ClassLoader.class, "CLASS_LOADER", Modifier.PRIVATE, FINAL, Modifier.STATIC)
         .initializer("$T.class.getClassLoader()", className)
         .build();
   }

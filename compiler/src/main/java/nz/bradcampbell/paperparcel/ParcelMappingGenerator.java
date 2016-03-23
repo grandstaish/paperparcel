@@ -5,7 +5,6 @@ import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 
-import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.JavaFile;
@@ -44,16 +43,6 @@ public final class ParcelMappingGenerator {
     CodeBlock.Builder staticBlockBuilder = CodeBlock.builder();
     int index = 0;
     for (DataClass dataClass : dataClasses) {
-      // Parameterized types don't need to be dynamically wrapped/unwrapped: ignore.
-      if (dataClass.isClassParameterized()) {
-        staticBlockBuilder.add("// Parameterized class ignored: $N\n", dataClass.getClassName().toString());
-        continue;
-      }
-      // AutoValue classes don't need a centralized lookup: they are Parcelable without wrapping.
-      if (dataClass.isAutoValue()) {
-        staticBlockBuilder.add("// AutoValue class ignored: $N\n", ((ClassName) dataClass.getClassName()).simpleName());
-        continue;
-      }
       TypeName original = dataClass.getClassName();
       TypeName parcelable = dataClass.getWrapperClassName();
       String varName = "delegator" + index++;

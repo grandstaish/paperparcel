@@ -247,8 +247,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
   private JavaFile generateParcelableWrapper(DataClass dataClass) throws IOException {
     TypeSpec.Builder wrapperBuilder = TypeSpec.classBuilder(dataClass.getWrapperClassName().simpleName())
         .addModifiers(PUBLIC, FINAL)
-        .addSuperinterface(dataClass.isClassParameterized()
-                           ? PARCELABLE : ParameterizedTypeName.get(TYPED_PARCELABLE, dataClass.getClassName()));
+        .addSuperinterface(ParameterizedTypeName.get(TYPED_PARCELABLE, dataClass.getClassName()));
 
     FieldSpec classLoader = null;
     if (dataClass.requiresClassLoader()) {
