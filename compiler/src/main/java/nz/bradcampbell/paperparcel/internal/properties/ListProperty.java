@@ -2,6 +2,7 @@ package nz.bradcampbell.paperparcel.internal.properties;
 
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
 
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
@@ -12,6 +13,8 @@ import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.Set;
 
 public class ListProperty extends Property {
   private final Property typeArgument;
@@ -23,7 +26,8 @@ public class ListProperty extends Property {
   }
 
   @Override
-  protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
+  protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
+                                          Map<ClassName, FieldSpec> typeAdapters) {
     // Read size
     String listSize = getName() + "Size";
     block.addStatement("$T $N = $N.readInt()", int.class, listSize, in);
@@ -53,9 +57,8 @@ public class ListProperty extends Property {
     String indexName = getName() + "Index";
     block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, listSize, indexName);
 
-    // Read in the parameter. Set isNullable to true as I don't know how to tell if a parameter is
-    // nullable or not. Kotlin can do this, Java can't.
-    CodeBlock parameterLiteral = typeArgument.readFromParcel(block, in, classLoader);
+    // Read in the parameter.
+    CodeBlock parameterLiteral = typeArgument.readFromParcel(block, in, classLoader, typeAdapters);
 
     // Add the parameter to the output list
     block.addStatement("$N.add($L)", listName, parameterLiteral);
@@ -65,7 +68,8 @@ public class ListProperty extends Property {
     return literal("$N", listName);
   }
 
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral) {
+  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral,
+                                              Map<ClassName, FieldSpec> typeAdapters) {
     // Write size
     String listSize = getName() + "Size";
     block.addStatement("$T $N = $L.size()", int.class, listSize, sourceLiteral);
@@ -87,14 +91,17 @@ public class ListProperty extends Property {
 
     CodeBlock parameterSource = literal("$N", parameterItemName);
 
-    // Write in the parameter. Set isNullable to true as I don't know how to tell if a parameter is
-    // nullable or not. Kotlin can do this, Java can't.
-    typeArgument.writeToParcel(block, dest, parameterSource);
+    // Write in the parameter
+    typeArgument.writeToParcel(block, dest, parameterSource, typeAdapters);
 
     block.endControlFlow();
   }
 
   @Override public boolean requiresClassLoader() {
     return typeArgument.requiresClassLoader();
+  }
+
+  @Override public Set<ClassName> requiredTypeAdapters() {
+    return typeArgument.requiredTypeAdapters();
   }
 }

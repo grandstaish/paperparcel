@@ -3,12 +3,17 @@ package nz.bradcampbell.paperparcel.internal;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
 import static nz.bradcampbell.paperparcel.internal.utils.StringUtils.capitalizeFirstCharacter;
 
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.WildcardTypeName;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Collections;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A model object that can generate a code block for both reading and writing itself to/from a Parcel
@@ -58,11 +63,19 @@ public abstract class Property {
   }
 
   /**
-   * todo:
+   * TODO:
    * @return
    */
   public boolean requiresClassLoader() {
     return false;
+  }
+
+  /**
+   * TODO:
+   * @return
+   */
+  public Set<ClassName> requiredTypeAdapters() {
+    return Collections.emptySet();
   }
 
   /**
@@ -73,7 +86,8 @@ public abstract class Property {
    * @param in The Parcel parameter
    * @param classLoader ClassLoader to use for reading data
    */
-  public final CodeBlock readFromParcel(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
+  public final CodeBlock readFromParcel(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
+                                        Map<ClassName, FieldSpec> typeAdapters) {
     TypeName typeName = getTypeName();
     if (typeName instanceof WildcardTypeName) {
       typeName = ((WildcardTypeName) typeName).upperBounds.get(0);
@@ -87,7 +101,7 @@ public abstract class Property {
       block.beginControlFlow("if ($N.readInt() == 0)", in);
     }
 
-    CodeBlock literal = readFromParcelInner(block, in, classLoader);
+    CodeBlock literal = readFromParcelInner(block, in, classLoader, typeAdapters);
     boolean alreadyDefined = defaultLiteral.toString().equals(literal.toString());
 
     CodeBlock result;
@@ -116,8 +130,8 @@ public abstract class Property {
    * @param in The Parcel parameter
    * @param classLoader ClassLoader to use for reading data
    */
-  protected abstract CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in,
-                                                   @Nullable FieldSpec classLoader);
+  protected abstract CodeBlock readFromParcelInner(
+      CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader, Map<ClassName, FieldSpec> typeAdapters);
 
   /**
    * Generates a CodeBlock object that can be used to write the property to the given parcel. This handles checks
@@ -126,7 +140,8 @@ public abstract class Property {
    *
    * @param dest The Parcel parameter
    */
-  public final void writeToParcel(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral) {
+  public final void writeToParcel(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral,
+                                  Map<ClassName, FieldSpec> typeAdapters) {
     if (isNullable) {
       block.beginControlFlow("if ($L == null)", sourceLiteral);
       block.addStatement("$N.writeInt(1)", dest);
@@ -134,7 +149,7 @@ public abstract class Property {
       block.addStatement("$N.writeInt(0)", dest);
     }
 
-    writeToParcelInner(block, dest, sourceLiteral);
+    writeToParcelInner(block, dest, sourceLiteral, typeAdapters);
 
     if (isNullable) {
       block.endControlFlow();
@@ -148,5 +163,6 @@ public abstract class Property {
    * @param block The CodeBlock builder to write the code to
    * @param dest The Parcel parameter
    */
-  protected abstract void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral);
+  protected abstract void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral,
+                                             Map<ClassName, FieldSpec> typeAdapters);
 }

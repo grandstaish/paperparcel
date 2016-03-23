@@ -4,6 +4,7 @@ import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.getRawTyp
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
 
 import com.squareup.javapoet.ArrayTypeName;
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
@@ -12,6 +13,9 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.WildcardTypeName;
 import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
+import java.util.Set;
 
 public class ArrayProperty extends Property {
   private final Property componentType;
@@ -23,7 +27,8 @@ public class ArrayProperty extends Property {
   }
 
   @Override
-  protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
+  protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
+                                          Map<ClassName, FieldSpec> typeAdapters) {
     // Read size
     String arraySize = getName() + "Size";
     block.addStatement("$T $N = $N.readInt()", int.class, arraySize, in);
@@ -37,9 +42,8 @@ public class ArrayProperty extends Property {
     String indexName = getName() + "Index";
     block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, arraySize, indexName);
 
-    // Read in the component. Set isNullable to true as I don't know how to tell if a parameter is
-    // nullable or not. Kotlin can do this, Java can't.
-    CodeBlock componentLiteral = componentType.readFromParcel(block, in, classLoader);
+    // Read in the component.
+    CodeBlock componentLiteral = componentType.readFromParcel(block, in, classLoader, typeAdapters);
 
     // Add the parameter to the output array
     block.addStatement("$N[$N] = $L", arrayName, indexName, componentLiteral);
@@ -49,7 +53,9 @@ public class ArrayProperty extends Property {
     return literal("$N", arrayName);
   }
 
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral) {
+  @Override
+  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral,
+                                    Map<ClassName, FieldSpec> typeAdapters) {
     // Write size
     String arraySize = getName() + "Size";
     block.addStatement("$T $N = $L.length", int.class, arraySize, sourceLiteral);
@@ -74,9 +80,8 @@ public class ArrayProperty extends Property {
 
     CodeBlock componentSource = literal("$N", componentItemName);
 
-    // Write in the component. Set isNullable to true as I don't know how to tell if a parameter is
-    // nullable or not. Kotlin can do this, Java can't.
-    componentType.writeToParcel(block, dest, componentSource);
+    // Write in the component.
+    componentType.writeToParcel(block, dest, componentSource, typeAdapters);
 
     block.endControlFlow();
   }
@@ -96,5 +101,13 @@ public class ArrayProperty extends Property {
     return CodeBlock.builder()
         .addStatement(initializer, variableName, componentTypeName, size)
         .build();
+  }
+
+  @Override public boolean requiresClassLoader() {
+    return componentType.requiresClassLoader();
+  }
+
+  @Override public Set<ClassName> requiredTypeAdapters() {
+    return componentType.requiredTypeAdapters();
   }
 }

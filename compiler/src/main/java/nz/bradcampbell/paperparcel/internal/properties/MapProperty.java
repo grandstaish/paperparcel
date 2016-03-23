@@ -2,6 +2,7 @@ package nz.bradcampbell.paperparcel.internal.properties;
 
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
 
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
@@ -12,7 +13,9 @@ import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 public class MapProperty extends Property {
   private final Property keyProperty;
@@ -25,7 +28,9 @@ public class MapProperty extends Property {
     this.valueProperty = valueProperty;
   }
 
-  @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
+  @Override
+  protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
+                                          Map<ClassName, FieldSpec> typeAdapters) {
     // Read size
     String mapSize = getName() + "Size";
     block.addStatement("$T $N = $N.readInt()", int.class, mapSize, in);
@@ -67,13 +72,11 @@ public class MapProperty extends Property {
     String indexName = getName() + "Index";
     block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, mapSize, indexName);
 
-    // Read in the key. Set isNullable to true as I don't know how to tell if a parameter is
-    // nullable or not. Kotlin can do this, Java can't.
-    CodeBlock keyLiteral = keyProperty.readFromParcel(block, in, classLoader);
+    // Read in the key
+    CodeBlock keyLiteral = keyProperty.readFromParcel(block, in, classLoader, typeAdapters);
 
-    // Read in the value. Set isNullable to true as I don't know how to tell if a parameter is
-    // nullable or not. Kotlin can do this, Java can't.
-    CodeBlock valueLiteral = valueProperty.readFromParcel(block, in, classLoader);
+    // Read in the value
+    CodeBlock valueLiteral = valueProperty.readFromParcel(block, in, classLoader, typeAdapters);
 
     // Add the parameter to the output map
     block.addStatement("$N.put($L, $L)", mapName, keyLiteral, valueLiteral);
@@ -83,7 +86,9 @@ public class MapProperty extends Property {
     return literal("$N", mapName);
   }
 
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral) {
+  @Override
+  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral,
+                                    Map<ClassName, FieldSpec> typeAdapters) {
     // Write size
     block.addStatement("$N.writeInt($L.size())", dest, sourceLiteral);
 
@@ -98,18 +103,23 @@ public class MapProperty extends Property {
     CodeBlock keySourceLiteral = literal("$N.getKey()", entryName);
     CodeBlock valueSourceLiteral = literal("$N.getValue()", entryName);
 
-    // Write in the key. Set isNullable to true as I don't know how to tell if a parameter is
-    // nullable or not. Kotlin can do this, Java can't.
-    keyProperty.writeToParcel(block, dest, keySourceLiteral);
+    // Write in the key.
+    keyProperty.writeToParcel(block, dest, keySourceLiteral, typeAdapters);
 
-    // Write in the value. Set isNullable to true as I don't know how to tell if a parameter is
-    // nullable or not. Kotlin can do this, Java can't.
-    valueProperty.writeToParcel(block, dest, valueSourceLiteral);
+    // Write in the value.
+    valueProperty.writeToParcel(block, dest, valueSourceLiteral, typeAdapters);
 
     block.endControlFlow();
   }
 
   @Override public boolean requiresClassLoader() {
     return keyProperty.requiresClassLoader() || valueProperty.requiresClassLoader();
+  }
+
+  @Override public Set<ClassName> requiredTypeAdapters() {
+    Set<ClassName> combined = new HashSet<>();
+    combined.addAll(keyProperty.requiredTypeAdapters());
+    combined.addAll(valueProperty.requiredTypeAdapters());
+    return combined;
   }
 }

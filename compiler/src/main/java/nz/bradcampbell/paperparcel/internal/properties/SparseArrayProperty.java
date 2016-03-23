@@ -2,6 +2,7 @@ package nz.bradcampbell.paperparcel.internal.properties;
 
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
 
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
@@ -10,6 +11,9 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.WildcardTypeName;
 import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Map;
+import java.util.Set;
 
 public class SparseArrayProperty extends Property {
   private Property typeArgument;
@@ -20,7 +24,9 @@ public class SparseArrayProperty extends Property {
     this.typeArgument = typeArgument;
   }
 
-  @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
+  @Override
+  protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
+                                          Map<ClassName, FieldSpec> typeAdapters) {
     // Read size
     String sparseArraySize = getName() + "Size";
     block.addStatement("$T $N = $N.readInt()", int.class, sparseArraySize, in);
@@ -51,7 +57,7 @@ public class SparseArrayProperty extends Property {
     block.addStatement("$T $N = $N.readInt()", int.class, keyName, in);
 
     // Read in the value.
-    CodeBlock parameterLiteral = typeArgument.readFromParcel(block, in, classLoader);
+    CodeBlock parameterLiteral = typeArgument.readFromParcel(block, in, classLoader, typeAdapters);
 
     // Add the parameter to the output list
     block.addStatement("$N.put($N, $L)", sparseArrayName, keyName, parameterLiteral);
@@ -61,7 +67,9 @@ public class SparseArrayProperty extends Property {
     return literal("$N", sparseArrayName);
   }
 
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral) {
+  @Override
+  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral,
+                                    Map<ClassName, FieldSpec> typeAdapters) {
     // Write size
     String sparseArraySize = getName() + "Size";
     block.addStatement("$T $N = $L.size()", int.class, sparseArraySize, sourceLiteral);
@@ -87,14 +95,17 @@ public class SparseArrayProperty extends Property {
 
     CodeBlock parameterSource = literal("$N", valueName);
 
-    // Write in the parameter. Set isNullable to true as I don't know how to tell if a parameter is
-    // nullable or not. Kotlin can do this, Java can't.
-    typeArgument.writeToParcel(block, dest, parameterSource);
+    // Write in the parameter.
+    typeArgument.writeToParcel(block, dest, parameterSource, typeAdapters);
 
     block.endControlFlow();
   }
 
   @Override public boolean requiresClassLoader() {
     return typeArgument.requiresClassLoader();
+  }
+
+  @Override public Set<ClassName> requiredTypeAdapters() {
+    return typeArgument.requiredTypeAdapters();
   }
 }

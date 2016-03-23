@@ -3,6 +3,7 @@ package nz.bradcampbell.paperparcel.internal.properties;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.getRawTypeName;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
 
+import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
@@ -12,7 +13,10 @@ import com.squareup.javapoet.WildcardTypeName;
 import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 public class NonParcelableProperty extends Property {
   private final List<Property> children;
@@ -25,8 +29,9 @@ public class NonParcelableProperty extends Property {
     this.isSingleton = isSingleton;
   }
 
-  @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in,
-                                                    @Nullable FieldSpec classLoader) {
+  @Override
+  protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
+                                          Map<ClassName, FieldSpec> typeAdapters) {
     if (isSingleton) {
       return literal("$T.INSTANCE", getRawTypeName(getTypeName()));
     }
@@ -48,7 +53,7 @@ public class NonParcelableProperty extends Property {
         originalParams[i] = ((WildcardTypeName) parameterTypeName).upperBounds.get(0);
         typeName = ParameterizedTypeName.get(originalType.rawType, originalParams);
       }
-      params[i + 1] = p.readFromParcel(block, in, classLoader);
+      params[i + 1] = p.readFromParcel(block, in, classLoader, typeAdapters);
       initializer += "$L";
       if (i != propertiesSize - 1) {
         initializer += ", ";
@@ -59,11 +64,29 @@ public class NonParcelableProperty extends Property {
     return literal(initializer, params);
   }
 
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock source) {
+  @Override
+  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock source,
+                                    Map<ClassName, FieldSpec> typeAdapters) {
     if (!isSingleton) {
       for (Property p : children) {
-        p.writeToParcel(block, dest, literal("$L.$N()", source, p.getAccessorMethodName()));
+        p.writeToParcel(block, dest, literal("$L.$N()", source, p.getAccessorMethodName()), typeAdapters);
       }
     }
+  }
+
+  @Override public boolean requiresClassLoader() {
+    boolean requiresClassLoader = false;
+    for (Property p : children) {
+      requiresClassLoader |= p.requiresClassLoader();
+    }
+    return requiresClassLoader;
+  }
+
+  @Override public Set<ClassName> requiredTypeAdapters() {
+    Set<ClassName> combined = new HashSet<>();
+    for (Property p : children) {
+      combined.addAll(p.requiredTypeAdapters());
+    }
+    return combined;
   }
 }

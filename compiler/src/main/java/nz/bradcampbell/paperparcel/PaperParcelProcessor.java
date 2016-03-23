@@ -49,6 +49,7 @@ import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.hasTypeArgume
 
 import com.google.auto.common.MoreElements;
 import com.google.auto.service.AutoService;
+import com.google.common.base.CaseFormat;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -99,6 +100,7 @@ import org.jetbrains.annotations.Nullable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -141,7 +143,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
   private Types typeUtil;
   private Elements elementUtils;
 
-  private Map<TypeName, TypeName> globalTypeAdapters = new HashMap<>();
+  private Map<TypeName, ClassName> globalTypeAdapters = new HashMap<>();
   private Map<String, TypeMirror> wrapperTypes = new HashMap<>();
 
   private static void error(ProcessingEnvironment processingEnv, String message, Element element) {
@@ -215,7 +217,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
       DeclaredType ta = (DeclaredType) element.asType();
       TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, ta);
-      globalTypeAdapters.put(typeAdapterType, TypeName.get(ta));
+      globalTypeAdapters.put(typeAdapterType, (ClassName) TypeName.get(ta));
     }
 
     // Create a DataClass models for all classes annotated with @PaperParcel
@@ -242,28 +244,6 @@ public class PaperParcelProcessor extends AbstractProcessor {
     return true;
   }
 
-  private JavaFile generateParcelableWrapper(DataClass dataClass) throws IOException {
-    TypeSpec.Builder wrapperBuilder = TypeSpec.classBuilder(dataClass.getWrapperClassName().simpleName())
-        .addModifiers(PUBLIC, FINAL)
-        .addSuperinterface(ParameterizedTypeName.get(TYPED_PARCELABLE, dataClass.getClassName()));
-
-    FieldSpec classLoader = null;
-    if (dataClass.requiresClassLoader()) {
-      classLoader = generateClassLoaderField(dataClass.getClassName());
-      wrapperBuilder.addField(classLoader);
-    }
-
-    wrapperBuilder.addField(generateCreator(dataClass.getClassName(), dataClass.getWrapperClassName(),
-                                            dataClass.isSingleton(), dataClass.getProperties(), classLoader))
-        .addField(generateContentsField(dataClass.getClassName()))
-        .addMethod(generateContentsConstructor(dataClass.getClassName()))
-        .addMethod(generateDescribeContents())
-        .addMethod(generateWriteToParcel(dataClass.getProperties()));
-
-    // Build the java file
-    return JavaFile.builder(dataClass.getClassPackage(), wrapperBuilder.build()).build();
-  }
-
   /**
    * Create a Parcel wrapper for the given data class
    *
@@ -275,8 +255,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
     String classPackage = getPackageName(typeElement);
     String wrappedClassName = generateWrappedTypeName(typeElement, typeMirror);
     List<Property> properties = new ArrayList<>();
+    Set<ClassName> requiredTypeAdapters = new HashSet<>();
     boolean requiresClassLoader = false;
-    Map<TypeName, TypeName> typeAdapters = new HashMap<>();
+    Map<TypeName, ClassName> typeAdapters = new HashMap<>();
     boolean isSingleton = TypeUtils.isSingleton(typeUtil, typeElement);
 
     // If the class is a singleton, we don't need to read/write variables. We can just use the static instance.
@@ -289,7 +270,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
         for (Object o : typeAdaptersArray) {
           DeclaredType ta = (DeclaredType) o;
           TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, ta);
-          typeAdapters.put(typeAdapterType, TypeName.get(ta));
+          typeAdapters.put(typeAdapterType, (ClassName) TypeName.get(ta));
         }
       }
 
@@ -307,7 +288,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
           continue;
         }
 
-        Map<TypeName, TypeName> variableScopedTypeAdapters = getTypeAdapterMapForVariable(
+        Map<TypeName, ClassName> variableScopedTypeAdapters = getTypeAdapterMapForVariable(
             typeAdapters, variableElement, accessorMethod);
 
         String name = variableElement.getSimpleName().toString();
@@ -325,12 +306,14 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
         properties.add(property);
 
+        requiredTypeAdapters.addAll(property.requiredTypeAdapters());
+
         requiresClassLoader |= property.requiresClassLoader();
       }
     }
 
     return new DataClass(properties, classPackage, wrappedClassName, TypeName.get(typeMirror), requiresClassLoader,
-                         isSingleton);
+                         requiredTypeAdapters, isSingleton);
   }
 
   private List<VariableElement> filterNonConstructorFields(
@@ -420,13 +403,13 @@ public class PaperParcelProcessor extends AbstractProcessor {
         variableElement);
   }
 
-  private Map<TypeName, TypeName> getTypeAdapterMapForVariable(
-      Map<TypeName, TypeName> classScopedTypeAdapters,
+  private Map<TypeName, ClassName> getTypeAdapterMapForVariable(
+      Map<TypeName, ClassName> classScopedTypeAdapters,
       VariableElement variableElement,
       ExecutableElement accessorMethod) {
 
     // Find a field-scoped adapter if it exists
-    Map<TypeName, TypeName> tempTypeAdapters = classScopedTypeAdapters;
+    Map<TypeName, ClassName> tempTypeAdapters = classScopedTypeAdapters;
     FieldTypeAdapter variableAdapter = variableElement.getAnnotation(FieldTypeAdapter.class);
 
     // Check the accessor method for the annotation too (AutoValue support)
@@ -448,7 +431,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     if (fieldAdapter != null) {
       tempTypeAdapters = new HashMap<>(classScopedTypeAdapters);
       TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, fieldAdapter);
-      tempTypeAdapters.put(typeAdapterType, TypeName.get(fieldAdapter));
+      tempTypeAdapters.put(typeAdapterType, (ClassName) TypeName.get(fieldAdapter));
     }
 
     return tempTypeAdapters;
@@ -463,7 +446,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
    * @return The parsed property
    */
   private Property parseProperty(TypeMirror variable, TypeMirror dataClass, boolean isNullable, String name,
-                                 @Nullable String accessorMethodName, Map<TypeName, TypeName> typeAdapters) {
+                                 @Nullable String accessorMethodName, Map<TypeName, ClassName> typeAdapters) {
 
     variable = getActualTypeParameter(variable, dataClass);
 
@@ -479,7 +462,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     }
 
     TypeName erasedTypeName = TypeName.get(erasedType);
-    TypeName typeAdapter = typeAdapters.get(erasedTypeName);
+    ClassName typeAdapter = typeAdapters.get(erasedTypeName);
     if (typeAdapter == null) {
       typeAdapter = globalTypeAdapters.get(erasedTypeName);
     }
@@ -622,6 +605,50 @@ public class PaperParcelProcessor extends AbstractProcessor {
     return variable;
   }
 
+  private JavaFile generateParcelableWrapper(DataClass dataClass) throws IOException {
+    TypeSpec.Builder wrapperBuilder = TypeSpec.classBuilder(dataClass.getWrapperClassName().simpleName())
+        .addModifiers(PUBLIC, FINAL)
+        .addSuperinterface(ParameterizedTypeName.get(TYPED_PARCELABLE, dataClass.getClassName()));
+
+    FieldSpec classLoader = null;
+    if (dataClass.getRequiresClassLoader()) {
+      classLoader = generateClassLoaderField(dataClass.getClassName());
+      wrapperBuilder.addField(classLoader);
+    }
+
+    Map<ClassName, FieldSpec> typeAdapters = new HashMap<>();
+    for (ClassName typeAdapter : dataClass.getRequiredTypeAdapters()) {
+      FieldSpec field = generateTypeAdapterField(typeAdapter);
+      typeAdapters.put(typeAdapter, field);
+      wrapperBuilder.addField(field);
+    }
+
+    wrapperBuilder.addField(generateCreator(dataClass.getClassName(), dataClass.getWrapperClassName(),
+                                            dataClass.isSingleton(), dataClass.getProperties(), classLoader,
+                                            typeAdapters))
+        .addField(generateContentsField(dataClass.getClassName()))
+        .addMethod(generateContentsConstructor(dataClass.getClassName()))
+        .addMethod(generateDescribeContents())
+        .addMethod(generateWriteToParcel(dataClass.getProperties(), typeAdapters));
+
+    // Build the java file
+    return JavaFile.builder(dataClass.getClassPackage(), wrapperBuilder.build()).build();
+  }
+
+  private FieldSpec generateTypeAdapterField(ClassName typeAdapter) {
+    String packageName = typeAdapter.packageName().replace("\\.", "_");
+    String simpleNames = "";
+    for (String name : typeAdapter.simpleNames()) {
+      simpleNames += name;
+    }
+    String constPackageName = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_UNDERSCORE, packageName);
+    String constSimpleNames = CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, simpleNames);
+    String fieldName = constPackageName + "_" + constSimpleNames;
+    return FieldSpec.builder(typeAdapter, fieldName, Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
+        .initializer("new $T()", typeAdapter)
+        .build();
+  }
+
   private FieldSpec generateClassLoaderField(TypeName className) {
     if (className instanceof ParameterizedTypeName) {
       className = ((ParameterizedTypeName) className).rawType;
@@ -631,8 +658,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .build();
   }
 
-  private FieldSpec generateCreator(TypeName typeName, ClassName wrapperClassName, boolean isSingleton,
-                                    List<Property> properties, FieldSpec classLoader) {
+  private FieldSpec generateCreator(
+      TypeName typeName, ClassName wrapperClassName, boolean isSingleton, List<Property> properties,
+      FieldSpec classLoader, Map<ClassName, FieldSpec> typeAdapters) {
 
     ClassName creator = ClassName.get("android.os", "Parcelable", "Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, wrapperClassName);
@@ -668,7 +696,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
       for (int i = 0; i < properties.size(); i++) {
         Property p = properties.get(i);
-        params[i + paramsOffset] = p.readFromParcel(block, in, classLoader);
+        params[i + paramsOffset] = p.readFromParcel(block, in, classLoader, typeAdapters);
         dataInitializer += "$L";
         if (i != properties.size() - 1) {
           dataInitializer += ", ";
@@ -717,7 +745,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .build();
   }
 
-  private MethodSpec generateWriteToParcel(List<Property> properties) {
+  private MethodSpec generateWriteToParcel(List<Property> properties, Map<ClassName, FieldSpec> typeAdapters) {
     ParameterSpec dest = ParameterSpec
         .builder(PARCEL, "dest")
         .build();
@@ -738,7 +766,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
       }
       block.addStatement("$T $N = $N.$N", wildCardTypeName, p.getName(), DATA_VARIABLE_NAME, accessorStrategy);
       CodeBlock sourceLiteral = PropertyUtils.literal("$N", p.getName());
-      p.writeToParcel(block, dest, sourceLiteral);
+      p.writeToParcel(block, dest, sourceLiteral, typeAdapters);
     }
 
     return builder.addCode(block.build()).build();

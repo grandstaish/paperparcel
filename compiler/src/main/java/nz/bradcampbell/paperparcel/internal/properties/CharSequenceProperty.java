@@ -10,6 +10,8 @@ import com.squareup.javapoet.TypeName;
 import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Map;
+
 public class CharSequenceProperty extends Property {
   private static final TypeName TEXT_UTILS = ClassName.get("android.text", "TextUtils");
 
@@ -19,11 +21,14 @@ public class CharSequenceProperty extends Property {
   }
 
   @Override
-  protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
+  protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
+                                          Map<ClassName, FieldSpec> typeAdapters) {
     return literal("$T.CHAR_SEQUENCE_CREATOR.createFromParcel($N)", TEXT_UTILS, in);
   }
 
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral) {
+  @Override
+  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral,
+                                    Map<ClassName, FieldSpec> typeAdapters) {
     block.addStatement("$T.writeToParcel($L, $N, 0)", TEXT_UTILS, sourceLiteral, dest);
   }
 }
