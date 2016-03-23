@@ -144,11 +144,11 @@ kapt {
 
 ``` groovy
 repositories {
-    maven { url 'http://oss.sonatype.org/content/repositories/snapshots' }
+    jcenter()
     maven { url 'https://jitpack.io' }
 }
 dependencies {
-    compile 'com.google.auto.value:auto-value:1.2-SNAPSHOT'
+    compile 'com.google.auto.value:auto-value:1.2-rc1'
     compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-beta7'
     apt 'com.github.grandstaish.paperparcel:compiler:1.0.0-beta7'
 }
