@@ -42,7 +42,7 @@ ext.deps = [
     design: 'com.android.support:design:23.1.1',
 
     // Square
-    javapoet: 'com.squareup:javapoet:1.4.0',
+    javapoet: 'com.squareup:javapoet:1.6.1',
 
     // Auto
     autovalue: 'com.google.auto.value:auto-value:1.2-rc1',
