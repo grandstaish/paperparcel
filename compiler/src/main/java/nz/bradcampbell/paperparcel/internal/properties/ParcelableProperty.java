@@ -11,13 +11,16 @@ import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
 
 public class ParcelableProperty extends Property {
-  public ParcelableProperty(Property.Type propertyType, boolean isNullable, String name) {
-    super(propertyType, isNullable, name);
+  public ParcelableProperty(boolean isNullable, TypeName typeName, boolean isInterface, String name,
+                            @Nullable String accessorMethodName) {
+
+    super(isNullable, typeName, isInterface, name, accessorMethodName);
   }
 
-  @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
-    TypeName wrappedTypeName = getRawTypeName(getPropertyType(), true);
-    return literal("$T.CREATOR.createFromParcel($N)", wrappedTypeName, in);
+  @Override
+  protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
+    TypeName rawTypeName = getRawTypeName(getTypeName());
+    return literal("$T.CREATOR.createFromParcel($N)", rawTypeName, in);
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral) {

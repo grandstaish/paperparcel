@@ -13,11 +13,13 @@ import org.jetbrains.annotations.Nullable;
 public class CharSequenceProperty extends Property {
   private static final TypeName TEXT_UTILS = ClassName.get("android.text", "TextUtils");
 
-  public CharSequenceProperty(Property.Type propertyType, boolean isNullable, String name) {
-    super(propertyType, isNullable, name);
+  public CharSequenceProperty(boolean isNullable, TypeName typeName, boolean isInterface, String name,
+                              @Nullable String accessorMethodName) {
+    super(isNullable, typeName, isInterface, name, accessorMethodName);
   }
 
-  @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
+  @Override
+  protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
     return literal("$T.CHAR_SEQUENCE_CREATOR.createFromParcel($N)", TEXT_UTILS, in);
   }
 

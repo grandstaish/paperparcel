@@ -1,8 +1,7 @@
 package nz.bradcampbell.paperparcel.internal;
 
-import static com.squareup.javapoet.TypeName.OBJECT;
-import static nz.bradcampbell.paperparcel.internal.utils.StringUtils.capitalizeFirstCharacter;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
+import static nz.bradcampbell.paperparcel.internal.utils.StringUtils.capitalizeFirstCharacter;
 
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
@@ -11,107 +10,59 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.WildcardTypeName;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
-
 /**
  * A model object that can generate a code block for both reading and writing itself to/from a Parcel
  */
 public abstract class Property {
-  private final static Type NO_TYPE = new Type(null, OBJECT, OBJECT, OBJECT, OBJECT, false, false, null);
-
-  /**
-   * A model object that holds all parsed information about the property type
-   */
-  public static final class Type {
-
-    @Nullable private final List<Type> childTypes;
-
-    private final TypeName parcelableTypeName;
-    private final TypeName typeName;
-    private final TypeName wrappedTypeName;
-    private final TypeName wildcardTypeName;
-
-    private final boolean isInterface;
-    private final boolean requiresClassLoader;
-
-    private final TypeName typeAdapter;
-
-    public Type(@Nullable List<Type> childTypes, TypeName parcelableTypeName, TypeName typeName,
-                TypeName wrappedTypeName, TypeName wildcardTypeName, boolean isInterface, boolean requiresClassLoader,
-                @Nullable TypeName typeAdapter) {
-
-      this.childTypes = childTypes;
-
-      this.parcelableTypeName = parcelableTypeName;
-      this.typeName = typeName;
-      this.wrappedTypeName = wrappedTypeName;
-      this.wildcardTypeName = wildcardTypeName;
-
-      this.isInterface = isInterface;
-      this.requiresClassLoader = requiresClassLoader;
-
-      this.typeAdapter = typeAdapter;
-    }
-
-    public Type getChildType(int index) {
-      if (childTypes == null || index >= childTypes.size()) {
-        return NO_TYPE;
-      }
-      return childTypes.get(index);
-    }
-
-    public TypeName getParcelableTypeName() {
-      return parcelableTypeName;
-    }
-
-    public TypeName getTypeName() {
-      return typeName;
-    }
-
-    public TypeName getWrappedTypeName() {
-      return wrappedTypeName;
-    }
-
-    public TypeName getWildcardTypeName() {
-      return wildcardTypeName;
-    }
-
-    public boolean isInterface() {
-      return isInterface;
-    }
-
-    public boolean requiresClassLoader() {
-      return requiresClassLoader;
-    }
-
-    @Nullable public TypeName getTypeAdapter() {
-      return typeAdapter;
-    }
-  }
-
   private final boolean isNullable;
+  private final TypeName typeName;
+  private final boolean isInterface;
   private final String name;
-  private final Type propertyType;
+  @Nullable private final String accessorMethodName;
 
   /**
    * Constructor.
    *
-   * @param propertyType The type information for this property
+   * todo:
    * @param isNullable True if the property can be null, false otherwise
    * @param name The name of the accessor method on the data object
    */
-  public Property(Type propertyType, boolean isNullable, String name) {
-    this.propertyType = propertyType;
+  public Property(boolean isNullable, TypeName typeName, boolean isInterface, String name,
+                  @Nullable String accessorMethodName) {
+
     this.isNullable = isNullable;
+    this.typeName = typeName;
+    this.isInterface = isInterface;
     this.name = name;
+    this.accessorMethodName = accessorMethodName;
   }
 
   public final String getName() {
     return name;
   }
 
-  public final Type getPropertyType() {
-    return propertyType;
+  public final boolean isNullable() {
+    return isNullable;
+  }
+
+  public final TypeName getTypeName() {
+    return typeName;
+  }
+
+  public final boolean isInterface() {
+    return isInterface;
+  }
+
+  @Nullable public final String getAccessorMethodName() {
+    return accessorMethodName;
+  }
+
+  /**
+   * todo:
+   * @return
+   */
+  public boolean requiresClassLoader() {
+    return false;
   }
 
   /**
@@ -123,7 +74,7 @@ public abstract class Property {
    * @param classLoader ClassLoader to use for reading data
    */
   public final CodeBlock readFromParcel(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
-    TypeName typeName = propertyType.getWildcardTypeName();
+    TypeName typeName = getTypeName();
     if (typeName instanceof WildcardTypeName) {
       typeName = ((WildcardTypeName) typeName).upperBounds.get(0);
     }
@@ -165,7 +116,8 @@ public abstract class Property {
    * @param in The Parcel parameter
    * @param classLoader ClassLoader to use for reading data
    */
-  protected abstract CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader);
+  protected abstract CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in,
+                                                   @Nullable FieldSpec classLoader);
 
   /**
    * Generates a CodeBlock object that can be used to write the property to the given parcel. This handles checks
@@ -197,12 +149,4 @@ public abstract class Property {
    * @param dest The Parcel parameter
    */
   protected abstract void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral);
-
-  /**
-   * @return True if this property type requires a ClassLoader instance passed into
-   *         {@link #readFromParcelInner(CodeBlock.Builder, ParameterSpec, FieldSpec)}
-   */
-  public final boolean requiresClassLoader() {
-    return propertyType.requiresClassLoader();
-  }
 }

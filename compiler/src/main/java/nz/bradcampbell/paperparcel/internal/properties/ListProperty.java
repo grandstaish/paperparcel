@@ -1,24 +1,29 @@
 package nz.bradcampbell.paperparcel.internal.properties;
 
-import com.squareup.javapoet.*;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
+
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.WildcardTypeName;
 import nz.bradcampbell.paperparcel.internal.Property;
-import nz.bradcampbell.paperparcel.internal.utils.PropertyUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 
-import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.createProperty;
-import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
-
 public class ListProperty extends Property {
-  public ListProperty(Property.Type propertyType, boolean isNullable, String name) {
-    super(propertyType, isNullable, name);
+  private final Property typeArgument;
+
+  public ListProperty(Property typeArgument, boolean isNullable, TypeName typeName, boolean isInterface, String name,
+                      @Nullable String accessorMethodName) {
+    super(isNullable, typeName, isInterface, name, accessorMethodName);
+    this.typeArgument = typeArgument;
   }
 
-  @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
-    Property.Type propertyType = getPropertyType();
-    Property.Type parameterPropertyType = propertyType.getChildType(0);
-
+  @Override
+  protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
     // Read size
     String listSize = getName() + "Size";
     block.addStatement("$T $N = $N.readInt()", int.class, listSize, in);
@@ -26,19 +31,19 @@ public class ListProperty extends Property {
     // Create list to read into
     String listName = getName();
 
-    TypeName typeName = propertyType.getWildcardTypeName();
+    TypeName typeName = getTypeName();
     if (typeName instanceof WildcardTypeName) {
       typeName = ((WildcardTypeName) typeName).upperBounds.get(0);
     }
 
-    TypeName parameterTypeName = parameterPropertyType.getWildcardTypeName();
+    TypeName parameterTypeName = typeArgument.getTypeName();
     if (parameterTypeName instanceof WildcardTypeName) {
       ParameterizedTypeName originalType = (ParameterizedTypeName) typeName;
       parameterTypeName = ((WildcardTypeName) parameterTypeName).upperBounds.get(0);
       typeName = ParameterizedTypeName.get(originalType.rawType, parameterTypeName);
     }
 
-    if (propertyType.isInterface()) {
+    if (isInterface()) {
       block.addStatement("$T $N = new $T<$T>($N)", typeName, listName, ArrayList.class, parameterTypeName, listSize);
     } else {
       block.addStatement("$T $N = new $T()", typeName, listName, typeName);
@@ -48,12 +53,9 @@ public class ListProperty extends Property {
     String indexName = getName() + "Index";
     block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, listSize, indexName);
 
-    String parameterName = getName() + "Item";
-
     // Read in the parameter. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    CodeBlock parameterLiteral = PropertyUtils.createProperty(parameterPropertyType, parameterName)
-        .readFromParcel(block, in, classLoader);
+    CodeBlock parameterLiteral = typeArgument.readFromParcel(block, in, classLoader);
 
     // Add the parameter to the output list
     block.addStatement("$N.add($L)", listName, parameterLiteral);
@@ -73,9 +75,7 @@ public class ListProperty extends Property {
     String indexName = getName() + "Index";
     block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, listSize, indexName);
 
-    Property.Type propertyType = getPropertyType();
-    Property.Type parameterPropertyType = propertyType.getChildType(0);
-    TypeName parameterTypeName = parameterPropertyType.getWildcardTypeName();
+    TypeName parameterTypeName = typeArgument.getTypeName();
     String parameterItemName = getName() + "Item";
 
     // Handle wildcard types
@@ -85,13 +85,16 @@ public class ListProperty extends Property {
 
     block.addStatement("$T $N = $L.get($N)", parameterTypeName, parameterItemName, sourceLiteral, indexName);
 
-    String parameterName = getName() + "Param";
     CodeBlock parameterSource = literal("$N", parameterItemName);
 
     // Write in the parameter. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    PropertyUtils.createProperty(parameterPropertyType, parameterName).writeToParcel(block, dest, parameterSource);
+    typeArgument.writeToParcel(block, dest, parameterSource);
 
     block.endControlFlow();
+  }
+
+  @Override public boolean requiresClassLoader() {
+    return typeArgument.requiresClassLoader();
   }
 }

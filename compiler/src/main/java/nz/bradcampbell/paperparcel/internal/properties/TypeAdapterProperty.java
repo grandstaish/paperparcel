@@ -10,22 +10,24 @@ import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
 
 public class TypeAdapterProperty extends Property {
-  public TypeAdapterProperty(Type propertyType, boolean isNullable, String name) {
-    super(propertyType, isNullable, name);
+  private final TypeName typeAdapter;
+
+  public TypeAdapterProperty(TypeName typeAdapter, boolean isNullable, TypeName typeName, boolean isInterface,
+                             String name, @Nullable String accessorMethodName) {
+    super(isNullable, typeName, isInterface, name, accessorMethodName);
+    this.typeAdapter = typeAdapter;
   }
 
   @Override
   protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
-    TypeName typeAdapterTypeName = getPropertyType().getTypeAdapter();
     String typeAdapterName = getName() + "TypeAdapter";
-    block.addStatement("$T $N = new $T()", typeAdapterTypeName, typeAdapterName, typeAdapterTypeName);
+    block.addStatement("$T $N = new $T()", typeAdapter, typeAdapterName, typeAdapter);
     return literal("$N.readFromParcel($N)", typeAdapterName, in);
   }
 
   @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral) {
-    TypeName typeAdapterTypeName = getPropertyType().getTypeAdapter();
     String typeAdapterName = getName() + "TypeAdapter";
-    block.addStatement("$T $N = new $T()", typeAdapterTypeName, typeAdapterName, typeAdapterTypeName);
+    block.addStatement("$T $N = new $T()", typeAdapter, typeAdapterName, typeAdapter);
     block.addStatement("$N.writeToParcel($L, $N)", typeAdapterName, sourceLiteral, dest);
   }
 }

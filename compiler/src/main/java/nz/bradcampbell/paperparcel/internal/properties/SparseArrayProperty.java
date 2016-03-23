@@ -1,34 +1,38 @@
 package nz.bradcampbell.paperparcel.internal.properties;
 
-import com.squareup.javapoet.*;
-import nz.bradcampbell.paperparcel.internal.Property;
-import nz.bradcampbell.paperparcel.internal.utils.PropertyUtils;
-import org.jetbrains.annotations.Nullable;
-
-import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.createProperty;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
 
+import com.squareup.javapoet.CodeBlock;
+import com.squareup.javapoet.FieldSpec;
+import com.squareup.javapoet.ParameterSpec;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
+import com.squareup.javapoet.WildcardTypeName;
+import nz.bradcampbell.paperparcel.internal.Property;
+import org.jetbrains.annotations.Nullable;
+
 public class SparseArrayProperty extends Property {
-  public SparseArrayProperty(Property.Type propertyType, boolean isNullable, String name) {
-    super(propertyType, isNullable, name);
+  private Property typeArgument;
+
+  public SparseArrayProperty(Property typeArgument, boolean isNullable, TypeName typeName, boolean isInterface,
+                             String name, @Nullable String accessorMethodName) {
+    super(isNullable, typeName, isInterface, name, accessorMethodName);
+    this.typeArgument = typeArgument;
   }
 
   @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
-    Property.Type propertyType = getPropertyType();
-    Property.Type parameterPropertyType = propertyType.getChildType(0);
-
     // Read size
     String sparseArraySize = getName() + "Size";
     block.addStatement("$T $N = $N.readInt()", int.class, sparseArraySize, in);
 
     // Create SparseArray to read into
     String sparseArrayName = getName();
-    TypeName typeName = propertyType.getWildcardTypeName();
+    TypeName typeName = getTypeName();
     if (typeName instanceof WildcardTypeName) {
       typeName = ((WildcardTypeName) typeName).upperBounds.get(0);
     }
 
-    TypeName parameterTypeName = parameterPropertyType.getWildcardTypeName();
+    TypeName parameterTypeName = typeArgument.getTypeName();
     if (parameterTypeName instanceof WildcardTypeName) {
       ParameterizedTypeName originalType = (ParameterizedTypeName) typeName;
       parameterTypeName = ((WildcardTypeName) parameterTypeName).upperBounds.get(0);
@@ -42,15 +46,12 @@ public class SparseArrayProperty extends Property {
     block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, sparseArraySize, indexName);
 
     String keyName = getName() + "Key";
-    String valueName = getName() + "Value";
 
     // Read the key
     block.addStatement("$T $N = $N.readInt()", int.class, keyName, in);
 
-    // Read in the value. Set isNullable to true as I don't know how to tell if a parameter is
-    // nullable or not. Kotlin can do this, Java can't.
-    CodeBlock parameterLiteral = PropertyUtils.createProperty(parameterPropertyType, valueName)
-        .readFromParcel(block, in, classLoader);
+    // Read in the value.
+    CodeBlock parameterLiteral = typeArgument.readFromParcel(block, in, classLoader);
 
     // Add the parameter to the output list
     block.addStatement("$N.put($N, $L)", sparseArrayName, keyName, parameterLiteral);
@@ -70,14 +71,9 @@ public class SparseArrayProperty extends Property {
     String indexName = getName() + "Index";
     block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, sparseArraySize, indexName);
 
-    Property.Type propertyType = getPropertyType();
-    Property.Type parameterPropertyType = propertyType.getChildType(0);
-    TypeName parameterTypeName = parameterPropertyType.getWildcardTypeName();
+    TypeName parameterTypeName = typeArgument.getTypeName();
 
     // Handle wildcard types
-    if (parameterTypeName instanceof ParameterizedTypeName) {
-      parameterTypeName = parameterPropertyType.getWildcardTypeName();
-    }
     if (parameterTypeName instanceof WildcardTypeName) {
       parameterTypeName = ((WildcardTypeName) parameterTypeName).upperBounds.get(0);
     }
@@ -89,13 +85,16 @@ public class SparseArrayProperty extends Property {
     String valueName = getName() + "Value";
     block.addStatement("$T $N = $L.get($N)", parameterTypeName, valueName, sourceLiteral, keyName);
 
-    String parameterName = getName() + "Param";
     CodeBlock parameterSource = literal("$N", valueName);
 
     // Write in the parameter. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    PropertyUtils.createProperty(parameterPropertyType, parameterName).writeToParcel(block, dest, parameterSource);
+    typeArgument.writeToParcel(block, dest, parameterSource);
 
     block.endControlFlow();
+  }
+
+  @Override public boolean requiresClassLoader() {
+    return typeArgument.requiresClassLoader();
   }
 }

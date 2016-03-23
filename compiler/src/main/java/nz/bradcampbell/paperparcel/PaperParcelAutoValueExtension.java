@@ -4,7 +4,6 @@ import static javax.lang.model.element.Modifier.PUBLIC;
 
 import com.google.auto.service.AutoService;
 import com.google.auto.value.extension.AutoValueExtension;
-import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
@@ -31,6 +30,7 @@ import javax.lang.model.type.TypeMirror;
 @AutoService(AutoValueExtension.class)
 public class PaperParcelAutoValueExtension extends AutoValueExtension {
   private static final TypeName PARCEL = ClassName.get("android.os", "Parcel");
+  private static final TypeName PAPER_PARCELS = ClassName.get("nz.bradcampbell.paperparcel", "PaperParcels");
 
   @Override public boolean applicable(Context context) {
     ProcessingEnvironment processingEnv = context.processingEnvironment();
@@ -48,21 +48,24 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
   }
 
   @Override public String generateClass(Context context, String className, String classToExtend, boolean isFinal) {
+    ClassName thisClass = ClassName.get(context.packageName(), className);
+
+    FieldSpec classLoader = generateClassLoaderField(thisClass);
     TypeSpec.Builder subclass = TypeSpec.classBuilder(className)
         .addModifiers(Modifier.FINAL)
         .superclass(TypeVariableName.get(classToExtend))
         .addMethod(generateSuperConstructor(context.properties()))
         .addAnnotation(PaperParcel.class)
-        .addField(generateCreator(context.packageName(), TypeName.get(context.autoValueClass().asType()), className,
-            context.properties()))
+        .addField(classLoader)
+        .addField(generateCreator(thisClass, classLoader))
         .addMethod(generateDescribeContents())
-        .addMethod(generateWriteToParcel(context.packageName(), className));
+        .addMethod(generateWriteToParcel());
 
     JavaFile javaFile = JavaFile.builder(context.packageName(), subclass.build()).build();
     return javaFile.toString();
   }
 
-  private MethodSpec generateWriteToParcel(String packageName, String className) {
+  private MethodSpec generateWriteToParcel() {
     ParameterSpec dest = ParameterSpec
         .builder(PARCEL, "dest")
         .build();
@@ -73,12 +76,8 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
         .addParameter(dest)
         .addParameter(int.class, "flags");
 
-    TypeName wrappedTypeName = ClassName.get(packageName, className + "Parcel");
-
-    String varName = "wrapped";
     CodeBlock code = CodeBlock.builder()
-        .addStatement("$T $N = $T.wrap(this)", wrappedTypeName, varName, wrappedTypeName)
-        .addStatement("$N.writeToParcel($N, 0)", varName, dest)
+        .addStatement("$N.writeParcelable($T.wrap(this), 0)", dest, PAPER_PARCELS)
         .build();
 
     builder.addCode(code);
@@ -86,37 +85,24 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
     return builder.build();
   }
 
-  private FieldSpec generateCreator(String packageName, TypeName autoValueClass, String className, Map<String, ExecutableElement> properties) {
-    ClassName thisClass = ClassName.get(packageName, className);
-
+  private FieldSpec generateCreator(TypeName thisClass, FieldSpec classLoader) {
     ClassName creator = ClassName.get("android.os", "Parcelable", "Creator");
-    TypeName creatorOfClass = ParameterizedTypeName.get(creator, autoValueClass);
+    TypeName creatorOfClass = ParameterizedTypeName.get(creator, thisClass);
 
     CodeBlock.Builder initializer = CodeBlock.builder()
-        .beginControlFlow("new $T()", ParameterizedTypeName.get(creator, autoValueClass))
-        .beginControlFlow("@$T public $T createFromParcel($T in)", ClassName.get(Override.class), autoValueClass, PARCEL);
+        .beginControlFlow("new $T()", ParameterizedTypeName.get(creator, thisClass))
+        .beginControlFlow("@$T public $T createFromParcel($T in)", ClassName.get(Override.class), thisClass, PARCEL);
 
-    TypeName wrappedTypeName = ClassName.get(packageName, className + "Parcel");
-    String name = "value";
-    initializer.addStatement("$T $N = $T.CREATOR.createFromParcel(in).getContents()", autoValueClass, name, wrappedTypeName);
-
-    List<String> params = new ArrayList<>(properties.size());
-    for (Map.Entry<String, ExecutableElement> entry : properties.entrySet()) {
-      String propertyName = entry.getKey();
-      params.add(name + "." + propertyName + "()");
-    }
-
-    initializer.addStatement("return new $T(" + Joiner.on(", ").join(params) + ")", thisClass);
+    initializer.addStatement("return $T.unsafeUnwrap(in.readParcelable($N))", PAPER_PARCELS, classLoader);
 
     initializer.endControlFlow()
-        .beginControlFlow("@$T public $T[] newArray($T size)", ClassName.get(Override.class), autoValueClass, int.class)
+        .beginControlFlow("@$T public $T[] newArray($T size)", ClassName.get(Override.class), thisClass, int.class)
         .addStatement("return new $T[size]", thisClass)
         .endControlFlow()
         .unindent()
         .add("}");
 
-    return FieldSpec
-        .builder(creatorOfClass, "CREATOR", Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC)
+    return FieldSpec.builder(creatorOfClass, "CREATOR", Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC)
         .initializer(initializer.build())
         .build();
   }
@@ -144,6 +130,15 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
     builder.addStatement(superFormat.toString(), args.toArray());
 
     return builder.build();
+  }
+
+  private FieldSpec generateClassLoaderField(TypeName className) {
+    if (className instanceof ParameterizedTypeName) {
+      className = ((ParameterizedTypeName) className).rawType;
+    }
+    return FieldSpec.builder(ClassLoader.class, "CLASS_LOADER", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
+        .initializer("$T.class.getClassLoader()", className)
+        .build();
   }
 
   private MethodSpec generateDescribeContents() {

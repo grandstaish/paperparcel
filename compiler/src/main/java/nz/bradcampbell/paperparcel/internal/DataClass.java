@@ -5,7 +5,6 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 
 import java.util.List;
-import java.util.Map;
 
 /**
  * A model object that holds information needed to build a Parcelable data class wrapper
@@ -13,7 +12,6 @@ import java.util.Map;
 public class DataClass {
   private final String classPackage;
   private final List<Property> properties;
-  private final Map<String, String> getterMethodMap;
   private final TypeName className;
   private final ClassName wrapperClassName;
   private final boolean requiresClassLoader;
@@ -21,28 +19,22 @@ public class DataClass {
 
   /**
    * Constructor.
+   *
    * @param properties All properties in the data class
    * @param classPackage The package of the data class
    * @param wrapperTypeName The simple name of the wrapper class
-   * @param getterMethodMap Map from variable name to getter method
    * @param className The data class type name
    * @param requiresClassLoader True if a ClassLoader field is required, false otherwise
    * @param singleton True if the class is a singleton object
    */
-  public DataClass(List<Property> properties, String classPackage, String wrapperTypeName,
-                   Map<String, String> getterMethodMap, TypeName className, boolean requiresClassLoader,
-                   boolean singleton) {
+  public DataClass(List<Property> properties, String classPackage, String wrapperTypeName, TypeName className,
+                   boolean requiresClassLoader, boolean singleton) {
     this.properties = properties;
     this.classPackage = classPackage;
-    this.getterMethodMap = getterMethodMap;
     this.requiresClassLoader = requiresClassLoader;
     this.wrapperClassName = ClassName.get(classPackage, wrapperTypeName);
     this.className = className;
     this.singleton = singleton;
-  }
-
-  public Map<String, String> getGetterMethodMap() {
-    return getterMethodMap;
   }
 
   public List<Property> getProperties() {

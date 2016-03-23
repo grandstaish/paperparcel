@@ -33,6 +33,11 @@ public class TypeUtils {
     // No instances.
   }
 
+  public static boolean isInterface(Types typeUtil, TypeMirror typeMirror) {
+    Element typeElement = typeUtil.asElement(typeMirror);
+    return typeElement != null && typeElement.getKind() == ElementKind.INTERFACE;
+  }
+
   public static String generateWrappedTypeName(TypeElement typeElement, TypeMirror typeMirror) {
     String innerHash = "";
 

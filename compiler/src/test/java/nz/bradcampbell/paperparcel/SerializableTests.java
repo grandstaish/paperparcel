@@ -195,8 +195,7 @@ public class SerializableTests {
         "@Override public TestParcel createFromParcel(Parcel in) {",
         "Child outChild = null;",
         "if (in.readInt() == 0) {",
-        "ChildParcel childParcel = ChildParcel.CREATOR.createFromParcel(in);",
-        "outChild = childParcel.getContents();",
+        "outChild = new Child();",
         "}",
         "Test data = new Test(outChild);",
         "return new TestParcel(data);",
@@ -224,43 +223,7 @@ public class SerializableTests {
         "dest.writeInt(1);",
         "} else {",
         "dest.writeInt(0);",
-        "ChildParcel childParcel = ChildParcel.wrap(child);",
-        "childParcel.writeToParcel(dest, 0);",
         "}",
-        "}",
-        "}"
-    ));
-
-    JavaFileObject expectedChildSource = JavaFileObjects.forSourceString("test/ChildParcel", Joiner.on('\n').join(
-        "package test;",
-        "import android.os.Parcel;",
-        "import android.os.Parcelable;",
-        "import java.lang.Override;",
-        "import nz.bradcampbell.paperparcel.TypedParcelable;",
-        "public final class ChildParcel implements TypedParcelable<Child> {",
-        "public static final Parcelable.Creator<ChildParcel> CREATOR = new Parcelable.Creator<ChildParcel>() {",
-        "@Override public ChildParcel createFromParcel(Parcel in) {",
-        "Child data = new Child();",
-        "return new ChildParcel(data);",
-        "}",
-        "@Override public ChildParcel[] newArray(int size) {",
-        "return new ChildParcel[size];",
-        "}",
-        "};",
-        "private final Child data;",
-        "private ChildParcel(Child data) {",
-        "this.data = data;",
-        "}",
-        "public static final ChildParcel wrap(Child data) {",
-        "return new ChildParcel(data);",
-        "}",
-        "public Child getContents() {",
-        "return data;",
-        "}",
-        "@Override public int describeContents() {",
-        "return 0;",
-        "}",
-        "@Override public void writeToParcel(Parcel dest, int flags) {",
         "}",
         "}"
     ));
@@ -269,6 +232,6 @@ public class SerializableTests {
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
-        .generatesSources(expectedSource, expectedChildSource);
+        .generatesSources(expectedSource);
   }
 }

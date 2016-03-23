@@ -1,10 +1,48 @@
 package nz.bradcampbell.paperparcel;
 
+import static com.squareup.javapoet.TypeName.BOOLEAN;
+import static com.squareup.javapoet.TypeName.BYTE;
+import static com.squareup.javapoet.TypeName.CHAR;
+import static com.squareup.javapoet.TypeName.DOUBLE;
+import static com.squareup.javapoet.TypeName.FLOAT;
+import static com.squareup.javapoet.TypeName.INT;
+import static com.squareup.javapoet.TypeName.LONG;
+import static com.squareup.javapoet.TypeName.SHORT;
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PROTECTED;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.BOOLEAN_ARRAY;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.BOXED_BOOLEAN;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.BOXED_BYTE;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.BOXED_CHAR;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.BOXED_DOUBLE;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.BOXED_FLOAT;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.BOXED_INT;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.BOXED_LONG;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.BOXED_SHORT;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.BUNDLE;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.BYTE_ARRAY;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.CHAR_SEQUENCE;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.ENUM;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.IBINDER;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.INT_ARRAY;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.LIST;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.LONG_ARRAY;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.MAP;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.OBJECT_ARRAY;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.PERSISTABLE_BUNDLE;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.SERIALIZABLE;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.SIZE;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.SIZEF;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.SPARSE_ARRAY;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.SPARSE_BOOLEAN_ARRAY;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.STRING;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.STRING_ARRAY;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.TYPE_ADAPTER;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.getParcelableType;
+import static nz.bradcampbell.paperparcel.internal.utils.StringUtils.capitalizeFirstCharacter;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.generateWrappedTypeName;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.getFields;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.getPackageName;
@@ -13,7 +51,6 @@ import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.hasTypeArgume
 import com.google.auto.common.MoreElements;
 import com.google.auto.service.AutoService;
 
-import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
@@ -26,12 +63,41 @@ import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
 import nz.bradcampbell.paperparcel.internal.DataClass;
 import nz.bradcampbell.paperparcel.internal.Property;
+import nz.bradcampbell.paperparcel.internal.properties.ArrayProperty;
+import nz.bradcampbell.paperparcel.internal.properties.BooleanArrayProperty;
+import nz.bradcampbell.paperparcel.internal.properties.BooleanProperty;
+import nz.bradcampbell.paperparcel.internal.properties.BundleProperty;
+import nz.bradcampbell.paperparcel.internal.properties.ByteArrayProperty;
+import nz.bradcampbell.paperparcel.internal.properties.ByteProperty;
+import nz.bradcampbell.paperparcel.internal.properties.CharProperty;
+import nz.bradcampbell.paperparcel.internal.properties.CharSequenceProperty;
+import nz.bradcampbell.paperparcel.internal.properties.DoubleProperty;
+import nz.bradcampbell.paperparcel.internal.properties.FloatProperty;
+import nz.bradcampbell.paperparcel.internal.properties.IBinderProperty;
+import nz.bradcampbell.paperparcel.internal.properties.IntArrayProperty;
+import nz.bradcampbell.paperparcel.internal.properties.IntProperty;
+import nz.bradcampbell.paperparcel.internal.properties.ListProperty;
+import nz.bradcampbell.paperparcel.internal.properties.LongArrayProperty;
+import nz.bradcampbell.paperparcel.internal.properties.LongProperty;
+import nz.bradcampbell.paperparcel.internal.properties.MapProperty;
+import nz.bradcampbell.paperparcel.internal.properties.NonParcelableProperty;
+import nz.bradcampbell.paperparcel.internal.properties.ParcelableProperty;
+import nz.bradcampbell.paperparcel.internal.properties.PersistableBundleProperty;
+import nz.bradcampbell.paperparcel.internal.properties.SerializableProperty;
+import nz.bradcampbell.paperparcel.internal.properties.ShortProperty;
+import nz.bradcampbell.paperparcel.internal.properties.SizeFProperty;
+import nz.bradcampbell.paperparcel.internal.properties.SizeProperty;
+import nz.bradcampbell.paperparcel.internal.properties.SparseArrayProperty;
+import nz.bradcampbell.paperparcel.internal.properties.SparseBooleanArrayProperty;
+import nz.bradcampbell.paperparcel.internal.properties.StringArrayProperty;
+import nz.bradcampbell.paperparcel.internal.properties.StringProperty;
+import nz.bradcampbell.paperparcel.internal.properties.TypeAdapterProperty;
 import nz.bradcampbell.paperparcel.internal.utils.AnnotationUtils;
 import nz.bradcampbell.paperparcel.internal.utils.PropertyUtils;
 import nz.bradcampbell.paperparcel.internal.utils.TypeUtils;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -77,18 +143,10 @@ public class PaperParcelProcessor extends AbstractProcessor {
   private Elements elementUtils;
 
   private Map<TypeName, TypeName> globalTypeAdapters = new HashMap<>();
-  private Map<String, TypeMirror> allWrapperTypes = new HashMap<>();
+  private Map<String, TypeMirror> wrapperTypes = new HashMap<>();
 
-  @Override public synchronized void init(ProcessingEnvironment env) {
-    super.init(env);
-    typeUtil = env.getTypeUtils();
-    elementUtils = env.getElementUtils();
-    filer = env.getFiler();
-  }
-
-  @Override
-  public SourceVersion getSupportedSourceVersion() {
-    return SourceVersion.latestSupported();
+  private static void error(ProcessingEnvironment processingEnv, String message, Element element) {
+    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
   }
 
   @Override public Set<String> getSupportedAnnotationTypes() {
@@ -100,13 +158,25 @@ public class PaperParcelProcessor extends AbstractProcessor {
   }
 
   @Override
+  public SourceVersion getSupportedSourceVersion() {
+    return SourceVersion.latestSupported();
+  }
+
+  @Override public synchronized void init(ProcessingEnvironment env) {
+    super.init(env);
+    typeUtil = env.getTypeUtils();
+    elementUtils = env.getElementUtils();
+    filer = env.getFiler();
+  }
+
+  @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnvironment) {
 
     // Processing is over. Generate java files for every data class found
     if (roundEnvironment.processingOver()) {
 
       Set<DataClass> dataClasses = new LinkedHashSet<>();
-      for (TypeMirror paperParcelType : allWrapperTypes.values()) {
+      for (TypeMirror paperParcelType : wrapperTypes.values()) {
         DataClass dataClass = createParcel(paperParcelType);
         dataClasses.add(dataClass);
         try {
@@ -130,14 +200,15 @@ public class PaperParcelProcessor extends AbstractProcessor {
       // Ensure we are dealing with a TypeElement
       if (!(element instanceof TypeElement)) {
         error(processingEnv,
-            "@GlobalTypeAdapter applies to a type, " + element.getSimpleName() + " is a " + element.getKind(),
-            element);
+              "@GlobalTypeAdapter applies to a type, " + element.getSimpleName() + " is a " + element.getKind(),
+              element);
         continue;
       }
 
       // Ensure we are dealing with a TypeAdapter
       TypeMirror elementMirror = element.asType();
-      TypeMirror typeAdapterMirror = typeUtil.erasure(elementUtils.getTypeElement(TypeAdapter.class.getCanonicalName()).asType());
+      TypeMirror typeAdapterMirror =
+          typeUtil.erasure(elementUtils.getTypeElement(TypeAdapter.class.getCanonicalName()).asType());
       if (!(typeUtil.isAssignable(elementMirror, typeAdapterMirror))) {
         error(processingEnv, element.getSimpleName() + " needs to implement TypeAdapter", element);
         continue;
@@ -154,8 +225,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
       // Ensure we are dealing with a TypeElement
       if (!(element instanceof TypeElement)) {
         error(processingEnv,
-            "@PaperParcel applies to a type, " + element.getSimpleName() + " is a " + element.getKind(),
-            element);
+              "@PaperParcel applies to a type, " + element.getSimpleName() + " is a " + element.getKind(),
+              element);
         continue;
       }
 
@@ -167,9 +238,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
         continue;
       }
 
-      allWrapperTypes.put(elementTypeMirror.toString(), elementTypeMirror);
-
-      findNonParcelableDependencies(elementTypeMirror);
+      wrapperTypes.put(elementTypeMirror.toString(), elementTypeMirror);
     }
 
     return true;
@@ -179,8 +248,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     TypeSpec.Builder wrapperBuilder = TypeSpec.classBuilder(dataClass.getWrapperClassName().simpleName())
         .addModifiers(PUBLIC, FINAL)
         .addSuperinterface(dataClass.isClassParameterized()
-                           ? PARCELABLE
-                           : ParameterizedTypeName.get(TYPED_PARCELABLE, dataClass.getClassName()));
+                           ? PARCELABLE : ParameterizedTypeName.get(TYPED_PARCELABLE, dataClass.getClassName()));
 
     FieldSpec classLoader = null;
     if (dataClass.requiresClassLoader()) {
@@ -189,20 +257,20 @@ public class PaperParcelProcessor extends AbstractProcessor {
     }
 
     wrapperBuilder.addField(generateCreator(dataClass.getClassName(), dataClass.getWrapperClassName(),
-            dataClass.isSingleton(), dataClass.getProperties(), classLoader))
+                                            dataClass.isSingleton(), dataClass.getProperties(), classLoader))
         .addField(generateContentsField(dataClass.getClassName()))
         .addMethod(generateWrapMethod(dataClass))
         .addMethod(generateContentsConstructor(dataClass.getClassName()))
         .addMethod(generateGetter(dataClass.getClassName()))
         .addMethod(generateDescribeContents())
-        .addMethod(generateWriteToParcel(dataClass.getProperties(), dataClass.getGetterMethodMap()));
+        .addMethod(generateWriteToParcel(dataClass.getProperties()));
 
     // Build the java file
     return JavaFile.builder(dataClass.getClassPackage(), wrapperBuilder.build()).build();
   }
 
   /**
-   * Create a Parcel wrapper for the given data class
+   * Create a Parcel wrapperTypes for the given data class
    *
    * @param typeMirror The data class
    */
@@ -212,7 +280,6 @@ public class PaperParcelProcessor extends AbstractProcessor {
     String classPackage = getPackageName(typeElement);
     String wrappedClassName = generateWrappedTypeName(typeElement, typeMirror);
     List<Property> properties = new ArrayList<>();
-    Map<String, String> getterMethodMap = new HashMap<>();
     boolean requiresClassLoader = false;
     Map<TypeName, TypeName> typeAdapters = new HashMap<>();
     boolean isSingleton = TypeUtils.isSingleton(typeUtil, typeElement);
@@ -258,24 +325,27 @@ public class PaperParcelProcessor extends AbstractProcessor {
         boolean isNullable = !isPrimitive && !annotatedWithNonNull;
 
         // Parse the property type into a Property.Type object and find all recursive data class dependencies
-        Property.Type propertyType =
-            parsePropertyType(variableElement.asType(), typeMirror, variableScopedTypeAdapters);
+        Property property = parseProperty(variableElement.asType(),
+                                          typeMirror,
+                                          isNullable,
+                                          name,
+                                          accessorMethod == null
+                                            ? null
+                                            : accessorMethod.getSimpleName().toString(),
+                                          variableScopedTypeAdapters);
 
-        getterMethodMap.put(name, accessorMethod == null ? null : accessorMethod.getSimpleName().toString());
-
-        Property property = PropertyUtils.createProperty(propertyType, isNullable, name);
         properties.add(property);
 
         requiresClassLoader |= property.requiresClassLoader();
       }
     }
 
-    return new DataClass(properties, classPackage, wrappedClassName, getterMethodMap, TypeName.get(typeMirror),
-        requiresClassLoader, isSingleton);
+    return new DataClass(properties, classPackage, wrappedClassName, TypeName.get(typeMirror), requiresClassLoader,
+                         isSingleton);
   }
 
-  private List<VariableElement> filterNonConstructorFields(List<VariableElement> variableElements,
-      TypeElement typeElement) {
+  private List<VariableElement> filterNonConstructorFields(
+      List<VariableElement> variableElements, TypeElement typeElement) {
     for (Element e : typeElement.getEnclosedElements()) {
       if (e instanceof ExecutableElement) {
         if (e.getSimpleName().toString().equals("<init>")) {
@@ -354,9 +424,11 @@ public class PaperParcelProcessor extends AbstractProcessor {
       }
     }
 
-    throw new PropertyValidationException("Could not find getter method for variable '" + variableName + "'.\nTry annotating your " +
-                                          "variable with '" + GetterMethodName.class.getCanonicalName() + "' or renaming your variable to follow " +
-                                          "the documented conventions.\nAlternatively your property can be have default or public visibility.", variableElement);
+    throw new PropertyValidationException(
+        "Could not find getter method for variable '" + variableName + "'.\nTry annotating your " +
+        "variable with '" + GetterMethodName.class.getCanonicalName() + "' or renaming your variable to follow " +
+        "the documented conventions.\nAlternatively your property can be have default or public visibility.",
+        variableElement);
   }
 
   private Map<TypeName, TypeName> getTypeAdapterMapForVariable(
@@ -394,183 +466,147 @@ public class PaperParcelProcessor extends AbstractProcessor {
   }
 
   /**
-   * Parses a TypeMirror into a Property.Type object. While doing so, this method will find all PaperParcel
-   * dependencies and append them to variableDependencies.
+   * Parses a TypeMirror into a Property object.
    *
-   * @param variable The member variable variable
+   * TODO:
+   * @param variable  The member variable variable
    * @param dataClass The class that owns this property
-   * @return The parsed variable
+   * @return The parsed property
    */
-  private Property.Type parsePropertyType(TypeMirror variable, TypeMirror dataClass, Map<TypeName, TypeName> typeAdapters) {
+  private Property parseProperty(TypeMirror variable, TypeMirror dataClass, boolean isNullable, String name,
+                                 @Nullable String accessorMethodName, Map<TypeName, TypeName> typeAdapters) {
+
     variable = getActualTypeParameter(variable, dataClass);
 
     TypeMirror erasedType = typeUtil.erasure(variable);
+    TypeName parcelableTypeName =
+        wrapperTypes.containsKey(variable.toString()) ? null : getParcelableType(typeUtil, erasedType);
+    boolean isInterface = TypeUtils.isInterface(typeUtil, erasedType);
 
-    // List of variable arguments for this property
-    List<Property.Type> childTypes = null;
-
-    // The variable that allows this variable to be parcelable, or null
-    TypeName parcelableTypeName = allWrapperTypes.containsKey(variable.toString()) ? null : PropertyUtils.getParcelableType(typeUtil, erasedType);
-    boolean isParcelable = parcelableTypeName != null;
-
-    TypeName typeName = ClassName.get(erasedType);
-    TypeName wrappedTypeName = typeName;
-    TypeName wildcardTypeName = typeName;
-
-    TypeName typeAdapter = typeAdapters.get(typeName);
+    TypeMirror type = variable;
+    boolean strippedWildcard = type instanceof WildcardType;
+    if (strippedWildcard) {
+      type = ((WildcardType) variable).getExtendsBound();
+    }
+    TypeName erasedTypeName = TypeName.get(erasedType);
+    TypeName typeAdapter = typeAdapters.get(erasedTypeName);
     if (typeAdapter == null) {
-      typeAdapter = globalTypeAdapters.get(typeName);
+      typeAdapter = globalTypeAdapters.get(erasedTypeName);
+    }
+    if (typeAdapter != null) {
+      parcelableTypeName = TYPE_ADAPTER;
     }
 
-    // The variable element associated, or null
-    Element typeElement = typeUtil.asElement(erasedType);
+    TypeName typeName = TypeName.get(variable);
 
-    TypeMirror noWildCardType = variable;
-    if (variable instanceof WildcardType) {
-
-      // Properties using Kotlin's @JvmWildcard will fall into here
-      noWildCardType = ((WildcardType) variable).getExtendsBound();
-    }
-
-    if (isParcelable) {
-
-      if (noWildCardType instanceof DeclaredType) {
-
-        // Parse variable arguments
-        DeclaredType declaredType = (DeclaredType) noWildCardType;
-        List<? extends TypeMirror> typeArguments = declaredType.getTypeArguments();
-
-        // Parse a "child variable" for each variable argument
-        int numTypeArgs = typeArguments.size();
-        if (numTypeArgs > 0) {
-
-          childTypes = new ArrayList<>(numTypeArgs);
-          TypeName[] parameterArray = new TypeName[numTypeArgs];
-          TypeName[] wildcardParameterArray = new TypeName[numTypeArgs];
-          TypeName[] wrappedParameterArray = new TypeName[numTypeArgs];
-
-          for (int i = 0; i < numTypeArgs; i++) {
-            Property.Type argType = parsePropertyType(typeArguments.get(i), dataClass, typeAdapters);
-            childTypes.add(argType);
-            parameterArray[i] = argType.getTypeName();
-            wildcardParameterArray[i] = argType.getWildcardTypeName();
-            wrappedParameterArray[i] = argType.getWrappedTypeName();
-          }
-
-          wrappedTypeName = ParameterizedTypeName.get((ClassName) typeName, wrappedParameterArray);
-          wildcardTypeName = ParameterizedTypeName.get((ClassName) typeName, wildcardParameterArray);
-          typeName = ParameterizedTypeName.get((ClassName) typeName, parameterArray);
-        }
-      }
-
-      if (noWildCardType instanceof ArrayType) {
-        ArrayType arrayType = (ArrayType) noWildCardType;
-
-        // Array types will always have 1 "child variable" which is the component variable
-        childTypes = new ArrayList<>(1);
-        Property.Type componentType = parsePropertyType(arrayType.getComponentType(), dataClass, typeAdapters);
-        childTypes.add(componentType);
-
-        wrappedTypeName = ArrayTypeName.of(componentType.getWrappedTypeName());
-        typeName = ArrayTypeName.of(componentType.getTypeName());
-        wildcardTypeName = ArrayTypeName.of(componentType.getWildcardTypeName());
-      }
-
-      // Add the wildcard back if it existed
-      if (variable instanceof WildcardType) {
-        wildcardTypeName = WildcardTypeName.subtypeOf(wildcardTypeName);
-      }
-
+    if (STRING.equals(parcelableTypeName)) {
+      return new StringProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (INT.equals(parcelableTypeName)) {
+      return new IntProperty(false, typeName, isInterface, name, accessorMethodName);
+    } else if (BOXED_INT.equals(parcelableTypeName)) {
+      return new IntProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (LONG.equals(parcelableTypeName)) {
+      return new LongProperty(false, typeName, isInterface, name, accessorMethodName);
+    } else if (BOXED_LONG.box().equals(parcelableTypeName)) {
+      return new LongProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (BYTE.equals(parcelableTypeName)) {
+      return new ByteProperty(false, typeName, isInterface, name, accessorMethodName);
+    } else if (BOXED_BYTE.equals(parcelableTypeName)) {
+      return new ByteProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (BOOLEAN.equals(parcelableTypeName)) {
+      return new BooleanProperty(false, typeName, isInterface, name, accessorMethodName);
+    } else if (BOXED_BOOLEAN.equals(parcelableTypeName)) {
+      return new BooleanProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (FLOAT.equals(parcelableTypeName)) {
+      return new FloatProperty(false, typeName, isInterface, name, accessorMethodName);
+    } else if (BOXED_FLOAT.equals(parcelableTypeName)) {
+      return new FloatProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (CHAR.equals(parcelableTypeName)) {
+      return new CharProperty(false, typeName, isInterface, name, accessorMethodName);
+    } else if(BOXED_CHAR.equals(parcelableTypeName)) {
+      return new CharProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (DOUBLE.equals(parcelableTypeName)) {
+      return new DoubleProperty(false, typeName, isInterface, name, accessorMethodName);
+    } else if (BOXED_DOUBLE.equals(parcelableTypeName)) {
+      return new DoubleProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (SHORT.equals(parcelableTypeName)) {
+      return new ShortProperty(false, typeName, isInterface, name, accessorMethodName);
+    } else if (BOXED_SHORT.equals(parcelableTypeName)) {
+      return new ShortProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (MAP.equals(parcelableTypeName)) {
+      List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
+      Property keyProperty = parseProperty(typeArguments.get(0), dataClass, true, name + "Key", null, typeAdapters);
+      Property valueProperty = parseProperty(typeArguments.get(1), dataClass, true, name + "Value", null, typeAdapters);
+      return new MapProperty(keyProperty, valueProperty, isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (LIST.equals(parcelableTypeName)) {
+      List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
+      Property typeArgument = parseProperty(typeArguments.get(0), dataClass, true, name + "Item", null, typeAdapters);
+      return new ListProperty(typeArgument, isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (BOOLEAN_ARRAY.equals(parcelableTypeName)) {
+      return new BooleanArrayProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (BYTE_ARRAY.equals(parcelableTypeName)) {
+      return new ByteArrayProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (INT_ARRAY.equals(parcelableTypeName)) {
+      return new IntArrayProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (LONG_ARRAY.equals(parcelableTypeName)) {
+      return new LongArrayProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (STRING_ARRAY.equals(parcelableTypeName)) {
+      return new StringArrayProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (SPARSE_ARRAY.equals(parcelableTypeName)) {
+      List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
+      Property typeArgument = parseProperty(typeArguments.get(0), dataClass, true, name + "Value", null, typeAdapters);
+      return new SparseArrayProperty(typeArgument, isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (SPARSE_BOOLEAN_ARRAY.equals(parcelableTypeName)) {
+      return new SparseBooleanArrayProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (BUNDLE.equals(parcelableTypeName)) {
+      return new BundleProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (PARCELABLE.equals(parcelableTypeName)) {
+      return new ParcelableProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (OBJECT_ARRAY.equals(parcelableTypeName)) {
+      TypeMirror componentType = ((ArrayType) type).getComponentType();
+      Property componentProperty = parseProperty(componentType, dataClass, true, name + "Component", null, typeAdapters);
+      return new ArrayProperty(componentProperty, typeName, isInterface, isNullable, name, accessorMethodName);
+    } else if (CHAR_SEQUENCE.equals(parcelableTypeName)) {
+      return new CharSequenceProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (IBINDER.equals(parcelableTypeName)) {
+      return new IBinderProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (SERIALIZABLE.equals(parcelableTypeName) || ENUM.equals(parcelableTypeName)) {
+      return new SerializableProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (PERSISTABLE_BUNDLE.equals(parcelableTypeName)) {
+      return new PersistableBundleProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (SIZE.equals(parcelableTypeName)) {
+      return new SizeProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (SIZEF.equals(parcelableTypeName)) {
+      return new SizeFProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (TYPE_ADAPTER.equals(parcelableTypeName)) {
+      return new TypeAdapterProperty(typeAdapter, isNullable, typeName, isInterface, name, accessorMethodName);
     } else {
-
-      // Update wildcard and typename to include wildcards and generics
-      wildcardTypeName = TypeName.get(variable);
-      typeName = TypeName.get(noWildCardType);
-
-      // This is (one of) the reason(s) it is not parcelable. Assume it contains a data object as a parameter
-      TypeElement requiredElement = (TypeElement) typeElement;
-      String packageName = getPackageName(requiredElement);
-      String className = generateWrappedTypeName(requiredElement, noWildCardType);
-      parcelableTypeName = wrappedTypeName = ClassName.get(packageName, className);
-    }
-
-    boolean isInterface = typeElement != null && typeElement.getKind() == ElementKind.INTERFACE;
-
-    boolean requiresClassLoader = PropertyUtils.requiresClassLoader(parcelableTypeName);
-    if (childTypes != null) {
-      for (Property.Type childProperty : childTypes) {
-        requiresClassLoader |= childProperty.requiresClassLoader();
-      }
-    }
-
-    // Use the AutoValue generated name as the "wrapped" type name so that the generated CREATOR object can be
-    // found when un-parcelling the AutoParcel object
-    if (typeElement != null) {
-      try {
-        //noinspection unchecked
-        Class<? extends Annotation> autoValueAnnotation = (Class<? extends Annotation>) Class.forName("com.google.auto.value.AutoValue");
-        Annotation autoValue = typeElement.getAnnotation(autoValueAnnotation);
-        if (autoValue != null) {
-          TypeElement requiredElement = (TypeElement) typeElement;
-          wrappedTypeName = ClassName.bestGuess(autoValueClassName(requiredElement));
+      TypeElement typeElement = (TypeElement) typeUtil.asElement(type);
+      boolean isSingleton = TypeUtils.isSingleton(typeUtil, typeElement);
+      List<Property> properties = new ArrayList<>();
+      if (!isSingleton) {
+        List<VariableElement> variableElements = getFields(typeUtil, typeElement);
+        variableElements = filterNonConstructorFields(variableElements, typeElement);
+        final int variableCount = variableElements.size();
+        if (variableCount > 0) {
+          for (int i = 0; i < variableCount; i++) {
+            VariableElement childVariable = variableElements.get(i);
+            ExecutableElement accessorMethod;
+            try {
+              accessorMethod = getAccessorMethod(typeElement, childVariable);
+            } catch (PropertyValidationException e) {
+              error(processingEnv, e.getMessage(), e.source);
+              continue;
+            }
+            String childAccessorName = accessorMethod == null ? null : accessorMethod.getSimpleName().toString();
+            String childName = name + capitalizeFirstCharacter(childVariable.getSimpleName().toString());
+            Property p = parseProperty(childVariable.asType(), type, true, childName, childAccessorName, typeAdapters);
+            properties.add(p);
+          }
         }
-      } catch (ClassNotFoundException ignored) {
       }
-    }
-
-    return new Property.Type(childTypes, parcelableTypeName, typeName, wrappedTypeName, wildcardTypeName, isInterface,
-        requiresClassLoader, typeAdapter);
-  }
-
-  private String autoValueClassName(TypeElement type) {
-    String name = type.getSimpleName().toString();
-    while (type.getEnclosingElement() instanceof TypeElement) {
-      type = (TypeElement) type.getEnclosingElement();
-      name = type.getSimpleName() + "_" + name;
-    }
-    String pkg = getPackageName(type);
-    String dot = pkg.isEmpty() ? "" : ".";
-    return pkg + dot + "AutoValue_" + name;
-  }
-
-  private void findNonParcelableDependencies(TypeMirror typeMirror) {
-    TypeElement typeElement = (TypeElement) typeUtil.asElement(typeMirror);
-    List<VariableElement> variableElements = getFields(typeUtil, typeElement);
-    variableElements = filterNonConstructorFields(variableElements, typeElement);
-    for (VariableElement variableElement : variableElements) {
-      TypeMirror variableMirror = variableElement.asType();
-      findNonParcelableDependencies(variableMirror, typeMirror);
-    }
-  }
-
-  private void findNonParcelableDependencies(TypeMirror variable, TypeMirror dataClass) {
-    variable = getActualTypeParameter(variable, dataClass);
-
-    if (variable instanceof WildcardType) {
-      // Properties using Kotlin's @JvmWildcard will fall into here
-      variable = ((WildcardType) variable).getExtendsBound();
-    }
-
-    boolean isParcelable = PropertyUtils.getParcelableType(typeUtil, variable) != null;
-    if (!isParcelable) {
-      allWrapperTypes.put(variable.toString(), variable);
-    }
-
-    if (variable instanceof DeclaredType) {
-      DeclaredType declaredType = (DeclaredType) variable;
-      for (TypeMirror parameterType : declaredType.getTypeArguments()) {
-        findNonParcelableDependencies(parameterType, dataClass);
-      }
-    }
-
-    if (variable instanceof ArrayType) {
-      ArrayType arrayType = (ArrayType) variable;
-      findNonParcelableDependencies(arrayType.getComponentType(), dataClass);
-    }
-
-    Element childElement = typeUtil.asElement(variable);
-    if (!isParcelable && childElement instanceof TypeElement) {
-      findNonParcelableDependencies(variable);
+      return new NonParcelableProperty(properties, isSingleton, isNullable, typeName, isInterface, name,
+                                       accessorMethodName);
     }
   }
 
@@ -605,17 +641,21 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .build();
   }
 
-  private FieldSpec generateCreator(TypeName typeName, ClassName wrapperClassName, boolean isSingleton,
-      List<Property> properties, FieldSpec classLoader) {
+  private FieldSpec generateCreator(TypeName typeName,
+                                    ClassName wrapperClassName,
+                                    boolean isSingleton,
+                                    List<Property> properties,
+                                    FieldSpec classLoader) {
 
     ClassName creator = ClassName.get("android.os", "Parcelable", "Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, wrapperClassName);
 
-    ParameterSpec in = ParameterSpec.builder(ClassName.get("android.os", "Parcel"), "in").build();
+    ParameterSpec in = ParameterSpec.builder(PARCEL, "in").build();
 
     CodeBlock.Builder creatorInitializer = CodeBlock.builder()
         .beginControlFlow("new $T()", ParameterizedTypeName.get(creator, wrapperClassName))
-        .beginControlFlow("@$T public $T createFromParcel($T $N)", ClassName.get(Override.class), wrapperClassName, PARCEL, in);
+        .beginControlFlow("@$T public $T createFromParcel($T $N)", ClassName.get(Override.class), wrapperClassName,
+                          PARCEL, in);
 
     if (isSingleton) {
       creatorInitializer.addStatement("return new $T($T.INSTANCE)", wrapperClassName, typeName);
@@ -656,7 +696,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
     }
 
     creatorInitializer.endControlFlow()
-        .beginControlFlow("@$T public $T[] newArray($T size)", ClassName.get(Override.class), wrapperClassName, int.class)
+        .beginControlFlow("@$T public $T[] newArray($T size)", ClassName.get(Override.class), wrapperClassName,
+                          int.class)
         .addStatement("return new $T[size]", wrapperClassName)
         .endControlFlow()
         .unindent()
@@ -707,7 +748,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .build();
   }
 
-  private MethodSpec generateWriteToParcel(List<Property> properties, Map<String, String> getterMethods) {
+  private MethodSpec generateWriteToParcel(List<Property> properties) {
     ParameterSpec dest = ParameterSpec
         .builder(PARCEL, "dest")
         .build();
@@ -720,9 +761,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
     CodeBlock.Builder block = CodeBlock.builder();
     for (Property p : properties) {
-      String getterMethodName = getterMethods == null ? null : getterMethods.get(p.getName());
+      String getterMethodName = p.getAccessorMethodName();
       String accessorStrategy = getterMethodName == null ? p.getName() : getterMethodName + "()";
-      TypeName wildCardTypeName = p.getPropertyType().getWildcardTypeName();
+      TypeName wildCardTypeName = p.getTypeName();
       if (wildCardTypeName instanceof WildcardTypeName) {
         wildCardTypeName = ((WildcardTypeName) wildCardTypeName).upperBounds.get(0);
       }
@@ -732,10 +773,6 @@ public class PaperParcelProcessor extends AbstractProcessor {
     }
 
     return builder.addCode(block.build()).build();
-  }
-
-  private static void error(ProcessingEnvironment processingEnv, String message, Element element) {
-    processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
   }
 
   static class NoValidConstructorFoundException extends IllegalStateException {

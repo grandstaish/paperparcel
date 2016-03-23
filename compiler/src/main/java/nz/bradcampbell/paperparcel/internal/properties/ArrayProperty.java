@@ -11,37 +11,35 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.WildcardTypeName;
 import nz.bradcampbell.paperparcel.internal.Property;
-import nz.bradcampbell.paperparcel.internal.utils.PropertyUtils;
 import org.jetbrains.annotations.Nullable;
 
 public class ArrayProperty extends Property {
-  public ArrayProperty(Property.Type propertyType, boolean isNullable, String name) {
-    super(propertyType, isNullable, name);
+  private final Property componentType;
+  
+  public ArrayProperty(Property componentType, TypeName typeName, boolean isInterface, boolean isNullable, String name,
+                       @Nullable String accessorMethodName) {
+    super(isNullable, typeName, isInterface, name, accessorMethodName);
+    this.componentType = componentType;
   }
 
-  @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
-    Property.Type propertyType = getPropertyType();
-
+  @Override
+  protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader) {
     // Read size
     String arraySize = getName() + "Size";
     block.addStatement("$T $N = $N.readInt()", int.class, arraySize, in);
 
     // Create array to read into
     String arrayName = getName();
-    block.add("$T ", propertyType.getWildcardTypeName());
-    block.add(generateArrayInitializer(arrayName, false, arraySize));
+    block.add("$T ", getTypeName());
+    block.add(generateArrayInitializer(arrayName, arraySize));
 
     // Write a loop to iterate through each component
     String indexName = getName() + "Index";
     block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, arraySize, indexName);
 
-    Property.Type componentPropertyType = propertyType.getChildType(0);
-    String componentName = getName() + "Item";
-
     // Read in the component. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    CodeBlock componentLiteral = PropertyUtils.createProperty(componentPropertyType, componentName)
-        .readFromParcel(block, in, classLoader);
+    CodeBlock componentLiteral = componentType.readFromParcel(block, in, classLoader);
 
     // Add the parameter to the output array
     block.addStatement("$N[$N] = $L", arrayName, indexName, componentLiteral);
@@ -61,14 +59,12 @@ public class ArrayProperty extends Property {
     String indexName = getName() + "Index";
     block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, arraySize, indexName);
 
-    Property.Type propertyType = getPropertyType();
-    Property.Type componentPropertyType = propertyType.getChildType(0);
-    TypeName componentTypeName = componentPropertyType.getWildcardTypeName();
+    TypeName componentTypeName = componentType.getTypeName();
     String componentItemName = getName() + "Item";
 
     // Handle wildcard types
     if (componentTypeName instanceof ParameterizedTypeName) {
-      componentTypeName = componentPropertyType.getWildcardTypeName();
+      componentTypeName = componentType.getTypeName();
     }
     if (componentTypeName instanceof WildcardTypeName) {
       componentTypeName = ((WildcardTypeName) componentTypeName).upperBounds.get(0);
@@ -76,26 +72,24 @@ public class ArrayProperty extends Property {
 
     block.addStatement("$T $N = $L[$N]", componentTypeName, componentItemName, sourceLiteral, indexName);
 
-    String componentName = getName() + "Component";
     CodeBlock componentSource = literal("$N", componentItemName);
 
     // Write in the component. Set isNullable to true as I don't know how to tell if a parameter is
     // nullable or not. Kotlin can do this, Java can't.
-    PropertyUtils.createProperty(componentPropertyType, componentName).writeToParcel(block, dest, componentSource);
+    componentType.writeToParcel(block, dest, componentSource);
 
     block.endControlFlow();
   }
 
-  private CodeBlock generateArrayInitializer(String variableName, boolean wrapped, String size) {
+  private CodeBlock generateArrayInitializer(String variableName, String size) {
     String initializer = "$N = new $T[$N]";
 
-    Property.Type propertyType = getPropertyType();
-    Property.Type componentType = propertyType.getChildType(0);
+    Property componentTypeTemp = componentType;
+    TypeName componentTypeName = getRawTypeName(componentTypeTemp.getTypeName());
 
-    TypeName componentTypeName = getRawTypeName(componentType, wrapped);
     while (componentTypeName instanceof ArrayTypeName) {
-      componentType = componentType.getChildType(0);
-      componentTypeName = getRawTypeName(componentType, wrapped);
+      componentTypeTemp = ((ArrayProperty) componentType).componentType;
+      componentTypeName = getRawTypeName(componentTypeTemp.getTypeName());
       initializer += "[]";
     }
 
