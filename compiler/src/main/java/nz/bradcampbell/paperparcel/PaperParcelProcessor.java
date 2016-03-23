@@ -199,9 +199,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
       // Ensure we are dealing with a TypeElement
       if (!(element instanceof TypeElement)) {
-        error(processingEnv,
-              "@GlobalTypeAdapter applies to a type, " + element.getSimpleName() + " is a " + element.getKind(),
-              element);
+        error(processingEnv, "@GlobalTypeAdapter applies to a type, " + element.getSimpleName() + " is a "
+                             + element.getKind(), element);
         continue;
       }
 
@@ -209,6 +208,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
       TypeMirror elementMirror = element.asType();
       TypeMirror typeAdapterMirror =
           typeUtil.erasure(elementUtils.getTypeElement(TypeAdapter.class.getCanonicalName()).asType());
+
       if (!(typeUtil.isAssignable(elementMirror, typeAdapterMirror))) {
         error(processingEnv, element.getSimpleName() + " needs to implement TypeAdapter", element);
         continue;
@@ -270,7 +270,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
   }
 
   /**
-   * Create a Parcel wrapperTypes for the given data class
+   * Create a Parcel wrapper for the given data class
    *
    * @param typeMirror The data class
    */
@@ -319,19 +319,13 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
         // A field is considered "nullable" when it is a non-primitive and not annotated with @NonNull or @NotNull
         boolean isPrimitive = variableElement.asType().getKind().isPrimitive();
-        boolean annotatedWithNonNull = accessorMethod != null
-                                       ? AnnotationUtils.isFieldRequired(accessorMethod)
-                                       : AnnotationUtils.isFieldRequired(variableElement);
+        boolean annotatedWithNonNull = accessorMethod != null ? AnnotationUtils.isFieldRequired(accessorMethod)
+                                                              : AnnotationUtils.isFieldRequired(variableElement);
         boolean isNullable = !isPrimitive && !annotatedWithNonNull;
 
         // Parse the property type into a Property.Type object and find all recursive data class dependencies
-        Property property = parseProperty(variableElement.asType(),
-                                          typeMirror,
-                                          isNullable,
-                                          name,
-                                          accessorMethod == null
-                                            ? null
-                                            : accessorMethod.getSimpleName().toString(),
+        String accessorMethodName = accessorMethod == null ? null : accessorMethod.getSimpleName().toString();
+        Property property = parseProperty(variableElement.asType(), typeMirror, isNullable, name, accessorMethodName,
                                           variableScopedTypeAdapters);
 
         properties.add(property);
@@ -375,9 +369,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
         }
       }
     }
-    throw new NoValidConstructorFoundException("No valid constructor found while processing " +
-                                               typeElement.getQualifiedName() + ". The constructor parameters and " +
-                                               "member variables need to be in the same order.");
+    throw new NoValidConstructorFoundException(
+        "No valid constructor found while processing " + typeElement.getQualifiedName() + ". The constructor parameters" +
+        " and member variables need to be in the same order.");
   }
 
   private ExecutableElement getAccessorMethod(TypeElement typeElement, VariableElement variableElement)
@@ -481,13 +475,14 @@ public class PaperParcelProcessor extends AbstractProcessor {
     TypeMirror erasedType = typeUtil.erasure(variable);
     TypeName parcelableTypeName =
         wrapperTypes.containsKey(variable.toString()) ? null : getParcelableType(typeUtil, erasedType);
+
     boolean isInterface = TypeUtils.isInterface(typeUtil, erasedType);
 
     TypeMirror type = variable;
-    boolean strippedWildcard = type instanceof WildcardType;
-    if (strippedWildcard) {
+    if (type instanceof WildcardType) {
       type = ((WildcardType) variable).getExtendsBound();
     }
+
     TypeName erasedTypeName = TypeName.get(erasedType);
     TypeName typeAdapter = typeAdapters.get(erasedTypeName);
     if (typeAdapter == null) {
