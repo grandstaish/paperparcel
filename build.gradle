@@ -2,7 +2,6 @@ allprojects {
     repositories {
         mavenCentral()
         jcenter()
-        maven { url 'http://oss.sonatype.org/content/repositories/snapshots' }
     }
 
     buildscript {
@@ -46,8 +45,8 @@ ext.deps = [
     javapoet: 'com.squareup:javapoet:1.4.0',
 
     // Auto
-    autovalue: 'com.google.auto.value:auto-value:1.2-SNAPSHOT',
-    autocommon: 'com.google.auto:auto-common:0.5',
+    autovalue: 'com.google.auto.value:auto-value:1.2-rc1',
+    autocommon: 'com.google.auto:auto-common:0.6',
     autoservice: 'com.google.auto.service:auto-service:1.0-rc2',
 
     // Test dependencies
