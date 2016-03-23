@@ -636,14 +636,14 @@ public class PaperParcelProcessor extends AbstractProcessor {
   }
 
   private FieldSpec generateTypeAdapterField(ClassName typeAdapter) {
-    String packageName = typeAdapter.packageName().replace("\\.", "_");
+    String packageName = typeAdapter.packageName().replace(".", "_");
     String simpleNames = "";
     for (String name : typeAdapter.simpleNames()) {
       simpleNames += name;
     }
     String constPackageName = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_UNDERSCORE, packageName);
     String constSimpleNames = CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, simpleNames);
-    String fieldName = constPackageName + "_" + constSimpleNames;
+    String fieldName = packageName.isEmpty() ? constSimpleNames : constPackageName + "_" + constSimpleNames;
     return FieldSpec.builder(typeAdapter, fieldName, Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
         .initializer("new $T()", typeAdapter)
         .build();
