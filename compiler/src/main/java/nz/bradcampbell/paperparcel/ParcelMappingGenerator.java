@@ -4,6 +4,7 @@ import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
+import static nz.bradcampbell.paperparcel.PaperParcelProcessor.DATA_VARIABLE_NAME;
 
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
@@ -49,10 +50,10 @@ public final class ParcelMappingGenerator {
       Class<PaperParcels.Delegator> delegator = PaperParcels.Delegator.class;
       staticBlockBuilder.add("$1T<$2T, $3T> $4N = new $1T<$2T, $3T>() {\n", delegator, original, parcelable, varName)
           .add("    @Override public $T unwrap($T wrapper) {\n", original, parcelable)
-          .add("      return wrapper.getContents();\n")
+          .add("      return wrapper.$N;\n", DATA_VARIABLE_NAME)
           .add("    }\n")
           .add("    @Override public $T wrap($T object) {\n", parcelable, original)
-          .add("      return $T.wrap(object);\n", parcelable)
+          .add("      return new $T(object);\n", parcelable)
           .add("    }\n")
           .add("};\n")
           .add("FROM_ORIGINAL.put($T.class, $N);\n", original, varName)

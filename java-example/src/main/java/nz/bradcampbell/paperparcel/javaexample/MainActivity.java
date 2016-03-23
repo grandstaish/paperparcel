@@ -25,14 +25,6 @@ public class MainActivity extends AppCompatActivity {
 
     if (savedInstanceState != null) {
       state = PaperParcels.unsafeUnwrap(savedInstanceState.getParcelable("state"));
-
-      // or:
-      // TypedParcelable<State> wrapped = savedInstanceState.getParcelable("state");
-      // state = PaperParcels.unwrap(wrapped);
-
-      // or:
-      // StateParcel wrapped = savedInstanceState.getParcelable("state");
-      // state = wrapped != null ? wrapped.getContents() : null;
     }
 
     Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -68,8 +60,5 @@ public class MainActivity extends AppCompatActivity {
   protected void onSaveInstanceState(Bundle outState) {
     super.onSaveInstanceState(outState);
     outState.putParcelable("state", PaperParcels.wrap(state));
-
-    // or:
-    // outState.putParcelable("state", StateParcel.wrap(state));
   }
 }

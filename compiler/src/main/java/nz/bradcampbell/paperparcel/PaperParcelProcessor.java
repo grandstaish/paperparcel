@@ -12,7 +12,6 @@ import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PROTECTED;
 import static javax.lang.model.element.Modifier.PUBLIC;
-import static javax.lang.model.element.Modifier.STATIC;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.BOOLEAN_ARRAY;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.BOXED_BOOLEAN;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.BOXED_BYTE;
@@ -132,7 +131,7 @@ import javax.tools.Diagnostic;
  */
 @AutoService(Processor.class)
 public class PaperParcelProcessor extends AbstractProcessor {
-  private static final String DATA_VARIABLE_NAME = "data";
+  public static final String DATA_VARIABLE_NAME = "data";
 
   private static final ClassName PARCEL = ClassName.get("android.os", "Parcel");
   private static final ClassName PARCELABLE = ClassName.get("android.os", "Parcelable");
@@ -258,9 +257,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     wrapperBuilder.addField(generateCreator(dataClass.getClassName(), dataClass.getWrapperClassName(),
                                             dataClass.isSingleton(), dataClass.getProperties(), classLoader))
         .addField(generateContentsField(dataClass.getClassName()))
-        .addMethod(generateWrapMethod(dataClass))
         .addMethod(generateContentsConstructor(dataClass.getClassName()))
-        .addMethod(generateGetter(dataClass.getClassName()))
         .addMethod(generateDescribeContents())
         .addMethod(generateWriteToParcel(dataClass.getProperties()));
 
@@ -704,32 +701,14 @@ public class PaperParcelProcessor extends AbstractProcessor {
   }
 
   private FieldSpec generateContentsField(TypeName className) {
-    return FieldSpec.builder(className, DATA_VARIABLE_NAME, PRIVATE, FINAL).build();
-  }
-
-  private MethodSpec generateWrapMethod(DataClass dataClass) {
-    ClassName className = dataClass.getWrapperClassName();
-    return MethodSpec.methodBuilder("wrap")
-        .addModifiers(PUBLIC, STATIC, FINAL)
-        .addParameter(dataClass.getClassName(), DATA_VARIABLE_NAME)
-        .addStatement("return new $T($N)", className, DATA_VARIABLE_NAME)
-        .returns(className)
-        .build();
+    return FieldSpec.builder(className, DATA_VARIABLE_NAME, PUBLIC, FINAL).build();
   }
 
   private MethodSpec generateContentsConstructor(TypeName className) {
     return MethodSpec.constructorBuilder()
-        .addModifiers(PRIVATE)
+        .addModifiers(PUBLIC)
         .addParameter(className, DATA_VARIABLE_NAME)
         .addStatement("this.$N = $N", DATA_VARIABLE_NAME, DATA_VARIABLE_NAME)
-        .build();
-  }
-
-  private MethodSpec generateGetter(TypeName className) {
-    return MethodSpec.methodBuilder("getContents")
-        .addModifiers(PUBLIC)
-        .returns(className)
-        .addStatement("return $N", DATA_VARIABLE_NAME)
         .build();
   }
 
