@@ -21,7 +21,7 @@ data class Example(var test: Int) : PaperParcelable
 
 Now your data class is `Parcelable` and can be passed directly to a `Bundle` or `Intent`
 
-A simple example can be found in the [kotlin-example](https://github.com/grandstaish/paperparcel/tree/master/kotlin-example) module. For a more real-world example, see [here](https://github.com/grandstaish/four-letters-redux/blob/master/app/src/main/kotlin/nz/bradcampbell/fourletters/redux/state/State.kt).
+A simple example can be found in the [kotlin-example](https://github.com/grandstaish/paperparcel/tree/master/examples/kotlin-example) module. For a more real-world example, see [here](https://github.com/grandstaish/four-letters-redux/blob/master/app/src/main/kotlin/nz/bradcampbell/fourletters/redux/state/State.kt).
 
 ## Usage (AutoValue) 
 
@@ -39,13 +39,13 @@ public abstract class Example implements Parcelable {
 
 Now your AutoValue class can be passed directly to a `Bundle` or `Intent` 
 
-A simple example can be found in the [autovalue-example](https://github.com/grandstaish/paperparcel/tree/master/autovalue-example) module.
+A simple example can be found in the [autovalue-example](https://github.com/grandstaish/paperparcel/tree/master/examples/autovalue-example) module.
 
 ## Usage (Java)
 
 This is a little more manual. If your library doesn't use Kotlin or AutoValue, you might consider [Parceler](https://github.com/johncarl81/parceler) or one of the other great alternatives to PaperParcel.
 
-However, if you use kotlin and java objects in the same project, you might still want to use PaperParcel. For an example on how to structure your model classes in java for PaperParcel to process them, see the [java-example](https://github.com/grandstaish/paperparcel/tree/master/java-example) module.
+However, if you use kotlin and java objects in the same project, you might still want to use PaperParcel. For an example on how to structure your model classes in java for PaperParcel to process them, see the [java-example](https://github.com/grandstaish/paperparcel/tree/master/examples/java-example) module.
 
 ## Type Adapters
 
