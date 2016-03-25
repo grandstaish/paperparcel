@@ -1,1 +1,14 @@
-include ':compiler', ':kotlin-example', ':java-example', ':paperparcel', ':autovalue-example', ':paperparcel-kotlin'
+include ':compiler'
+
+include ':paperparcel'
+include ':paperparcel-kotlin'
+
+include ':kotlin-example'
+include ':java-example'
+include ':autovalue-example'
+include ':mixed-example'
+
+project(':kotlin-example').projectDir = new File("examples/kotlin-example")
+project(':java-example').projectDir = new File("examples/java-example")
+project(':autovalue-example').projectDir = new File("examples/autovalue-example")
+project(':mixed-example').projectDir = new File("examples/mixed-example")
