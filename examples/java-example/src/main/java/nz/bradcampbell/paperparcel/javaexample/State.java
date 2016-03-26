@@ -1,19 +1,21 @@
 package nz.bradcampbell.paperparcel.javaexample;
 
-import nz.bradcampbell.paperparcel.GetterMethodName;
+import nz.bradcampbell.paperparcel.AccessorMethod;
 import nz.bradcampbell.paperparcel.PaperParcel;
+import nz.bradcampbell.paperparcel.TypeAdapters;
 
 import java.util.Date;
 
-@PaperParcel(typeAdapters = DateTypeAdapter.class)
+@PaperParcel
+@TypeAdapters(DateTypeAdapter.class)
 public final class State {
   private final int count;
 
   /**
-   * Able to use a custom getter name as per the @GetterMethodName tag. By default, if "x" is the property name,
+   * Able to use a custom getter name as per the @AccessorMethod tag. By default, if "x" is the property name,
    * PaperParcel will search for a method named "x()", "getX()", or "isX()"
    */
-  @GetterMethodName("customGetterMethodName")
+  @AccessorMethod("customGetterMethodName")
   private final Date modificationDate;
 
   public State(int count, Date modificationDate) {

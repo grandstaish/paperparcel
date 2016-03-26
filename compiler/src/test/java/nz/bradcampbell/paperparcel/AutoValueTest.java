@@ -29,11 +29,11 @@ public class AutoValueTest {
     JavaFileObject dateTypeAdapter = JavaFileObjects.forSourceString("test.DateTypeAdapter", Joiner.on('\n').join(
         "package test;",
         "import android.os.Parcel;",
-        "import nz.bradcampbell.paperparcel.GlobalTypeAdapter;",
+        "import nz.bradcampbell.paperparcel.DefaultAdapter;",
         "import nz.bradcampbell.paperparcel.TypeAdapter;",
         "import org.jetbrains.annotations.NotNull;",
         "import java.util.Date;",
-        "@GlobalTypeAdapter",
+        "@DefaultAdapter",
         "public class DateTypeAdapter implements TypeAdapter<Date> {",
         "@NotNull",
         "@Override",
@@ -100,13 +100,13 @@ public class AutoValueTest {
   @Test public void localDateTypeAdapterTest() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
-        "import nz.bradcampbell.paperparcel.FieldTypeAdapter;",
+        "import nz.bradcampbell.paperparcel.TypeAdapters;",
         "import com.google.auto.value.AutoValue;",
         "import android.os.Parcelable;",
         "import java.util.Date;",
         "@AutoValue",
         "public abstract class Test implements Parcelable {",
-        "@FieldTypeAdapter(DateTypeAdapter.class)",
+        "@TypeAdapters(DateTypeAdapter.class)",
         "public abstract Date count();",
         "}"
     ));

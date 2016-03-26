@@ -24,9 +24,4 @@ import java.lang.annotation.Target;
 @Retention(CLASS)
 @Target(TYPE)
 public @interface PaperParcel {
-
-  /**
-   * @return A list of custom TypeAdapters
-   */
-  Class<? extends TypeAdapter<?>>[] typeAdapters() default {};
 }

@@ -122,7 +122,6 @@ import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Elements;
@@ -154,8 +153,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
   @Override public Set<String> getSupportedAnnotationTypes() {
     Set<String> types = new LinkedHashSet<>();
     types.add(PaperParcel.class.getCanonicalName());
-    types.add(GlobalTypeAdapter.class.getCanonicalName());
-    types.add(FieldTypeAdapter.class.getCanonicalName());
+    types.add(DefaultAdapter.class.getCanonicalName());
+    types.add(TypeAdapters.class.getCanonicalName());
     return types;
   }
 
@@ -197,7 +196,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     }
 
     // Find all global-scoped TypeAdapters
-    for (Element element : roundEnvironment.getElementsAnnotatedWith(GlobalTypeAdapter.class)) {
+    for (Element element : roundEnvironment.getElementsAnnotatedWith(DefaultAdapter.class)) {
 
       // Ensure we are dealing with a TypeElement
       if (!(element instanceof TypeElement)) {
@@ -265,9 +264,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
     if (!isSingleton) {
 
       // Override the type adapters with the current element preferences
-      Map<String, Object> annotation = AnnotationUtils.getAnnotation(PaperParcel.class, typeElement);
+      Map<String, Object> annotation = AnnotationUtils.getAnnotation(TypeAdapters.class, typeElement);
       if (annotation != null) {
-        Object[] typeAdaptersArray = (Object[]) annotation.get("typeAdapters");
+        Object[] typeAdaptersArray = (Object[]) annotation.get("value");
         for (Object o : typeAdaptersArray) {
           DeclaredType ta = (DeclaredType) o;
           TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, ta);
@@ -384,9 +383,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
     String variableName = variableElement.getSimpleName().toString().toLowerCase();
 
     // If the name is custom, return this straight away
-    GetterMethodName getterMethodName = variableElement.getAnnotation(GetterMethodName.class);
-    if (getterMethodName != null) {
-      variableName = getterMethodName.value().toLowerCase();
+    AccessorMethod accessorMethod = variableElement.getAnnotation(AccessorMethod.class);
+    if (accessorMethod != null) {
+      variableName = accessorMethod.value().toLowerCase();
     }
 
     Set<Modifier> modifiers = variableElement.getModifiers();
@@ -424,7 +423,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
     throw new PropertyValidationException(
         "Could not find getter method for variable '" + variableName + "'.\nTry annotating your " +
-        "variable with '" + GetterMethodName.class.getCanonicalName() + "' or renaming your variable to follow " +
+        "variable with '" + AccessorMethod.class.getCanonicalName() + "' or renaming your variable to follow " +
         "the documented conventions.\nAlternatively your property can be have default or public visibility.",
         variableElement);
   }
@@ -434,30 +433,24 @@ public class PaperParcelProcessor extends AbstractProcessor {
       VariableElement variableElement,
       ExecutableElement accessorMethod) {
 
-    // Find a field-scoped adapter if it exists
+    // Find the field-scoped adapters, if any
     Map<TypeName, ClassName> tempTypeAdapters = classScopedTypeAdapters;
-    FieldTypeAdapter variableAdapter = variableElement.getAnnotation(FieldTypeAdapter.class);
+    Map<String, Object> annotation = AnnotationUtils.getAnnotation(TypeAdapters.class, variableElement);
 
     // Check the accessor method for the annotation too (AutoValue support)
-    if (variableAdapter == null && accessorMethod != null) {
-      variableAdapter = accessorMethod.getAnnotation(FieldTypeAdapter.class);
+    if (annotation == null && accessorMethod != null) {
+      annotation = AnnotationUtils.getAnnotation(TypeAdapters.class, accessorMethod);
     }
 
-    // http://blog.retep.org/2009/02/13/getting-class-values-from-annotations-in-an-annotationprocessor/
-    DeclaredType fieldAdapter = null;
-    if (variableAdapter != null) {
-      try {
-        variableAdapter.value();
-      } catch (MirroredTypeException mte) {
-        fieldAdapter = (DeclaredType) mte.getTypeMirror();
-      }
-    }
-
-    // Temporarily override the type adapters map with the new type adapter (for the scope of this property)
-    if (fieldAdapter != null) {
+    // Override the type adapters with the current element preferences
+    if (annotation != null) {
       tempTypeAdapters = new HashMap<>(classScopedTypeAdapters);
-      TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, fieldAdapter);
-      tempTypeAdapters.put(typeAdapterType, (ClassName) TypeName.get(fieldAdapter));
+      Object[] typeAdaptersArray = (Object[]) annotation.get("value");
+      for (Object o : typeAdaptersArray) {
+        DeclaredType ta = (DeclaredType) o;
+        TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, ta);
+        tempTypeAdapters.put(typeAdapterType, (ClassName) TypeName.get(ta));
+      }
     }
 
     return tempTypeAdapters;

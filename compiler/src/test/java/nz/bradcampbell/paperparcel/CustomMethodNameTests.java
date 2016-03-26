@@ -16,10 +16,10 @@ public class CustomMethodNameTests {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
         "import nz.bradcampbell.paperparcel.PaperParcel;",
-        "import nz.bradcampbell.paperparcel.GetterMethodName;",
+        "import nz.bradcampbell.paperparcel.AccessorMethod;",
         "@PaperParcel",
         "public final class Test {",
-        "@GetterMethodName(\"customGetterMethod\")",
+        "@AccessorMethod(\"customGetterMethod\")",
         "private final int child;",
         "public Test(int child) {",
         "this.child = child;",
