@@ -19,7 +19,9 @@ import java.lang.annotation.Target;
  * Example:
  * <pre><code>
  *   &#64;TypeAdapters(ClassScopedTypeAdapter::class)
- *   data class Example(val a: Int, &#64;TypeAdapters(VariableScopedTypeAdapter::class) val b: Map<SomeKey, SomeValue>)
+ *   data class Example(
+ *       val a: Int,
+ *       &#64;TypeAdapters(VariableScopedTypeAdapter::class) val b: Map&lt;SomeKey, SomeValue&gt;)
  * </code></pre>
  */
 @Documented

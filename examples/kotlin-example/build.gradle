@@ -34,8 +34,9 @@ kapt {
 
 dependencies {
     compile deps.appCompat 
-    compile deps.design 
+    compile deps.design
 
+    compile project(':paperparcel')
     compile project(':paperparcel-kotlin')
     kapt project(':compiler')
 

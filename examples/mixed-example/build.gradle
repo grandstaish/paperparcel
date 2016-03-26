@@ -37,6 +37,7 @@ dependencies {
     compile deps.design
 
     compile deps.autovalue
+    compile project(':paperparcel')
     compile project(':paperparcel-kotlin')
     kapt deps.autovalue
     kapt project(':compiler')
