@@ -21,12 +21,15 @@ import java.util.Set;
 public class NonParcelableProperty extends Property {
   private final List<Property> children;
   private final boolean isSingleton;
+  private final TypeName instantiableTypeName;
 
-  public NonParcelableProperty(List<Property> children, boolean isSingleton, boolean isNullable, TypeName typeName,
-                               boolean isInterface, String name, @Nullable String accessorMethodName) {
+  public NonParcelableProperty(List<Property> children, boolean isSingleton, TypeName instantiableTypeName,
+                               boolean isNullable, TypeName typeName, boolean isInterface, String name,
+                               @Nullable String accessorMethodName) {
     super(isNullable, typeName, isInterface, name, accessorMethodName);
     this.children = children;
     this.isSingleton = isSingleton;
+    this.instantiableTypeName = instantiableTypeName;
   }
 
   @Override
@@ -39,7 +42,7 @@ public class NonParcelableProperty extends Property {
     Object[] params;
     int propertiesSize = children.size();
     params = new Object[propertiesSize + 1];
-    TypeName typeName = getTypeName();
+    TypeName typeName = instantiableTypeName;
     if (typeName instanceof WildcardTypeName) {
       typeName = ((WildcardTypeName) typeName).upperBounds.get(0);
     }

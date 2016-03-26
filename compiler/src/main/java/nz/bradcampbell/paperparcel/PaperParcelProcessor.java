@@ -98,6 +98,7 @@ import nz.bradcampbell.paperparcel.internal.utils.TypeUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -316,6 +317,31 @@ public class PaperParcelProcessor extends AbstractProcessor {
                          requiredTypeAdapters, isSingleton);
   }
 
+  private boolean isAutoValueClass(TypeElement typeElement) {
+    if (typeElement != null) {
+      try {
+        //noinspection unchecked
+        Class<? extends Annotation> autoValueAnnotation =
+            (Class<? extends Annotation>) Class.forName("com.google.auto.value.AutoValue");
+        Annotation autoValue = typeElement.getAnnotation(autoValueAnnotation);
+        return autoValue != null;
+      } catch (ClassNotFoundException ignored) {
+      }
+    }
+    return false;
+  }
+
+  private String autoValueGeneratedClassName(TypeElement type) {
+    String name = type.getSimpleName().toString();
+    while (type.getEnclosingElement() instanceof TypeElement) {
+      type = (TypeElement) type.getEnclosingElement();
+      name = type.getSimpleName() + "_" + name;
+    }
+    String pkg = getPackageName(type);
+    String dot = pkg.isEmpty() ? "" : ".";
+    return pkg + dot + "AutoValue_" + name;
+  }
+
   private List<VariableElement> filterNonConstructorFields(
       List<VariableElement> variableElements, TypeElement typeElement) {
     for (Element e : typeElement.getEnclosedElements()) {
@@ -451,8 +477,14 @@ public class PaperParcelProcessor extends AbstractProcessor {
     variable = getActualTypeParameter(variable, dataClass);
 
     TypeMirror erasedType = typeUtil.erasure(variable);
+
+    TypeElement typeElement = (TypeElement) typeUtil.asElement(erasedType);
+    boolean isAutoValueClass = isAutoValueClass(typeElement);
+
+    String canonicalName = isAutoValueClass ? autoValueGeneratedClassName(typeElement) : variable.toString();
+
     TypeName parcelableTypeName =
-        wrapperTypes.containsKey(variable.toString()) ? null : getParcelableType(typeUtil, erasedType);
+        wrapperTypes.containsKey(canonicalName) ? null : getParcelableType(typeUtil, erasedType);
 
     boolean isInterface = TypeUtils.isInterface(typeUtil, erasedType);
 
@@ -554,7 +586,11 @@ public class PaperParcelProcessor extends AbstractProcessor {
     } else if (TYPE_ADAPTER.equals(parcelableTypeName)) {
       return new TypeAdapterProperty(typeAdapter, isNullable, typeName, isInterface, name, accessorMethodName);
     } else {
-      TypeElement typeElement = (TypeElement) typeUtil.asElement(type);
+      TypeName instantiableTypeName = typeName;
+      if (isAutoValueClass) {
+        typeElement = elementUtils.getTypeElement(canonicalName);
+        instantiableTypeName = TypeName.get(typeElement.asType());
+      }
       boolean isSingleton = TypeUtils.isSingleton(typeUtil, typeElement);
       List<Property> properties = new ArrayList<>();
       if (!isSingleton) {
@@ -578,8 +614,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
           }
         }
       }
-      return new NonParcelableProperty(properties, isSingleton, isNullable, typeName, isInterface, name,
-                                       accessorMethodName);
+      return new NonParcelableProperty(properties, isSingleton, instantiableTypeName, isNullable, typeName,
+                                       isInterface, name, accessorMethodName);
     }
   }
 
