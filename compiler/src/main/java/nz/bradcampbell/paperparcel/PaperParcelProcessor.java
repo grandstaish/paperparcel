@@ -124,6 +124,7 @@ import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.WildcardType;
+import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
@@ -354,33 +355,28 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
   private List<VariableElement> filterNonConstructorFields(
       List<VariableElement> variableElements, TypeElement typeElement) {
-    for (Element e : typeElement.getEnclosedElements()) {
-      if (e instanceof ExecutableElement) {
-        if (e.getSimpleName().toString().equals("<init>")) {
-          ExecutableElement constructor = (ExecutableElement) e;
-          List<VariableElement> params = new ArrayList<>(constructor.getParameters());
-          List<VariableElement> result = new ArrayList<>();
-          Iterator<VariableElement> iterator = params.iterator();
-          if (iterator.hasNext()) {
-            VariableElement currentParam = iterator.next();
-            for (VariableElement field : variableElements) {
-              if (typeUtil.isAssignable(field.asType(), currentParam.asType())) {
-                iterator.remove();
-                result.add(field);
-                if (iterator.hasNext()) {
-                  currentParam = iterator.next();
-                } else {
-                  // No more params, ignore all other fields
-                  break;
-                }
-              }
+    for (ExecutableElement e : ElementFilter.constructorsIn(typeElement.getEnclosedElements())) {
+      List<VariableElement> params = new ArrayList<>(e.getParameters());
+      List<VariableElement> result = new ArrayList<>();
+      Iterator<VariableElement> iterator = params.iterator();
+      if (iterator.hasNext()) {
+        VariableElement currentParam = iterator.next();
+        for (VariableElement field : variableElements) {
+          if (typeUtil.isAssignable(field.asType(), currentParam.asType())) {
+            iterator.remove();
+            result.add(field);
+            if (iterator.hasNext()) {
+              currentParam = iterator.next();
+            } else {
+              // No more params, ignore all other fields
+              break;
             }
           }
-          // If params.size() returns 0, then we can construct the object using the fields in result
-          if (params.size() == 0) {
-            return result;
-          }
         }
+      }
+      // If params.size() returns 0, then we can construct the object using the fields in result
+      if (params.size() == 0) {
+        return result;
       }
     }
     throw new NoValidConstructorFoundException(
@@ -406,27 +402,21 @@ public class PaperParcelProcessor extends AbstractProcessor {
       return null;
     }
 
-    for (Element enclosedElement : MoreElements.getLocalAndInheritedMethods(typeElement, elementUtils)) {
+    for (ExecutableElement method : MoreElements.getLocalAndInheritedMethods(typeElement, elementUtils)) {
+      String result = method.getSimpleName().toString();
+      String name = result.toLowerCase();
 
-      // Find all enclosing methods
-      if (enclosedElement instanceof ExecutableElement) {
-        ExecutableElement method = (ExecutableElement) enclosedElement;
+      // Check the method name is equal to the variable name, "get" + variable name, or "is" + variable name
+      if (name.equals(variableName) || name.equals("get" + variableName) || name.equals("is" + variableName)) {
 
-        String result = method.getSimpleName().toString();
-        String name = result.toLowerCase();
+        // Check this method returns something
+        TypeName returnType = TypeName.get(method.getReturnType());
+        if (returnType.equals(TypeName.get(variableElement.asType()))) {
 
-        // Check the method name is equal to the variable name, "get" + variable name, or "is" + variable name
-        if (name.equals(variableName) || name.equals("get" + variableName) || name.equals("is" + variableName)) {
+          // Check this method takes no parameters
+          if (method.getParameters().size() == 0) {
 
-          // Check this method returns something
-          TypeName returnType = TypeName.get(method.getReturnType());
-          if (returnType.equals(TypeName.get(variableElement.asType()))) {
-
-            // Check this method takes no parameters
-            if (method.getParameters().size() == 0) {
-
-              return method;
-            }
+            return method;
           }
         }
       }
