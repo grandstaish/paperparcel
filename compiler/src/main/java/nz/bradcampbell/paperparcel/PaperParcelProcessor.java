@@ -390,7 +390,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     String variableName = variableElement.getSimpleName().toString().toLowerCase();
 
     // If the name is custom, return this straight away
-    AccessorMethod accessorMethod = variableElement.getAnnotation(AccessorMethod.class);
+    AccessorName accessorMethod = variableElement.getAnnotation(AccessorName.class);
     if (accessorMethod != null) {
       variableName = accessorMethod.value().toLowerCase();
     }
@@ -424,7 +424,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
     throw new PropertyValidationException(
         "Could not find getter method for variable '" + variableName + "'.\nTry annotating your " +
-        "variable with '" + AccessorMethod.class.getCanonicalName() + "' or renaming your variable to follow " +
+        "variable with '" + AccessorName.class.getCanonicalName() + "' or renaming your variable to follow " +
         "the documented conventions.\nAlternatively your property can be have default or public visibility.",
         variableElement);
   }

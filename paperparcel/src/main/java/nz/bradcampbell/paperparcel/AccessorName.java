@@ -20,6 +20,6 @@ import java.lang.annotation.Target;
 @Documented
 @Retention(SOURCE)
 @Target(FIELD)
-public @interface AccessorMethod {
+public @interface AccessorName {
   String value();
 }
