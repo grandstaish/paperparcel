@@ -2,13 +2,11 @@ package nz.bradcampbell.autovalueexample;
 
 import android.os.Parcel;
 
-import nz.bradcampbell.paperparcel.DefaultAdapter;
 import nz.bradcampbell.paperparcel.TypeAdapter;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Date;
 
-@DefaultAdapter
 public class DateTypeAdapter implements TypeAdapter<Date> {
   @NotNull
   @Override

@@ -264,14 +264,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
     if (!isSingleton) {
 
       // Override the type adapters with the current element preferences
-      Map<String, Object> annotation = AnnotationUtils.getAnnotation(TypeAdapters.class, typeElement);
-      if (annotation != null) {
-        Object[] typeAdaptersArray = (Object[]) annotation.get("value");
-        for (Object o : typeAdaptersArray) {
-          DeclaredType ta = (DeclaredType) o;
-          TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, ta);
-          typeAdapters.put(typeAdapterType, (ClassName) TypeName.get(ta));
-        }
+      TypeElement tempTypeElement = typeElement;
+      while (tempTypeElement != null && !applyTypeAdaptersFromElement(tempTypeElement, typeAdapters)) {
+        tempTypeElement = (TypeElement) typeUtil.asElement(tempTypeElement.getSuperclass());
       }
 
       List<VariableElement> variableElements = getFields(typeUtil, typeElement);
@@ -314,6 +309,22 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
     return new DataClass(properties, classPackage, wrappedClassName, TypeName.get(typeMirror), requiresClassLoader,
                          requiredTypeAdapters, isSingleton);
+  }
+
+  private boolean applyTypeAdaptersFromElement(Element element, Map<TypeName, ClassName> typeAdapters) {
+    if (element != null) {
+      Map<String, Object> annotation = AnnotationUtils.getAnnotation(TypeAdapters.class, element);
+      if (annotation != null) {
+        Object[] typeAdaptersArray = (Object[]) annotation.get("value");
+        for (Object o : typeAdaptersArray) {
+          DeclaredType ta = (DeclaredType) o;
+          TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, ta);
+          typeAdapters.put(typeAdapterType, (ClassName) TypeName.get(ta));
+        }
+        return true;
+      }
+    }
+    return false;
   }
 
   private boolean isAutoValueClass(TypeElement typeElement) {
@@ -429,28 +440,13 @@ public class PaperParcelProcessor extends AbstractProcessor {
   }
 
   private Map<TypeName, ClassName> getTypeAdapterMapForVariable(
-      Map<TypeName, ClassName> classScopedTypeAdapters,
-      VariableElement variableElement,
+      Map<TypeName, ClassName> classScopedTypeAdapters, VariableElement variableElement,
       ExecutableElement accessorMethod) {
 
-    // Find the field-scoped adapters, if any
-    Map<TypeName, ClassName> tempTypeAdapters = classScopedTypeAdapters;
-    Map<String, Object> annotation = AnnotationUtils.getAnnotation(TypeAdapters.class, variableElement);
-
-    // Check the accessor method for the annotation too (AutoValue support)
-    if (annotation == null && accessorMethod != null) {
-      annotation = AnnotationUtils.getAnnotation(TypeAdapters.class, accessorMethod);
-    }
-
-    // Override the type adapters with the current element preferences
-    if (annotation != null) {
-      tempTypeAdapters = new HashMap<>(classScopedTypeAdapters);
-      Object[] typeAdaptersArray = (Object[]) annotation.get("value");
-      for (Object o : typeAdaptersArray) {
-        DeclaredType ta = (DeclaredType) o;
-        TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, ta);
-        tempTypeAdapters.put(typeAdapterType, (ClassName) TypeName.get(ta));
-      }
+    Map<TypeName, ClassName> tempTypeAdapters = new HashMap<>(classScopedTypeAdapters);
+    boolean applied = applyTypeAdaptersFromElement(variableElement, tempTypeAdapters);
+    if (!applied) {
+      applyTypeAdaptersFromElement(accessorMethod, tempTypeAdapters);
     }
 
     return tempTypeAdapters;
