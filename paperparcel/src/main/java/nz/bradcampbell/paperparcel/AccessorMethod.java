@@ -1,7 +1,7 @@
 package nz.bradcampbell.paperparcel;
 
 import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.RetentionPolicy.CLASS;
+import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -18,7 +18,7 @@ import java.lang.annotation.Target;
  * </code></pre>
  */
 @Documented
-@Retention(CLASS)
+@Retention(SOURCE)
 @Target(FIELD)
 public @interface AccessorMethod {
   String value();

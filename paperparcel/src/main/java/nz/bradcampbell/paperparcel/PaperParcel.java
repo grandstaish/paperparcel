@@ -1,7 +1,7 @@
 package nz.bradcampbell.paperparcel;
 
 import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.CLASS;
+import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -21,7 +21,7 @@ import java.lang.annotation.Target;
  * &#64;PaperParcel cannot be used directly on a generic data class
  */
 @Documented
-@Retention(CLASS)
+@Retention(SOURCE)
 @Target(TYPE)
 public @interface PaperParcel {
 }

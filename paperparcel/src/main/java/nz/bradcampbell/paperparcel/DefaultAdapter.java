@@ -1,7 +1,7 @@
 package nz.bradcampbell.paperparcel;
 
 import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.CLASS;
+import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
  * take precedence over any TypeAdapters annotated with this annotation.
  */
 @Documented
-@Retention(CLASS)
+@Retention(SOURCE)
 @Target(TYPE)
 public @interface DefaultAdapter {
 }
