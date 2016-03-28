@@ -10,6 +10,8 @@ PaperParcel is an annotation processor that automatically generates type-safe [P
 
 Annotated data classes can contain any type that would normally be able to be parcelled. This includes all the basic Kotlin types, Lists, Maps, Arrays, SparseArrays, and [many more](https://github.com/grandstaish/PaperParcel/tree/master/compiler/src/test/java/nz/bradcampbell/paperparcel). In addition to the regular types, Data classes can contain other data classes, or they can have data class Arrays, or even data class type parameters. PaperParcel tries to have as little restriction as possible into how you write your data classes, so if you think anything is missing then please raise an issue.
 
+PaperParcel is 100% generated code, no reflection or byte-code manipulation is involved. You can see all the generated classes yourself by viewing the auto-generated `PaperParcelMapping` class after a build.
+
 ## Usage (Kotlin)
 
 Annotate your data class with `@PaperParcel`, implement `PaperParcelable`, and create a JVM static instance of `PaperParcelable.Creator` e.g.:
@@ -23,7 +25,18 @@ data class Example(var test: Int) : PaperParcelable {
 }
 ```
 
-Now your data class is `Parcelable` and can be passed directly to a `Bundle` or `Intent`
+Now your data class is `Parcelable` and can be passed directly to a `Bundle` or `Intent`. Unfortunately this is still a little bit of boilerplate code, but it only has to be applied to the class you want to be parcelable, e.g.:
+
+``` java
+@PaperParcel
+data class Example(var test: ChildExample) : PaperParcelable {
+  companion object {
+    @JvmField val CREATOR = PaperParcelable.Creator(State::class.java)
+  }
+}
+
+data class ChildExample(var test: Int)
+```
 
 A simple example can be found in the [kotlin-example](https://github.com/grandstaish/paperparcel/tree/master/examples/kotlin-example) module. For a more real-world example, see [here](https://github.com/grandstaish/four-letters-redux/blob/master/app/src/main/kotlin/nz/bradcampbell/fourletters/redux/state/State.kt).
 
