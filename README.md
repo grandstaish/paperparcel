@@ -25,7 +25,9 @@ data class Example(var test: Int) : PaperParcelable {
 }
 ```
 
-Now your data class is `Parcelable` and can be passed directly to a `Bundle` or `Intent`. Unfortunately this is still a little bit of boilerplate code, but it only has to be applied to the class you want to be `Parcelable`, e.g.:
+Now your data class is `Parcelable` and can be passed directly to a `Bundle` or `Intent`. 
+
+Unfortunately this is still a little bit of boilerplate code, but it only has to be applied to the class you want to be `Parcelable`, e.g.:
 
 ``` java
 @PaperParcel
@@ -64,7 +66,9 @@ public abstract class Example implements Parcelable {
 }
 ```
 
-Now your `AutoValue` class can be passed directly to a `Bundle` or `Intent`. Because `AutoValue` extension utilizes the same processor as Kotlin, just like the Kotlin example, members of the `AutoValue` class that are also bean objects (e.g. other `AutoValue` classes) do not have to implement `Parcelable`. 
+Now your `AutoValue` class can be passed directly to a `Bundle` or `Intent`. 
+
+Just like the Kotlin example, members of a `Parcelable` `AutoValue` class that are "bean" objects (e.g. other `AutoValue` classes) do not have to implement `Parcelable`. 
 
 A simple example can be found in the [autovalue-example](https://github.com/grandstaish/paperparcel/tree/master/examples/autovalue-example) module.
 
@@ -76,6 +80,8 @@ PaperParcel makes the following assumptions about annotated classes:
 - The annotated class' member variable names must equal the primary constructor parameter names (ordering does not matter)
 - The number of member variables should equal the number of arguments in the primary constructor. Static and transient member variables are not included in this count. 
 - For each member variable, either the member variable must be public (or default) or its accessor method must be named `x()`, `isX()`, `getX()`,  where `x` is the member variable's name. Alternatively, the member variable can be annotated with `@AccessorName` to specify what the actual accessor name is. Additionally, the accessor method must have no parameters.
+
+A misconfigured class will fail with an exception telling you what went wrong.
 
 E.g.:
 
@@ -101,6 +107,10 @@ public final class State extends PaperParcelable {
   }
 }
 ```
+
+If you can't `extend PaperParcelable`, it's not required. Just `implement Parcelable` instead, and copy implementation for `writeToParcel` and `describeContents` (they're both 1-liners). 
+
+If your app targets Android N+, paperparcel-java8 provides `PaperParcelable` as an interface with `default` methods. 
 
 ## Type Adapters
 
@@ -225,8 +235,6 @@ dependencies {
 ```
 
 Note that the [android-apt](https://bitbucket.org/hvisser/android-apt) plugin must be applied. 
-
-Note that if you're building for Android N+, you can use paperparcel-java8 instead of paperparcel-java7.
 
 ## Proguard
 
