@@ -12,11 +12,15 @@ Annotated data classes can contain any type that would normally be able to be pa
 
 ## Usage (Kotlin)
 
-Annotate your data class with `@PaperParcel` and implement `PaperParcelable`, e.g.:
+Annotate your data class with `@PaperParcel`, implement `PaperParcelable`, and create a JVM static instance of `PaperParcelable.Creator` e.g.:
 
 ``` java
 @PaperParcel
-data class Example(var test: Int) : PaperParcelable
+data class Example(var test: Int) : PaperParcelable {
+  companion object {
+    @JvmField val CREATOR = PaperParcelable.Creator(State::class.java)
+  }
+}
 ```
 
 Now your data class is `Parcelable` and can be passed directly to a `Bundle` or `Intent`
@@ -86,7 +90,7 @@ Add the list of specific TypeAdapters to the PaperParcel annotation. This will t
 
 ``` java
 @PaperParcel(typeAdapters = arrayOf(DateTypeAdapter::class))
-data class Example(val a: Date) : PaperParcelable
+data class Example(val a: Date) : PaperParcelable { ... }
 ```
 
 #### Variable TypeAdapters
@@ -95,7 +99,7 @@ Add the specific TypeAdapter directly on the variable. This will take precedence
 
 ``` java
 @PaperParcel
-data class Example(@FieldTypeAdapter(DateTypeAdapter::class) val a: Date) : PaperParcelable
+data class Example(@FieldTypeAdapter(DateTypeAdapter::class) val a: Date) : PaperParcelable { ... }
 ```
 
 ## Limitations
@@ -105,7 +109,7 @@ The @PaperParcel annotation cannot be put directly on a data class with type par
 This is wrong:
 ``` java
 @PaperParcel
-data class BadExample<T>(val child: T) : PaperParcelable
+data class BadExample<T>(val child: T) : PaperParcelable { ... }
 ```
 
 However, it is OK to use data classes with typed parameters inside of your annotated data class, e.g.:
@@ -113,7 +117,7 @@ However, it is OK to use data classes with typed parameters inside of your annot
 This is OK:
 ``` java
 @PaperParcel
-data class GoodExample(val child: BadExample<Int>) : PaperParcelable
+data class GoodExample(val child: BadExample<Int>) : PaperParcelable { ... }
 ```
 
 Please file a bug for anything you see is missing or not handled correctly.
@@ -125,8 +129,8 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 dependencies {
-    compile 'com.github.grandstaish.paperparcel:paperparcel-kotlin:1.0.0-beta8'
-    kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-beta8'
+    compile 'com.github.grandstaish.paperparcel:paperparcel-kotlin:1.0.0-rc1'
+    kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc1'
 }
 ```
 
@@ -149,8 +153,8 @@ repositories {
 }
 dependencies {
     compile 'com.google.auto.value:auto-value:1.2-rc1'
-    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-beta8'
-    apt 'com.github.grandstaish.paperparcel:compiler:1.0.0-beta8'
+    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-rc1'
+    apt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc1'
 }
 ```
 
@@ -165,11 +169,6 @@ In addition to the default Android rules set by proguard-android.txt in the SDK,
 -keepclassmembers class nz.bradcampbell.paperparcel.PaperParcelMapping {
   static ** FROM_ORIGINAL;
   static ** FROM_PARCELABLE;
-}
-
-# This is only needed if you are using paperparcel-kotlin
--keepclassmembers interface * extends android.os.Parcelable {
-  static ** CREATOR;
 }
 ```
 
