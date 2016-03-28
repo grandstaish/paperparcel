@@ -20,7 +20,7 @@ Annotate your data class with `@PaperParcel`, implement `PaperParcelable`, and c
 @PaperParcel
 data class Example(var test: Int) : PaperParcelable {
   companion object {
-    @JvmField val CREATOR = PaperParcelable.Creator(State::class.java)
+    @JvmField val CREATOR = PaperParcelable.Creator(Example::class.java)
   }
 }
 ```
