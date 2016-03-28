@@ -7,12 +7,13 @@ include ':paperparcel-java8'
 
 include ':kotlin-example'
 include ':java7-example'
-include ':java8-example'
+// Travis does not know about Android N yet and Jack does not support annotation processing yet
+// include ':java8-example'
 include ':autovalue-example'
 include ':mixed-example'
 
 project(':kotlin-example').projectDir = new File("examples/kotlin-example")
 project(':java7-example').projectDir = new File("examples/java7-example")
-project(':java8-example').projectDir = new File("examples/java8-example")
+// project(':java8-example').projectDir = new File("examples/java8-example")
 project(':autovalue-example').projectDir = new File("examples/autovalue-example")
 project(':mixed-example').projectDir = new File("examples/mixed-example")
