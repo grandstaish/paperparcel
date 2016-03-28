@@ -102,7 +102,6 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -397,6 +396,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
   private List<VariableElement> getOrderedVariables(
       ExecutableElement constructor, List<VariableElement> fieldElements, TypeElement typeElement) {
 
+    List<? extends VariableElement> params = constructor.getParameters();
+
     // Attempt to match constructor params by name
     Map<Name, VariableElement> fieldNamesToFieldMap = new HashMap<>(fieldElements.size());
     for (VariableElement field : fieldElements) {
@@ -404,7 +405,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     }
     boolean canUseConstructorArguments = true;
     List<VariableElement> orderedFields = new ArrayList<>(fieldElements.size());
-    for (VariableElement param : constructor.getParameters()) {
+    for (VariableElement param : params) {
       VariableElement field = fieldNamesToFieldMap.get(param.getSimpleName());
       if (field == null) {
         canUseConstructorArguments = false;
@@ -417,26 +418,17 @@ public class PaperParcelProcessor extends AbstractProcessor {
     }
 
     // Attempt to match constructor params by order (support for https://youtrack.jetbrains.com/issue/KT-9609)
-    List<VariableElement> params = new ArrayList<>(constructor.getParameters());
-    Iterator<VariableElement> iterator = params.iterator();
-    if (iterator.hasNext()) {
-      VariableElement currentParam = iterator.next();
-      for (VariableElement field : fieldElements) {
-        if (typeUtil.isAssignable(field.asType(), currentParam.asType())) {
-          iterator.remove();
-          if (iterator.hasNext()) {
-            currentParam = iterator.next();
-          } else {
-            // No more params, ignore all other fields
-            break;
-          }
-        }
+    boolean areParametersInOrder = true;
+    for (int i = 0; i < params.size(); i++) {
+      VariableElement param = params.get(i);
+      VariableElement field = fieldElements.get(i);
+      if (!typeUtil.isAssignable(field.asType(), param.asType())) {
+        areParametersInOrder = false;
+        break;
       }
-
-      // If params.size() returns 0, then we can construct the object using the fields in result
-      if (params.size() == 0) {
-        return fieldElements;
-      }
+    }
+    if (areParametersInOrder) {
+      return fieldElements;
     }
 
     throw new NoValidConstructorFoundException(
