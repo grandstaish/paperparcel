@@ -60,12 +60,12 @@ A simple example can be found in the [autovalue-example](https://github.com/gran
 
 ## Usage (Java)
 
-PaperParcel currently (this will improve once [this kapt bug](https://youtrack.jetbrains.com/issue/KT-9609) is fixed), relies on a specific format for bean objects: 
+PaperParcel makes the following assumptions about annotated classes: 
 
-- Constructor must have public or default visibility
-- Member variable names must equal constructor parameter names (ordering does not matter)
-- The number of member variables should equal the number of arguments in the primary constructor. Static and transient members are ignored. 
-- For each member variable, either the member must be public or it's accessor method must be named `x()`, `isX()`, `getX()`,  where `x` is the member variable's name. Alternatively, the member variable can be annotated with `@AccessorName` to specify what the actual accessor name is. The accessor method must have no parameters.
+- The primary constructor must have public or default visibility as PaperParcel doesn't use reflection. 
+- The annotated class' member variable names must equal the primary constructor parameter names (ordering does not matter)
+- The number of member variables should equal the number of arguments in the primary constructor. Static and transient member variables are not included in this count. 
+- For each member variable, either the member variable must be public (or default) or its accessor method must be named `x()`, `isX()`, `getX()`,  where `x` is the member variable's name. Alternatively, the member variable can be annotated with `@AccessorName` to specify what the actual accessor name is. Additionally, the accessor method must have no parameters.
 
 E.g.:
 
