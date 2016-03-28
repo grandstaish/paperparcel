@@ -117,6 +117,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
@@ -270,10 +271,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
         tempTypeElement = (TypeElement) typeUtil.asElement(tempTypeElement.getSuperclass());
       }
 
-      List<VariableElement> variableElements = getFields(typeUtil, typeElement);
-      variableElements = filterNonConstructorFields(variableElements, typeElement);
-
-      for (VariableElement variableElement : variableElements) {
+      for (VariableElement variableElement : getPropertyElements(typeElement)) {
 
         // Determine how we will access this property and in doing so, validate the property
         ExecutableElement accessorMethod;
@@ -310,6 +308,32 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
     return new DataClass(properties, classPackage, wrappedClassName, TypeName.get(typeMirror), requiresClassLoader,
                          requiredTypeAdapters, isSingleton);
+  }
+
+  private List<? extends VariableElement> getPropertyElements(TypeElement typeElement) {
+    // Get constructor
+    List<ExecutableElement> constructors = ElementFilter.constructorsIn(typeElement.getEnclosedElements());
+    constructors = filterNonVisibleElements(constructors);
+    if (constructors.size() > 1) {
+      throw new IllegalStateException(typeElement.toString() + " has more than one public constructor");
+    }
+    ExecutableElement primaryConstructor = constructors.get(0);
+
+    // Try to match parameters with members by name. If can't, fallback to ordering. If both fail, throw.
+    List<VariableElement> fieldElements = getFields(typeUtil, typeElement);
+
+    return getOrderedVariables(primaryConstructor, fieldElements, typeElement);
+  }
+
+  private static <T extends Element> List<T> filterNonVisibleElements(List<T> list) {
+    ArrayList<T> filteredList = new ArrayList<>(list.size());
+    for (T e : list) {
+      Set<Modifier> modifiers = e.getModifiers();
+      if (!modifiers.contains(PRIVATE) && !modifiers.contains(PROTECTED)) {
+        filteredList.add(e);
+      }
+    }
+    return filteredList;
   }
 
   private boolean applyTypeAdaptersFromElement(Element element, Map<TypeName, ClassName> typeAdapters) {
@@ -353,32 +377,51 @@ public class PaperParcelProcessor extends AbstractProcessor {
     return pkg + dot + "AutoValue_" + name;
   }
 
-  private List<VariableElement> filterNonConstructorFields(
-      List<VariableElement> variableElements, TypeElement typeElement) {
-    for (ExecutableElement e : ElementFilter.constructorsIn(typeElement.getEnclosedElements())) {
-      List<VariableElement> params = new ArrayList<>(e.getParameters());
-      List<VariableElement> result = new ArrayList<>();
-      Iterator<VariableElement> iterator = params.iterator();
-      if (iterator.hasNext()) {
-        VariableElement currentParam = iterator.next();
-        for (VariableElement field : variableElements) {
-          if (typeUtil.isAssignable(field.asType(), currentParam.asType())) {
-            iterator.remove();
-            result.add(field);
-            if (iterator.hasNext()) {
-              currentParam = iterator.next();
-            } else {
-              // No more params, ignore all other fields
-              break;
-            }
+  private List<VariableElement> getOrderedVariables(
+      ExecutableElement constructor, List<VariableElement> fieldElements, TypeElement typeElement) {
+
+    // Attempt to match constructor params by name
+    Map<Name, VariableElement> fieldNamesToFieldMap = new HashMap<>(fieldElements.size());
+    for (VariableElement field : fieldElements) {
+      fieldNamesToFieldMap.put(field.getSimpleName(), field);
+    }
+    boolean canUseConstructorArguments = true;
+    List<VariableElement> orderedFields = new ArrayList<>(fieldElements.size());
+    for (VariableElement param : constructor.getParameters()) {
+      VariableElement field = fieldNamesToFieldMap.get(param.getSimpleName());
+      if (field == null) {
+        canUseConstructorArguments = false;
+        break;
+      }
+      orderedFields.add(field);
+    }
+    if (canUseConstructorArguments) {
+      return orderedFields;
+    }
+
+    // Attempt to match constructor params by order (support for https://youtrack.jetbrains.com/issue/KT-9609)
+    List<VariableElement> params = new ArrayList<>(constructor.getParameters());
+    Iterator<VariableElement> iterator = params.iterator();
+    if (iterator.hasNext()) {
+      VariableElement currentParam = iterator.next();
+      for (VariableElement field : fieldElements) {
+        if (typeUtil.isAssignable(field.asType(), currentParam.asType())) {
+          iterator.remove();
+          if (iterator.hasNext()) {
+            currentParam = iterator.next();
+          } else {
+            // No more params, ignore all other fields
+            break;
           }
         }
       }
+
       // If params.size() returns 0, then we can construct the object using the fields in result
       if (params.size() == 0) {
-        return result;
+        return fieldElements;
       }
     }
+
     throw new NoValidConstructorFoundException(
         "No valid constructor found while processing " + typeElement.getQualifiedName() + ". The constructor parameters" +
         " and member variables need to be in the same order.");
@@ -573,12 +616,11 @@ public class PaperParcelProcessor extends AbstractProcessor {
       boolean isSingleton = TypeUtils.isSingleton(typeUtil, typeElement);
       List<Property> properties = new ArrayList<>();
       if (!isSingleton) {
-        List<VariableElement> variableElements = getFields(typeUtil, typeElement);
-        variableElements = filterNonConstructorFields(variableElements, typeElement);
-        final int variableCount = variableElements.size();
+        List<? extends VariableElement> propertyElements = getPropertyElements(typeElement);
+        final int variableCount = propertyElements.size();
         if (variableCount > 0) {
           for (int i = 0; i < variableCount; i++) {
-            VariableElement childVariable = variableElements.get(i);
+            VariableElement childVariable = propertyElements.get(i);
             ExecutableElement accessorMethod;
             try {
               accessorMethod = getAccessorMethod(typeElement, childVariable);
