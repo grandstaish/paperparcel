@@ -25,7 +25,7 @@ data class Example(var test: Int) : PaperParcelable {
 }
 ```
 
-Now your data class is `Parcelable` and can be passed directly to a `Bundle` or `Intent`. Unfortunately this is still a little bit of boilerplate code, but it only has to be applied to the class you want to be parcelable, e.g.:
+Now your data class is `Parcelable` and can be passed directly to a `Bundle` or `Intent`. Unfortunately this is still a little bit of boilerplate code, but it only has to be applied to the class you want to be `Parcelable`, e.g.:
 
 ``` java
 @PaperParcel
@@ -54,7 +54,7 @@ public abstract class Example implements Parcelable {
 }
 ```
 
-Now your AutoValue class can be passed directly to a `Bundle` or `Intent` 
+Now your `AutoValue` class can be passed directly to a `Bundle` or `Intent`. Because `AutoValue` extension utilizes the same processor as Kotlin, just like the Kotlin example, members of the `AutoValue` class that are also bean objects (e.g. other `AutoValue` classes) do not have to implement `Parcelable`. 
 
 A simple example can be found in the [autovalue-example](https://github.com/grandstaish/paperparcel/tree/master/examples/autovalue-example) module.
 
