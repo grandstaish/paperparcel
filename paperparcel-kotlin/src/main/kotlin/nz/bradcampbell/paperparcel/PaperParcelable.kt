@@ -4,13 +4,13 @@ import android.os.Parcel
 import android.os.Parcelable
 
 interface PaperParcelable : Parcelable {
-  companion object CREATOR : Parcelable.Creator<Any> {
-    override fun createFromParcel(inParcel: Parcel): Any {
-      return PaperParcels.unsafeUnwrap(inParcel.readParcelable(PaperParcelable::class.java.classLoader))
+  class Creator<T>(private val type: Class<out T>) : Parcelable.Creator<T> {
+    override fun createFromParcel(parcel: Parcel): T {
+      return PaperParcels.unsafeUnwrap<T>(parcel.readParcelable<Parcelable>(type.classLoader))
     }
 
-    override fun newArray(size: Int): Array<Any?> {
-      return arrayOfNulls(size)
+    override fun newArray(i: Int): Array<T> {
+      return PaperParcels.newArray(type, i)
     }
   }
 

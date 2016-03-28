@@ -10,6 +10,8 @@ import java.util.Date;
 @PaperParcel
 @TypeAdapters(DateTypeAdapter.class)
 public final class State extends PaperParcelable {
+  private static final PaperParcelable.Creator<State> CREATOR = new PaperParcelable.Creator<>(State.class);
+
   private final int count;
 
   // Able to use a custom getter name as per the @AccessorMethod tag. By default, if "x" is the property name,

@@ -55,6 +55,9 @@ public final class ParcelMappingGenerator {
           .add("    @Override public $T wrap($T object) {\n", parcelable, original)
           .add("      return new $T(object);\n", parcelable)
           .add("    }\n")
+          .add("    @Override public $T[] newArray(int i) {\n", original)
+          .add("      return new $T[i];\n", original)
+          .add("    }\n")
           .add("};\n")
           .add("FROM_ORIGINAL.put($T.class, $N);\n", original, varName)
           .add("FROM_PARCELABLE.put($T.class, $N);\n", parcelable, varName);

@@ -77,10 +77,28 @@ public final class PaperParcels {
     return unwrap(unsafeCast);
   }
 
+  /**
+   * Creates an array of the original type
+   * @param type The class of the original type
+   * @param i The size of the array
+   * @param <T> The original type
+   * @return A new array of size i
+   */
+  public static <T> T[] newArray(Class<? extends T> type, int i) {
+    //noinspection unchecked
+    Delegator<T, TypedParcelable<T>> delegator = FROM_ORIGINAL.get(type);
+    if (delegator == null) {
+      return null;
+    }
+    return delegator.newArray(i);
+  }
+
   interface Delegator<ORIG, PARCEL extends TypedParcelable<ORIG>> {
     ORIG unwrap(PARCEL parcelableObj);
 
     TypedParcelable<ORIG> wrap(ORIG originalObj);
+
+    ORIG[] newArray(int i);
   }
 
   private static Map<Class, Delegator> getFieldValue(Class clazz, String fieldName)
