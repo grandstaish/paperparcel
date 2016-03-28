@@ -311,18 +311,35 @@ public class PaperParcelProcessor extends AbstractProcessor {
   }
 
   private List<? extends VariableElement> getPropertyElements(TypeElement typeElement) {
+    // Get all members
+    List<VariableElement> fieldElements = getFields(typeUtil, typeElement);
+
     // Get constructor
     List<ExecutableElement> constructors = ElementFilter.constructorsIn(typeElement.getEnclosedElements());
     constructors = filterNonVisibleElements(constructors);
+    constructors = filterExecutableElementsOfSize(constructors, fieldElements.size());
+    if (constructors.size() == 0) {
+      throw new IllegalStateException("Could not find an appropriate constructor on " + typeElement.toString() + ". " +
+                                      "There were " + fieldElements.size() + " member variables, but no visible " +
+                                      "constructors with that many elements.");
+    }
     if (constructors.size() > 1) {
-      throw new IllegalStateException(typeElement.toString() + " has more than one public constructor");
+      throw new IllegalStateException(typeElement.toString() + " has more than one valid constructor. PaperParcel " +
+                                      "requires only one constructor.");
     }
     ExecutableElement primaryConstructor = constructors.get(0);
 
-    // Try to match parameters with members by name. If can't, fallback to ordering. If both fail, throw.
-    List<VariableElement> fieldElements = getFields(typeUtil, typeElement);
-
     return getOrderedVariables(primaryConstructor, fieldElements, typeElement);
+  }
+
+  private static <T extends ExecutableElement> List<T> filterExecutableElementsOfSize(List<T> list, int expectedSize) {
+    ArrayList<T> filteredList = new ArrayList<>(list.size());
+    for (T e : list) {
+      if (e.getParameters().size() == expectedSize) {
+        filteredList.add(e);
+      }
+    }
+    return filteredList;
   }
 
   private static <T extends Element> List<T> filterNonVisibleElements(List<T> list) {
