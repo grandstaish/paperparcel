@@ -73,10 +73,10 @@ The TypeAdapters can be applied in multiple ways:
 
 #### Global TypeAdapters
 
-Annotate your type adapter with @GlobalTypeAdapter:
+Annotate your type adapter with `@DefaultAdapter`:
 
 ``` java
-@GlobalTypeAdapter
+@DefaultAdapter
 class DateTypeAdapter : TypeAdapter<Date> {
   // ... 
 }
@@ -96,7 +96,7 @@ data class Example(val a: Date) : PaperParcelable { ... }
 
 #### Variable TypeAdapters
 
-Add the specific TypeAdapter directly on the variable. This will take precedence over both global and class-scoped TypeAdapters and will only apply to the annotated variable.
+Add the list of specific TypeAdapters directly on the variable. These will take precedence over both global and class-scoped TypeAdapters and will only apply to the annotated variable.
 
 ``` java
 @PaperParcel
