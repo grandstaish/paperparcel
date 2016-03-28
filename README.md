@@ -33,7 +33,7 @@ Unfortunately this is still a little bit of boilerplate code, but it only has to
 @PaperParcel
 data class Example(var test: ChildExample) : PaperParcelable {
   companion object {
-    @JvmField val CREATOR = PaperParcelable.Creator(State::class.java)
+    @JvmField val CREATOR = PaperParcelable.Creator(Example::class.java)
   }
 }
 
@@ -87,13 +87,13 @@ E.g.:
 
 ``` java
 @PaperParcel
-public final class State extends PaperParcelable {
-  private static final PaperParcelable.Creator<State> CREATOR = new PaperParcelable.Creator<>(State.class);
+public final class Example extends PaperParcelable {
+  private static final PaperParcelable.Creator<Example> CREATOR = new PaperParcelable.Creator<>(Example.class);
 
   private final int firstMember;
   private final long secondMember;
 
-  public State(int firstMember, long secondMember) {
+  public Example(int firstMember, long secondMember) {
     this.firstMember = firstMember;
     this.secondMember = secondMember;
   }
