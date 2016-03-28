@@ -86,10 +86,11 @@ In this example, PaperParcel will automatically use this TypeAdapter for any Dat
 
 #### Class TypeAdapters
 
-Add the list of specific TypeAdapters to the PaperParcel annotation. This will take precedence over global TypeAdapters and will apply to all variables in this class.
+Add the list of specific TypeAdapters to the data class. This will take precedence over global TypeAdapters and will apply to all variables in this class of the specified type.
 
 ``` java
-@PaperParcel(typeAdapters = arrayOf(DateTypeAdapter::class))
+@PaperParcel
+@TypeAdapters(DateTypeAdapter::class)
 data class Example(val a: Date) : PaperParcelable { ... }
 ```
 
@@ -99,7 +100,7 @@ Add the specific TypeAdapter directly on the variable. This will take precedence
 
 ``` java
 @PaperParcel
-data class Example(@FieldTypeAdapter(DateTypeAdapter::class) val a: Date) : PaperParcelable { ... }
+data class Example(@TypeAdapters(DateTypeAdapter::class) val a: Date) : PaperParcelable { ... }
 ```
 
 ## Limitations
