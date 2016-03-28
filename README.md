@@ -60,9 +60,35 @@ A simple example can be found in the [autovalue-example](https://github.com/gran
 
 ## Usage (Java)
 
-This is a little more manual. If your library doesn't use Kotlin or AutoValue, you might consider [Parceler](https://github.com/johncarl81/parceler) or one of the other great alternatives to PaperParcel.
+PaperParcel currently (this will improve once [this kapt bug](https://youtrack.jetbrains.com/issue/KT-9609) is fixed), relies on a specific format for bean objects: 
 
-However, if you use kotlin and java objects in the same project, you might still want to use PaperParcel. For an example on how to structure your model classes in java for PaperParcel to process them, see the [java-example](https://github.com/grandstaish/paperparcel/tree/master/examples/java-example) module.
+- Constructor arguments must be in the same order as member variables (this excludes statics and transient varaibles) and the constructor must be public.
+- For each member variable, either the member must be public or it's accessor method must be named `x()`, `isX()`, `getX()`,  where `x` is the member variable's name. Alternatively, the member variable can be annotated with `@AccessorName` to specify what the actual accessor name is. The accessor method must have no parameters.
+
+E.g.:
+
+``` java
+@PaperParcel
+public final class State extends PaperParcelable {
+  private static final PaperParcelable.Creator<State> CREATOR = new PaperParcelable.Creator<>(State.class);
+
+  private final int firstMember;
+  private final long secondMember;
+
+  public State(int firstMember, long secondMember) {
+    this.firstMember = firstMember;
+    this.secondMember = secondMember;
+  }
+
+  public int getFirstMember() {
+    return firstMember;
+  }
+
+  public long getSecondMember() {
+    return secondMember;
+  }
+}
+```
 
 ## Type Adapters
 
@@ -143,6 +169,7 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 dependencies {
+    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-rc1'
     compile 'com.github.grandstaish.paperparcel:paperparcel-kotlin:1.0.0-rc1'
     kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc1'
 }
@@ -172,7 +199,22 @@ dependencies {
 }
 ```
 
+## Download (Java)
+
+``` groovy
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+dependencies {
+    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-rc1'
+    compile 'com.github.grandstaish.paperparcel:paperparcel-java7:1.0.0-rc1'
+    apt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc1'
+}
+```
+
 Note that the [android-apt](https://bitbucket.org/hvisser/android-apt) plugin must be applied. 
+
+Note that if you're building for Android N+, you can use paperparcel-java8 instead of paperparcel-java7.
 
 ## Proguard
 
