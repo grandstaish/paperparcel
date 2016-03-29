@@ -42,7 +42,7 @@ data class ChildExample(var test: Int)
 
 A simple example can be found in the [kotlin-example](https://github.com/grandstaish/paperparcel/tree/master/examples/kotlin-example) module. For a more real-world example, see [here](https://github.com/grandstaish/four-letters-redux/blob/master/app/src/main/kotlin/nz/bradcampbell/fourletters/redux/state/State.kt).
 
-If you add additional properties to your data class, ensure to make them transient (via `@Transient`), e.g.:
+If you add additional (non-constructor) properties to your data class, ensure to make them transient (via `@Transient`), e.g.:
 
 ``` java
 @PaperParcel
