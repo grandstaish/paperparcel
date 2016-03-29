@@ -110,7 +110,7 @@ public final class Example extends PaperParcelable {
 
 If you can't `extend PaperParcelable`, it's not required. Just `implement Parcelable` instead, and copy implementation for `writeToParcel` and `describeContents` (they're both 1-liners). 
 
-If your app targets Android N+, paperparcel-java8 provides `PaperParcelable` as an interface with `default` methods. 
+If your app targets Android N+, [paperparcel-java8](https://github.com/grandstaish/paperparcel/tree/master/paperparcel-java8) provides `PaperParcelable` as an interface with `default` methods. 
 
 ## Type Adapters
 
@@ -220,6 +220,8 @@ dependencies {
     apt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc1'
 }
 ```
+
+Note that the [android-apt](https://bitbucket.org/hvisser/android-apt) plugin must be applied. 
 
 ## Download (Java)
 
