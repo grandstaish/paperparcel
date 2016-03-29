@@ -146,18 +146,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
   private Types typeUtil;
   private Elements elementUtils;
 
-  private Map<TypeName, ClassName> defaultAdapters = new HashMap<>();
-  private Map<String, Wrapper> wrappers = new HashMap<>();
-
-  private class Wrapper {
-    TypeMirror type;
-    int describeContents;
-
-    public Wrapper(TypeMirror type, int describeContents) {
-      this.type = type;
-      this.describeContents = describeContents;
-    }
-  }
+  private Map<TypeName, ClassName> globalTypeAdapters = new HashMap<>();
+  private Map<String, TypeMirror> wrapperTypes = new HashMap<>();
 
   private static void error(ProcessingEnvironment processingEnv, String message, Element element) {
     processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
@@ -190,8 +180,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
     if (roundEnvironment.processingOver()) {
 
       Set<DataClass> dataClasses = new LinkedHashSet<>();
-      for (Wrapper wrapper : wrappers.values()) {
-        DataClass dataClass = createWrapper(wrapper);
+      for (TypeMirror paperParcelType : wrapperTypes.values()) {
+        DataClass dataClass = createParcel(paperParcelType);
         dataClasses.add(dataClass);
         try {
           generateParcelableWrapper(dataClass).writeTo(filer);
@@ -230,7 +220,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
       DeclaredType ta = (DeclaredType) element.asType();
       TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, ta);
-      defaultAdapters.put(typeAdapterType, (ClassName) TypeName.get(ta));
+      globalTypeAdapters.put(typeAdapterType, (ClassName) TypeName.get(ta));
     }
 
     // Create a DataClass models for all classes annotated with @PaperParcel
@@ -251,8 +241,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
         continue;
       }
 
-      PaperParcel annotation = element.getAnnotation(PaperParcel.class);
-      wrappers.put(elementTypeMirror.toString(), new Wrapper(elementTypeMirror, annotation.describeContents()));
+      wrapperTypes.put(elementTypeMirror.toString(), elementTypeMirror);
     }
 
     return true;
@@ -261,10 +250,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
   /**
    * Create a Parcel wrapper for the given data class
    *
-   * @param wrapper The wrapper model
+   * @param typeMirror The data class
    */
-  private DataClass createWrapper(Wrapper wrapper) {
-    TypeMirror typeMirror = wrapper.type;
+  private DataClass createParcel(TypeMirror typeMirror) {
     TypeElement typeElement = (TypeElement) typeUtil.asElement(typeMirror);
 
     String classPackage = getPackageName(typeElement);
@@ -320,7 +308,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     }
 
     return new DataClass(properties, classPackage, wrappedClassName, TypeName.get(typeMirror), requiresClassLoader,
-                         requiredTypeAdapters, isSingleton, wrapper.describeContents);
+                         requiredTypeAdapters, isSingleton);
   }
 
   private List<? extends VariableElement> getPropertyElements(TypeElement typeElement) {
@@ -529,7 +517,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     String canonicalName = isAutoValueClass ? autoValueGeneratedClassName(typeElement) : variable.toString();
 
     TypeName parcelableTypeName =
-        wrappers.containsKey(canonicalName) ? null : getParcelableType(typeUtil, erasedType);
+        wrapperTypes.containsKey(canonicalName) ? null : getParcelableType(typeUtil, erasedType);
 
     boolean isInterface = TypeUtils.isInterface(typeUtil, erasedType);
 
@@ -541,7 +529,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     TypeName erasedTypeName = TypeName.get(erasedType);
     ClassName typeAdapter = typeAdapters.get(erasedTypeName);
     if (typeAdapter == null) {
-      typeAdapter = defaultAdapters.get(erasedTypeName);
+      typeAdapter = globalTypeAdapters.get(erasedTypeName);
     }
     if (typeAdapter != null) {
       parcelableTypeName = TYPE_ADAPTER;
@@ -712,7 +700,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
                                             typeAdapters))
         .addField(generateContentsField(dataClass.getClassName()))
         .addMethod(generateContentsConstructor(dataClass.getClassName()))
-        .addMethod(generateDescribeContents(dataClass.getDescribeContents()))
+        .addMethod(generateDescribeContents())
         .addMethod(generateWriteToParcel(dataClass.getProperties(), typeAdapters));
 
     // Build the java file
@@ -820,12 +808,12 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .build();
   }
 
-  private MethodSpec generateDescribeContents(int flags) {
+  private MethodSpec generateDescribeContents() {
     return MethodSpec.methodBuilder("describeContents")
         .addAnnotation(Override.class)
         .addModifiers(PUBLIC)
         .returns(int.class)
-        .addStatement("return $L", flags)
+        .addStatement("return 0")
         .build();
   }
 

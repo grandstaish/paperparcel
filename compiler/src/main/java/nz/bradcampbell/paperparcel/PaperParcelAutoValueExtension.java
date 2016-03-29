@@ -72,17 +72,18 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
   }
 
   private MethodSpec generateWriteToParcel() {
-    ParameterSpec dest = ParameterSpec.builder(PARCEL, "dest").build();
-    ParameterSpec flags = ParameterSpec.builder(int.class, "flags").build();
+    ParameterSpec dest = ParameterSpec
+        .builder(PARCEL, "dest")
+        .build();
 
     MethodSpec.Builder builder = MethodSpec.methodBuilder("writeToParcel")
         .addAnnotation(Override.class)
         .addModifiers(PUBLIC)
         .addParameter(dest)
-        .addParameter(flags);
+        .addParameter(int.class, "flags");
 
     CodeBlock code = CodeBlock.builder()
-        .addStatement("$N.writeParcelable($T.wrap(this), $N)", dest, PAPER_PARCELS, flags)
+        .addStatement("$N.writeParcelable($T.wrap(this), 0)", dest, PAPER_PARCELS)
         .build();
 
     builder.addCode(code);

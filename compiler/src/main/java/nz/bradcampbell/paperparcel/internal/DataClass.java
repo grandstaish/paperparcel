@@ -1,7 +1,5 @@
 package nz.bradcampbell.paperparcel.internal;
 
-import android.os.Parcelable;
-
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeName;
 
@@ -19,7 +17,6 @@ public class DataClass {
   private final boolean requiresClassLoader;
   private final Set<ClassName> requiredTypeAdapters;
   private final boolean singleton;
-  private final int describeContents;
 
   /**
    * Constructor.
@@ -31,11 +28,9 @@ public class DataClass {
    * @param requiresClassLoader True if a ClassLoader field is required, false otherwise
    * @param requiredTypeAdapters All of the TypeAdapter types required for this class
    * @param singleton True if the class is a singleton object
-   * @param describeContents Flags for use in {@link Parcelable#describeContents()}
    */
-  public DataClass(
-      List<Property> properties, String classPackage, String wrapperTypeName, TypeName className,
-      boolean requiresClassLoader, Set<ClassName> requiredTypeAdapters, boolean singleton, int describeContents) {
+  public DataClass(List<Property> properties, String classPackage, String wrapperTypeName, TypeName className,
+                   boolean requiresClassLoader, Set<ClassName> requiredTypeAdapters, boolean singleton) {
     this.properties = properties;
     this.classPackage = classPackage;
     this.requiresClassLoader = requiresClassLoader;
@@ -43,7 +38,6 @@ public class DataClass {
     this.className = className;
     this.requiredTypeAdapters = requiredTypeAdapters;
     this.singleton = singleton;
-    this.describeContents = describeContents;
   }
 
   public List<Property> getProperties() {
@@ -72,9 +66,5 @@ public class DataClass {
 
   public boolean isSingleton() {
     return singleton;
-  }
-
-  public int getDescribeContents() {
-    return describeContents;
   }
 }
