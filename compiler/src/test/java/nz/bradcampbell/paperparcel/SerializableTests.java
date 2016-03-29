@@ -147,7 +147,7 @@ public class SerializableTests {
         .generatesSources(expectedSource);
   }
 
-  @Test public void generatedWrapperIsUsedOverSerializableTest() throws Exception {
+  @Test public void parcelableIsFavouredOverSerializableTest() throws Exception {
     JavaFileObject root = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
         "import nz.bradcampbell.paperparcel.PaperParcel;",
@@ -167,8 +167,23 @@ public class SerializableTests {
         "package test;",
         "import java.io.Serializable;",
         "import nz.bradcampbell.paperparcel.PaperParcel;",
+        "import android.os.Parcel;",
+        "import android.os.Parcelable;",
         "@PaperParcel",
-        "public final class Child implements Serializable {",
+        "public final class Child implements Serializable, Parcelable {",
+        "public static final Parcelable.Creator<Child> CREATOR = new Parcelable.Creator<Child>() {",
+        "@Override public Child createFromParcel(Parcel in) {",
+        "return new Child();",
+        "}",
+        "@Override public Child[] newArray(int size) {",
+        "return new Child[size];",
+        "}",
+        "};",
+        "@Override public int describeContents() {",
+        "return 0;",
+        "}",
+        "@Override public void writeToParcel(Parcel dest, int flags) {",
+        "}",
         "}"
     ));
 
@@ -183,7 +198,7 @@ public class SerializableTests {
         "@Override public TestParcel createFromParcel(Parcel in) {",
         "Child outChild = null;",
         "if (in.readInt() == 0) {",
-        "outChild = new Child();",
+        "outChild = Child.CREATOR.createFromParcel(in);",
         "}",
         "Test data = new Test(outChild);",
         "return new TestParcel(data);",
@@ -205,6 +220,7 @@ public class SerializableTests {
         "dest.writeInt(1);",
         "} else {",
         "dest.writeInt(0);",
+        "child.writeToParcel(dest, flags);",
         "}",
         "}",
         "}"

@@ -42,7 +42,6 @@ import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.STRING;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.STRING_ARRAY;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.TYPE_ADAPTER;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.getParcelableType;
-import static nz.bradcampbell.paperparcel.internal.utils.StringUtils.capitalizeFirstCharacter;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.generateWrappedTypeName;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.getFields;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.getPackageName;
@@ -81,7 +80,6 @@ import nz.bradcampbell.paperparcel.internal.properties.ListProperty;
 import nz.bradcampbell.paperparcel.internal.properties.LongArrayProperty;
 import nz.bradcampbell.paperparcel.internal.properties.LongProperty;
 import nz.bradcampbell.paperparcel.internal.properties.MapProperty;
-import nz.bradcampbell.paperparcel.internal.properties.NonParcelableProperty;
 import nz.bradcampbell.paperparcel.internal.properties.ParcelableProperty;
 import nz.bradcampbell.paperparcel.internal.properties.PersistableBundleProperty;
 import nz.bradcampbell.paperparcel.internal.properties.SerializableProperty;
@@ -100,7 +98,6 @@ import nz.bradcampbell.paperparcel.internal.utils.TypeUtils;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
-import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -146,8 +143,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
   private Types typeUtil;
   private Elements elementUtils;
 
-  private Map<TypeName, ClassName> globalTypeAdapters = new HashMap<>();
-  private Map<String, TypeMirror> wrapperTypes = new HashMap<>();
+  private Map<TypeName, ClassName> defaultAdapters = new HashMap<>();
+  private Set<DataClass> dataClasses = new LinkedHashSet<>();
 
   private static void error(ProcessingEnvironment processingEnv, String message, Element element) {
     processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
@@ -176,25 +173,13 @@ public class PaperParcelProcessor extends AbstractProcessor {
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnvironment) {
 
-    // Processing is over. Generate java files for every data class found
+    // Processing is over. Generate a mapping class for every data class found
     if (roundEnvironment.processingOver()) {
-
-      Set<DataClass> dataClasses = new LinkedHashSet<>();
-      for (TypeMirror paperParcelType : wrapperTypes.values()) {
-        DataClass dataClass = createParcel(paperParcelType);
-        dataClasses.add(dataClass);
-        try {
-          generateParcelableWrapper(dataClass).writeTo(filer);
-        } catch (IOException e) {
-          throw new RuntimeException("An error occurred while writing to filer." + e.getMessage(), e);
-        }
-      }
       try {
         ParcelMappingGenerator.generateParcelableMapping(dataClasses).writeTo(filer);
       } catch (IOException e) {
         throw new RuntimeException("An error occurred while writing Lookup to filer." + e.getMessage(), e);
       }
-
       return true;
     }
 
@@ -220,7 +205,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
       DeclaredType ta = (DeclaredType) element.asType();
       TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, ta);
-      globalTypeAdapters.put(typeAdapterType, (ClassName) TypeName.get(ta));
+      defaultAdapters.put(typeAdapterType, (ClassName) TypeName.get(ta));
     }
 
     // Create a DataClass models for all classes annotated with @PaperParcel
@@ -241,7 +226,13 @@ public class PaperParcelProcessor extends AbstractProcessor {
         continue;
       }
 
-      wrapperTypes.put(elementTypeMirror.toString(), elementTypeMirror);
+      DataClass dataClass = createParcel(elementTypeMirror);
+      dataClasses.add(dataClass);
+      try {
+        generateParcelableWrapper(dataClass).writeTo(filer);
+      } catch (IOException e) {
+        throw new RuntimeException("An error occurred while writing to filer." + e.getMessage(), e);
+      }
     }
 
     return true;
@@ -370,31 +361,6 @@ public class PaperParcelProcessor extends AbstractProcessor {
     return false;
   }
 
-  private boolean isAutoValueClass(TypeElement typeElement) {
-    if (typeElement != null) {
-      try {
-        //noinspection unchecked
-        Class<? extends Annotation> autoValueAnnotation =
-            (Class<? extends Annotation>) Class.forName("com.google.auto.value.AutoValue");
-        Annotation autoValue = typeElement.getAnnotation(autoValueAnnotation);
-        return autoValue != null;
-      } catch (ClassNotFoundException ignored) {
-      }
-    }
-    return false;
-  }
-
-  private String autoValueGeneratedClassName(TypeElement type) {
-    String name = type.getSimpleName().toString();
-    while (type.getEnclosingElement() instanceof TypeElement) {
-      type = (TypeElement) type.getEnclosingElement();
-      name = type.getSimpleName() + "_" + name;
-    }
-    String pkg = getPackageName(type);
-    String dot = pkg.isEmpty() ? "" : ".";
-    return pkg + dot + "AutoValue_" + name;
-  }
-
   private List<VariableElement> getOrderedVariables(
       ExecutableElement constructor, List<VariableElement> fieldElements, TypeElement typeElement) {
 
@@ -499,9 +465,12 @@ public class PaperParcelProcessor extends AbstractProcessor {
   /**
    * Parses a TypeMirror into a Property object.
    *
-   * TODO:
    * @param variable  The member variable variable
    * @param dataClass The class that owns this property
+   * @param isNullable True if the property is nullable
+   * @param name The name of the property
+   * @param accessorMethodName The string name of the accessor method, or null if the property is already accessible
+   * @param typeAdapters All type adapters are in scope of this property
    * @return The parsed property
    */
   private Property parseProperty(TypeMirror variable, TypeMirror dataClass, boolean isNullable, String name,
@@ -511,13 +480,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
     TypeMirror erasedType = typeUtil.erasure(variable);
 
-    TypeElement typeElement = (TypeElement) typeUtil.asElement(erasedType);
-    boolean isAutoValueClass = isAutoValueClass(typeElement);
-
-    String canonicalName = isAutoValueClass ? autoValueGeneratedClassName(typeElement) : variable.toString();
-
-    TypeName parcelableTypeName =
-        wrapperTypes.containsKey(canonicalName) ? null : getParcelableType(typeUtil, erasedType);
+    TypeName parcelableTypeName = getParcelableType(typeUtil, erasedType);
 
     boolean isInterface = TypeUtils.isInterface(typeUtil, erasedType);
 
@@ -529,7 +492,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     TypeName erasedTypeName = TypeName.get(erasedType);
     ClassName typeAdapter = typeAdapters.get(erasedTypeName);
     if (typeAdapter == null) {
-      typeAdapter = globalTypeAdapters.get(erasedTypeName);
+      typeAdapter = defaultAdapters.get(erasedTypeName);
     }
     if (typeAdapter != null) {
       parcelableTypeName = TYPE_ADAPTER;
@@ -623,35 +586,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     } else if (TYPE_ADAPTER.equals(parcelableTypeName)) {
       return new TypeAdapterProperty(typeAdapter, isNullable, typeName, isInterface, name, accessorMethodName);
     } else {
-      TypeName instantiableTypeName = typeName;
-      if (isAutoValueClass) {
-        typeElement = elementUtils.getTypeElement(canonicalName);
-        instantiableTypeName = TypeName.get(typeElement.asType());
-      }
-      boolean isSingleton = TypeUtils.isSingleton(typeUtil, typeElement);
-      List<Property> properties = new ArrayList<>();
-      if (!isSingleton) {
-        List<? extends VariableElement> propertyElements = getPropertyElements(typeElement);
-        final int variableCount = propertyElements.size();
-        if (variableCount > 0) {
-          for (int i = 0; i < variableCount; i++) {
-            VariableElement childVariable = propertyElements.get(i);
-            ExecutableElement accessorMethod;
-            try {
-              accessorMethod = getAccessorMethod(typeElement, childVariable);
-            } catch (PropertyValidationException e) {
-              error(processingEnv, e.getMessage(), e.source);
-              continue;
-            }
-            String childAccessorName = accessorMethod == null ? null : accessorMethod.getSimpleName().toString();
-            String childName = name + capitalizeFirstCharacter(childVariable.getSimpleName().toString());
-            Property p = parseProperty(childVariable.asType(), type, true, childName, childAccessorName, typeAdapters);
-            properties.add(p);
-          }
-        }
-      }
-      return new NonParcelableProperty(properties, isSingleton, instantiableTypeName, isNullable, typeName,
-                                       isInterface, name, accessorMethodName);
+      throw new UnknownPropertyTypeException("PaperParcel does not support type: " + typeName);
     }
   }
 
@@ -741,8 +676,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
     CodeBlock.Builder creatorInitializer = CodeBlock.builder()
         .beginControlFlow("new $T()", ParameterizedTypeName.get(creator, wrapperClassName))
-        .beginControlFlow("@$T public $T createFromParcel($T $N)", ClassName.get(Override.class), wrapperClassName,
-                          PARCEL, in);
+        .beginControlFlow("@$T public $T createFromParcel($T $N)", Override.class, wrapperClassName, PARCEL, in);
 
     if (isSingleton) {
       creatorInitializer.addStatement("return new $T($T.INSTANCE)", wrapperClassName, typeName);
@@ -783,8 +717,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
     }
 
     creatorInitializer.endControlFlow()
-        .beginControlFlow("@$T public $T[] newArray($T size)", ClassName.get(Override.class), wrapperClassName,
-                          int.class)
+        .beginControlFlow("@$T public $T[] newArray($T size)", Override.class, wrapperClassName, int.class)
         .addStatement("return new $T[size]", wrapperClassName)
         .endControlFlow()
         .unindent()
@@ -844,17 +777,23 @@ public class PaperParcelProcessor extends AbstractProcessor {
   }
 
   static class NoValidConstructorFoundException extends IllegalStateException {
-    public NoValidConstructorFoundException(String s) {
-      super(s);
+    NoValidConstructorFoundException(String message) {
+      super(message);
     }
   }
 
   static class PropertyValidationException extends IllegalStateException {
     final VariableElement source;
 
-    public PropertyValidationException(String message, VariableElement source) {
+    PropertyValidationException(String message, VariableElement source) {
       super(message);
       this.source = source;
+    }
+  }
+
+  static class UnknownPropertyTypeException extends IllegalStateException {
+    UnknownPropertyTypeException(String message) {
+      super(message);
     }
   }
 }

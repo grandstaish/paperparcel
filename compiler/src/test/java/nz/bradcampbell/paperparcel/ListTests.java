@@ -2,8 +2,6 @@ package nz.bradcampbell.paperparcel;
 
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
-import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
-import static java.util.Arrays.asList;
 
 import com.google.common.base.Joiner;
 import com.google.testing.compile.JavaFileObjects;
@@ -97,239 +95,6 @@ public class ListTests {
         .compilesWithoutError()
         .and()
         .generatesSources(expectedSource);
-  }
-
-  @Test public void listOfNonParcelableTypesTest() throws Exception {
-    JavaFileObject dataClassRoot = JavaFileObjects.forSourceString("test.Root", Joiner.on('\n').join(
-        "package test;",
-        "import nz.bradcampbell.paperparcel.PaperParcel;",
-        "import java.util.List;",
-        "@PaperParcel",
-        "public final class Root {",
-        "private final List<Child> child;",
-        "public Root(List<Child> child) {",
-        "this.child = child;",
-        "}",
-        "public List<Child> getChild() {",
-        "return this.child;",
-        "}",
-        "}"
-    ));
-
-    JavaFileObject dataClassChild = JavaFileObjects.forSourceString("test.Child", Joiner.on('\n').join(
-        "package test;",
-        "public final class Child {",
-        "private final Integer child;",
-        "public Child(Integer child) {",
-        "this.child = child;",
-        "}",
-        "public Integer getChild() {",
-        "return this.child;",
-        "}",
-        "}"
-    ));
-
-    JavaFileObject rootParcel = JavaFileObjects.forSourceString("test/RootParcel", Joiner.on('\n').join(
-        "package test;",
-        "import android.os.Parcel;",
-        "import android.os.Parcelable;",
-        "import java.lang.Integer;",
-        "import java.lang.Override;",
-        "import java.util.ArrayList;",
-        "import java.util.List;",
-        "import nz.bradcampbell.paperparcel.TypedParcelable;",
-        "public final class RootParcel implements TypedParcelable<Root> {",
-        "public static final Parcelable.Creator<RootParcel> CREATOR = new Parcelable.Creator<RootParcel>() {",
-        "@Override public RootParcel createFromParcel(Parcel in) {",
-        "List<Child> outChild = null;",
-        "if (in.readInt() == 0) {",
-        "int childSize = in.readInt();",
-        "List<Child> child = new ArrayList<Child>(childSize);",
-        "for (int childIndex = 0; childIndex < childSize; childIndex++) {",
-        "Child outChildItem = null;",
-        "if (in.readInt() == 0) {",
-        "Integer outChildItemChild = null;",
-        "if (in.readInt() == 0) {",
-        "outChildItemChild = in.readInt();",
-        "}",
-        "outChildItem = new Child(outChildItemChild);",
-        "}",
-        "child.add(outChildItem);",
-        "}",
-        "outChild = child;",
-        "}",
-        "Root data = new Root(outChild);",
-        "return new RootParcel(data);",
-        "}",
-        "@Override public RootParcel[] newArray(int size) {",
-        "return new RootParcel[size];",
-        "}",
-        "};",
-        "public final Root data;",
-        "public RootParcel(Root data) {",
-        "this.data = data;",
-        "}",
-        "@Override public int describeContents() {",
-        "return 0;",
-        "}",
-        "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "List<Child> child = data.getChild();",
-        "if (child == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "int childSize = child.size();",
-        "dest.writeInt(childSize);",
-        "for (int childIndex = 0; childIndex < childSize; childIndex++) {",
-        "Child childItem = child.get(childIndex);",
-        "if (childItem == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "if (childItem.getChild() == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "dest.writeInt(childItem.getChild());",
-        "}",
-        "}",
-        "}",
-        "}",
-        "}",
-        "}"
-    ));
-
-    assertAbout(javaSources()).that(asList(dataClassRoot, dataClassChild))
-        .processedWith(new PaperParcelProcessor())
-        .compilesWithoutError()
-        .and()
-        .generatesSources(rootParcel);
-  }
-
-  @Test public void listOfListOfDataTypesTest() throws Exception {
-    JavaFileObject dataClassRoot = JavaFileObjects.forSourceString("test.Root", Joiner.on('\n').join(
-        "package test;",
-        "import nz.bradcampbell.paperparcel.PaperParcel;",
-        "import java.util.List;",
-        "@PaperParcel",
-        "public final class Root {",
-        "private final List<List<Child>> child;",
-        "public Root(List<List<Child>> child) {",
-        "this.child = child;",
-        "}",
-        "public List<List<Child>> getChild() {",
-        "return this.child;",
-        "}",
-        "}"
-    ));
-
-    JavaFileObject dataClassChild = JavaFileObjects.forSourceString("test.Child", Joiner.on('\n').join(
-        "package test;",
-        "public final class Child {",
-        "private final Integer child;",
-        "public Child(Integer child) {",
-        "this.child = child;",
-        "}",
-        "public Integer getChild() {",
-        "return this.child;",
-        "}",
-        "}"
-    ));
-
-    JavaFileObject rootParcel = JavaFileObjects.forSourceString("test/RootParcel", Joiner.on('\n').join(
-        "package test;",
-        "import android.os.Parcel;",
-        "import android.os.Parcelable;",
-        "import java.lang.Integer;",
-        "import java.lang.Override;",
-        "import java.util.ArrayList;",
-        "import java.util.List;",
-        "import nz.bradcampbell.paperparcel.TypedParcelable;",
-        "public final class RootParcel implements TypedParcelable<Root> {",
-        "public static final Parcelable.Creator<RootParcel> CREATOR = new Parcelable.Creator<RootParcel>() {",
-        "@Override public RootParcel createFromParcel(Parcel in) {",
-        "List<List<Child>> outChild = null;",
-        "if (in.readInt() == 0) {",
-        "int childSize = in.readInt();",
-        "List<List<Child>> child = new ArrayList<List<Child>>(childSize);",
-        "for (int childIndex = 0; childIndex < childSize; childIndex++) {",
-        "List<Child> outChildItem = null;",
-        "if (in.readInt() == 0) {",
-        "int childItemSize = in.readInt();",
-        "List<Child> childItem = new ArrayList<Child>(childItemSize);",
-        "for (int childItemIndex = 0; childItemIndex < childItemSize; childItemIndex++) {",
-        "Child outChildItemItem = null;",
-        "if (in.readInt() == 0) {",
-        "Integer outChildItemItemChild = null;",
-        "if (in.readInt() == 0) {",
-        "outChildItemItemChild = in.readInt();",
-        "}",
-        "outChildItemItem = new Child(outChildItemItemChild);",
-        "}",
-        "childItem.add(outChildItemItem);",
-        "}",
-        "outChildItem = childItem;",
-        "}",
-        "child.add(outChildItem);",
-        "}",
-        "outChild = child;",
-        "}",
-        "Root data = new Root(outChild);",
-        "return new RootParcel(data);",
-        "}",
-        "@Override public RootParcel[] newArray(int size) {",
-        "return new RootParcel[size];",
-        "}",
-        "};",
-        "public final Root data;",
-        "public RootParcel(Root data) {",
-        "this.data = data;",
-        "}",
-        "@Override public int describeContents() {",
-        "return 0;",
-        "}",
-        "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "List<List<Child>> child = data.getChild();",
-        "if (child == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "int childSize = child.size();",
-        "dest.writeInt(childSize);",
-        "for (int childIndex = 0; childIndex < childSize; childIndex++) {",
-        "List<Child> childItem = child.get(childIndex);",
-        "if (childItem == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "int childItemSize = childItem.size();",
-        "dest.writeInt(childItemSize);",
-        "for (int childItemIndex = 0; childItemIndex < childItemSize; childItemIndex++) {",
-        "Child childItemItem = childItem.get(childItemIndex);",
-        "if (childItemItem == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "if (childItemItem.getChild() == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "dest.writeInt(childItemItem.getChild());",
-        "}",
-        "}",
-        "}",
-        "}",
-        "}",
-        "}",
-        "}",
-        "}"
-    ));
-
-    assertAbout(javaSources()).that(asList(dataClassRoot, dataClassChild))
-        .processedWith(new PaperParcelProcessor())
-        .compilesWithoutError()
-        .and()
-        .generatesSources(rootParcel);
   }
 
   @Test public void listOfListOfBundlesTest() throws Exception {
@@ -554,269 +319,6 @@ public class ListTests {
         .generatesSources(expectedSource);
   }
 
-  @Test public void listOfNonParcelableMapsTest() throws Exception {
-    JavaFileObject dataClassRoot = JavaFileObjects.forSourceString("test.Root", Joiner.on('\n').join(
-        "package test;",
-        "import nz.bradcampbell.paperparcel.PaperParcel;",
-        "import java.util.List;",
-        "import java.util.Map;",
-        "@PaperParcel",
-        "public final class Root {",
-        "private final List<Map<Integer, Child>> child;",
-        "public Root(List<Map<Integer, Child>> child) {",
-        "this.child = child;",
-        "}",
-        "public List<Map<Integer, Child>> getChild() {",
-        "return this.child;",
-        "}",
-        "}"
-    ));
-
-    JavaFileObject dataClassChild = JavaFileObjects.forSourceString("test.Child", Joiner.on('\n').join(
-        "package test;",
-        "public final class Child {",
-        "private final Integer child;",
-        "public Child(Integer child) {",
-        "this.child = child;",
-        "}",
-        "public Integer getChild() {",
-        "return this.child;",
-        "}",
-        "}"
-    ));
-
-    JavaFileObject rootParcel = JavaFileObjects.forSourceString("test/RootParcel", Joiner.on('\n').join(
-        "package test;",
-        "import android.os.Parcel;",
-        "import android.os.Parcelable;",
-        "import java.lang.Integer;",
-        "import java.lang.Override;",
-        "import java.util.ArrayList;",
-        "import java.util.LinkedHashMap;",
-        "import java.util.List;",
-        "import java.util.Map;",
-        "import nz.bradcampbell.paperparcel.TypedParcelable;",
-        "public final class RootParcel implements TypedParcelable<Root> {",
-        "public static final Parcelable.Creator<RootParcel> CREATOR = new Parcelable.Creator<RootParcel>() {",
-        "@Override public RootParcel createFromParcel(Parcel in) {",
-        "List<Map<Integer, Child>> outChild = null;",
-        "if (in.readInt() == 0) {",
-        "int childSize = in.readInt();",
-        "List<Map<Integer, Child>> child = new ArrayList<Map<Integer, Child>>(childSize);",
-        "for (int childIndex = 0; childIndex < childSize; childIndex++) {",
-        "Map<Integer, Child> outChildItem = null;",
-        "if (in.readInt() == 0) {",
-        "int childItemSize = in.readInt();",
-        "Map<Integer, Child> childItem = new LinkedHashMap<Integer, Child>(childItemSize);",
-        "for (int childItemIndex = 0; childItemIndex < childItemSize; childItemIndex++) {",
-        "Integer outChildItemKey = null;",
-        "if (in.readInt() == 0) {",
-        "outChildItemKey = in.readInt();",
-        "}",
-        "Child outChildItemValue = null;",
-        "if (in.readInt() == 0) {",
-        "Integer outChildItemValueChild = null;",
-        "if (in.readInt() == 0) {",
-        "outChildItemValueChild = in.readInt();",
-        "}",
-        "outChildItemValue = new Child(outChildItemValueChild);",
-        "}",
-        "childItem.put(outChildItemKey, outChildItemValue);",
-        "}",
-        "outChildItem = childItem;",
-        "}",
-        "child.add(outChildItem);",
-        "}",
-        "outChild = child",
-        "}",
-        "Root data = new Root(outChild);",
-        "return new RootParcel(data);",
-        "}",
-        "@Override public RootParcel[] newArray(int size) {",
-        "return new RootParcel[size];",
-        "}",
-        "};",
-        "public final Root data;",
-        "public RootParcel(Root data) {",
-        "this.data = data;",
-        "}",
-        "@Override public int describeContents() {",
-        "return 0;",
-        "}",
-        "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "List<Map<Integer, Child>> child = data.getChild();",
-        "if (child == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "int childSize = child.size();",
-        "dest.writeInt(childSize);",
-        "for (int childIndex = 0; childIndex < childSize; childIndex++) {",
-        "Map<Integer, Child> childItem = child.get(childIndex);",
-        "if (childItem == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "dest.writeInt(childItem.size());",
-        "for (Map.Entry<Integer, Child> childItemEntry : childItem.entrySet()) {",
-        "if (childItemEntry.getKey() == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "dest.writeInt(childItemEntry.getKey());",
-        "}",
-        "if (childItemEntry.getValue() == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "if (childItemEntry.getValue().getChild() == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "dest.writeInt(childItemEntry.getValue().getChild());",
-        "}",
-        "}",
-        "}",
-        "}",
-        "}",
-        "}",
-        "}",
-        "}"
-    ));
-
-    assertAbout(javaSources()).that(asList(dataClassRoot, dataClassChild))
-        .processedWith(new PaperParcelProcessor())
-        .compilesWithoutError()
-        .and()
-        .generatesSources(rootParcel);
-  }
-
-  @Test public void listOfNonParcelableArraysTest() throws Exception {
-    JavaFileObject dataClassRoot = JavaFileObjects.forSourceString("test.Root", Joiner.on('\n').join(
-        "package test;",
-        "import nz.bradcampbell.paperparcel.PaperParcel;",
-        "import java.util.List;",
-        "@PaperParcel",
-        "public final class Root {",
-        "private final List<Child[]> child;",
-        "public Root(List<Child[]> child) {",
-        "this.child = child;",
-        "}",
-        "public List<Child[]> getChild() {",
-        "return this.child;",
-        "}",
-        "}"
-    ));
-
-    JavaFileObject dataClassChild = JavaFileObjects.forSourceString("test.Child", Joiner.on('\n').join(
-        "package test;",
-        "public final class Child {",
-        "private final Integer child;",
-        "public Child(Integer child) {",
-        "this.child = child;",
-        "}",
-        "public Integer getChild() {",
-        "return this.child;",
-        "}",
-        "}"
-    ));
-
-    JavaFileObject rootParcel = JavaFileObjects.forSourceString("test/RootParcel", Joiner.on('\n').join(
-        "package test;",
-        "import android.os.Parcel;",
-        "import android.os.Parcelable;",
-        "import java.lang.Integer;",
-        "import java.lang.Override;",
-        "import java.util.ArrayList;",
-        "import java.util.List;",
-        "import nz.bradcampbell.paperparcel.TypedParcelable;",
-        "public final class RootParcel implements TypedParcelable<Root> {",
-        "public static final Parcelable.Creator<RootParcel> CREATOR = new Parcelable.Creator<RootParcel>() {",
-        "@Override public RootParcel createFromParcel(Parcel in) {",
-        "List<Child[]> outChild = null;",
-        "if (in.readInt() == 0) {",
-        "int childSize = in.readInt();",
-        "List<Child[]> child = new ArrayList<Child[]>(childSize);",
-        "for (int childIndex = 0; childIndex < childSize; childIndex++) {",
-        "Child[] outChildItem = null;",
-        "if (in.readInt() == 0) {",
-        "int childItemSize = in.readInt();",
-        "Child[] childItem = new Child[childItemSize];",
-        "for (int childItemIndex = 0; childItemIndex < childItemSize; childItemIndex++) {",
-        "Child outChildItemComponent = null;",
-        "if (in.readInt() == 0) {",
-        "Integer outChildItemComponentChild = null;",
-        "if (in.readInt() == 0) {",
-        "outChildItemComponentChild = in.readInt();",
-        "}",
-        "outChildItemComponent = new Child(outChildItemComponentChild);",
-        "}",
-        "childItem[childItemIndex] = outChildItemComponent;",
-        "}",
-        "outChildItem = childItem;",
-        "}",
-        "child.add(outChildItem);",
-        "}",
-        "outChild = child;",
-        "}",
-        "Root data = new Root(outChild);",
-        "return new RootParcel(data);",
-        "}",
-        "@Override public RootParcel[] newArray(int size) {",
-        "return new RootParcel[size];",
-        "}",
-        "};",
-        "public final Root data;",
-        "public RootParcel(Root data) {",
-        "this.data = data;",
-        "}",
-        "@Override public int describeContents() {",
-        "return 0;",
-        "}",
-        "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "List<Child[]> child = data.getChild();",
-        "if (child == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "int childSize = child.size();",
-        "dest.writeInt(childSize);",
-        "for (int childIndex = 0; childIndex < childSize; childIndex++) {",
-        "Child[] childItem = child.get(childIndex);",
-        "if (childItem == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "int childItemSize = childItem.length;",
-        "dest.writeInt(childItemSize);",
-        "for (int childItemIndex = 0; childItemIndex < childItemSize; childItemIndex++) {",
-        "Child childItemItem = childItem[childItemIndex];",
-        "if (childItemItem == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "if (childItemItem.getChild() == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "dest.writeInt(childItemItem.getChild());",
-        "}",
-        "}",
-        "}",
-        "}",
-        "}",
-        "}",
-        "}",
-        "}"
-    ));
-
-    assertAbout(javaSources()).that(asList(dataClassRoot, dataClassChild))
-        .processedWith(new PaperParcelProcessor())
-        .compilesWithoutError()
-        .and()
-        .generatesSources(rootParcel);
-  }
-
   @Test public void arrayListOfParcelableTypesTest() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
@@ -985,31 +487,18 @@ public class ListTests {
         .generatesSources(expectedSource);
   }
 
-  @Test public void linkedListOfNonParcelableTypesTest() throws Exception {
+  @Test public void linkedListOfIntegersTest() throws Exception {
     JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
         "package test;",
         "import nz.bradcampbell.paperparcel.PaperParcel;",
         "import java.util.LinkedList;",
         "@PaperParcel",
         "public final class Test {",
-        "private final LinkedList<Child> child;",
-        "public Test(LinkedList<Child> child) {",
+        "private final LinkedList<Integer> child;",
+        "public Test(LinkedList<Integer> child) {",
         "this.child = child;",
         "}",
-        "public LinkedList<Child> getChild() {",
-        "return this.child;",
-        "}",
-        "}"
-    ));
-
-    JavaFileObject dataClassChild = JavaFileObjects.forSourceString("test.Child", Joiner.on('\n').join(
-        "package test;",
-        "public final class Child {",
-        "private final Integer child;",
-        "public Child(Integer child) {",
-        "this.child = child;",
-        "}",
-        "public Integer getChild() {",
+        "public LinkedList<Integer> getChild() {",
         "return this.child;",
         "}",
         "}"
@@ -1026,18 +515,14 @@ public class ListTests {
         "public final class TestParcel implements TypedParcelable<Test> {",
         "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
         "@Override public TestParcel createFromParcel(Parcel in) {",
-        "LinkedList<Child> outChild = null;",
+        "LinkedList<Integer> outChild = null;",
         "if (in.readInt() == 0) {",
         "int childSize = in.readInt();",
-        "LinkedList<Child> child = new LinkedList<Child>();",
+        "LinkedList<Integer> child = new LinkedList<Integer>();",
         "for (int childIndex = 0; childIndex < childSize; childIndex++) {",
-        "Child outChildItem = null;",
+        "Integer outChildItem = null;",
         "if (in.readInt() == 0) {",
-        "Integer outChildItemChild = null;",
-        "if (in.readInt() == 0) {",
-        "outChildItemChild = in.readInt();",
-        "}",
-        "outChildItem = new Child(outChildItemChild);",
+        "outChildItem = in.readInt();",
         "}",
         "child.add(outChildItem);",
         "}",
@@ -1058,7 +543,7 @@ public class ListTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "LinkedList<Child> child = data.getChild();",
+        "LinkedList<Integer> child = data.getChild();",
         "if (child == null) {",
         "dest.writeInt(1);",
         "} else {",
@@ -1066,17 +551,12 @@ public class ListTests {
         "int childSize = child.size();",
         "dest.writeInt(childSize);",
         "for (int childIndex = 0; childIndex < childSize; childIndex++) {",
-        "Child childItem = child.get(childIndex);",
+        "Integer childItem = child.get(childIndex);",
         "if (childItem == null) {",
         "dest.writeInt(1);",
         "} else {",
         "dest.writeInt(0);",
-        "if (childItem.getChild() == null) {",
-        "dest.writeInt(1);",
-        "} else {",
-        "dest.writeInt(0);",
-        "dest.writeInt(childItem.getChild());",
-        "}",
+        "dest.writeInt(childItem);",
         "}",
         "}",
         "}",
@@ -1084,7 +564,7 @@ public class ListTests {
         "}"
     ));
 
-    assertAbout(javaSources()).that(asList(source, dataClassChild))
+    assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
