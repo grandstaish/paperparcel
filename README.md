@@ -19,7 +19,7 @@ Annotate your data class with `@PaperParcel`, implement `PaperParcelable`, and c
 ``` java
 @PaperParcel 
 data class Example(
-  var test: Int
+  val test: Int
 ) : PaperParcelable {
   companion object {
     @JvmField val CREATOR = PaperParcelable.Creator(Example::class.java)
@@ -36,7 +36,7 @@ If you add additional (non-constructor) properties to your data class, ensure to
 ``` java
 @PaperParcel
 data class Example(
-  var test: Int
+  val test: Int
 ) : PaperParcelable {
   ...
   @delegate:Transient val somethingElse by lazy { ... }
