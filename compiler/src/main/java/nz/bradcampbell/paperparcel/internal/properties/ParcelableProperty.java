@@ -16,7 +16,6 @@ import java.util.Map;
 public class ParcelableProperty extends Property {
   public ParcelableProperty(boolean isNullable, TypeName typeName, boolean isInterface, String name,
                             @Nullable String accessorMethodName) {
-
     super(isNullable, typeName, isInterface, name, accessorMethodName);
   }
 
@@ -28,8 +27,8 @@ public class ParcelableProperty extends Property {
   }
 
   @Override
-  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral,
-                                    Map<ClassName, FieldSpec> typeAdapters) {
-    block.addStatement("$L.writeToParcel($N, 0)", sourceLiteral, dest);
+  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
+                                    CodeBlock sourceLiteral, Map<ClassName, FieldSpec> typeAdapters) {
+    block.addStatement("$L.writeToParcel($N, $N)", sourceLiteral, dest, flags);
   }
 }

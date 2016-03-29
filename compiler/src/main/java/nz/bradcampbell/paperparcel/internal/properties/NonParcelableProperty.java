@@ -68,11 +68,11 @@ public class NonParcelableProperty extends Property {
   }
 
   @Override
-  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock source,
-                                    Map<ClassName, FieldSpec> typeAdapters) {
+  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
+                                    CodeBlock sourceLiteral, Map<ClassName, FieldSpec> typeAdapters) {
     if (!isSingleton) {
       for (Property p : children) {
-        p.writeToParcel(block, dest, literal("$L.$N()", source, p.getAccessorMethodName()), typeAdapters);
+        p.writeToParcel(block, dest, flags, literal("$L.$N()", sourceLiteral, p.getAccessorMethodName()), typeAdapters);
       }
     }
   }

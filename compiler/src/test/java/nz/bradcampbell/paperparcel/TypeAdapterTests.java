@@ -42,7 +42,7 @@ public class TypeAdapterTests {
         "public Date readFromParcel(Parcel in) {",
         "return new Date(in.readLong());",
         "}",
-        "public void writeToParcel(Date value, Parcel dest) {",
+        "public void writeToParcel(Date value, Parcel dest, int flags) {",
         "dest.writeLong(value.getTime());",
         "}",
         "}"
@@ -83,7 +83,7 @@ public class TypeAdapterTests {
         "dest.writeInt(1);",
         "} else {",
         "dest.writeInt(0);",
-        "TEST_DATE_TYPE_ADAPTER.writeToParcel(child, dest);",
+        "TEST_DATE_TYPE_ADAPTER.writeToParcel(child, dest, flags);",
         "}",
         "}",
         "}"

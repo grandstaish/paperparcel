@@ -20,7 +20,9 @@ public interface TypeAdapter<T> {
    * Writes {@code value} to the Parcel {@code outParcel}
    * @param value The object to be written to the {@link Parcel}
    * @param outParcel The {@link Parcel} which will contain the value of {@code T}
+   * @param flags Additional flags about how the object should be written. May be 0 or
+   *              {@link android.os.Parcelable#PARCELABLE_WRITE_RETURN_VALUE}.
    */
-  void writeToParcel(@NotNull T value, @NotNull Parcel outParcel);
+  void writeToParcel(@NotNull T value, @NotNull Parcel outParcel, int flags);
 
 }

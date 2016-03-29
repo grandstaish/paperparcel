@@ -30,9 +30,9 @@ public class TypeAdapterProperty extends Property {
   }
 
   @Override
-  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral,
-                                    Map<ClassName, FieldSpec> typeAdapters) {
-    block.addStatement("$N.writeToParcel($L, $N)", typeAdapters.get(typeAdapter), sourceLiteral, dest);
+  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
+                                    CodeBlock sourceLiteral, Map<ClassName, FieldSpec> typeAdapters) {
+    block.addStatement("$N.writeToParcel($L, $N, $N)", typeAdapters.get(typeAdapter), sourceLiteral, dest, flags);
   }
 
   @Override public Set<ClassName> requiredTypeAdapters() {

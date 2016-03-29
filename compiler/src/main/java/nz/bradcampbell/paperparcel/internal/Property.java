@@ -140,8 +140,8 @@ public abstract class Property {
    *
    * @param dest The Parcel parameter
    */
-  public final void writeToParcel(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral,
-                                  Map<ClassName, FieldSpec> typeAdapters) {
+  public final void writeToParcel(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
+                                  CodeBlock sourceLiteral, Map<ClassName, FieldSpec> typeAdapters) {
     if (isNullable) {
       block.beginControlFlow("if ($L == null)", sourceLiteral);
       block.addStatement("$N.writeInt(1)", dest);
@@ -149,7 +149,7 @@ public abstract class Property {
       block.addStatement("$N.writeInt(0)", dest);
     }
 
-    writeToParcelInner(block, dest, sourceLiteral, typeAdapters);
+    writeToParcelInner(block, dest, flags, sourceLiteral, typeAdapters);
 
     if (isNullable) {
       block.endControlFlow();
@@ -163,6 +163,6 @@ public abstract class Property {
    * @param block The CodeBlock builder to write the code to
    * @param dest The Parcel parameter
    */
-  protected abstract void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral,
-                                             Map<ClassName, FieldSpec> typeAdapters);
+  protected abstract void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
+                                             CodeBlock sourceLiteral, Map<ClassName, FieldSpec> typeAdapters);
 }

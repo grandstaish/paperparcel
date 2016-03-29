@@ -87,8 +87,8 @@ public class MapProperty extends Property {
   }
 
   @Override
-  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral,
-                                    Map<ClassName, FieldSpec> typeAdapters) {
+  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
+                                    CodeBlock sourceLiteral, Map<ClassName, FieldSpec> typeAdapters) {
     // Write size
     block.addStatement("$N.writeInt($L.size())", dest, sourceLiteral);
 
@@ -104,10 +104,10 @@ public class MapProperty extends Property {
     CodeBlock valueSourceLiteral = literal("$N.getValue()", entryName);
 
     // Write in the key.
-    keyProperty.writeToParcel(block, dest, keySourceLiteral, typeAdapters);
+    keyProperty.writeToParcel(block, dest, flags, keySourceLiteral, typeAdapters);
 
     // Write in the value.
-    valueProperty.writeToParcel(block, dest, valueSourceLiteral, typeAdapters);
+    valueProperty.writeToParcel(block, dest, flags, valueSourceLiteral, typeAdapters);
 
     block.endControlFlow();
   }

@@ -3,6 +3,8 @@ package nz.bradcampbell.paperparcel;
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PUBLIC;
 
+import com.google.auto.common.MoreElements;
+import com.google.auto.common.MoreTypes;
 import com.google.auto.service.AutoService;
 import com.google.auto.value.extension.AutoValueExtension;
 import com.google.common.collect.Lists;
@@ -59,8 +61,11 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
         .addAnnotation(PaperParcel.class)
         .addField(classLoader)
         .addField(generateCreator(thisClass, classLoader))
-        .addMethod(generateDescribeContents())
         .addMethod(generateWriteToParcel());
+
+    if (needsContentDescriptor(context)) {
+      subclass.addMethod(generateDescribeContents());
+    }
 
     JavaFile javaFile = JavaFile.builder(context.packageName(), subclass.build()).build();
     return javaFile.toString();
@@ -149,5 +154,19 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
         .returns(int.class)
         .addStatement("return 0")
         .build();
+  }
+
+  private static boolean needsContentDescriptor(Context context) {
+    ProcessingEnvironment env = context.processingEnvironment();
+    for (ExecutableElement element : MoreElements.getLocalAndInheritedMethods(
+        context.autoValueClass(), env.getElementUtils())) {
+      if (element.getSimpleName().contentEquals("describeContents")
+          && MoreTypes.isTypeOf(int.class, element.getReturnType())
+          && element.getParameters().isEmpty()
+          && !element.getModifiers().contains(Modifier.ABSTRACT)) {
+        return false;
+      }
+    }
+    return true;
   }
 }

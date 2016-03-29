@@ -41,7 +41,7 @@ public class AutoValueTest {
         "return new Date(inParcel.readLong());",
         "}",
         "@Override",
-        "public void writeToParcel(@NotNull Date value, @NotNull Parcel outParcel) {",
+        "public void writeToParcel(@NotNull Date value, @NotNull Parcel outParcel, int flags) {",
         "outParcel.writeLong(value.getTime());",
         "}",
         "}"
@@ -84,7 +84,7 @@ public class AutoValueTest {
         "dest.writeInt(1);",
         "} else {",
         "dest.writeInt(0);",
-        "TEST_DATE_TYPE_ADAPTER.writeToParcel(count, dest);",
+        "TEST_DATE_TYPE_ADAPTER.writeToParcel(count, dest, flags);",
         "}",
         "}",
         "}"
@@ -124,7 +124,7 @@ public class AutoValueTest {
         "return new Date(inParcel.readLong());",
         "}",
         "@Override",
-        "public void writeToParcel(@NotNull Date value, @NotNull Parcel outParcel) {",
+        "public void writeToParcel(@NotNull Date value, @NotNull Parcel outParcel, int flags) {",
         "outParcel.writeLong(value.getTime());",
         "}",
         "}"
@@ -167,7 +167,7 @@ public class AutoValueTest {
         "dest.writeInt(1);",
         "} else {",
         "dest.writeInt(0);",
-        "TEST_DATE_TYPE_ADAPTER.writeToParcel(count, dest);",
+        "TEST_DATE_TYPE_ADAPTER.writeToParcel(count, dest, flags);",
         "}",
         "}",
         "}"

@@ -68,8 +68,8 @@ public class ListProperty extends Property {
     return literal("$N", listName);
   }
 
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral,
-                                              Map<ClassName, FieldSpec> typeAdapters) {
+  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
+                                              CodeBlock sourceLiteral, Map<ClassName, FieldSpec> typeAdapters) {
     // Write size
     String listSize = getName() + "Size";
     block.addStatement("$T $N = $L.size()", int.class, listSize, sourceLiteral);
@@ -92,7 +92,7 @@ public class ListProperty extends Property {
     CodeBlock parameterSource = literal("$N", parameterItemName);
 
     // Write in the parameter
-    typeArgument.writeToParcel(block, dest, parameterSource, typeAdapters);
+    typeArgument.writeToParcel(block, dest, flags, parameterSource, typeAdapters);
 
     block.endControlFlow();
   }

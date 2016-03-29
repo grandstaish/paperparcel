@@ -25,8 +25,8 @@ public class PersistableBundleProperty extends Property {
   }
 
   @Override
-  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral,
-                                    Map<ClassName, FieldSpec> typeAdapters) {
+  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
+                                    CodeBlock sourceLiteral, Map<ClassName, FieldSpec> typeAdapters) {
     block.addStatement("$N.writePersistableBundle($L)", dest, sourceLiteral);
   }
 

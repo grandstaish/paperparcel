@@ -63,7 +63,7 @@ public class CharSequenceTests {
         "dest.writeInt(1);",
         "} else {",
         "dest.writeInt(0);",
-        "TextUtils.writeToParcel(child, dest, 0);",
+        "TextUtils.writeToParcel(child, dest, flags);",
         "}",
         "}",
         "}"

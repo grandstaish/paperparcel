@@ -27,8 +27,8 @@ public class CharSequenceProperty extends Property {
   }
 
   @Override
-  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral,
-                                    Map<ClassName, FieldSpec> typeAdapters) {
-    block.addStatement("$T.writeToParcel($L, $N, 0)", TEXT_UTILS, sourceLiteral, dest);
+  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
+                                    CodeBlock sourceLiteral, Map<ClassName, FieldSpec> typeAdapters) {
+    block.addStatement("$T.writeToParcel($L, $N, $N)", TEXT_UTILS, sourceLiteral, dest, flags);
   }
 }

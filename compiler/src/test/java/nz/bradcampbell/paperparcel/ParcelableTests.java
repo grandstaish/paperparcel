@@ -66,7 +66,7 @@ public class ParcelableTests {
         "dest.writeInt(1);",
         "} else {",
         "dest.writeInt(0);",
-        "child.writeToParcel(dest, 0);",
+        "child.writeToParcel(dest, flags);",
         "}",
         "}",
         "}"
@@ -168,7 +168,7 @@ public class ParcelableTests {
         "dest.writeInt(1);",
         "} else {",
         "dest.writeInt(0);",
-        "child.writeToParcel(dest, 0);",
+        "child.writeToParcel(dest, flags);",
         "}",
         "}",
         "}"

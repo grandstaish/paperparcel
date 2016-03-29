@@ -54,8 +54,8 @@ public class ArrayProperty extends Property {
   }
 
   @Override
-  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, CodeBlock sourceLiteral,
-                                    Map<ClassName, FieldSpec> typeAdapters) {
+  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
+                                    CodeBlock sourceLiteral, Map<ClassName, FieldSpec> typeAdapters) {
     // Write size
     String arraySize = getName() + "Size";
     block.addStatement("$T $N = $L.length", int.class, arraySize, sourceLiteral);
@@ -81,7 +81,7 @@ public class ArrayProperty extends Property {
     CodeBlock componentSource = literal("$N", componentItemName);
 
     // Write in the component.
-    componentType.writeToParcel(block, dest, componentSource, typeAdapters);
+    componentType.writeToParcel(block, dest, flags, componentSource, typeAdapters);
 
     block.endControlFlow();
   }

@@ -812,15 +812,14 @@ public class PaperParcelProcessor extends AbstractProcessor {
   }
 
   private MethodSpec generateWriteToParcel(List<Property> properties, Map<ClassName, FieldSpec> typeAdapters) {
-    ParameterSpec dest = ParameterSpec
-        .builder(PARCEL, "dest")
-        .build();
+    ParameterSpec dest = ParameterSpec.builder(PARCEL, "dest").build();
+    ParameterSpec flags = ParameterSpec.builder(int.class, "flags").build();
 
     MethodSpec.Builder builder = MethodSpec.methodBuilder("writeToParcel")
         .addAnnotation(Override.class)
         .addModifiers(PUBLIC)
         .addParameter(dest)
-        .addParameter(int.class, "flags");
+        .addParameter(flags);
 
     CodeBlock.Builder block = CodeBlock.builder();
     for (Property p : properties) {
@@ -832,7 +831,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
       }
       block.addStatement("$T $N = $N.$N", wildCardTypeName, p.getName(), DATA_VARIABLE_NAME, accessorStrategy);
       CodeBlock sourceLiteral = PropertyUtils.literal("$N", p.getName());
-      p.writeToParcel(block, dest, sourceLiteral, typeAdapters);
+      p.writeToParcel(block, dest, flags, sourceLiteral, typeAdapters);
     }
 
     return builder.addCode(block.build()).build();
