@@ -12,8 +12,8 @@ import com.squareup.javapoet.WildcardTypeName;
 import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -63,7 +63,8 @@ public class MapProperty extends Property {
     }
 
     if (isInterface()) {
-      block.addStatement("$T $N = new $T<$T, $T>($N)", typeName, mapName, HashMap.class, keyTypeName, valueTypeName, mapSize);
+      block.addStatement("$T $N = new $T<$T, $T>($N)", typeName, mapName, LinkedHashMap.class, keyTypeName,
+                         valueTypeName, mapSize);
     } else {
       block.addStatement("$T $N = new $T()", typeName, mapName, typeName);
     }
