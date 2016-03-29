@@ -33,6 +33,7 @@ import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.MAP;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.OBJECT_ARRAY;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.PERSISTABLE_BUNDLE;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.SERIALIZABLE;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.SET;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.SIZE;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.SIZEF;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.SPARSE_ARRAY;
@@ -84,6 +85,7 @@ import nz.bradcampbell.paperparcel.internal.properties.NonParcelableProperty;
 import nz.bradcampbell.paperparcel.internal.properties.ParcelableProperty;
 import nz.bradcampbell.paperparcel.internal.properties.PersistableBundleProperty;
 import nz.bradcampbell.paperparcel.internal.properties.SerializableProperty;
+import nz.bradcampbell.paperparcel.internal.properties.SetProperty;
 import nz.bradcampbell.paperparcel.internal.properties.ShortProperty;
 import nz.bradcampbell.paperparcel.internal.properties.SizeFProperty;
 import nz.bradcampbell.paperparcel.internal.properties.SizeProperty;
@@ -578,6 +580,10 @@ public class PaperParcelProcessor extends AbstractProcessor {
       List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
       Property typeArgument = parseProperty(typeArguments.get(0), dataClass, true, name + "Item", null, typeAdapters);
       return new ListProperty(typeArgument, isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (SET.equals(parcelableTypeName)) {
+      List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
+      Property typeArgument = parseProperty(typeArguments.get(0), dataClass, true, name + "Item", null, typeAdapters);
+      return new SetProperty(typeArgument, isNullable, typeName, isInterface, name, accessorMethodName);
     } else if (BOOLEAN_ARRAY.equals(parcelableTypeName)) {
       return new BooleanArrayProperty(isNullable, typeName, isInterface, name, accessorMethodName);
     } else if (BYTE_ARRAY.equals(parcelableTypeName)) {

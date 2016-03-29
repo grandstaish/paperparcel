@@ -33,6 +33,7 @@ public class PropertyUtils {
   public static final TypeName STRING = ClassName.get("java.lang", "String");
   public static final TypeName MAP = ClassName.get("java.util", "Map");
   public static final TypeName LIST = ClassName.get("java.util", "List");
+  public static final TypeName SET = ClassName.get("java.util", "Set");
   public static final TypeName BOOLEAN_ARRAY = ArrayTypeName.of(boolean.class);
   public static final TypeName BYTE_ARRAY = ArrayTypeName.of(byte.class);
   public static final TypeName INT_ARRAY = ArrayTypeName.of(int.class);
@@ -61,7 +62,7 @@ public class PropertyUtils {
   public static final TypeName BOXED_SHORT = SHORT.box();
   public static final TypeName TYPE_ADAPTER = TypeName.get(TypeAdapter.class);
 
-  private static final Set<TypeName> VALID_TYPES = ImmutableSet.of(STRING, MAP, LIST, BOOLEAN_ARRAY, BYTE_ARRAY,
+  private static final Set<TypeName> VALID_TYPES = ImmutableSet.of(STRING, MAP, LIST, SET, BOOLEAN_ARRAY, BYTE_ARRAY,
       INT_ARRAY, LONG_ARRAY, STRING_ARRAY, SPARSE_ARRAY, SPARSE_BOOLEAN_ARRAY, BUNDLE, PARCELABLE, PARCELABLE_ARRAY,
       CHAR_SEQUENCE, IBINDER, OBJECT_ARRAY, SERIALIZABLE, PERSISTABLE_BUNDLE, SIZE, SIZEF, ENUM, INT, BOXED_INT,
       LONG, BOXED_LONG, BYTE, BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT, CHAR, BOXED_CHAR, DOUBLE,
