@@ -3,6 +3,8 @@ package nz.bradcampbell.paperparcel;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
+import android.os.Parcelable;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
@@ -24,4 +26,9 @@ import java.lang.annotation.Target;
 @Retention(SOURCE)
 @Target(TYPE)
 public @interface PaperParcel {
+
+  /**
+   * @return The flag that will be used in the generated {@link Parcelable#describeContents()} method. Defaults to 0.
+   */
+  int describeContents() default 0;
 }
