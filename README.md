@@ -105,7 +105,7 @@ A good example of when you might want this functionality is with java.util.Date 
 
 ``` java
 class DateTypeAdapter : TypeAdapter<Date> {
-    override fun writeToParcel(value: Date, outParcel: Parcel) {
+    override fun writeToParcel(value: Date, outParcel: Parcel, flags: Int) {
         outParcel.writeLong(value.time)
     }
 
@@ -176,9 +176,9 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 dependencies {
-    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-rc1'
-    compile 'com.github.grandstaish.paperparcel:paperparcel-kotlin:1.0.0-rc1'
-    kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc1'
+    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-rc2'
+    compile 'com.github.grandstaish.paperparcel:paperparcel-kotlin:1.0.0-rc2'
+    kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc2'
 }
 ```
 
@@ -200,9 +200,9 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 dependencies {
-    compile 'com.google.auto.value:auto-value:1.2-rc1'
-    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-rc1'
-    apt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc1'
+    compile 'com.google.auto.value:auto-value:1.2-rc2'
+    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-rc2'
+    apt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc2'
 }
 ```
 
@@ -215,9 +215,9 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 dependencies {
-    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-rc1'
-    compile 'com.github.grandstaish.paperparcel:paperparcel-java7:1.0.0-rc1'
-    apt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc1'
+    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-rc2'
+    compile 'com.github.grandstaish.paperparcel:paperparcel-java7:1.0.0-rc2'
+    apt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc2'
 }
 ```
 
