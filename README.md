@@ -17,8 +17,10 @@ PaperParcel is 100% generated code, no reflection or byte-code manipulation is i
 Annotate your data class with `@PaperParcel`, implement `PaperParcelable`, and create a JVM static instance of `PaperParcelable.Creator` e.g.:
 
 ``` java
-@PaperParcel
-data class Example(var test: Int) : PaperParcelable {
+@PaperParcel 
+data class Example(
+  var test: Int
+) : PaperParcelable {
   companion object {
     @JvmField val CREATOR = PaperParcelable.Creator(Example::class.java)
   }
@@ -33,7 +35,9 @@ If you add additional (non-constructor) properties to your data class, ensure to
 
 ``` java
 @PaperParcel
-data class Example(var test: Int) : PaperParcelable {
+data class Example(
+  var test: Int
+) : PaperParcelable {
   ...
   @delegate:Transient val somethingElse by lazy { ... }
 }
@@ -122,7 +126,7 @@ The TypeAdapters can be applied in multiple ways:
 Annotate your type adapter with `@DefaultAdapter`:
 
 ``` java
-@DefaultAdapter
+@DefaultAdapter 
 class DateTypeAdapter : TypeAdapter<Date> {
   // ... 
 }
@@ -137,7 +141,9 @@ Add the list of specific TypeAdapters to the data class. This will take preceden
 ``` java
 @PaperParcel
 @TypeAdapters(DateTypeAdapter::class)
-data class Example(val a: Date) : PaperParcelable { ... }
+data class Example(
+  val a: Date
+) : PaperParcelable { ... }
 ```
 
 #### Variable TypeAdapters
@@ -146,7 +152,9 @@ Add the list of specific TypeAdapters directly on the variable. These will take 
 
 ``` java
 @PaperParcel
-data class Example(@TypeAdapters(DateTypeAdapter::class) val a: Date) : PaperParcelable { ... }
+data class Example(
+  @TypeAdapters(DateTypeAdapter::class) val a: Date
+) : PaperParcelable { ... }
 ```
 
 ## Limitations
@@ -155,8 +163,10 @@ The @PaperParcel annotation cannot be put directly on a data class with type par
 
 This is wrong:
 ``` java
-@PaperParcel
-data class BadExample<T>(val child: T) : PaperParcelable { ... }
+@PaperParcel 
+data class BadExample<T>(
+  val child: T
+) : PaperParcelable { ... }
 ```
 
 However, it is OK to use data classes with typed parameters inside of your annotated data class, e.g.:
@@ -164,7 +174,9 @@ However, it is OK to use data classes with typed parameters inside of your annot
 This is OK:
 ``` java
 @PaperParcel
-data class GoodExample(val child: BadExample<Int>) : PaperParcelable { ... }
+data class GoodExample(
+  val child: BadExample<Int>
+) : PaperParcelable { ... }
 ```
 
 Please file a bug for anything you see is missing or not handled correctly.
