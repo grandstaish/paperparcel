@@ -27,19 +27,6 @@ data class Example(var test: Int) : PaperParcelable {
 
 Now your data class is `Parcelable` and can be passed directly to a `Bundle` or `Intent`. 
 
-Unfortunately this is still a little bit of boilerplate code, but it only has to be applied to the class you want to be `Parcelable`, e.g.:
-
-``` java
-@PaperParcel
-data class Example(var test: ChildExample) : PaperParcelable {
-  companion object {
-    @JvmField val CREATOR = PaperParcelable.Creator(Example::class.java)
-  }
-}
-
-data class ChildExample(var test: Int)
-```
-
 A simple example can be found in the [kotlin-example](https://github.com/grandstaish/paperparcel/tree/master/examples/kotlin-example) module. For a more real-world example, see [here](https://github.com/grandstaish/four-letters-redux/blob/master/app/src/main/kotlin/nz/bradcampbell/fourletters/redux/state/State.kt).
 
 If you add additional (non-constructor) properties to your data class, ensure to make them transient (via `@Transient`), e.g.:
@@ -67,8 +54,6 @@ public abstract class Example implements Parcelable {
 ```
 
 Now your `AutoValue` class can be passed directly to a `Bundle` or `Intent`. 
-
-Just like the Kotlin example, members of a `Parcelable` `AutoValue` class that are "bean" objects (e.g. other `AutoValue` classes) do not have to implement `Parcelable`. 
 
 A simple example can be found in the [autovalue-example](https://github.com/grandstaish/paperparcel/tree/master/examples/autovalue-example) module.
 
