@@ -1,10 +1,15 @@
+# IntelliJ IDEA
 *.iml
-.gradle
-/local.properties
+.idea/
 /.idea/workspace.xml
 /.idea/libraries
-.DS_Store
-/build
-/captures
-.idea/
 
+# Gradle
+.gradle
+/build
+
+# Android
+/local.properties
+
+# OSX
+.DS_Store
