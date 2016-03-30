@@ -31,7 +31,7 @@ Now your data class is `Parcelable` and can be passed directly to a `Bundle` or 
 
 A simple example can be found in the [kotlin-example](https://github.com/grandstaish/paperparcel/tree/master/examples/kotlin-example) module. For a more real-world example, see [here](https://github.com/grandstaish/four-letters-redux/blob/master/app/src/main/kotlin/nz/bradcampbell/fourletters/redux/state/State.kt).
 
-The `CREATOR` field is boilerplate code, and a great candidate for and a Live Template. I wrote a [quick tutorial in the wiki](https://github.com/grandstaish/paperparcel/wiki/Live-template-for-CREATOR) to help set it up.
+The `CREATOR` field is boilerplate code and is a great candidate for a [Live Template](https://medium.com/google-developers/writing-more-code-by-writing-less-code-with-android-studio-live-templates-244f648d17c7#.q5h975yrd). I wrote a [quick tutorial in the wiki](https://github.com/grandstaish/paperparcel/wiki/Live-template-for-CREATOR) to help set it up.
 
 If you add additional (non-constructor) properties to your data class, ensure to make them transient (via `@Transient`). This is to work around a [bug in kapt](https://youtrack.jetbrains.com/issue/KT-9609) and won't be required once the bug has been fixed. E.g.:
 
