@@ -31,7 +31,7 @@ Now your data class is `Parcelable` and can be passed directly to a `Bundle` or 
 
 A simple example can be found in the [kotlin-example](https://github.com/grandstaish/paperparcel/tree/master/examples/kotlin-example) module. For a more real-world example, see [here](https://github.com/grandstaish/four-letters-redux/blob/master/app/src/main/kotlin/nz/bradcampbell/fourletters/redux/state/State.kt).
 
-If you add additional (non-constructor) properties to your data class, ensure to make them transient (via `@Transient`), e.g.:
+If you add additional (non-constructor) properties to your data class, ensure to make them transient (via `@Transient`). This is to work around a [bug in kapt](https://youtrack.jetbrains.com/issue/KT-9609) and won't be required once the bug has been fixed. E.g.:
 
 ``` java
 @PaperParcel
