@@ -31,7 +31,7 @@ project.plugins.whenPluginAdded { plugin ->
     }
 }
 
-ext.kotlin_version = '1.0.1-1'
+ext.kotlin_version = '1.0.1-2'
 
 ext.deps = [
     // Intellij
