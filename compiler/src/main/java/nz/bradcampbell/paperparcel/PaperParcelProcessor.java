@@ -42,6 +42,7 @@ import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.STRING;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.STRING_ARRAY;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.TYPE_ADAPTER;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.getParcelableType;
+import static nz.bradcampbell.paperparcel.internal.utils.StringUtils.getUniqueName;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.generateWrappedTypeName;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.getFields;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.getPackageName;
@@ -672,7 +673,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
     ClassName creator = ClassName.get("android.os", "Parcelable", "Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, wrapperClassName);
 
-    ParameterSpec in = ParameterSpec.builder(PARCEL, "in").build();
+    String inParameterName = "in";
+    ParameterSpec in = ParameterSpec.builder(PARCEL, inParameterName).build();
 
     CodeBlock.Builder creatorInitializer = CodeBlock.builder()
         .beginControlFlow("new $T()", ParameterizedTypeName.get(creator, wrapperClassName))
@@ -700,9 +702,12 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
       CodeBlock.Builder block = CodeBlock.builder();
 
+      Set<String> scopedVariableNames = new LinkedHashSet<>();
+      scopedVariableNames.add(inParameterName);
+
       for (int i = 0; i < properties.size(); i++) {
         Property p = properties.get(i);
-        params[i + paramsOffset] = p.readFromParcel(block, in, classLoader, typeAdapters);
+        params[i + paramsOffset] = p.readFromParcel(block, in, classLoader, typeAdapters, scopedVariableNames);
         dataInitializer += "$L";
         if (i != properties.size() - 1) {
           dataInitializer += ", ";
@@ -751,8 +756,11 @@ public class PaperParcelProcessor extends AbstractProcessor {
   }
 
   private MethodSpec generateWriteToParcel(List<Property> properties, Map<ClassName, FieldSpec> typeAdapters) {
-    ParameterSpec dest = ParameterSpec.builder(PARCEL, "dest").build();
-    ParameterSpec flags = ParameterSpec.builder(int.class, "flags").build();
+    String destParameterName = "dest";
+    String flagsParameterName = "flags";
+
+    ParameterSpec dest = ParameterSpec.builder(PARCEL, destParameterName).build();
+    ParameterSpec flags = ParameterSpec.builder(int.class, flagsParameterName).build();
 
     MethodSpec.Builder builder = MethodSpec.methodBuilder("writeToParcel")
         .addAnnotation(Override.class)
@@ -760,17 +768,28 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .addParameter(dest)
         .addParameter(flags);
 
+    Set<String> scopedVariableNames = new LinkedHashSet<>();
+    scopedVariableNames.add(destParameterName);
+    scopedVariableNames.add(flagsParameterName);
+
     CodeBlock.Builder block = CodeBlock.builder();
     for (Property p : properties) {
       String getterMethodName = p.getAccessorMethodName();
       String accessorStrategy = getterMethodName == null ? p.getName() : getterMethodName + "()";
+
       TypeName wildCardTypeName = p.getTypeName();
       if (wildCardTypeName instanceof WildcardTypeName) {
         wildCardTypeName = ((WildcardTypeName) wildCardTypeName).upperBounds.get(0);
       }
-      block.addStatement("$T $N = $N.$N", wildCardTypeName, p.getName(), DATA_VARIABLE_NAME, accessorStrategy);
-      CodeBlock sourceLiteral = PropertyUtils.literal("$N", p.getName());
-      p.writeToParcel(block, dest, flags, sourceLiteral, typeAdapters);
+
+      String propertyName = getUniqueName(p.getName(), scopedVariableNames);
+      block.addStatement("$T $N = $N.$N", wildCardTypeName, propertyName, DATA_VARIABLE_NAME, accessorStrategy);
+
+      // Add propertyName to scoped names
+      scopedVariableNames.add(propertyName);
+
+      CodeBlock sourceLiteral = PropertyUtils.literal("$N", propertyName);
+      p.writeToParcel(block, dest, flags, sourceLiteral, typeAdapters, scopedVariableNames);
     }
 
     return builder.addCode(block.build()).build();

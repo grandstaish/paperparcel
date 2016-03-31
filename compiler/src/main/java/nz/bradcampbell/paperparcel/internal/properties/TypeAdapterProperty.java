@@ -25,13 +25,14 @@ public class TypeAdapterProperty extends Property {
 
   @Override
   protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                          Map<ClassName, FieldSpec> typeAdapters) {
+                                          Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
     return literal("$N.readFromParcel($N)", typeAdapters.get(typeAdapter), in);
   }
 
   @Override
-  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
-                                    CodeBlock sourceLiteral, Map<ClassName, FieldSpec> typeAdapters) {
+  protected void writeToParcelInner(
+      CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
+      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
     block.addStatement("$N.writeToParcel($L, $N, $N)", typeAdapters.get(typeAdapter), sourceLiteral, dest, flags);
   }
 

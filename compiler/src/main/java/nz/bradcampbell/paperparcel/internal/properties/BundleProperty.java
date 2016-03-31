@@ -11,6 +11,7 @@ import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Set;
 
 public class BundleProperty extends Property {
   public BundleProperty(boolean isNullable, TypeName typeName, boolean isInterface, String name,
@@ -20,13 +21,14 @@ public class BundleProperty extends Property {
 
   @Override
   protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                          Map<ClassName, FieldSpec> typeAdapters) {
+                                          Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
     return literal("$N.readBundle($N)", in, classLoader);
   }
 
   @Override
-  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
-                                    CodeBlock sourceLiteral, Map<ClassName, FieldSpec> typeAdapters) {
+  protected void writeToParcelInner(
+      CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
+      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
     block.addStatement("$N.writeBundle($L)", dest, sourceLiteral);
   }
 

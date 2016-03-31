@@ -1,6 +1,7 @@
 package nz.bradcampbell.paperparcel.internal.properties;
 
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
+import static nz.bradcampbell.paperparcel.internal.utils.StringUtils.getUniqueName;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -14,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -30,13 +32,16 @@ public class MapProperty extends Property {
 
   @Override
   protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                          Map<ClassName, FieldSpec> typeAdapters) {
+                                          Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
     // Read size
-    String mapSize = getName() + "Size";
+    String mapSize = getUniqueName(getName() + "Size", scopedVariableNames);
     block.addStatement("$T $N = $N.readInt()", int.class, mapSize, in);
 
+    // Add mapSize to scoped names
+    scopedVariableNames.add(mapSize);
+
     // Create map to read into
-    String mapName = getName();
+    String mapName = getUniqueName(getName(), scopedVariableNames);
 
     TypeName typeName = getTypeName();
     if (typeName instanceof WildcardTypeName) {
@@ -69,15 +74,25 @@ public class MapProperty extends Property {
       block.addStatement("$T $N = new $T()", typeName, mapName, typeName);
     }
 
+    // Add mapName to scopedNames
+    scopedVariableNames.add(mapName);
+
     // Write a loop to iterate through each entity
-    String indexName = getName() + "Index";
+    String indexName = getUniqueName(getName() + "Index", scopedVariableNames);
     block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, mapSize, indexName);
 
+    // Control flow, new scope
+    Set<String> loopScopedVariableNames = new LinkedHashSet<>(scopedVariableNames);
+
+    // Add indexName to scoped names
+    loopScopedVariableNames.add(indexName);
+
     // Read in the key
-    CodeBlock keyLiteral = keyProperty.readFromParcel(block, in, classLoader, typeAdapters);
+    CodeBlock keyLiteral = keyProperty.readFromParcel(block, in, classLoader, typeAdapters, loopScopedVariableNames);
 
     // Read in the value
-    CodeBlock valueLiteral = valueProperty.readFromParcel(block, in, classLoader, typeAdapters);
+    CodeBlock valueLiteral = valueProperty.readFromParcel(block, in, classLoader, typeAdapters,
+                                                          loopScopedVariableNames);
 
     // Add the parameter to the output map
     block.addStatement("$N.put($L, $L)", mapName, keyLiteral, valueLiteral);
@@ -88,8 +103,10 @@ public class MapProperty extends Property {
   }
 
   @Override
-  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
-                                    CodeBlock sourceLiteral, Map<ClassName, FieldSpec> typeAdapters) {
+  protected void writeToParcelInner(
+      CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
+      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+
     // Write size
     block.addStatement("$N.writeInt($L.size())", dest, sourceLiteral);
 
@@ -97,18 +114,24 @@ public class MapProperty extends Property {
     TypeName valueTypeName = valueProperty.getTypeName();
 
     // Write a loop to iterate through each entry
-    String entryName = getName() + "Entry";
+    String entryName = getUniqueName(getName() + "Entry", scopedVariableNames);
     block.beginControlFlow("for ($T<$T, $T> $N : $L.entrySet())", Map.Entry.class, keyTypeName, valueTypeName,
                            entryName, sourceLiteral);
+
+    // Control flow, new scope
+    Set<String> loopScopedVariableNames = new LinkedHashSet<>(scopedVariableNames);
+
+    // Add entryName to scoped names
+    loopScopedVariableNames.add(entryName);
 
     CodeBlock keySourceLiteral = literal("$N.getKey()", entryName);
     CodeBlock valueSourceLiteral = literal("$N.getValue()", entryName);
 
     // Write in the key.
-    keyProperty.writeToParcel(block, dest, flags, keySourceLiteral, typeAdapters);
+    keyProperty.writeToParcel(block, dest, flags, keySourceLiteral, typeAdapters, loopScopedVariableNames);
 
     // Write in the value.
-    valueProperty.writeToParcel(block, dest, flags, valueSourceLiteral, typeAdapters);
+    valueProperty.writeToParcel(block, dest, flags, valueSourceLiteral, typeAdapters, loopScopedVariableNames);
 
     block.endControlFlow();
   }

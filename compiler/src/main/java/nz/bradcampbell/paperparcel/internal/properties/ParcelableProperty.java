@@ -12,6 +12,7 @@ import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Set;
 
 public class ParcelableProperty extends Property {
   public ParcelableProperty(boolean isNullable, TypeName typeName, boolean isInterface, String name,
@@ -21,14 +22,15 @@ public class ParcelableProperty extends Property {
 
   @Override
   protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                          Map<ClassName, FieldSpec> typeAdapters) {
+                                          Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
     TypeName rawTypeName = getRawTypeName(getTypeName());
     return literal("$T.CREATOR.createFromParcel($N)", rawTypeName, in);
   }
 
   @Override
-  protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
-                                    CodeBlock sourceLiteral, Map<ClassName, FieldSpec> typeAdapters) {
+  protected void writeToParcelInner(
+      CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
+      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
     block.addStatement("$L.writeToParcel($N, $N)", sourceLiteral, dest, flags);
   }
 }

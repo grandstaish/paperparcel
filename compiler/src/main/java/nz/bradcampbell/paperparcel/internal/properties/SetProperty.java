@@ -1,6 +1,7 @@
 package nz.bradcampbell.paperparcel.internal.properties;
 
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
+import static nz.bradcampbell.paperparcel.internal.utils.StringUtils.getUniqueName;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -27,13 +28,16 @@ public class SetProperty extends Property {
 
   @Override
   protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                          Map<ClassName, FieldSpec> typeAdapters) {
+                                          Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
     // Read size
-    String setSize = getName() + "Size";
+    String setSize = getUniqueName(getName() + "Size", scopedVariableNames);
     block.addStatement("$T $N = $N.readInt()", int.class, setSize, in);
 
+    // Add setSize to scoped names
+    scopedVariableNames.add(setSize);
+
     // Create set to read into
-    String setName = getName();
+    String setName = getUniqueName(getName(), scopedVariableNames);
 
     TypeName typeName = getTypeName();
     if (typeName instanceof WildcardTypeName) {
@@ -53,30 +57,46 @@ public class SetProperty extends Property {
       block.addStatement("$T $N = new $T()", typeName, setName, typeName);
     }
 
+    // Add setName to scoped names
+    scopedVariableNames.add(setName);
+
     // Write a loop to iterate through each parameter
-    String indexName = getName() + "Index";
+    String indexName = getUniqueName(getName() + "Index", scopedVariableNames);
     block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, setSize, indexName);
 
+    // Control flow, new scope
+    Set<String> loopScopedVariableNames = new LinkedHashSet<>(scopedVariableNames);
+
+    // Add indexName to scoped names
+    loopScopedVariableNames.add(indexName);
+
     // Read in the parameter.
-    CodeBlock parameterLiteral = typeArgument.readFromParcel(block, in, classLoader, typeAdapters);
+    CodeBlock itemLiteral = typeArgument.readFromParcel(block, in, classLoader, typeAdapters, loopScopedVariableNames);
 
     // Add the parameter to the output list
-    block.addStatement("$N.add($L)", setName, parameterLiteral);
+    block.addStatement("$N.add($L)", setName, itemLiteral);
 
     block.endControlFlow();
 
     return literal("$N", setName);
   }
 
-  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
-                                              CodeBlock sourceLiteral, Map<ClassName, FieldSpec> typeAdapters) {
-    // Write size
-    String setSize = getName() + "Size";
+  @Override
+  protected void writeToParcelInner(
+      CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
+      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+
+    String setSize = getUniqueName(getName() + "Size", scopedVariableNames);
     block.addStatement("$T $N = $L.size()", int.class, setSize, sourceLiteral);
+
+    // Add setSize to scoped names
+    scopedVariableNames.add(setSize);
+
+    // Write size
     block.addStatement("$N.writeInt($N)", dest, setSize);
 
     // Write a loop to iterate through each parameter
-    String parameterItemName = getName() + "Item";
+    String parameterItemName = getUniqueName(getName() + "Item", scopedVariableNames);
 
     TypeName parameterTypeName = typeArgument.getTypeName();
 
@@ -87,10 +107,16 @@ public class SetProperty extends Property {
 
     block.beginControlFlow("for ($T $N : $L)", parameterTypeName, parameterItemName, sourceLiteral);
 
+    // Control flow, new scope
+    Set<String> loopScopedVariableNames = new LinkedHashSet<>(scopedVariableNames);
+
+    // Add parameterItemName to scoped names
+    loopScopedVariableNames.add(parameterItemName);
+
     CodeBlock parameterSource = literal("$N", parameterItemName);
 
-    // Write in the parameter
-    typeArgument.writeToParcel(block, dest, flags, parameterSource, typeAdapters);
+    // Write in the item
+    typeArgument.writeToParcel(block, dest, flags, parameterSource, typeAdapters, loopScopedVariableNames);
 
     block.endControlFlow();
   }

@@ -2,6 +2,7 @@ package nz.bradcampbell.paperparcel.internal;
 
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
 import static nz.bradcampbell.paperparcel.internal.utils.StringUtils.capitalizeFirstCharacter;
+import static nz.bradcampbell.paperparcel.internal.utils.StringUtils.getUniqueName;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -87,30 +88,41 @@ public abstract class Property {
    * @param classLoader ClassLoader to use for reading data
    */
   public final CodeBlock readFromParcel(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                        Map<ClassName, FieldSpec> typeAdapters) {
+                                        Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
     TypeName typeName = getTypeName();
     if (typeName instanceof WildcardTypeName) {
       typeName = ((WildcardTypeName) typeName).upperBounds.get(0);
     }
 
-    CodeBlock defaultLiteral = literal("$N", name);
-    CodeBlock nullableLiteral = literal("$N", "out" + capitalizeFirstCharacter(name));
+    String defaultName = getUniqueName(name, scopedVariableNames);
+    String nullableName = getUniqueName("out" + capitalizeFirstCharacter(defaultName), scopedVariableNames);
+
+    CodeBlock defaultLiteral = literal("$N", defaultName);
+    CodeBlock nullableLiteral = literal("$N", nullableName);
 
     if (isNullable) {
       block.addStatement("$T $L = null", typeName, nullableLiteral);
       block.beginControlFlow("if ($N.readInt() == 0)", in);
     }
 
-    CodeBlock literal = readFromParcelInner(block, in, classLoader, typeAdapters);
+    CodeBlock literal = readFromParcelInner(block, in, classLoader, typeAdapters, scopedVariableNames);
     boolean alreadyDefined = defaultLiteral.toString().equals(literal.toString());
 
     CodeBlock result;
     if (isNullable) {
       block.addStatement("$L = $L", nullableLiteral, literal);
       result = nullableLiteral;
+
+      // Add nullableName to scoped names
+      scopedVariableNames.add(nullableName);
+
     } else if (!alreadyDefined) {
       block.addStatement("$T $L = $L", typeName, defaultLiteral, literal);
       result = defaultLiteral;
+
+      // Add defaultName to scoped names
+      scopedVariableNames.add(defaultName);
+
     } else {
       result = defaultLiteral;
     }
@@ -131,7 +143,8 @@ public abstract class Property {
    * @param classLoader ClassLoader to use for reading data
    */
   protected abstract CodeBlock readFromParcelInner(
-      CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader, Map<ClassName, FieldSpec> typeAdapters);
+      CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
+      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames);
 
   /**
    * Generates a CodeBlock object that can be used to write the property to the given parcel. This handles checks
@@ -140,8 +153,10 @@ public abstract class Property {
    *
    * @param dest The Parcel parameter
    */
-  public final void writeToParcel(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
-                                  CodeBlock sourceLiteral, Map<ClassName, FieldSpec> typeAdapters) {
+  public final void writeToParcel(
+      CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
+      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+
     if (isNullable) {
       block.beginControlFlow("if ($L == null)", sourceLiteral);
       block.addStatement("$N.writeInt(1)", dest);
@@ -149,7 +164,7 @@ public abstract class Property {
       block.addStatement("$N.writeInt(0)", dest);
     }
 
-    writeToParcelInner(block, dest, flags, sourceLiteral, typeAdapters);
+    writeToParcelInner(block, dest, flags, sourceLiteral, typeAdapters, scopedVariableNames);
 
     if (isNullable) {
       block.endControlFlow();
@@ -163,6 +178,7 @@ public abstract class Property {
    * @param block The CodeBlock builder to write the code to
    * @param dest The Parcel parameter
    */
-  protected abstract void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
-                                             CodeBlock sourceLiteral, Map<ClassName, FieldSpec> typeAdapters);
+  protected abstract void writeToParcelInner(
+      CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
+      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames);
 }
