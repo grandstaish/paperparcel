@@ -21,14 +21,14 @@ public class LongProperty extends Property {
 
   @Override
   protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                          Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+                                          Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
     return literal("$N.readLong()", in);
   }
 
   @Override
   protected void writeToParcelInner(
       CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
-      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+      Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
     block.addStatement("$N.writeLong($L)", dest, sourceLiteral);
   }
 }

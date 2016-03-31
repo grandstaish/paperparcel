@@ -21,14 +21,14 @@ public class ShortProperty extends Property {
 
   @Override
   protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                          Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+                                          Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
     return literal("($T) $N.readInt()", TypeName.SHORT, in);
   }
 
   @Override
   protected void writeToParcelInner(
       CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
-      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+      Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
     block.addStatement("$N.writeInt($L)", dest, sourceLiteral);
   }
 }

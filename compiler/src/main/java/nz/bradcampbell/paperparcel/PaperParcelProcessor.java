@@ -42,7 +42,9 @@ import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.STRING;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.STRING_ARRAY;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.TYPE_ADAPTER;
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.getParcelableType;
+import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
 import static nz.bradcampbell.paperparcel.internal.utils.StringUtils.getUniqueName;
+import static nz.bradcampbell.paperparcel.internal.utils.StringUtils.uncapitalizeFirstCharacter;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.generateWrappedTypeName;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.getFields;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.getPackageName;
@@ -50,7 +52,6 @@ import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.hasTypeArgume
 
 import com.google.auto.common.MoreElements;
 import com.google.auto.service.AutoService;
-import com.google.common.base.CaseFormat;
 
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -102,6 +103,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -624,37 +626,18 @@ public class PaperParcelProcessor extends AbstractProcessor {
       wrapperBuilder.addField(classLoader);
     }
 
-    Map<ClassName, FieldSpec> typeAdapters = new HashMap<>();
-    for (ClassName typeAdapter : dataClass.getRequiredTypeAdapters()) {
-      FieldSpec field = generateTypeAdapterField(typeAdapter);
-      typeAdapters.put(typeAdapter, field);
-      wrapperBuilder.addField(field);
-    }
+    FieldSpec creator = generateCreator(
+        dataClass.getClassName(), dataClass.getWrapperClassName(), dataClass.isSingleton(), dataClass.getProperties(),
+        classLoader, dataClass.getRequiredTypeAdapters());
 
-    wrapperBuilder.addField(generateCreator(dataClass.getClassName(), dataClass.getWrapperClassName(),
-                                            dataClass.isSingleton(), dataClass.getProperties(), classLoader,
-                                            typeAdapters))
+    wrapperBuilder.addField(creator)
         .addField(generateContentsField(dataClass.getClassName()))
         .addMethod(generateContentsConstructor(dataClass.getClassName()))
         .addMethod(generateDescribeContents())
-        .addMethod(generateWriteToParcel(dataClass.getProperties(), typeAdapters));
+        .addMethod(generateWriteToParcel(dataClass.getProperties(), dataClass.getRequiredTypeAdapters()));
 
     // Build the java file
     return JavaFile.builder(dataClass.getClassPackage(), wrapperBuilder.build()).build();
-  }
-
-  private FieldSpec generateTypeAdapterField(ClassName typeAdapter) {
-    String packageName = typeAdapter.packageName().replace(".", "_");
-    String simpleNames = "";
-    for (String name : typeAdapter.simpleNames()) {
-      simpleNames += name;
-    }
-    String constPackageName = CaseFormat.LOWER_UNDERSCORE.to(CaseFormat.UPPER_UNDERSCORE, packageName);
-    String constSimpleNames = CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, simpleNames);
-    String fieldName = packageName.isEmpty() ? constSimpleNames : constPackageName + "_" + constSimpleNames;
-    return FieldSpec.builder(typeAdapter, fieldName, Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
-        .initializer("new $T()", typeAdapter)
-        .build();
   }
 
   private FieldSpec generateClassLoaderField(TypeName className) {
@@ -668,7 +651,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
   private FieldSpec generateCreator(
       TypeName typeName, ClassName wrapperClassName, boolean isSingleton, List<Property> properties,
-      FieldSpec classLoader, Map<ClassName, FieldSpec> typeAdapters) {
+      FieldSpec classLoader, Set<ClassName> typeAdapters) {
 
     ClassName creator = ClassName.get("android.os", "Parcelable", "Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, wrapperClassName);
@@ -705,9 +688,23 @@ public class PaperParcelProcessor extends AbstractProcessor {
       Set<String> scopedVariableNames = new LinkedHashSet<>();
       scopedVariableNames.add(inParameterName);
 
+      Map<ClassName, CodeBlock> typeAdapterMap = new LinkedHashMap<>(typeAdapters.size());
+
+      for (ClassName typeAdapter : typeAdapters) {
+        String typeAdapterName = getUniqueName(
+            uncapitalizeFirstCharacter(typeAdapter.simpleName()), scopedVariableNames);
+
+        block.addStatement("$T $N = new $T()", typeAdapter, typeAdapterName, typeAdapter);
+
+        // Add type adapter name to scoped names
+        scopedVariableNames.add(typeAdapterName);
+
+        typeAdapterMap.put(typeAdapter, literal("$N", typeAdapterName));
+      }
+
       for (int i = 0; i < properties.size(); i++) {
         Property p = properties.get(i);
-        params[i + paramsOffset] = p.readFromParcel(block, in, classLoader, typeAdapters, scopedVariableNames);
+        params[i + paramsOffset] = p.readFromParcel(block, in, classLoader, typeAdapterMap, scopedVariableNames);
         dataInitializer += "$L";
         if (i != properties.size() - 1) {
           dataInitializer += ", ";
@@ -755,7 +752,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .build();
   }
 
-  private MethodSpec generateWriteToParcel(List<Property> properties, Map<ClassName, FieldSpec> typeAdapters) {
+  private MethodSpec generateWriteToParcel(List<Property> properties, Set<ClassName> typeAdapters) {
     String destParameterName = "dest";
     String flagsParameterName = "flags";
 
@@ -768,11 +765,26 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .addParameter(dest)
         .addParameter(flags);
 
+    CodeBlock.Builder block = CodeBlock.builder();
+
     Set<String> scopedVariableNames = new LinkedHashSet<>();
     scopedVariableNames.add(destParameterName);
     scopedVariableNames.add(flagsParameterName);
 
-    CodeBlock.Builder block = CodeBlock.builder();
+    Map<ClassName, CodeBlock> typeAdapterMap = new LinkedHashMap<>(typeAdapters.size());
+
+    for (ClassName typeAdapter : typeAdapters) {
+      String typeAdapterName = getUniqueName(
+          uncapitalizeFirstCharacter(typeAdapter.simpleName()), scopedVariableNames);
+
+      block.addStatement("$T $N = new $T()", typeAdapter, typeAdapterName, typeAdapter);
+
+      // Add type adapter name to scoped names
+      scopedVariableNames.add(typeAdapterName);
+
+      typeAdapterMap.put(typeAdapter, literal("$N", typeAdapterName));
+    }
+
     for (Property p : properties) {
       String getterMethodName = p.getAccessorMethodName();
       String accessorStrategy = getterMethodName == null ? p.getName() : getterMethodName + "()";
@@ -789,7 +801,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
       scopedVariableNames.add(propertyName);
 
       CodeBlock sourceLiteral = PropertyUtils.literal("$N", propertyName);
-      p.writeToParcel(block, dest, flags, sourceLiteral, typeAdapters, scopedVariableNames);
+      p.writeToParcel(block, dest, flags, sourceLiteral, typeAdapterMap, scopedVariableNames);
     }
 
     return builder.addCode(block.build()).build();

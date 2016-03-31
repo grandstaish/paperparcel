@@ -32,7 +32,7 @@ public class MapProperty extends Property {
 
   @Override
   protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                          Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+                                          Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
     // Read size
     String mapSize = getUniqueName(getName() + "Size", scopedVariableNames);
     block.addStatement("$T $N = $N.readInt()", int.class, mapSize, in);
@@ -88,10 +88,10 @@ public class MapProperty extends Property {
     loopScopedVariableNames.add(indexName);
 
     // Read in the key
-    CodeBlock keyLiteral = keyProperty.readFromParcel(block, in, classLoader, typeAdapters, loopScopedVariableNames);
+    CodeBlock keyLiteral = keyProperty.readFromParcel(block, in, classLoader, typeAdaptersMap, loopScopedVariableNames);
 
     // Read in the value
-    CodeBlock valueLiteral = valueProperty.readFromParcel(block, in, classLoader, typeAdapters,
+    CodeBlock valueLiteral = valueProperty.readFromParcel(block, in, classLoader, typeAdaptersMap,
                                                           loopScopedVariableNames);
 
     // Add the parameter to the output map
@@ -105,7 +105,7 @@ public class MapProperty extends Property {
   @Override
   protected void writeToParcelInner(
       CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
-      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+      Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
 
     // Write size
     block.addStatement("$N.writeInt($L.size())", dest, sourceLiteral);
@@ -128,10 +128,10 @@ public class MapProperty extends Property {
     CodeBlock valueSourceLiteral = literal("$N.getValue()", entryName);
 
     // Write in the key.
-    keyProperty.writeToParcel(block, dest, flags, keySourceLiteral, typeAdapters, loopScopedVariableNames);
+    keyProperty.writeToParcel(block, dest, flags, keySourceLiteral, typeAdaptersMap, loopScopedVariableNames);
 
     // Write in the value.
-    valueProperty.writeToParcel(block, dest, flags, valueSourceLiteral, typeAdapters, loopScopedVariableNames);
+    valueProperty.writeToParcel(block, dest, flags, valueSourceLiteral, typeAdaptersMap, loopScopedVariableNames);
 
     block.endControlFlow();
   }

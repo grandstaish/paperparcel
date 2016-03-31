@@ -28,7 +28,7 @@ public class SparseArrayProperty extends Property {
 
   @Override
   protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                          Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+                                          Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
     // Read size
     String sparseArraySize = getUniqueName(getName() + "Size", scopedVariableNames);
     block.addStatement("$T $N = $N.readInt()", int.class, sparseArraySize, in);
@@ -75,7 +75,8 @@ public class SparseArrayProperty extends Property {
     loopScopedVariableNames.add(keyName);
 
     // Read in the value
-    CodeBlock valueLiteral = typeArgument.readFromParcel(block, in, classLoader, typeAdapters, loopScopedVariableNames);
+    CodeBlock valueLiteral = typeArgument.readFromParcel(block, in, classLoader, typeAdaptersMap,
+                                                         loopScopedVariableNames);
 
     // Add the value to the output list
     block.addStatement("$N.put($N, $L)", sparseArrayName, keyName, valueLiteral);
@@ -88,7 +89,7 @@ public class SparseArrayProperty extends Property {
   @Override
   protected void writeToParcelInner(
       CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
-      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+      Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
 
     String sparseArraySize = getUniqueName(getName() + "Size", scopedVariableNames);
     block.addStatement("$T $N = $L.size()", int.class, sparseArraySize, sourceLiteral);
@@ -133,7 +134,7 @@ public class SparseArrayProperty extends Property {
     CodeBlock parameterSource = literal("$N", valueName);
 
     // Write in the value
-    typeArgument.writeToParcel(block, dest, flags, parameterSource, typeAdapters, loopScopedVariableNames);
+    typeArgument.writeToParcel(block, dest, flags, parameterSource, typeAdaptersMap, loopScopedVariableNames);
 
     block.endControlFlow();
   }

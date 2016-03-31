@@ -88,7 +88,7 @@ public abstract class Property {
    * @param classLoader ClassLoader to use for reading data
    */
   public final CodeBlock readFromParcel(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                        Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+                                        Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
     TypeName typeName = getTypeName();
     if (typeName instanceof WildcardTypeName) {
       typeName = ((WildcardTypeName) typeName).upperBounds.get(0);
@@ -105,7 +105,7 @@ public abstract class Property {
       block.beginControlFlow("if ($N.readInt() == 0)", in);
     }
 
-    CodeBlock literal = readFromParcelInner(block, in, classLoader, typeAdapters, scopedVariableNames);
+    CodeBlock literal = readFromParcelInner(block, in, classLoader, typeAdaptersMap, scopedVariableNames);
     boolean alreadyDefined = defaultLiteral.toString().equals(literal.toString());
 
     CodeBlock result;
@@ -144,7 +144,7 @@ public abstract class Property {
    */
   protected abstract CodeBlock readFromParcelInner(
       CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames);
+      Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames);
 
   /**
    * Generates a CodeBlock object that can be used to write the property to the given parcel. This handles checks
@@ -155,7 +155,7 @@ public abstract class Property {
    */
   public final void writeToParcel(
       CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
-      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+      Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
 
     if (isNullable) {
       block.beginControlFlow("if ($L == null)", sourceLiteral);
@@ -164,7 +164,7 @@ public abstract class Property {
       block.addStatement("$N.writeInt(0)", dest);
     }
 
-    writeToParcelInner(block, dest, flags, sourceLiteral, typeAdapters, scopedVariableNames);
+    writeToParcelInner(block, dest, flags, sourceLiteral, typeAdaptersMap, scopedVariableNames);
 
     if (isNullable) {
       block.endControlFlow();
@@ -180,5 +180,5 @@ public abstract class Property {
    */
   protected abstract void writeToParcelInner(
       CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
-      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames);
+      Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames);
 }

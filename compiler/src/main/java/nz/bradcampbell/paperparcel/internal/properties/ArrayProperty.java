@@ -30,7 +30,7 @@ public class ArrayProperty extends Property {
 
   @Override
   protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                          Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+                                          Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
     // Read size
     String arraySize = getUniqueName(getName() + "Size", scopedVariableNames);
     block.addStatement("$T $N = $N.readInt()", int.class, arraySize, in);
@@ -57,7 +57,7 @@ public class ArrayProperty extends Property {
     loopScopedVariableNames.add(indexName);
 
     // Read in the component.
-    CodeBlock componentLiteral = componentType.readFromParcel(block, in, classLoader, typeAdapters,
+    CodeBlock componentLiteral = componentType.readFromParcel(block, in, classLoader, typeAdaptersMap,
                                                               loopScopedVariableNames);
 
     // Add the parameter to the output array
@@ -71,7 +71,7 @@ public class ArrayProperty extends Property {
   @Override
   protected void writeToParcelInner(
       CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
-      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+      Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
 
     String arraySize = getUniqueName(getName() + "Size", scopedVariableNames);
     block.addStatement("$T $N = $L.length", int.class, arraySize, sourceLiteral);
@@ -111,7 +111,7 @@ public class ArrayProperty extends Property {
     CodeBlock componentSource = literal("$N", componentItemName);
 
     // Write in the component.
-    componentType.writeToParcel(block, dest, flags, componentSource, typeAdapters, loopScopedVariableNames);
+    componentType.writeToParcel(block, dest, flags, componentSource, typeAdaptersMap, loopScopedVariableNames);
 
     block.endControlFlow();
   }

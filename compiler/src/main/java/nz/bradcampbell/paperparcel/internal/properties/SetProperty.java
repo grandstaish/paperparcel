@@ -28,7 +28,7 @@ public class SetProperty extends Property {
 
   @Override
   protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                          Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+                                          Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
     // Read size
     String setSize = getUniqueName(getName() + "Size", scopedVariableNames);
     block.addStatement("$T $N = $N.readInt()", int.class, setSize, in);
@@ -71,7 +71,8 @@ public class SetProperty extends Property {
     loopScopedVariableNames.add(indexName);
 
     // Read in the parameter.
-    CodeBlock itemLiteral = typeArgument.readFromParcel(block, in, classLoader, typeAdapters, loopScopedVariableNames);
+    CodeBlock itemLiteral = typeArgument.readFromParcel(block, in, classLoader, typeAdaptersMap,
+                                                        loopScopedVariableNames);
 
     // Add the parameter to the output list
     block.addStatement("$N.add($L)", setName, itemLiteral);
@@ -84,7 +85,7 @@ public class SetProperty extends Property {
   @Override
   protected void writeToParcelInner(
       CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
-      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+      Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
 
     String setSize = getUniqueName(getName() + "Size", scopedVariableNames);
     block.addStatement("$T $N = $L.size()", int.class, setSize, sourceLiteral);
@@ -116,7 +117,7 @@ public class SetProperty extends Property {
     CodeBlock parameterSource = literal("$N", parameterItemName);
 
     // Write in the item
-    typeArgument.writeToParcel(block, dest, flags, parameterSource, typeAdapters, loopScopedVariableNames);
+    typeArgument.writeToParcel(block, dest, flags, parameterSource, typeAdaptersMap, loopScopedVariableNames);
 
     block.endControlFlow();
   }

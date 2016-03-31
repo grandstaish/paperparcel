@@ -29,7 +29,7 @@ public class ListProperty extends Property {
 
   @Override
   protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                          Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+                                          Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
     // Read size
     String listSize = getUniqueName(getName() + "Size", scopedVariableNames);
     block.addStatement("$T $N = $N.readInt()", int.class, listSize, in);
@@ -72,7 +72,7 @@ public class ListProperty extends Property {
     loopScopedVariableNames.add(indexName);
 
     // Read in the item
-    CodeBlock itemLiteral = typeArgument.readFromParcel(block, in, classLoader, typeAdapters, loopScopedVariableNames);
+    CodeBlock itemLiteral = typeArgument.readFromParcel(block, in, classLoader, typeAdaptersMap, loopScopedVariableNames);
 
     // Add the item to the output list
     block.addStatement("$N.add($L)", listName, itemLiteral);
@@ -84,7 +84,7 @@ public class ListProperty extends Property {
 
   @Override protected void writeToParcelInner(
       CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
-      Map<ClassName, FieldSpec> typeAdapters, Set<String> scopedVariableNames) {
+      Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
 
     String listSize = getUniqueName(getName() + "Size", scopedVariableNames);
     block.addStatement("$T $N = $L.size()", int.class, listSize, sourceLiteral);
@@ -121,7 +121,7 @@ public class ListProperty extends Property {
     CodeBlock parameterSource = literal("$N", parameterItemName);
 
     // Write in the parameter
-    typeArgument.writeToParcel(block, dest, flags, parameterSource, typeAdapters, loopScopedVariableNames);
+    typeArgument.writeToParcel(block, dest, flags, parameterSource, typeAdaptersMap, loopScopedVariableNames);
 
     block.endControlFlow();
   }
