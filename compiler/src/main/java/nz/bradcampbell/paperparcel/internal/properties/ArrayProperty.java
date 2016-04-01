@@ -12,6 +12,7 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.WildcardTypeName;
+import nz.bradcampbell.paperparcel.internal.Adapter;
 import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
 
@@ -137,7 +138,7 @@ public class ArrayProperty extends Property {
     return componentType.requiresClassLoader();
   }
 
-  @Override public Set<ClassName> requiredTypeAdapters() {
+  @Override public Set<Adapter> requiredTypeAdapters() {
     return componentType.requiredTypeAdapters();
   }
 }

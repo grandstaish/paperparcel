@@ -4,7 +4,7 @@ import android.os.Parcel
 import nz.bradcampbell.paperparcel.TypeAdapter
 import java.util.*
 
-class DateTypeAdapter : TypeAdapter<Date> {
+object DateTypeAdapter : TypeAdapter<Date> {
   override fun writeToParcel(value: Date, outParcel: Parcel, flags: Int) {
     outParcel.writeLong(value.time)
   }

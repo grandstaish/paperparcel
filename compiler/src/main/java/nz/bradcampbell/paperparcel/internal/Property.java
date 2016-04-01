@@ -75,7 +75,7 @@ public abstract class Property {
    * TODO:
    * @return
    */
-  public Set<ClassName> requiredTypeAdapters() {
+  public Set<Adapter> requiredTypeAdapters() {
     return Collections.emptySet();
   }
 

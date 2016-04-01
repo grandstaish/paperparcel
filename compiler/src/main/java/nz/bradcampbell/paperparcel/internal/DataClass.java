@@ -15,7 +15,7 @@ public class DataClass {
   private final TypeName className;
   private final ClassName wrapperClassName;
   private final boolean requiresClassLoader;
-  private final Set<ClassName> requiredTypeAdapters;
+  private final Set<Adapter> requiredTypeAdapters;
   private final boolean singleton;
 
   /**
@@ -30,7 +30,7 @@ public class DataClass {
    * @param singleton True if the class is a singleton object
    */
   public DataClass(List<Property> properties, String classPackage, String wrapperTypeName, TypeName className,
-                   boolean requiresClassLoader, Set<ClassName> requiredTypeAdapters, boolean singleton) {
+                   boolean requiresClassLoader, Set<Adapter> requiredTypeAdapters, boolean singleton) {
     this.properties = properties;
     this.classPackage = classPackage;
     this.requiresClassLoader = requiresClassLoader;
@@ -60,7 +60,7 @@ public class DataClass {
     return requiresClassLoader;
   }
 
-  public Set<ClassName> getRequiredTypeAdapters() {
+  public Set<Adapter> getRequiredTypeAdapters() {
     return requiredTypeAdapters;
   }
 

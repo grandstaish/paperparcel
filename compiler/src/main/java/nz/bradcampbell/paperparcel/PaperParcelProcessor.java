@@ -49,6 +49,7 @@ import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.generateWrapp
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.getFields;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.getPackageName;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.hasTypeArguments;
+import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.isSingleton;
 
 import com.google.auto.common.MoreElements;
 import com.google.auto.service.AutoService;
@@ -63,6 +64,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
+import nz.bradcampbell.paperparcel.internal.Adapter;
 import nz.bradcampbell.paperparcel.internal.DataClass;
 import nz.bradcampbell.paperparcel.internal.Property;
 import nz.bradcampbell.paperparcel.internal.properties.ArrayProperty;
@@ -146,7 +148,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
   private Types typeUtil;
   private Elements elementUtils;
 
-  private Map<TypeName, ClassName> defaultAdapters = new HashMap<>();
+  private Map<TypeName, Adapter> defaultAdapterMap = new HashMap<>();
   private Set<DataClass> dataClasses = new LinkedHashSet<>();
 
   private static void error(ProcessingEnvironment processingEnv, String message, Element element) {
@@ -206,9 +208,10 @@ public class PaperParcelProcessor extends AbstractProcessor {
         continue;
       }
 
-      DeclaredType ta = (DeclaredType) element.asType();
-      TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, ta);
-      defaultAdapters.put(typeAdapterType, (ClassName) TypeName.get(ta));
+      TypeElement typeElement = (TypeElement) element;
+      boolean singleton = isSingleton(typeUtil, typeElement);
+      TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, (DeclaredType) typeElement.asType());
+      defaultAdapterMap.put(typeAdapterType, new Adapter(singleton, ClassName.get(typeElement)));
     }
 
     // Create a DataClass models for all classes annotated with @PaperParcel
@@ -252,10 +255,10 @@ public class PaperParcelProcessor extends AbstractProcessor {
     String classPackage = getPackageName(typeElement);
     String wrappedClassName = generateWrappedTypeName(typeElement, typeMirror);
     List<Property> properties = new ArrayList<>();
-    Set<ClassName> requiredTypeAdapters = new HashSet<>();
+    Set<Adapter> requiredTypeAdapters = new HashSet<>();
     boolean requiresClassLoader = false;
-    Map<TypeName, ClassName> typeAdapters = new HashMap<>();
-    boolean isSingleton = TypeUtils.isSingleton(typeUtil, typeElement);
+    Map<TypeName, Adapter> typeAdapters = new HashMap<>();
+    boolean isSingleton = isSingleton(typeUtil, typeElement);
 
     // If the class is a singleton, we don't need to read/write variables. We can just use the static instance.
     if (!isSingleton) {
@@ -277,7 +280,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
           continue;
         }
 
-        Map<TypeName, ClassName> variableScopedTypeAdapters = getTypeAdapterMapForVariable(
+        Map<TypeName, Adapter> variableScopedTypeAdapters = getTypeAdapterMapForVariable(
             typeAdapters, variableElement, accessorMethod);
 
         String name = variableElement.getSimpleName().toString();
@@ -348,15 +351,17 @@ public class PaperParcelProcessor extends AbstractProcessor {
     return filteredList;
   }
 
-  private boolean applyTypeAdaptersFromElement(Element element, Map<TypeName, ClassName> typeAdapters) {
+  private boolean applyTypeAdaptersFromElement(Element element, Map<TypeName, Adapter> typeAdapters) {
     if (element != null) {
       Map<String, Object> annotation = AnnotationUtils.getAnnotation(TypeAdapters.class, element);
       if (annotation != null) {
         Object[] typeAdaptersArray = (Object[]) annotation.get("value");
         for (Object o : typeAdaptersArray) {
           DeclaredType ta = (DeclaredType) o;
+          TypeElement typeElement = (TypeElement) typeUtil.asElement(ta);
           TypeName typeAdapterType = PropertyUtils.getTypeAdapterType(typeUtil, ta);
-          typeAdapters.put(typeAdapterType, (ClassName) TypeName.get(ta));
+          boolean singleton = isSingleton(typeUtil, typeElement);
+          typeAdapters.put(typeAdapterType, new Adapter(singleton, ClassName.get(typeElement)));
         }
         return true;
       }
@@ -452,11 +457,11 @@ public class PaperParcelProcessor extends AbstractProcessor {
         variableElement);
   }
 
-  private Map<TypeName, ClassName> getTypeAdapterMapForVariable(
-      Map<TypeName, ClassName> classScopedTypeAdapters, VariableElement variableElement,
+  private Map<TypeName, Adapter> getTypeAdapterMapForVariable(
+      Map<TypeName, Adapter> classScopedTypeAdapters, VariableElement variableElement,
       ExecutableElement accessorMethod) {
 
-    Map<TypeName, ClassName> tempTypeAdapters = new HashMap<>(classScopedTypeAdapters);
+    Map<TypeName, Adapter> tempTypeAdapters = new HashMap<>(classScopedTypeAdapters);
     boolean applied = applyTypeAdaptersFromElement(variableElement, tempTypeAdapters);
     if (!applied) {
       applyTypeAdaptersFromElement(accessorMethod, tempTypeAdapters);
@@ -473,11 +478,11 @@ public class PaperParcelProcessor extends AbstractProcessor {
    * @param isNullable True if the property is nullable
    * @param name The name of the property
    * @param accessorMethodName The string name of the accessor method, or null if the property is already accessible
-   * @param typeAdapters All type adapters are in scope of this property
+   * @param typeAdapterMap All type adapters are in scope of this property
    * @return The parsed property
    */
   private Property parseProperty(TypeMirror variable, TypeMirror dataClass, boolean isNullable, String name,
-                                 @Nullable String accessorMethodName, Map<TypeName, ClassName> typeAdapters) {
+                                 @Nullable String accessorMethodName, Map<TypeName, Adapter> typeAdapterMap) {
 
     variable = getActualTypeParameter(variable, dataClass);
 
@@ -493,9 +498,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
     }
 
     TypeName erasedTypeName = TypeName.get(erasedType);
-    ClassName typeAdapter = typeAdapters.get(erasedTypeName);
+    Adapter typeAdapter = typeAdapterMap.get(erasedTypeName);
     if (typeAdapter == null) {
-      typeAdapter = defaultAdapters.get(erasedTypeName);
+      typeAdapter = defaultAdapterMap.get(erasedTypeName);
     }
     if (typeAdapter != null) {
       parcelableTypeName = TYPE_ADAPTER;
@@ -539,16 +544,16 @@ public class PaperParcelProcessor extends AbstractProcessor {
       return new ShortProperty(isNullable, typeName, isInterface, name, accessorMethodName);
     } else if (MAP.equals(parcelableTypeName)) {
       List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
-      Property keyProperty = parseProperty(typeArguments.get(0), dataClass, true, name + "Key", null, typeAdapters);
-      Property valueProperty = parseProperty(typeArguments.get(1), dataClass, true, name + "Value", null, typeAdapters);
+      Property keyProperty = parseProperty(typeArguments.get(0), dataClass, true, name + "Key", null, typeAdapterMap);
+      Property valueProperty = parseProperty(typeArguments.get(1), dataClass, true, name + "Value", null, typeAdapterMap);
       return new MapProperty(keyProperty, valueProperty, isNullable, typeName, isInterface, name, accessorMethodName);
     } else if (LIST.equals(parcelableTypeName)) {
       List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
-      Property typeArgument = parseProperty(typeArguments.get(0), dataClass, true, name + "Item", null, typeAdapters);
+      Property typeArgument = parseProperty(typeArguments.get(0), dataClass, true, name + "Item", null, typeAdapterMap);
       return new ListProperty(typeArgument, isNullable, typeName, isInterface, name, accessorMethodName);
     } else if (SET.equals(parcelableTypeName)) {
       List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
-      Property typeArgument = parseProperty(typeArguments.get(0), dataClass, true, name + "Item", null, typeAdapters);
+      Property typeArgument = parseProperty(typeArguments.get(0), dataClass, true, name + "Item", null, typeAdapterMap);
       return new SetProperty(typeArgument, isNullable, typeName, isInterface, name, accessorMethodName);
     } else if (BOOLEAN_ARRAY.equals(parcelableTypeName)) {
       return new BooleanArrayProperty(isNullable, typeName, isInterface, name, accessorMethodName);
@@ -562,7 +567,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
       return new StringArrayProperty(isNullable, typeName, isInterface, name, accessorMethodName);
     } else if (SPARSE_ARRAY.equals(parcelableTypeName)) {
       List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
-      Property typeArgument = parseProperty(typeArguments.get(0), dataClass, true, name + "Value", null, typeAdapters);
+      Property typeArgument = parseProperty(typeArguments.get(0), dataClass, true, name + "Value", null, typeAdapterMap);
       return new SparseArrayProperty(typeArgument, isNullable, typeName, isInterface, name, accessorMethodName);
     } else if (SPARSE_BOOLEAN_ARRAY.equals(parcelableTypeName)) {
       return new SparseBooleanArrayProperty(isNullable, typeName, isInterface, name, accessorMethodName);
@@ -572,7 +577,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
       return new ParcelableProperty(isNullable, typeName, isInterface, name, accessorMethodName);
     } else if (OBJECT_ARRAY.equals(parcelableTypeName)) {
       TypeMirror componentType = ((ArrayType) type).getComponentType();
-      Property componentProperty = parseProperty(componentType, dataClass, true, name + "Component", null, typeAdapters);
+      Property componentProperty = parseProperty(componentType, dataClass, true, name + "Component", null, typeAdapterMap);
       return new ArrayProperty(componentProperty, typeName, isInterface, isNullable, name, accessorMethodName);
     } else if (CHAR_SEQUENCE.equals(parcelableTypeName)) {
       return new CharSequenceProperty(isNullable, typeName, isInterface, name, accessorMethodName);
@@ -651,7 +656,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
   private FieldSpec generateCreator(
       TypeName typeName, ClassName wrapperClassName, boolean isSingleton, List<Property> properties,
-      FieldSpec classLoader, Set<ClassName> typeAdapters) {
+      FieldSpec classLoader, Set<Adapter> typeAdapters) {
 
     ClassName creator = ClassName.get("android.os", "Parcelable", "Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, wrapperClassName);
@@ -688,18 +693,21 @@ public class PaperParcelProcessor extends AbstractProcessor {
       Set<String> scopedVariableNames = new LinkedHashSet<>();
       scopedVariableNames.add(inParameterName);
 
+      // Create the required TypeAdapters
       Map<ClassName, CodeBlock> typeAdapterMap = new LinkedHashMap<>(typeAdapters.size());
-
-      for (ClassName typeAdapter : typeAdapters) {
-        String typeAdapterName = getUniqueName(
-            uncapitalizeFirstCharacter(typeAdapter.simpleName()), scopedVariableNames);
-
-        block.addStatement("$T $N = new $T()", typeAdapter, typeAdapterName, typeAdapter);
-
-        // Add type adapter name to scoped names
-        scopedVariableNames.add(typeAdapterName);
-
-        typeAdapterMap.put(typeAdapter, literal("$N", typeAdapterName));
+      for (Adapter adapter : typeAdapters) {
+        CodeBlock literal;
+        if (adapter.isSingleton()) {
+          literal = literal("$T.INSTANCE", adapter.getClassName());
+        } else {
+          String typeAdapterName = getUniqueName(
+              uncapitalizeFirstCharacter(adapter.getClassName().simpleName()), scopedVariableNames);
+          block.addStatement("$T $N = new $T()", adapter.getClassName(), typeAdapterName, adapter.getClassName());
+          // Add type adapter name to scoped names
+          scopedVariableNames.add(typeAdapterName);
+          literal = literal("$N", typeAdapterName);
+        }
+        typeAdapterMap.put(adapter.getClassName(), literal);
       }
 
       for (int i = 0; i < properties.size(); i++) {
@@ -752,7 +760,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
         .build();
   }
 
-  private MethodSpec generateWriteToParcel(List<Property> properties, Set<ClassName> typeAdapters) {
+  private MethodSpec generateWriteToParcel(List<Property> properties, Set<Adapter> typeAdapters) {
     String destParameterName = "dest";
     String flagsParameterName = "flags";
 
@@ -771,18 +779,21 @@ public class PaperParcelProcessor extends AbstractProcessor {
     scopedVariableNames.add(destParameterName);
     scopedVariableNames.add(flagsParameterName);
 
+    // Create the required TypeAdapters
     Map<ClassName, CodeBlock> typeAdapterMap = new LinkedHashMap<>(typeAdapters.size());
-
-    for (ClassName typeAdapter : typeAdapters) {
-      String typeAdapterName = getUniqueName(
-          uncapitalizeFirstCharacter(typeAdapter.simpleName()), scopedVariableNames);
-
-      block.addStatement("$T $N = new $T()", typeAdapter, typeAdapterName, typeAdapter);
-
-      // Add type adapter name to scoped names
-      scopedVariableNames.add(typeAdapterName);
-
-      typeAdapterMap.put(typeAdapter, literal("$N", typeAdapterName));
+    for (Adapter adapter : typeAdapters) {
+      CodeBlock literal;
+      if (adapter.isSingleton()) {
+        literal = literal("$T.INSTANCE", adapter.getClassName());
+      } else {
+        String typeAdapterName = getUniqueName(
+            uncapitalizeFirstCharacter(adapter.getClassName().simpleName()), scopedVariableNames);
+        block.addStatement("$T $N = new $T()", adapter.getClassName(), typeAdapterName, adapter.getClassName());
+        // Add type adapter name to scoped names
+        scopedVariableNames.add(typeAdapterName);
+        literal = literal("$N", typeAdapterName);
+      }
+      typeAdapterMap.put(adapter.getClassName(), literal);
     }
 
     for (Property p : properties) {

@@ -10,6 +10,7 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.WildcardTypeName;
+import nz.bradcampbell.paperparcel.internal.Adapter;
 import nz.bradcampbell.paperparcel.internal.Property;
 import org.jetbrains.annotations.Nullable;
 
@@ -126,7 +127,7 @@ public class SetProperty extends Property {
     return typeArgument.requiresClassLoader();
   }
 
-  @Override public Set<ClassName> requiredTypeAdapters() {
+  @Override public Set<Adapter> requiredTypeAdapters() {
     return typeArgument.requiredTypeAdapters();
   }
 }
