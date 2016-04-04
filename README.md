@@ -164,25 +164,12 @@ data class Example(
 
 The @PaperParcel annotation cannot be put directly on a data class with type parameters, e.g.:
 
-This is wrong:
 ``` java
 @PaperParcel 
 data class BadExample<T>(
   val child: T
 ) : PaperParcelable { ... }
 ```
-
-However, it is OK to use data classes with typed parameters inside of your annotated data class, e.g.:
-
-This is OK:
-``` java
-@PaperParcel
-data class GoodExample(
-  val child: BadExample<Int>
-) : PaperParcelable { ... }
-```
-
-Please file a bug for anything you see is missing or not handled correctly.
 
 ## Download (Kotlin)
 
