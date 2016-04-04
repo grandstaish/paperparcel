@@ -60,7 +60,7 @@ public class BundleTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "Bundle child = data.getChild();",
+        "Bundle child = this.data.getChild();",
         "if (child == null) {",
         "dest.writeInt(1);",
         "} else {",

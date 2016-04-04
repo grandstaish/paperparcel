@@ -55,7 +55,7 @@ public class CustomMethodNameTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "int child = data.customGetterMethod();",
+        "int child = this.data.customGetterMethod();",
         "dest.writeInt(child);",
         "}",
         "}"
@@ -106,7 +106,7 @@ public class CustomMethodNameTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "int child = data.child;",
+        "int child = this.data.child;",
         "dest.writeInt(child);",
         "}",
         "}"

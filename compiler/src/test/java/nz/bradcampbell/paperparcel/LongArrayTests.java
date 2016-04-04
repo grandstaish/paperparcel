@@ -56,7 +56,7 @@ public class LongArrayTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "long[] child = data.getChild();",
+        "long[] child = this.data.getChild();",
         "if (child == null) {",
         "dest.writeInt(1);",
         "} else {",

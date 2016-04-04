@@ -55,7 +55,7 @@ public class NonNullTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "Integer child = data.getChild();",
+        "Integer child = this.data.getChild();",
         "dest.writeInt(child);",
         "}",
         "}"

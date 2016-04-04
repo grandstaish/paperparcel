@@ -53,7 +53,7 @@ public class FloatTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "float child = data.getChild();",
+        "float child = this.data.getChild();",
         "dest.writeFloat(child);",
         "}",
         "}"
@@ -111,7 +111,7 @@ public class FloatTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "Float child = data.getChild();",
+        "Float child = this.data.getChild();",
         "if (child == null) {",
         "dest.writeInt(1);",
         "} else {",

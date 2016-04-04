@@ -62,7 +62,7 @@ public class EnumTests {
         "}",
         "@Override",
         "public void writeToParcel(Parcel dest, int flags) {",
-        "Test.TestEnum child = data.getChild();",
+        "Test.TestEnum child = this.data.getChild();",
         "if (child == null) {",
         "dest.writeInt(1);",
         "} else {",

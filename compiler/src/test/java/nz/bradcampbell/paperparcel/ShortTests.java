@@ -53,7 +53,7 @@ public class ShortTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "short child = data.getChild();",
+        "short child = this.data.getChild();",
         "dest.writeInt(child);",
         "}",
         "}"

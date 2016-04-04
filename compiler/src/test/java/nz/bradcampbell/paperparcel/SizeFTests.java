@@ -58,7 +58,7 @@ public class SizeFTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "SizeF child = data.getChild();",
+        "SizeF child = this.data.getChild();",
         "if (child == null) {",
         "dest.writeInt(1);",
         "} else {",

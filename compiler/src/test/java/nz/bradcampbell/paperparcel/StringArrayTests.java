@@ -57,7 +57,7 @@ public class StringArrayTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "String[] child = data.getChild();",
+        "String[] child = this.data.getChild();",
         "if (child == null) {",
         "dest.writeInt(1);",
         "} else {",

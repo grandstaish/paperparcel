@@ -79,7 +79,7 @@ public class TypeAdapterTests {
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
         "DateTypeAdapter dateTypeAdapter = new DateTypeAdapter();",
-        "Date child = data.getChild();",
+        "Date child = this.data.getChild();",
         "if (child == null) {",
         "dest.writeInt(1);",
         "} else {",

@@ -56,7 +56,7 @@ public class IntArrayTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "int[] child = data.getChild();",
+        "int[] child = this.data.getChild();",
         "if (child == null) {",
         "dest.writeInt(1);",
         "} else {",

@@ -53,7 +53,7 @@ public class ByteTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "byte child = data.getChild();",
+        "byte child = this.data.getChild();",
         "dest.writeByte(child);",
         "}",
         "}"
@@ -111,7 +111,7 @@ public class ByteTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "Byte child = data.getChild();",
+        "Byte child = this.data.getChild();",
         "if (child == null) {",
         "dest.writeInt(1);",
         "} else {",

@@ -53,7 +53,7 @@ public class DoubleTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "double child = data.getChild();",
+        "double child = this.data.getChild();",
         "dest.writeDouble(child);",
         "}",
         "}"
@@ -111,7 +111,7 @@ public class DoubleTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "Double child = data.getChild();",
+        "Double child = this.data.getChild();",
         "if (child == null) {",
         "dest.writeInt(1);",
         "} else {",

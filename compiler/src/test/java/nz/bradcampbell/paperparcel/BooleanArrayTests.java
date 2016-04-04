@@ -56,7 +56,7 @@ public class BooleanArrayTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "boolean[] child = data.getChild();",
+        "boolean[] child = this.data.getChild();",
         "if (child == null) {",
         "dest.writeInt(1);",
         "} else {",

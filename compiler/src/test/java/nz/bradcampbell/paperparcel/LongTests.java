@@ -53,7 +53,7 @@ public class LongTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "long child = data.getChild();",
+        "long child = this.data.getChild();",
         "dest.writeLong(child);",
         "}",
         "}"

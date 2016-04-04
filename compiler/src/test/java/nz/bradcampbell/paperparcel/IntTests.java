@@ -53,7 +53,7 @@ public class IntTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "int child = data.getChild();",
+        "int child = this.data.getChild();",
         "dest.writeInt(child);",
         "}",
         "}"

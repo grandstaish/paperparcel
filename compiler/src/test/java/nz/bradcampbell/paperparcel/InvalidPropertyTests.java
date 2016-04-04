@@ -120,7 +120,7 @@ public class InvalidPropertyTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "int child2 = data.getChild2();",
+        "int child2 = this.data.getChild2();",
         "dest.writeInt(child2);",
         "}",
         "}"

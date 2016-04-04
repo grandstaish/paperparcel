@@ -685,7 +685,6 @@ public class PaperParcelProcessor extends AbstractProcessor {
       int paramsOffset = 3;
       Object[] params = new Object[properties.size() + paramsOffset];
       params[0] = typeName;
-      params[1] = DATA_VARIABLE_NAME;
       params[2] = rawTypeName;
 
       CodeBlock.Builder block = CodeBlock.builder();
@@ -722,8 +721,12 @@ public class PaperParcelProcessor extends AbstractProcessor {
       creatorInitializer.add(block.build());
 
       dataInitializer += ")";
+
+      String dataFieldName = getUniqueName(DATA_VARIABLE_NAME, scopedVariableNames);
+      params[1] = dataFieldName;
+
       creatorInitializer.addStatement(dataInitializer, params);
-      creatorInitializer.addStatement("return new $T($N)", wrapperClassName, DATA_VARIABLE_NAME);
+      creatorInitializer.addStatement("return new $T($N)", wrapperClassName, dataFieldName);
     }
 
     creatorInitializer.endControlFlow()
@@ -806,7 +809,9 @@ public class PaperParcelProcessor extends AbstractProcessor {
       }
 
       String propertyName = getUniqueName(p.getName(), scopedVariableNames);
-      block.addStatement("$T $N = $N.$N", wildCardTypeName, propertyName, DATA_VARIABLE_NAME, accessorStrategy);
+
+      String dataFieldName = "this." + DATA_VARIABLE_NAME;
+      block.addStatement("$T $N = $N.$N", wildCardTypeName, propertyName, dataFieldName, accessorStrategy);
 
       // Add propertyName to scoped names
       scopedVariableNames.add(propertyName);

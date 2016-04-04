@@ -60,7 +60,7 @@ public class PersistableBundleTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "PersistableBundle child = data.getChild();",
+        "PersistableBundle child = this.data.getChild();",
         "if (child == null) {",
         "dest.writeInt(1);",
         "} else {",

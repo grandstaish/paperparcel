@@ -69,7 +69,7 @@ public class SparseArrayTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "SparseArray<Integer> child = data.getChild();",
+        "SparseArray<Integer> child = this.data.getChild();",
         "if (child == null) {",
         "dest.writeInt(1);",
         "} else {",

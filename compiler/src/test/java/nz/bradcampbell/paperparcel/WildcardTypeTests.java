@@ -78,7 +78,7 @@ public class WildcardTypeTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "List<List<? extends Integer>> child = data.getChild();",
+        "List<List<? extends Integer>> child = this.data.getChild();",
         "if (child == null) {",
         "dest.writeInt(1);",
         "} else {",

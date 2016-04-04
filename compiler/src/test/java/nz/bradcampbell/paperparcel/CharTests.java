@@ -53,7 +53,7 @@ public class CharTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "char child = data.getChild();",
+        "char child = this.data.getChild();",
         "dest.writeInt(child);",
         "}",
         "}"
@@ -111,7 +111,7 @@ public class CharTests {
         "return 0;",
         "}",
         "@Override public void writeToParcel(Parcel dest, int flags) {",
-        "Character child = data.getChild();",
+        "Character child = this.data.getChild();",
         "if (child == null) {",
         "dest.writeInt(1);",
         "} else {",

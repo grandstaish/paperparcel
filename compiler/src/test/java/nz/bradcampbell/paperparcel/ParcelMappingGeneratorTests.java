@@ -173,7 +173,7 @@ public class ParcelMappingGeneratorTests {
           "return 0;",
           "}",
           "@Override public void writeToParcel(Parcel dest, int flags) {",
-          "boolean child = data.getChild();",
+          "boolean child = this.data.getChild();",
           "dest.writeInt(child ? 1 : 0);",
           "}",
           "}"
