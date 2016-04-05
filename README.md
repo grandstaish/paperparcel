@@ -122,43 +122,7 @@ class DateTypeAdapter : TypeAdapter<Date> {
 }
 ```
 
-The TypeAdapters can be applied in multiple ways:
-
-#### Global TypeAdapters
-
-Annotate your type adapter with `@DefaultAdapter`:
-
-``` java
-@DefaultAdapter 
-class DateTypeAdapter : TypeAdapter<Date> {
-  // ... 
-}
-```
-
-In this example, PaperParcel will automatically use this TypeAdapter for any Date type unless a more explicit TypeAdapter is defined later.
-
-#### Class TypeAdapters
-
-Add the list of specific TypeAdapters to the data class. This will take precedence over global TypeAdapters and will apply to all variables in this class of the specified type.
-
-``` java
-@PaperParcel
-@TypeAdapters(DateTypeAdapter::class)
-data class Example(
-  val a: Date
-) : PaperParcelable { ... }
-```
-
-#### Variable TypeAdapters
-
-Add the list of specific TypeAdapters directly on the variable. These will take precedence over both global and class-scoped TypeAdapters and will only apply to the annotated variable.
-
-``` java
-@PaperParcel
-data class Example(
-  @TypeAdapters(DateTypeAdapter::class) val a: Date
-) : PaperParcelable { ... }
-```
+For more information on how to use `TypeAdapters`, see the [Type Adapters wiki page](https://github.com/grandstaish/paperparcel/wiki/Type-Adapters).
 
 ## Limitations
 
