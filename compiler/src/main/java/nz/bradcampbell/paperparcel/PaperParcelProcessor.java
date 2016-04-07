@@ -45,7 +45,6 @@ import static nz.bradcampbell.paperparcel.utils.PropertyUtils.getParcelableType;
 import static nz.bradcampbell.paperparcel.utils.PropertyUtils.literal;
 import static nz.bradcampbell.paperparcel.utils.StringUtils.getUniqueName;
 import static nz.bradcampbell.paperparcel.utils.StringUtils.uncapitalizeFirstCharacter;
-import static nz.bradcampbell.paperparcel.utils.TypeUtils.getFields;
 import static nz.bradcampbell.paperparcel.utils.TypeUtils.hasTypeArguments;
 import static nz.bradcampbell.paperparcel.utils.TypeUtils.isSingleton;
 
@@ -119,7 +118,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
@@ -127,7 +125,6 @@ import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.WildcardType;
-import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
@@ -279,7 +276,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
         tempTypeElement = (TypeElement) typeUtil.asElement(tempTypeElement.getSuperclass());
       }
 
-      for (VariableElement variableElement : getPropertyElements(typeElement)) {
+      FieldExtractor fieldExtractor = new FieldExtractor(typeUtil);
+      for (VariableElement variableElement : fieldExtractor.requiredFields(typeElement)) {
 
         // Determine how we will access this property and in doing so, validate the property
         ExecutableElement accessorMethod;
@@ -318,49 +316,6 @@ public class PaperParcelProcessor extends AbstractProcessor {
                          requiredTypeAdapters, isSingleton);
   }
 
-  private List<? extends VariableElement> getPropertyElements(TypeElement typeElement) {
-    // Get all members
-    List<VariableElement> fieldElements = getFields(typeUtil, typeElement);
-
-    // Get constructor
-    List<ExecutableElement> constructors = ElementFilter.constructorsIn(typeElement.getEnclosedElements());
-    constructors = filterNonVisibleElements(constructors);
-    constructors = filterExecutableElementsOfSize(constructors, fieldElements.size());
-    if (constructors.size() == 0) {
-      throw new IllegalStateException("Could not find an appropriate constructor on " + typeElement.toString() + ". " +
-                                      "There were " + fieldElements.size() + " member variables, but no visible " +
-                                      "constructors with that many elements.");
-    }
-    if (constructors.size() > 1) {
-      throw new IllegalStateException(typeElement.toString() + " has more than one valid constructor. PaperParcel " +
-                                      "requires only one constructor.");
-    }
-    ExecutableElement primaryConstructor = constructors.get(0);
-
-    return getOrderedVariables(primaryConstructor, fieldElements, typeElement);
-  }
-
-  private static <T extends ExecutableElement> List<T> filterExecutableElementsOfSize(List<T> list, int expectedSize) {
-    ArrayList<T> filteredList = new ArrayList<>(list.size());
-    for (T e : list) {
-      if (e.getParameters().size() == expectedSize) {
-        filteredList.add(e);
-      }
-    }
-    return filteredList;
-  }
-
-  private static <T extends Element> List<T> filterNonVisibleElements(List<T> list) {
-    ArrayList<T> filteredList = new ArrayList<>(list.size());
-    for (T e : list) {
-      Set<Modifier> modifiers = e.getModifiers();
-      if (!modifiers.contains(PRIVATE) && !modifiers.contains(PROTECTED)) {
-        filteredList.add(e);
-      }
-    }
-    return filteredList;
-  }
-
   private boolean applyTypeAdaptersFromElement(Element element, Map<TypeName, Adapter> typeAdapters) {
     if (element != null) {
       Map<String, Object> annotation = AnnotationUtils.getAnnotation(TypeAdapters.class, element);
@@ -377,49 +332,6 @@ public class PaperParcelProcessor extends AbstractProcessor {
       }
     }
     return false;
-  }
-
-  private List<VariableElement> getOrderedVariables(
-      ExecutableElement constructor, List<VariableElement> fieldElements, TypeElement typeElement) {
-
-    List<? extends VariableElement> params = constructor.getParameters();
-
-    // Attempt to match constructor params by name
-    Map<Name, VariableElement> fieldNamesToFieldMap = new HashMap<>(fieldElements.size());
-    for (VariableElement field : fieldElements) {
-      fieldNamesToFieldMap.put(field.getSimpleName(), field);
-    }
-    boolean canUseConstructorArguments = true;
-    List<VariableElement> orderedFields = new ArrayList<>(fieldElements.size());
-    for (VariableElement param : params) {
-      VariableElement field = fieldNamesToFieldMap.get(param.getSimpleName());
-      if (field == null) {
-        canUseConstructorArguments = false;
-        break;
-      }
-      orderedFields.add(field);
-    }
-    if (canUseConstructorArguments) {
-      return orderedFields;
-    }
-
-    // Attempt to match constructor params by order (support for https://youtrack.jetbrains.com/issue/KT-9609)
-    boolean areParametersInOrder = true;
-    for (int i = 0; i < params.size(); i++) {
-      VariableElement param = params.get(i);
-      VariableElement field = fieldElements.get(i);
-      if (!typeUtil.isAssignable(field.asType(), param.asType())) {
-        areParametersInOrder = false;
-        break;
-      }
-    }
-    if (areParametersInOrder) {
-      return fieldElements;
-    }
-
-    throw new NoValidConstructorFoundException(
-        "No valid constructor found while processing " + typeElement.getQualifiedName() + ". The constructor parameters" +
-        " and member variables need to be in the same order.");
   }
 
   private ExecutableElement getAccessorMethod(TypeElement typeElement, VariableElement variableElement)
@@ -683,28 +595,13 @@ public class PaperParcelProcessor extends AbstractProcessor {
     if (isSingleton) {
       creatorInitializer.addStatement("return new $T($T.INSTANCE)", wrapperClassName, typeName);
     } else {
-      String dataInitializer;
-      TypeName rawTypeName;
-
-      if (typeName instanceof ParameterizedTypeName) {
-        rawTypeName = ((ParameterizedTypeName) typeName).rawType;
-        dataInitializer = "$T $N = new $T<>(";
-      } else {
-        rawTypeName = typeName;
-        dataInitializer = "$T $N = new $T(";
-      }
-
-      int paramsOffset = 3;
-      Object[] params = new Object[properties.size() + paramsOffset];
-      params[0] = typeName;
-      params[2] = rawTypeName;
+      List<ClassInitializer.Field> fields = new ArrayList<>(properties.size());
 
       CodeBlock.Builder block = CodeBlock.builder();
 
       Set<String> scopedVariableNames = new LinkedHashSet<>();
       scopedVariableNames.add(inParameterName);
 
-      // Create the required TypeAdapters
       Map<ClassName, CodeBlock> typeAdapterMap = new LinkedHashMap<>(typeAdapters.size());
       for (Adapter adapter : typeAdapters) {
         CodeBlock literal;
@@ -714,31 +611,23 @@ public class PaperParcelProcessor extends AbstractProcessor {
           String typeAdapterName = getUniqueName(
               uncapitalizeFirstCharacter(adapter.getClassName().simpleName()), scopedVariableNames);
           block.addStatement("$T $N = new $T()", adapter.getClassName(), typeAdapterName, adapter.getClassName());
-          // Add type adapter name to scoped names
           scopedVariableNames.add(typeAdapterName);
           literal = literal("$N", typeAdapterName);
         }
         typeAdapterMap.put(adapter.getClassName(), literal);
       }
 
-      for (int i = 0; i < properties.size(); i++) {
-        Property p = properties.get(i);
-        params[i + paramsOffset] = p.readFromParcel(block, in, classLoader, typeAdapterMap, scopedVariableNames);
-        dataInitializer += "$L";
-        if (i != properties.size() - 1) {
-          dataInitializer += ", ";
-        }
+      for (Property p : properties) {
+        String name = p.getName();
+        CodeBlock value = p.readFromParcel(block, in, classLoader, typeAdapterMap, scopedVariableNames);
+        fields.add(new ClassInitializer.Field(name, value));
       }
 
       creatorInitializer.add(block.build());
 
-      dataInitializer += ")";
-
-      String dataFieldName = getUniqueName(DATA_VARIABLE_NAME, scopedVariableNames);
-      params[1] = dataFieldName;
-
-      creatorInitializer.addStatement(dataInitializer, params);
-      creatorInitializer.addStatement("return new $T($N)", wrapperClassName, dataFieldName);
+      ClassInitializer classInitializer = new ClassInitializer();
+      CodeBlock dataInitializer = classInitializer.initialize(typeName, creatorInitializer, fields, scopedVariableNames);
+      creatorInitializer.addStatement("return new $T($L)", wrapperClassName, dataInitializer);
     }
 
     creatorInitializer.endControlFlow()
@@ -833,12 +722,6 @@ public class PaperParcelProcessor extends AbstractProcessor {
     }
 
     return builder.addCode(block.build()).build();
-  }
-
-  static class NoValidConstructorFoundException extends IllegalStateException {
-    NoValidConstructorFoundException(String message) {
-      super(message);
-    }
   }
 
   static class PropertyValidationException extends IllegalStateException {
