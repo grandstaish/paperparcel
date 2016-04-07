@@ -1,7 +1,5 @@
 package nz.bradcampbell.paperparcel.model.properties;
 
-import static nz.bradcampbell.paperparcel.utils.PropertyUtils.literal;
-
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
@@ -24,7 +22,7 @@ public class CharSequenceProperty extends Property {
   @Override
   protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
                                           Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
-    return literal("$T.CHAR_SEQUENCE_CREATOR.createFromParcel($N)", TEXT_UTILS, in);
+    return CodeBlock.of("$T.CHAR_SEQUENCE_CREATOR.createFromParcel($N)", TEXT_UTILS, in);
   }
 
   @Override

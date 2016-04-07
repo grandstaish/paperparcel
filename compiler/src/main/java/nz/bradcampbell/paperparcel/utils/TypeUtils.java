@@ -3,9 +3,11 @@ package nz.bradcampbell.paperparcel.utils;
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
-import static javax.lang.model.element.Modifier.TRANSIENT;
 
-import java.util.ArrayList;
+import com.squareup.javapoet.ParameterizedTypeName;
+import com.squareup.javapoet.TypeName;
+import nz.bradcampbell.paperparcel.TypeAdapter;
+
 import java.util.List;
 import java.util.Set;
 import javax.lang.model.element.Element;
@@ -15,7 +17,6 @@ import javax.lang.model.element.PackageElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
@@ -65,10 +66,6 @@ public class TypeUtils {
     }
   }
 
-  public static String getPackageName(TypeElement type) {
-    return getPackage(type).getQualifiedName().toString();
-  }
-
   public static PackageElement getPackage(Element type) {
     while (type.getKind() != ElementKind.PACKAGE) {
       type = type.getEnclosingElement();
@@ -76,26 +73,19 @@ public class TypeUtils {
     return (PackageElement) type;
   }
 
-  /**
-   * Gets a list of all non-static member variables of a TypeElement
-   *
-   * @param el The data class
-   * @return A list of non-static, non-transient member variables. Cannot be null.
-   */
-  public static List<VariableElement> getFields(Types typeUtils, TypeElement el) {
-    List<? extends Element> enclosedElements = el.getEnclosedElements();
-    List<VariableElement> variables = new ArrayList<>();
-    for (Element e : enclosedElements) {
-      Set<Modifier> modifiers = e.getModifiers();
-      if (e instanceof VariableElement && !modifiers.contains(STATIC) && !modifiers.contains(TRANSIENT)) {
-        variables.add((VariableElement) e);
+  public static TypeName getTypeAdapterType(Types typeUtil, DeclaredType typeAdapter) {
+    TypeName typeAdapterTypeName = TypeName.get(TypeAdapter.class);
+    List<? extends TypeMirror> interfaces = ((TypeElement)typeUtil.asElement(typeAdapter)).getInterfaces();
+    for (TypeMirror intf : interfaces) {
+      TypeName typeName = TypeName.get(intf);
+      if (typeName instanceof ParameterizedTypeName) {
+        ParameterizedTypeName paramTypeName = (ParameterizedTypeName) typeName;
+        if (paramTypeName.rawType.equals(typeAdapterTypeName)) {
+          return paramTypeName.typeArguments.get(0);
+        }
       }
     }
-    TypeMirror superType = el.getSuperclass();
-    if (superType.getKind() != TypeKind.NONE) {
-      variables.addAll(getFields(typeUtils, (TypeElement) typeUtils.asElement(superType)));
-    }
-    return variables;
+    return null;
   }
 
   /**

@@ -1,6 +1,5 @@
 package nz.bradcampbell.paperparcel.model;
 
-import static nz.bradcampbell.paperparcel.utils.PropertyUtils.literal;
 import static nz.bradcampbell.paperparcel.utils.StringUtils.capitalizeFirstCharacter;
 import static nz.bradcampbell.paperparcel.utils.StringUtils.getUniqueName;
 
@@ -107,8 +106,8 @@ public abstract class Property {
     String defaultName = getUniqueName(name, scopedVariableNames);
     String nullableName = getUniqueName("out" + capitalizeFirstCharacter(defaultName), scopedVariableNames);
 
-    CodeBlock defaultLiteral = literal("$N", defaultName);
-    CodeBlock nullableLiteral = literal("$N", nullableName);
+    CodeBlock defaultLiteral = CodeBlock.of("$N", defaultName);
+    CodeBlock nullableLiteral = CodeBlock.of("$N", nullableName);
 
     if (isNullable) {
       block.addStatement("$T $L = null", typeName, nullableLiteral);

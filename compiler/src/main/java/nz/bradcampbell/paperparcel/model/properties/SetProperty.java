@@ -1,6 +1,5 @@
 package nz.bradcampbell.paperparcel.model.properties;
 
-import static nz.bradcampbell.paperparcel.utils.PropertyUtils.literal;
 import static nz.bradcampbell.paperparcel.utils.StringUtils.getUniqueName;
 
 import com.squareup.javapoet.ClassName;
@@ -80,7 +79,7 @@ public class SetProperty extends Property {
 
     block.endControlFlow();
 
-    return literal("$N", setName);
+    return CodeBlock.of("$N", setName);
   }
 
   @Override
@@ -115,7 +114,7 @@ public class SetProperty extends Property {
     // Add parameterItemName to scoped names
     loopScopedVariableNames.add(parameterItemName);
 
-    CodeBlock parameterSource = literal("$N", parameterItemName);
+    CodeBlock parameterSource = CodeBlock.of("$N", parameterItemName);
 
     // Write in the item
     typeArgument.writeToParcel(block, dest, flags, parameterSource, typeAdaptersMap, loopScopedVariableNames);

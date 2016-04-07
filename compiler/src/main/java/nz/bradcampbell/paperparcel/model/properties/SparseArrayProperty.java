@@ -1,6 +1,5 @@
 package nz.bradcampbell.paperparcel.model.properties;
 
-import static nz.bradcampbell.paperparcel.utils.PropertyUtils.literal;
 import static nz.bradcampbell.paperparcel.utils.StringUtils.getUniqueName;
 
 import com.squareup.javapoet.ClassName;
@@ -84,7 +83,7 @@ public class SparseArrayProperty extends Property {
 
     block.endControlFlow();
 
-    return literal("$N", sparseArrayName);
+    return CodeBlock.of("$N", sparseArrayName);
   }
 
   @Override
@@ -132,7 +131,7 @@ public class SparseArrayProperty extends Property {
     // Add valueName to scoped names
     loopScopedVariableNames.add(valueName);
 
-    CodeBlock parameterSource = literal("$N", valueName);
+    CodeBlock parameterSource = CodeBlock.of("$N", valueName);
 
     // Write in the value
     typeArgument.writeToParcel(block, dest, flags, parameterSource, typeAdaptersMap, loopScopedVariableNames);

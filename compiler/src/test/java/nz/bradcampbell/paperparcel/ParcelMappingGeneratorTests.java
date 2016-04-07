@@ -3,7 +3,7 @@ package nz.bradcampbell.paperparcel;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
 import static java.util.Arrays.asList;
-import static nz.bradcampbell.paperparcel.ParcelMappingGenerator.PACKAGE_NAME;
+import static nz.bradcampbell.paperparcel.MappingGenerator.PACKAGE_NAME;
 
 import com.google.common.base.Joiner;
 import com.google.common.truth.Truth;

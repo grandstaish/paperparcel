@@ -1,7 +1,5 @@
 package nz.bradcampbell.paperparcel.model.properties;
 
-import static nz.bradcampbell.paperparcel.utils.PropertyUtils.literal;
-
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
@@ -22,7 +20,7 @@ public class BooleanProperty extends Property {
   @Override
   protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
                                           Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
-    return literal("$N.readInt() == 1", in);
+    return CodeBlock.of("$N.readInt() == 1", in);
   }
 
   @Override

@@ -14,14 +14,22 @@ import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import nz.bradcampbell.paperparcel.model.DataClass;
 
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.processing.Filer;
 
-public final class ParcelMappingGenerator {
+public final class MappingGenerator {
   static final String PACKAGE_NAME = "nz.bradcampbell.paperparcel";
 
-  public static JavaFile generateParcelableMapping(Set<DataClass> dataClasses) {
+  private final Filer filer;
+
+  public MappingGenerator(Filer filer) {
+    this.filer = filer;
+  }
+
+  public void generateParcelableMapping(Set<DataClass> dataClasses) {
     TypeSpec.Builder wrapperBuilder =
         TypeSpec.classBuilder("PaperParcelMapping").addModifiers(PUBLIC, FINAL);
 
@@ -29,17 +37,23 @@ public final class ParcelMappingGenerator {
     addMapFields(wrapperBuilder);
     addStaticInitializerForMaps(dataClasses, wrapperBuilder);
 
-    return JavaFile.builder(PACKAGE_NAME, wrapperBuilder.build()).build();
+    JavaFile mapping = JavaFile.builder(PACKAGE_NAME, wrapperBuilder.build()).build();
+
+    try {
+      mapping.writeTo(filer);
+    } catch (IOException e) {
+      throw new RuntimeException("An error occurred while writing Lookup to filer." + e.getMessage(), e);
+    }
   }
 
-  private static void addClassComment(TypeSpec.Builder wrapperBuilder) {
+  private void addClassComment(TypeSpec.Builder wrapperBuilder) {
     wrapperBuilder.addJavadoc("THIS CODE IS AUTO-GENERATED, DO NOT EDIT\n");
     wrapperBuilder.addJavadoc("<p>\n");
     wrapperBuilder.addJavadoc("Builds up mappings from data objects to their generated Parcel classes.\n");
     wrapperBuilder.addJavadoc("This code is used reflectively by {@link PaperParcels}.\n");
   }
 
-  private static void addStaticInitializerForMaps(Set<DataClass> dataClasses,
+  private void addStaticInitializerForMaps(Set<DataClass> dataClasses,
       TypeSpec.Builder wrapperBuilder) {
     CodeBlock.Builder staticBlockBuilder = CodeBlock.builder();
     int index = 0;
@@ -65,13 +79,13 @@ public final class ParcelMappingGenerator {
     wrapperBuilder.addStaticBlock(staticBlockBuilder.build());
   }
 
-  private static void addMapFields(TypeSpec.Builder wrapperBuilder) {
+  private void addMapFields(TypeSpec.Builder wrapperBuilder) {
     FieldSpec fromOriginalClass = buildClassToDelegatorMap("FROM_ORIGINAL");
     FieldSpec fromParcelableClass = buildClassToDelegatorMap("FROM_PARCELABLE");
     wrapperBuilder.addField(fromOriginalClass).addField(fromParcelableClass);
   }
 
-  private static FieldSpec buildClassToDelegatorMap(String name) {
+  private FieldSpec buildClassToDelegatorMap(String name) {
     ParameterizedTypeName mapType =
         ParameterizedTypeName.get(Map.class, Class.class, PaperParcels.Delegator.class);
     return FieldSpec.builder(mapType, name, PRIVATE, STATIC, FINAL)

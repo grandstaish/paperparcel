@@ -1,6 +1,5 @@
 package nz.bradcampbell.paperparcel;
 
-import static nz.bradcampbell.paperparcel.utils.PropertyUtils.literal;
 import static nz.bradcampbell.paperparcel.utils.StringUtils.getUniqueName;
 
 import com.squareup.javapoet.CodeBlock;
@@ -61,6 +60,6 @@ public class ClassInitializer {
 
     initializer += ")";
     block.addStatement(initializer, params);
-    return literal("$N", fieldName);
+    return CodeBlock.of("$N", fieldName);
   }
 }

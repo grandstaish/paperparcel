@@ -1,7 +1,5 @@
 package nz.bradcampbell.paperparcel.model.properties;
 
-import static nz.bradcampbell.paperparcel.utils.PropertyUtils.getRawTypeName;
-import static nz.bradcampbell.paperparcel.utils.PropertyUtils.literal;
 import static nz.bradcampbell.paperparcel.utils.StringUtils.getUniqueName;
 
 import com.squareup.javapoet.ArrayTypeName;
@@ -66,7 +64,7 @@ public class ArrayProperty extends Property {
 
     block.endControlFlow();
 
-    return literal("$N", arrayName);
+    return CodeBlock.of("$N", arrayName);
   }
 
   @Override
@@ -109,7 +107,7 @@ public class ArrayProperty extends Property {
     // Add componentItemName to scopedVariables
     loopScopedVariableNames.add(componentItemName);
 
-    CodeBlock componentSource = literal("$N", componentItemName);
+    CodeBlock componentSource = CodeBlock.of("$N", componentItemName);
 
     // Write in the component.
     componentType.writeToParcel(block, dest, flags, componentSource, typeAdaptersMap, loopScopedVariableNames);
@@ -132,6 +130,13 @@ public class ArrayProperty extends Property {
     return CodeBlock.builder()
         .addStatement(initializer, variableName, componentTypeName, size)
         .build();
+  }
+
+  private TypeName getRawTypeName(TypeName typeName) {
+    while (typeName instanceof ParameterizedTypeName) {
+      typeName = ((ParameterizedTypeName) typeName).rawType;
+    }
+    return typeName;
   }
 
   @Override public boolean requiresClassLoader() {
