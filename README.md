@@ -12,97 +12,13 @@ Annotated data classes can contain any type that would normally be able to be pa
 
 PaperParcel is 100% generated code, no reflection or byte-code manipulation is involved. You can see all the generated classes yourself by viewing the auto-generated `PaperParcelMapping` class after a build.
 
-## Usage (Kotlin)
+## Usage 
 
-Annotate your data class with `@PaperParcel`, implement `PaperParcelable`, and create a JVM static instance of `PaperParcelable.Creator` e.g.:
+All documentation can be found in the [wiki](https://github.com/grandstaish/paperparcel/wiki):
 
-``` java
-@PaperParcel 
-data class Example(
-  val test: Int,
-  ...
-) : PaperParcelable {
-  companion object {
-    @JvmField val CREATOR = PaperParcelable.Creator(Example::class.java)
-  }
-}
-```
-
-Now your data class is `Parcelable` and can be passed directly to a `Bundle` or `Intent`. 
-
-A simple example can be found in the [kotlin-example](https://github.com/grandstaish/paperparcel/tree/master/examples/kotlin-example) module. For a more real-world example, see [here](https://github.com/grandstaish/four-letters-redux/blob/master/app/src/main/kotlin/nz/bradcampbell/fourletters/redux/state/State.kt).
-
-The `CREATOR` field is boilerplate code and is a great candidate for a [Live Template](https://medium.com/google-developers/writing-more-code-by-writing-less-code-with-android-studio-live-templates-244f648d17c7#.q5h975yrd). I wrote a [quick tutorial in the wiki](https://github.com/grandstaish/paperparcel/wiki/Live-template-for-CREATOR) to help set it up.
-
-If you add additional (non-constructor) properties to your data class, ensure to make them transient (via `@Transient`). This is to work around a [bug in kapt](https://youtrack.jetbrains.com/issue/KT-9609) and won't be required once the bug has been fixed. E.g.:
-
-``` java
-@PaperParcel
-data class Example(
-  val test: Int
-) : PaperParcelable {
-  ...
-  @delegate:Transient val somethingElse by lazy { ... }
-}
-```
-
-## Usage (AutoValue) 
-
-Simply implement `Parcelable` on your AutoValue class and PaperParcel's AutoValue extension will take care of the rest, e.g.:
-
-``` java
-@AutoValue
-public abstract class Example implements Parcelable {
-    public abstract int test();
-    public static State create(int test) {
-        return new AutoValue_Example(test);
-    }
-}
-```
-
-Now your `AutoValue` class can be passed directly to a `Bundle` or `Intent`. 
-
-A simple example can be found in the [autovalue-example](https://github.com/grandstaish/paperparcel/tree/master/examples/autovalue-example) module.
-
-## Usage (Java)
-
-PaperParcel makes the following assumptions about annotated classes: 
-
-- The primary constructor must have public or default visibility as PaperParcel doesn't use reflection. 
-- The annotated class' member variable names must equal the primary constructor parameter names (ordering does not matter)
-- The number of member variables should equal the number of arguments in the primary constructor. Static and transient member variables are not included in this count. 
-- For each member variable, either the member variable must be public (or default) or its accessor method must be named `x()`, `isX()`, `getX()`,  where `x` is the member variable's name. Alternatively, the member variable can be annotated with `@AccessorName` to specify what the actual accessor name is. Additionally, the accessor method must have no parameters.
-
-A misconfigured class will fail with an exception telling you what went wrong.
-
-E.g.:
-
-``` java
-@PaperParcel
-public final class Example extends PaperParcelable {
-  private static final PaperParcelable.Creator<Example> CREATOR = new PaperParcelable.Creator<>(Example.class);
-
-  private final int firstMember;
-  private final long secondMember;
-
-  public Example(int firstMember, long secondMember) {
-    this.firstMember = firstMember;
-    this.secondMember = secondMember;
-  }
-
-  public int getFirstMember() {
-    return firstMember;
-  }
-
-  public long getSecondMember() {
-    return secondMember;
-  }
-}
-```
-
-If you can't `extend PaperParcelable`, it's not required. Just `implement Parcelable` instead, and copy implementation for `writeToParcel` and `describeContents` (they're both 1-liners). 
-
-If your app targets Android N+, [paperparcel-java8](https://github.com/grandstaish/paperparcel/tree/master/paperparcel-java8) provides `PaperParcelable` as an interface with `default` methods. 
+- For Kotlin users, see [Kotlin Usage](https://github.com/grandstaish/paperparcel/wiki/Kotlin-Usage)
+- For AutoValue users, see [AutoValue Usage](https://github.com/grandstaish/paperparcel/wiki/AutoValue-Usage)
+- For Java users, see [Java Usage](https://github.com/grandstaish/paperparcel/wiki/Java-Usage)
 
 ## Type Adapters
 
