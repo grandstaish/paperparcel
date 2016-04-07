@@ -12,7 +12,7 @@ import com.squareup.javapoet.JavaFile;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
-import nz.bradcampbell.paperparcel.internal.DataClass;
+import nz.bradcampbell.paperparcel.model.DataClass;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
