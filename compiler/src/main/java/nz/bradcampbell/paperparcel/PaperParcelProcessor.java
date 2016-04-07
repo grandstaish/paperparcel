@@ -45,9 +45,7 @@ import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.getParcel
 import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
 import static nz.bradcampbell.paperparcel.internal.utils.StringUtils.getUniqueName;
 import static nz.bradcampbell.paperparcel.internal.utils.StringUtils.uncapitalizeFirstCharacter;
-import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.generateWrappedTypeName;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.getFields;
-import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.getPackageName;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.hasTypeArguments;
 import static nz.bradcampbell.paperparcel.internal.utils.TypeUtils.isSingleton;
 
@@ -96,6 +94,7 @@ import nz.bradcampbell.paperparcel.internal.properties.SparseBooleanArrayPropert
 import nz.bradcampbell.paperparcel.internal.properties.StringArrayProperty;
 import nz.bradcampbell.paperparcel.internal.properties.StringProperty;
 import nz.bradcampbell.paperparcel.internal.properties.TypeAdapterProperty;
+import nz.bradcampbell.paperparcel.internal.properties.WrapperProperty;
 import nz.bradcampbell.paperparcel.internal.utils.AnnotationUtils;
 import nz.bradcampbell.paperparcel.internal.utils.PropertyUtils;
 import nz.bradcampbell.paperparcel.internal.utils.TypeUtils;
@@ -149,7 +148,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
   private Elements elementUtils;
 
   private Map<TypeName, Adapter> defaultAdapterMap = new HashMap<>();
-  private Set<DataClass> dataClasses = new LinkedHashSet<>();
+  private Set<TypeElement> unprocessedTypes = new LinkedHashSet<>();
+  private Map<ClassName, ClassName> wrapperMap = new LinkedHashMap<>();
 
   private static void error(ProcessingEnvironment processingEnv, String message, Element element) {
     processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
@@ -178,8 +178,20 @@ public class PaperParcelProcessor extends AbstractProcessor {
   @Override
   public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnvironment) {
 
-    // Processing is over. Generate a mapping class for every data class found
+    // Processing over. Generate code.
     if (roundEnvironment.processingOver()) {
+
+      Set<DataClass> dataClasses = new LinkedHashSet<>();
+      for (TypeElement element : unprocessedTypes) {
+        DataClass dataClass = createParcel(element);
+        dataClasses.add(dataClass);
+        try {
+          generateParcelableWrapper(dataClass).writeTo(filer);
+        } catch (IOException e) {
+          throw new RuntimeException("An error occurred while writing to filer." + e.getMessage(), e);
+        }
+      }
+
       try {
         ParcelMappingGenerator.generateParcelableMapping(dataClasses).writeTo(filer);
       } catch (IOException e) {
@@ -224,21 +236,19 @@ public class PaperParcelProcessor extends AbstractProcessor {
         continue;
       }
 
-      TypeMirror elementTypeMirror = element.asType();
+      TypeElement typeElement = (TypeElement) element;
 
-      // Ensure the root element isn't parameterized
-      if (hasTypeArguments(elementTypeMirror)) {
+      // Ensure the element isn't parameterized
+      if (hasTypeArguments(typeElement)) {
         error(processingEnv, "@PaperParcel cannot be used directly on generic data classes.", element);
         continue;
       }
 
-      DataClass dataClass = createParcel(elementTypeMirror);
-      dataClasses.add(dataClass);
-      try {
-        generateParcelableWrapper(dataClass).writeTo(filer);
-      } catch (IOException e) {
-        throw new RuntimeException("An error occurred while writing to filer." + e.getMessage(), e);
-      }
+      unprocessedTypes.add(typeElement);
+
+      ClassName className = ClassName.get(typeElement);
+      ClassName wrapperName = ClassName.get(className.packageName(), className.simpleName() + "Parcel");
+      wrapperMap.put(className, wrapperName);
     }
 
     return true;
@@ -247,17 +257,17 @@ public class PaperParcelProcessor extends AbstractProcessor {
   /**
    * Create a Parcel wrapper for the given data class
    *
-   * @param typeMirror The data class
+   * @param typeElement The data class
    */
-  private DataClass createParcel(TypeMirror typeMirror) {
-    TypeElement typeElement = (TypeElement) typeUtil.asElement(typeMirror);
+  private DataClass createParcel(TypeElement typeElement) {
+    ClassName className = ClassName.get(typeElement);
+    ClassName wrappedClassName = wrapperMap.get(className);
 
-    String classPackage = getPackageName(typeElement);
-    String wrappedClassName = generateWrappedTypeName(typeElement, typeMirror);
     List<Property> properties = new ArrayList<>();
     Set<Adapter> requiredTypeAdapters = new HashSet<>();
-    boolean requiresClassLoader = false;
     Map<TypeName, Adapter> typeAdapters = new HashMap<>();
+
+    boolean requiresClassLoader = false;
     boolean isSingleton = isSingleton(typeUtil, typeElement);
 
     // If the class is a singleton, we don't need to read/write variables. We can just use the static instance.
@@ -293,8 +303,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
         // Parse the property type into a Property.Type object and find all recursive data class dependencies
         String accessorMethodName = accessorMethod == null ? null : accessorMethod.getSimpleName().toString();
-        Property property = parseProperty(variableElement.asType(), typeMirror, isNullable, name, accessorMethodName,
-                                          variableScopedTypeAdapters);
+        Property property = parseProperty(variableElement.asType(), typeElement.asType(), isNullable, name,
+                                          accessorMethodName, variableScopedTypeAdapters);
 
         properties.add(property);
 
@@ -304,7 +314,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
       }
     }
 
-    return new DataClass(properties, classPackage, wrappedClassName, TypeName.get(typeMirror), requiresClassLoader,
+    return new DataClass(properties, className.packageName(), wrappedClassName, className, requiresClassLoader,
                          requiredTypeAdapters, isSingleton);
   }
 
@@ -593,6 +603,8 @@ public class PaperParcelProcessor extends AbstractProcessor {
       return new SizeFProperty(isNullable, typeName, isInterface, name, accessorMethodName);
     } else if (TYPE_ADAPTER.equals(parcelableTypeName)) {
       return new TypeAdapterProperty(typeAdapter, isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (typeName instanceof ClassName && wrapperMap.containsKey(typeName)) {
+      return new WrapperProperty(wrapperMap.get(typeName), isNullable, typeName, isInterface, name, accessorMethodName);
     } else {
       throw new UnknownPropertyTypeException("PaperParcel does not support type: " + typeName);
     }

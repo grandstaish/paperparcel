@@ -1,7 +1,6 @@
 package nz.bradcampbell.paperparcel.internal;
 
 import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.TypeName;
 
 import java.util.List;
 import java.util.Set;
@@ -12,7 +11,7 @@ import java.util.Set;
 public class DataClass {
   private final String classPackage;
   private final List<Property> properties;
-  private final TypeName className;
+  private final ClassName className;
   private final ClassName wrapperClassName;
   private final boolean requiresClassLoader;
   private final Set<Adapter> requiredTypeAdapters;
@@ -29,12 +28,12 @@ public class DataClass {
    * @param requiredTypeAdapters All of the TypeAdapter types required for this class
    * @param singleton True if the class is a singleton object
    */
-  public DataClass(List<Property> properties, String classPackage, String wrapperTypeName, TypeName className,
+  public DataClass(List<Property> properties, String classPackage, ClassName wrapperTypeName, ClassName className,
                    boolean requiresClassLoader, Set<Adapter> requiredTypeAdapters, boolean singleton) {
     this.properties = properties;
     this.classPackage = classPackage;
     this.requiresClassLoader = requiresClassLoader;
-    this.wrapperClassName = ClassName.get(classPackage, wrapperTypeName);
+    this.wrapperClassName = wrapperTypeName;
     this.className = className;
     this.requiredTypeAdapters = requiredTypeAdapters;
     this.singleton = singleton;
@@ -52,7 +51,7 @@ public class DataClass {
     return wrapperClassName;
   }
 
-  public TypeName getClassName() {
+  public ClassName getClassName() {
     return className;
   }
 
