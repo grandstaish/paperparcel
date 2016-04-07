@@ -126,14 +126,17 @@ For more information on how to use `TypeAdapters`, see the [Type Adapters wiki p
 
 ## Limitations
 
-The @PaperParcel annotation cannot be put directly on a data class with type parameters, e.g.:
+Classes with type parameters cannot be annotated with `@PaperParcel` 
 
+E.g.: you can't do the following:
 ``` java
 @PaperParcel 
 data class BadExample<T>(
   val child: T
-) : PaperParcelable { ... }
+) 
 ```
+
+An issue has been raised for this [here](https://github.com/grandstaish/paperparcel/issues/44).
 
 ## Download (Kotlin)
 
