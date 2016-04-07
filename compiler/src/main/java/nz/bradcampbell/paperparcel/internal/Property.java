@@ -4,6 +4,8 @@ import static nz.bradcampbell.paperparcel.internal.utils.PropertyUtils.literal;
 import static nz.bradcampbell.paperparcel.internal.utils.StringUtils.capitalizeFirstCharacter;
 import static nz.bradcampbell.paperparcel.internal.utils.StringUtils.getUniqueName;
 
+import android.os.Parcel;
+
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
@@ -29,9 +31,11 @@ public abstract class Property {
   /**
    * Constructor.
    *
-   * todo:
    * @param isNullable True if the property can be null, false otherwise
+   * @param typeName The property TypeName
+   * @param isInterface True when the property TypeName is an interface and can't be instantiated by itself
    * @param name The name of the accessor method on the data object
+   * @param accessorMethodName The name of the accessor method, or null if the property is visible
    */
   public Property(boolean isNullable, TypeName typeName, boolean isInterface, String name,
                   @Nullable String accessorMethodName) {
@@ -64,16 +68,20 @@ public abstract class Property {
   }
 
   /**
-   * TODO:
-   * @return
+   * Subclasses should override this if they require a class loader, or if they have child properties
+   * that might require class loaders.
+   *
+   * @return True if this property requires a class loader
    */
   public boolean requiresClassLoader() {
     return false;
   }
 
   /**
-   * TODO:
-   * @return
+   * Subclasses should override this if they require a type adapter, or if they have child properties
+   * that might require type adapters.
+   *
+   * @return A set of all the required type adapters for this property
    */
   public Set<Adapter> requiredTypeAdapters() {
     return Collections.emptySet();
@@ -82,10 +90,12 @@ public abstract class Property {
   /**
    * Generates a CodeBlock object that can read this property from the given Parcel parameter. This handles checks
    * if the property is nullable.
-   * TODO:
    *
+   * @param block The code block for the read method
    * @param in The Parcel parameter
-   * @param classLoader ClassLoader to use for reading data
+   * @param classLoader ClassLoader to use for reading data, or null if not required
+   * @param typeAdaptersMap A Map of Types to TypeAdapters
+   * @param scopedVariableNames All variable names that have been used in the current scope
    */
   public final CodeBlock readFromParcel(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
                                         Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
@@ -136,11 +146,31 @@ public abstract class Property {
 
   /**
    * Generates code to read the property from the given parcel.
-   * TODO:
+   *
+   * If any manual writing to the "block" is needed, ensure to keep "scopedVariableNames" up to date
+   * with any new variables added to the method body.
+   *
+   * This method must return the un-parcelled value, e.g.
+   *
+   * <pre><code>
+   *   return CodeBlock.of("$N.readInt()", in);
+   * </code></pre>
+   *
+   * or alternatively, if pre-processing is required; you have to create the instance (with the name
+   * returned by {@link #getName()}), and then return a {@link CodeBlock} which is just simply the
+   * instance, e.g.:
+   *
+   * <pre><code>
+   *   block.addStatement("$1T $N = new $1T(), SomeType.class, getName());
+   *   // ... processing
+   *   return CodeBlock.of("$N", getName());
+   * </code></pre>
    *
    * @param block The CodeBlock builder to write the code to
    * @param in The Parcel parameter
-   * @param classLoader ClassLoader to use for reading data
+   * @param classLoader ClassLoader to use for reading data, or null if not required
+   * @param typeAdaptersMap A Map of Types to TypeAdapters
+   * @param scopedVariableNames All variable names that have been used in the current scope
    */
   protected abstract CodeBlock readFromParcelInner(
       CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
@@ -149,9 +179,13 @@ public abstract class Property {
   /**
    * Generates a CodeBlock object that can be used to write the property to the given parcel. This handles checks
    * if the property is nullable.
-   * TODO:
    *
+   * @param block The code block for the write method
    * @param dest The Parcel parameter
+   * @param flags The flags passed in from {@link android.os.Parcelable#writeToParcel(Parcel, int)}
+   * @param sourceLiteral The source to be written
+   * @param typeAdaptersMap A Map of Types to TypeAdapters
+   * @param scopedVariableNames All variable names that have been used in the current scope
    */
   public final void writeToParcel(
       CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
@@ -173,10 +207,16 @@ public abstract class Property {
 
   /**
    * Generates code to write the property to the given parcel.
-   * TODO:
+   *
+   * If any manual writing to the "block" is needed, ensure to keep "scopedVariableNames" up to date
+   * with any new variables added to the method body.
    *
    * @param block The CodeBlock builder to write the code to
    * @param dest The Parcel parameter
+   * @param flags The flags passed in from {@link android.os.Parcelable#writeToParcel(Parcel, int)}
+   * @param sourceLiteral The source to be written
+   * @param typeAdaptersMap A Map of Types to TypeAdapters
+   * @param scopedVariableNames All variable names that have been used in the current scope
    */
   protected abstract void writeToParcelInner(
       CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,

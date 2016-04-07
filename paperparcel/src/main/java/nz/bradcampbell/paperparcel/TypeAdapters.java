@@ -15,14 +15,6 @@ import java.lang.annotation.Target;
  *
  * TypeAdapters defined this way will override the default type adapters of the same type (set via
  * {@link DefaultAdapter}). Additionally, variable-scoped adapters will take precedence over class-scoped adapters.
- *
- * Example:
- * <pre><code>
- *   &#64;TypeAdapters(ClassScopedTypeAdapter::class)
- *   data class Example(
- *       val a: Int,
- *       &#64;TypeAdapters(VariableScopedTypeAdapter::class) val b: Map&lt;SomeKey, SomeValue&gt;)
- * </code></pre>
  */
 @Documented
 @Retention(SOURCE)

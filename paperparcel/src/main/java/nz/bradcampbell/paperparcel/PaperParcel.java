@@ -3,22 +3,23 @@ package nz.bradcampbell.paperparcel;
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.SOURCE;
 
+import android.os.Parcelable;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 /**
- * For use on Kotlin data classes to generate parcelable "wrapper" classes that know how to read and write this
- * object to and from an {@link android.os.Parcel}
+ * Can be applied to an BEAN-formatted object to automatically generate a "wrapper" class which
+ * knows how to parcel and un-parcel that object.
  *
- * Generated classes will be in the format {ClassName} + "Parcel", e.g.:
- * <pre><code>
- *   &#64;PaperParcel
- *   data class Example(val a: Int)
- * </code></pre>
- * Will produce ExampleParcel.java in the same package as your data class.
+ * To wrap the annotated class with its generated wrapper, you can use {@link PaperParcels#wrap(Object)}.
  *
- * &#64;PaperParcel cannot be used directly on a generic data class
+ * To unwrap a wrapped type, you can use {@link PaperParcels#unwrap(TypedParcelable)} or
+ * {@link PaperParcels#unsafeUnwrap(Parcelable)}
+ *
+ * @see android.os.Parcel
+ * @see android.os.Parcelable
  */
 @Documented
 @Retention(SOURCE)
