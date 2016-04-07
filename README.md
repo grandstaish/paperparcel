@@ -138,6 +138,9 @@ data class BadExample<T>(
 ## Download (Kotlin)
 
 ``` groovy
+kapt {
+    generateStubs = true
+}
 repositories {
     maven { url 'https://jitpack.io' }
 }
@@ -145,16 +148,6 @@ dependencies {
     compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-rc3'
     compile 'com.github.grandstaish.paperparcel:paperparcel-kotlin:1.0.0-rc3'
     kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc3'
-}
-```
-
-Note the use of `kapt` instead of `compile` for the compiler.
-
-When using `kapt`, be sure to include the following in your `build.gradle` file:
-
-```
-kapt {
-    generateStubs = true
 }
 ```
 
