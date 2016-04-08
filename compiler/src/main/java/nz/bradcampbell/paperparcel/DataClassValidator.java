@@ -7,6 +7,7 @@ import static javax.lang.model.element.Modifier.STATIC;
 import static javax.lang.model.element.Modifier.TRANSIENT;
 import static javax.lang.model.util.ElementFilter.constructorsIn;
 
+import nz.bradcampbell.paperparcel.DataClassInitializer.InitializationStrategy;
 import nz.bradcampbell.paperparcel.utils.StringUtils;
 
 import java.util.ArrayList;

@@ -16,6 +16,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
+import nz.bradcampbell.paperparcel.DataClassInitializer.InitializationStrategy;
 import nz.bradcampbell.paperparcel.model.Adapter;
 import nz.bradcampbell.paperparcel.model.DataClass;
 import nz.bradcampbell.paperparcel.model.Property;
@@ -102,7 +103,7 @@ public class WrapperGenerator {
     if (isSingleton) {
       creatorInitializer.addStatement("return new $T($T.INSTANCE)", wrapperClassName, typeName);
     } else {
-      List<ClassInitializer.Field> fields = new ArrayList<>(properties.size());
+      List<DataClassInitializer.Field> fields = new ArrayList<>(properties.size());
 
       CodeBlock.Builder block = CodeBlock.builder();
 
@@ -127,14 +128,14 @@ public class WrapperGenerator {
       for (Property p : properties) {
         String name = p.getName();
         CodeBlock value = p.readFromParcel(block, in, classLoader, typeAdapterMap, scopedVariableNames);
-        fields.add(new ClassInitializer.Field(name, value));
+        fields.add(new DataClassInitializer.Field(name, value));
       }
 
       creatorInitializer.add(block.build());
 
-      ClassInitializer classInitializer = new ClassInitializer();
-      CodeBlock dataInitializer = classInitializer.initialize(typeName, creatorInitializer, fields,
-                                                              scopedVariableNames, initializationStrategy);
+      DataClassInitializer dataClassInitializer = new DataClassInitializer();
+      CodeBlock dataInitializer = dataClassInitializer.initialize(typeName, creatorInitializer, fields,
+                                                                  scopedVariableNames, initializationStrategy);
       creatorInitializer.addStatement("return new $T($L)", wrapperClassName, dataInitializer);
     }
 

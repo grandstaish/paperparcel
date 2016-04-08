@@ -1,7 +1,7 @@
 package nz.bradcampbell.paperparcel.model;
 
 import com.squareup.javapoet.ClassName;
-import nz.bradcampbell.paperparcel.InitializationStrategy;
+import nz.bradcampbell.paperparcel.DataClassInitializer.InitializationStrategy;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;

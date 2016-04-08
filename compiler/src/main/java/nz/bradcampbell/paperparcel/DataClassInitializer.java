@@ -9,7 +9,7 @@ import com.squareup.javapoet.TypeName;
 import java.util.List;
 import java.util.Set;
 
-public class ClassInitializer {
+public class DataClassInitializer {
   public static class Field {
     private final String name;
     private final CodeBlock value;
@@ -18,6 +18,11 @@ public class ClassInitializer {
       this.name = name;
       this.value = value;
     }
+  }
+
+  public enum InitializationStrategy {
+    CONSTRUCTOR,
+    SETTER
   }
 
   public CodeBlock initialize(TypeName typeName, CodeBlock.Builder block, List<Field> fields,
