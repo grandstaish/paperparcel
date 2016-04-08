@@ -19,6 +19,7 @@ import com.squareup.javapoet.WildcardTypeName;
 import nz.bradcampbell.paperparcel.model.Adapter;
 import nz.bradcampbell.paperparcel.model.DataClass;
 import nz.bradcampbell.paperparcel.model.Property;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -63,7 +64,7 @@ public class WrapperGenerator {
 
     FieldSpec creator = generateCreator(
         dataClass.getClassName(), dataClass.getWrapperClassName(), dataClass.isSingleton(), dataClass.getProperties(),
-        classLoader, dataClass.getRequiredTypeAdapters());
+        classLoader, dataClass.getRequiredTypeAdapters(), dataClass.getInitializationStrategy());
 
     wrapperBuilder.addField(creator)
         .addField(generateContentsField(dataClass.getClassName()))
@@ -86,7 +87,7 @@ public class WrapperGenerator {
 
   private FieldSpec generateCreator(
       TypeName typeName, ClassName wrapperClassName, boolean isSingleton, List<Property> properties,
-      FieldSpec classLoader, Set<Adapter> typeAdapters) {
+      FieldSpec classLoader, Set<Adapter> typeAdapters, @Nullable InitializationStrategy initializationStrategy) {
 
     ClassName creator = ClassName.get("android.os", "Parcelable", "Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, wrapperClassName);
@@ -132,7 +133,8 @@ public class WrapperGenerator {
       creatorInitializer.add(block.build());
 
       ClassInitializer classInitializer = new ClassInitializer();
-      CodeBlock dataInitializer = classInitializer.initialize(typeName, creatorInitializer, fields, scopedVariableNames);
+      CodeBlock dataInitializer = classInitializer.initialize(typeName, creatorInitializer, fields,
+                                                              scopedVariableNames, initializationStrategy);
       creatorInitializer.addStatement("return new $T($L)", wrapperClassName, dataInitializer);
     }
 

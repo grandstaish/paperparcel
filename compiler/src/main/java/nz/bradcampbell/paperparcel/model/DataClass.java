@@ -1,6 +1,8 @@
 package nz.bradcampbell.paperparcel.model;
 
 import com.squareup.javapoet.ClassName;
+import nz.bradcampbell.paperparcel.InitializationStrategy;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Set;
@@ -16,10 +18,10 @@ public class DataClass {
   private final boolean requiresClassLoader;
   private final Set<Adapter> requiredTypeAdapters;
   private final boolean singleton;
+  @Nullable private final InitializationStrategy initializationStrategy;
 
   /**
    * Constructor.
-   *
    * @param properties All properties in the data class
    * @param classPackage The package of the data class
    * @param wrapperTypeName The simple name of the wrapper class
@@ -27,9 +29,11 @@ public class DataClass {
    * @param requiresClassLoader True if a ClassLoader field is required, false otherwise
    * @param requiredTypeAdapters All of the TypeAdapter types required for this class
    * @param singleton True if the class is a singleton object
+   * @param initializationStrategy The strategy to be used to re-create this object while un-parcelling
    */
   public DataClass(List<Property> properties, String classPackage, ClassName wrapperTypeName, ClassName className,
-                   boolean requiresClassLoader, Set<Adapter> requiredTypeAdapters, boolean singleton) {
+                   boolean requiresClassLoader, Set<Adapter> requiredTypeAdapters, boolean singleton,
+                   @Nullable InitializationStrategy initializationStrategy) {
     this.properties = properties;
     this.classPackage = classPackage;
     this.requiresClassLoader = requiresClassLoader;
@@ -37,6 +41,7 @@ public class DataClass {
     this.className = className;
     this.requiredTypeAdapters = requiredTypeAdapters;
     this.singleton = singleton;
+    this.initializationStrategy = initializationStrategy;
   }
 
   public List<Property> getProperties() {
@@ -65,5 +70,9 @@ public class DataClass {
 
   public boolean isSingleton() {
     return singleton;
+  }
+
+  @Nullable public InitializationStrategy getInitializationStrategy() {
+    return initializationStrategy;
   }
 }

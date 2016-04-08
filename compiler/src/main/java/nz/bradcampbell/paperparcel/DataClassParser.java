@@ -170,6 +170,8 @@ public class DataClassParser {
     boolean requiresClassLoader = false;
     boolean isSingleton = isSingleton(typeUtil, typeElement);
 
+    InitializationStrategy initializationStrategy = null;
+
     // If the class is a singleton, we don't need to read/write variables. We can just use the static instance.
     if (!isSingleton) {
 
@@ -179,8 +181,16 @@ public class DataClassParser {
         tempTypeElement = (TypeElement) typeUtil.asElement(tempTypeElement.getSuperclass());
       }
 
-      FieldExtractor fieldExtractor = new FieldExtractor(typeUtil);
-      for (VariableElement variableElement : fieldExtractor.requiredFields(typeElement)) {
+      DataClassValidator dataClassValidator = new DataClassValidator(processingEnv, typeUtil);
+      try {
+        dataClassValidator.validate(typeElement);
+      } catch (DataClassValidator.IncompatibleTypeException e) {
+        throw new RuntimeException(e);
+      }
+
+      initializationStrategy = dataClassValidator.getInitializationStrategy();
+
+      for (VariableElement variableElement : dataClassValidator.getFields()) {
 
         // Determine how we will access this property and in doing so, validate the property
         ExecutableElement accessorMethod;
@@ -216,7 +226,7 @@ public class DataClassParser {
     }
 
     return new DataClass(properties, className.packageName(), wrappedClassName, className, requiresClassLoader,
-                         requiredTypeAdapters, isSingleton);
+                         requiredTypeAdapters, isSingleton, initializationStrategy);
   }
 
   private boolean applyTypeAdaptersFromElement(Element element, Map<TypeName, Adapter> typeAdapters) {
