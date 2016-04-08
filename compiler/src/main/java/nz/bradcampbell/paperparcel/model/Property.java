@@ -160,7 +160,7 @@ public abstract class Property {
    * instance, e.g.:
    *
    * <pre><code>
-   *   block.addStatement("$1T $N = new $1T(), SomeType.class, getName());
+   *   block.addStatement("$1T $2N = new $1T(), SomeType.class, getName());
    *   // ... processing
    *   return CodeBlock.of("$N", getName());
    * </code></pre>
