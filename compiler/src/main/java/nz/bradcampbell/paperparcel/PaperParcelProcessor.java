@@ -46,8 +46,6 @@ public class PaperParcelProcessor extends AbstractProcessor {
   private Map<ClassName, ClassName> wrapperMap = new LinkedHashMap<>();
   private Set<DataClass> dataClasses = new LinkedHashSet<>();
 
-  private boolean mappingFileCreated = false;
-
   @Override public Set<String> getSupportedAnnotationTypes() {
     Set<String> types = new LinkedHashSet<>();
     types.add(PaperParcel.class.getCanonicalName());
@@ -81,15 +79,14 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
     dataClasses.addAll(newDataClasses);
 
-    if (!mappingFileCreated && unprocessedTypes.size() == 0) {
+    if (roundEnvironment.processingOver()) {
+      if (!unprocessedTypes.isEmpty()) {
+        error("Could not create Parcelable wrappers for " + unprocessedTypes);
+      }
+
       // Generate mapping file
       MappingGenerator mappingGenerator = new MappingGenerator(filer);
       mappingGenerator.generateParcelableMapping(dataClasses);
-      mappingFileCreated = true;
-    }
-
-    if (roundEnvironment.processingOver() && !unprocessedTypes.isEmpty()) {
-        error("Could not create Parcelable wrappers for " + unprocessedTypes);
     }
 
     return true;
