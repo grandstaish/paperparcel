@@ -26,9 +26,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.ElementFilter;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 
 @AutoService(AutoValueExtension.class)
 public class PaperParcelAutoValueExtension extends AutoValueExtension {
@@ -39,7 +45,11 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
     ProcessingEnvironment processingEnv = context.processingEnvironment();
     TypeMirror parcelable = processingEnv.getElementUtils().getTypeElement("android.os.Parcelable").asType();
     TypeMirror autoValueClass = context.autoValueClass().asType();
-    return processingEnv.getTypeUtils().isAssignable(autoValueClass, parcelable);
+    boolean isParcelable = processingEnv.getTypeUtils().isAssignable(autoValueClass, parcelable);
+    boolean needsImplementation = needsContentDescriptor(context)
+        || needsWriteToParcel(context)
+        || needsCreator(context);
+    return isParcelable && needsImplementation;
   }
 
   @Override public Set<String> consumeProperties(Context context) {
@@ -52,21 +62,27 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
 
   @Override public String generateClass(Context context, String className, String classToExtend, boolean isFinal) {
     ClassName thisClass = ClassName.get(context.packageName(), className);
-
-    FieldSpec classLoader = generateClassLoaderField(thisClass);
     TypeSpec.Builder subclass = TypeSpec.classBuilder(className)
         .addModifiers(PUBLIC, FINAL)
         .superclass(TypeVariableName.get(classToExtend))
-        .addMethod(generateSuperConstructor(context.properties()))
-        .addAnnotation(PaperParcel.class)
-        .addField(classLoader)
-        .addField(generateCreator(thisClass, classLoader))
-        .addMethod(generateWriteToParcel());
-
-    if (needsContentDescriptor(context)) {
+        .addMethod(generateSuperConstructor(context.properties()));
+    boolean needsCreator = needsCreator(context);
+    boolean needsWriteToParcel = needsWriteToParcel(context);
+    boolean needsContentDescriptor = needsContentDescriptor(context);
+    if (needsCreator || needsWriteToParcel) {
+      subclass.addAnnotation(PaperParcel.class);
+    }
+    if (needsCreator) {
+      FieldSpec classLoader = generateClassLoaderField(thisClass);
+      subclass.addField(classLoader)
+          .addField(generateCreator(thisClass, classLoader));
+    }
+    if (needsWriteToParcel) {
+      subclass.addMethod(generateWriteToParcel());
+    }
+    if (needsContentDescriptor) {
       subclass.addMethod(generateDescribeContents());
     }
-
     JavaFile javaFile = JavaFile.builder(context.packageName(), subclass.build()).build();
     return javaFile.toString();
   }
@@ -74,39 +90,31 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
   private MethodSpec generateWriteToParcel() {
     ParameterSpec dest = ParameterSpec.builder(PARCEL, "dest").build();
     ParameterSpec flags = ParameterSpec.builder(int.class, "flags").build();
-
     MethodSpec.Builder builder = MethodSpec.methodBuilder("writeToParcel")
         .addAnnotation(Override.class)
         .addModifiers(PUBLIC)
         .addParameter(dest)
         .addParameter(flags);
-
     CodeBlock code = CodeBlock.builder()
         .addStatement("$N.writeParcelable($T.wrap(this), $N)", dest, PAPER_PARCELS, flags)
         .build();
-
     builder.addCode(code);
-
     return builder.build();
   }
 
   private FieldSpec generateCreator(TypeName thisClass, FieldSpec classLoader) {
     ClassName creator = ClassName.get("android.os", "Parcelable", "Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, thisClass);
-
     CodeBlock.Builder initializer = CodeBlock.builder()
         .beginControlFlow("new $T()", ParameterizedTypeName.get(creator, thisClass))
         .beginControlFlow("@$T public $T createFromParcel($T in)", ClassName.get(Override.class), thisClass, PARCEL);
-
     initializer.addStatement("return $T.unsafeUnwrap(in.readParcelable($N))", PAPER_PARCELS, classLoader);
-
     initializer.endControlFlow()
         .beginControlFlow("@$T public $T[] newArray($T size)", ClassName.get(Override.class), thisClass, int.class)
         .addStatement("return new $T[size]", thisClass)
         .endControlFlow()
         .unindent()
         .add("}");
-
     return FieldSpec.builder(creatorOfClass, "CREATOR", Modifier.PUBLIC, FINAL, Modifier.STATIC)
         .initializer(initializer.build())
         .build();
@@ -114,16 +122,13 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
 
   private MethodSpec generateSuperConstructor(Map<String, ExecutableElement> properties) {
     List<ParameterSpec> params = Lists.newArrayListWithCapacity(properties.size());
-
     for (Map.Entry<String, ExecutableElement> entry : properties.entrySet()) {
       TypeName propertyType = TypeName.get(entry.getValue().getReturnType());
       String propertyName = entry.getKey();
       params.add(ParameterSpec.builder(propertyType, propertyName).build());
     }
-
     MethodSpec.Builder builder = MethodSpec.constructorBuilder()
         .addParameters(params);
-
     StringBuilder superFormat = new StringBuilder("super(");
     List<ParameterSpec> args = new ArrayList<>();
     for (int i = 0, n = params.size(); i < n; i++) {
@@ -133,7 +138,6 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
     }
     superFormat.append(")");
     builder.addStatement(superFormat.toString(), args.toArray());
-
     return builder.build();
   }
 
@@ -164,6 +168,49 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
           && element.getParameters().isEmpty()
           && !element.getModifiers().contains(Modifier.ABSTRACT)) {
         return false;
+      }
+    }
+    return true;
+  }
+
+  private static boolean needsWriteToParcel(Context context) {
+    ProcessingEnvironment processingEnv = context.processingEnvironment();
+    TypeMirror parcel = processingEnv.getElementUtils().getTypeElement("android.os.Parcel").asType();
+    ProcessingEnvironment env = context.processingEnvironment();
+    for (ExecutableElement element : MoreElements.getLocalAndInheritedMethods(
+        context.autoValueClass(), env.getElementUtils())) {
+      if (element.getSimpleName().contentEquals("writeToParcel")
+          && MoreTypes.isTypeOf(void.class, element.getReturnType())
+          && !element.getModifiers().contains(Modifier.ABSTRACT)) {
+        List<? extends VariableElement> parameters = element.getParameters();
+        if (parameters.size() == 2
+            && processingEnv.getTypeUtils().isSameType(parcel, parameters.get(0).asType())
+            && MoreTypes.isTypeOf(int.class, parameters.get(1).asType())) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  private static boolean needsCreator(Context context) {
+    ProcessingEnvironment processingEnv = context.processingEnvironment();
+    Types typeUtils = processingEnv.getTypeUtils();
+    Elements elementUtils = processingEnv.getElementUtils();
+    TypeMirror creatorType = typeUtils.erasure(elementUtils.getTypeElement("android.os.Parcelable.Creator").asType());
+    List<? extends Element> members = processingEnv.getElementUtils().getAllMembers(context.autoValueClass());
+    for (VariableElement field : ElementFilter.fieldsIn(members)) {
+      if (field.asType() instanceof DeclaredType) {
+        List<? extends TypeMirror> typeArguments = ((DeclaredType) field.asType()).getTypeArguments();
+        if (typeArguments.size() == 1
+            && field.getSimpleName().contentEquals("CREATOR")
+            && typeUtils.isSameType(creatorType, typeUtils.erasure(field.asType()))
+            && typeUtils.isAssignable(context.autoValueClass().asType(), typeArguments.get(0))
+            && field.getModifiers().contains(Modifier.STATIC)
+            && field.getModifiers().contains(Modifier.PUBLIC)
+            && field.getModifiers().contains(Modifier.FINAL)) {
+          return false;
+        }
       }
     }
     return true;
