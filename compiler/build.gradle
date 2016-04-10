@@ -34,6 +34,7 @@ dependencies {
     compile deps.javapoet
 
     testCompile deps.junit
+    testCompile deps.mockito
     testCompile deps.truth
     testCompile deps.compiletesting
     testCompile files(Jvm.current().getToolsJar())
