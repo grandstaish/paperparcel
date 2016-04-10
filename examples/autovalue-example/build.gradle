@@ -29,7 +29,8 @@ dependencies {
     compile deps.appCompat
     compile deps.design
 
-    compile deps.autovalue
+    provided deps.autovalue
+    apt deps.autovalue
 
     compile project(':paperparcel')
     apt project(':compiler')

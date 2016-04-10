@@ -45,7 +45,7 @@ ext.deps = [
     javapoet: 'com.squareup:javapoet:1.6.1',
 
     // Auto
-    autovalue: 'com.google.auto.value:auto-value:1.2-rc1',
+    autovalue: 'com.google.auto.value:auto-value:1.2',
     autocommon: 'com.google.auto:auto-common:0.6',
     autoservice: 'com.google.auto.service:auto-service:1.0-rc2',
 
