@@ -174,9 +174,8 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
   }
 
   private static boolean needsWriteToParcel(Context context) {
-    ProcessingEnvironment processingEnv = context.processingEnvironment();
-    TypeMirror parcel = processingEnv.getElementUtils().getTypeElement("android.os.Parcel").asType();
     ProcessingEnvironment env = context.processingEnvironment();
+    TypeMirror parcel = env.getElementUtils().getTypeElement("android.os.Parcel").asType();
     for (ExecutableElement element : MoreElements.getLocalAndInheritedMethods(
         context.autoValueClass(), env.getElementUtils())) {
       if (element.getSimpleName().contentEquals("writeToParcel")
@@ -184,7 +183,7 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
           && !element.getModifiers().contains(Modifier.ABSTRACT)) {
         List<? extends VariableElement> parameters = element.getParameters();
         if (parameters.size() == 2
-            && processingEnv.getTypeUtils().isSameType(parcel, parameters.get(0).asType())
+            && env.getTypeUtils().isSameType(parcel, parameters.get(0).asType())
             && MoreTypes.isTypeOf(int.class, parameters.get(1).asType())) {
           return false;
         }
@@ -194,11 +193,11 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
   }
 
   private static boolean needsCreator(Context context) {
-    ProcessingEnvironment processingEnv = context.processingEnvironment();
-    Types typeUtils = processingEnv.getTypeUtils();
-    Elements elementUtils = processingEnv.getElementUtils();
+    ProcessingEnvironment env = context.processingEnvironment();
+    Types typeUtils = env.getTypeUtils();
+    Elements elementUtils = env.getElementUtils();
     TypeMirror creatorType = typeUtils.erasure(elementUtils.getTypeElement("android.os.Parcelable.Creator").asType());
-    List<? extends Element> members = processingEnv.getElementUtils().getAllMembers(context.autoValueClass());
+    List<? extends Element> members = env.getElementUtils().getAllMembers(context.autoValueClass());
     for (VariableElement field : ElementFilter.fieldsIn(members)) {
       if (field.asType() instanceof DeclaredType) {
         List<? extends TypeMirror> typeArguments = ((DeclaredType) field.asType()).getTypeArguments();
