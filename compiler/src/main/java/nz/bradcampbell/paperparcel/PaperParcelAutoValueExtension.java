@@ -30,7 +30,6 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
@@ -205,15 +204,10 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
     TypeMirror creatorType = typeUtils.erasure(elementUtils.getTypeElement("android.os.Parcelable.Creator").asType());
     List<? extends Element> members = env.getElementUtils().getAllMembers(context.autoValueClass());
     for (VariableElement field : ElementFilter.fieldsIn(members)) {
-      if (field.asType() instanceof DeclaredType) {
-        List<? extends TypeMirror> typeArguments = ((DeclaredType) field.asType()).getTypeArguments();
-        if (typeArguments.size() == 1
-            && field.getSimpleName().contentEquals("CREATOR")
-            && typeUtils.isSameType(creatorType, typeUtils.erasure(field.asType()))
-            && field.getModifiers().contains(Modifier.STATIC)
-            && !field.getModifiers().contains(Modifier.PRIVATE)) {
-          return false;
-        }
+      if (field.getSimpleName().contentEquals("CREATOR")
+          && typeUtils.isSameType(creatorType, typeUtils.erasure(field.asType()))
+          && field.getModifiers().contains(Modifier.STATIC)) {
+        return false;
       }
     }
     return true;
