@@ -22,11 +22,11 @@ All documentation can be found in the [wiki](https://github.com/grandstaish/pape
 
 ## Type Adapters
 
-Occasionally when using PaperParcel you might find the need to parcel an unknown type, or modify how an object is read/written to a parcel. TypeAdapters allow you to do this.
+Occasionally when using PaperParcel you might find the need to parcel an unknown type, or modify how an object is read/written to a `Parcel`. `TypeAdapter`s allow you to do this.
 
-A good example of when you might want this functionality is with java.util.Date objects. By default, PaperParcel will recognise Date as Serializable, and use Serialization as the Parcel reading/writing mechanism. Serialization is slow, so you might want to write a custom TypeAdapter for a Date object.
+A good example of when you might want this functionality is with `java.util.Date` objects. By default, PaperParcel will recognise `Date` as `Serializable`, and use Serialization as the `Parcel` reading/writing mechanism. Serialization is slow, so you might want to write a custom `TypeAdapter` for a `Date` object.
 
-Defining TypeAdapters for a particular type automatically allows the use of this type with any container type, e.g. a TypeAdapter for Date will apply to the Date elements in List<Map<String, Date>>.
+Defining `TypeAdapter`s for a particular type automatically allows the use of this type with any container type, e.g. a `TypeAdapter` for `Date` will apply to the `Date` elements in `List<Map<String, Date>>`.
 
 For information on how to define and use `TypeAdapters`, see the [Type Adapters wiki page](https://github.com/grandstaish/paperparcel/wiki/Type-Adapters).
 
