@@ -10,7 +10,7 @@ import java.util.Date;
 @PaperParcel
 @TypeAdapters(DateTypeAdapter.class)
 public final class State extends PaperParcelable {
-  private static final PaperParcelable.Creator<State> CREATOR = new PaperParcelable.Creator<>(State.class);
+  public static final PaperParcelable.Creator<State> CREATOR = new PaperParcelable.Creator<>(State.class);
 
   private final int count;
 
