@@ -35,6 +35,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import javax.tools.Diagnostic;
 
 @AutoService(AutoValueExtension.class)
 public class PaperParcelAutoValueExtension extends AutoValueExtension {
@@ -45,11 +46,25 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
     ProcessingEnvironment processingEnv = context.processingEnvironment();
     TypeMirror parcelable = processingEnv.getElementUtils().getTypeElement("android.os.Parcelable").asType();
     TypeMirror autoValueClass = context.autoValueClass().asType();
-    boolean isParcelable = processingEnv.getTypeUtils().isAssignable(autoValueClass, parcelable);
-    boolean needsImplementation = needsContentDescriptor(context)
-        || needsWriteToParcel(context)
-        || needsCreator(context);
-    return isParcelable && needsImplementation;
+    // Disallow manual implementation of the CREATOR instance
+    if (!needsCreator(context)) {
+      context.processingEnvironment().getMessager().printMessage(
+          Diagnostic.Kind.ERROR,
+          "Manual implementation of a Parcelable.Creator<T> CREATOR field found when processing "
+          + autoValueClass.toString() + ". Remove this so PaperParcel can automatically generate the implementation "
+          + "for you.");
+      return false;
+    }
+    // Disallow manual implementation of writeToParcel
+    if (!needsWriteToParcel(context)) {
+      context.processingEnvironment().getMessager().printMessage(
+          Diagnostic.Kind.ERROR,
+          "Manual implementation of Parcelable#writeToParcel(Parcel,int) found when processing "
+          + autoValueClass.toString() + ". Remove this so PaperParcel can automatically generate the implementation "
+          + "for you.");
+      return false;
+    }
+    return processingEnv.getTypeUtils().isAssignable(autoValueClass, parcelable);
   }
 
   @Override public Set<String> consumeProperties(Context context) {
@@ -62,25 +77,16 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
 
   @Override public String generateClass(Context context, String className, String classToExtend, boolean isFinal) {
     ClassName thisClass = ClassName.get(context.packageName(), className);
+    FieldSpec classLoader = generateClassLoaderField(thisClass);
     TypeSpec.Builder subclass = TypeSpec.classBuilder(className)
         .addModifiers(PUBLIC, FINAL)
         .superclass(TypeVariableName.get(classToExtend))
-        .addMethod(generateSuperConstructor(context.properties()));
-    boolean needsCreator = needsCreator(context);
-    boolean needsWriteToParcel = needsWriteToParcel(context);
-    boolean needsContentDescriptor = needsContentDescriptor(context);
-    if (needsCreator || needsWriteToParcel) {
-      subclass.addAnnotation(PaperParcel.class);
-    }
-    if (needsCreator) {
-      FieldSpec classLoader = generateClassLoaderField(thisClass);
-      subclass.addField(classLoader)
-          .addField(generateCreator(thisClass, classLoader));
-    }
-    if (needsWriteToParcel) {
-      subclass.addMethod(generateWriteToParcel());
-    }
-    if (needsContentDescriptor) {
+        .addMethod(generateSuperConstructor(context.properties()))
+        .addAnnotation(PaperParcel.class)
+        .addField(classLoader)
+        .addField(generateCreator(thisClass, classLoader))
+        .addMethod(generateWriteToParcel());
+    if (needsContentDescriptor(context)) {
       subclass.addMethod(generateDescribeContents());
     }
     JavaFile javaFile = JavaFile.builder(context.packageName(), subclass.build()).build();
@@ -204,10 +210,8 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
         if (typeArguments.size() == 1
             && field.getSimpleName().contentEquals("CREATOR")
             && typeUtils.isSameType(creatorType, typeUtils.erasure(field.asType()))
-            && typeUtils.isAssignable(context.autoValueClass().asType(), typeArguments.get(0))
             && field.getModifiers().contains(Modifier.STATIC)
-            && field.getModifiers().contains(Modifier.PUBLIC)
-            && field.getModifiers().contains(Modifier.FINAL)) {
+            && !field.getModifiers().contains(Modifier.PRIVATE)) {
           return false;
         }
       }
