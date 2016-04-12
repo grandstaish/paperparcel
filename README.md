@@ -54,9 +54,9 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 dependencies {
-    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-rc3'
-    compile 'com.github.grandstaish.paperparcel:paperparcel-kotlin:1.0.0-rc3'
-    kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc3'
+    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-rc4'
+    compile 'com.github.grandstaish.paperparcel:paperparcel-kotlin:1.0.0-rc4'
+    kapt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc4'
 }
 ```
 
@@ -70,8 +70,8 @@ repositories {
 dependencies {
     provided 'com.google.auto.value:auto-value:1.2'
     apt 'com.google.auto.value:auto-value:1.2'
-    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-rc3'
-    apt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc3'
+    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-rc4'
+    apt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc4'
 }
 ```
 
@@ -84,9 +84,9 @@ repositories {
     maven { url 'https://jitpack.io' }
 }
 dependencies {
-    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-rc3'
-    compile 'com.github.grandstaish.paperparcel:paperparcel-java7:1.0.0-rc3'
-    apt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc3'
+    compile 'com.github.grandstaish.paperparcel:paperparcel:1.0.0-rc4'
+    compile 'com.github.grandstaish.paperparcel:paperparcel-java7:1.0.0-rc4'
+    apt 'com.github.grandstaish.paperparcel:compiler:1.0.0-rc4'
 }
 ```
 
