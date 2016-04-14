@@ -127,16 +127,18 @@ public class DataClassParser {
   private final Types typeUtil;
   private final Elements elementUtils;
 
-  private final Map<TypeName, Adapter> defaultAdapterMap;
-  private final Map<ClassName, ClassName> wrapperMap;
+  private final Map<TypeName, Adapter> defaultAdapters;
+  private final Map<ClassName, ClassName> wrappers;
+  private final Map<ClassName, ClassName> delegates;
 
-  public DataClassParser(ProcessingEnvironment processingEnv, Map<TypeName, Adapter> defaultAdapterMap,
-                         Map<ClassName, ClassName> wrapperMap) {
+  public DataClassParser(ProcessingEnvironment processingEnv, Map<TypeName, Adapter> defaultAdapters,
+                         Map<ClassName, ClassName> wrappers, Map<ClassName, ClassName> delegates) {
     this.processingEnv = processingEnv;
+    this.delegates = delegates;
     this.typeUtil = processingEnv.getTypeUtils();
     this.elementUtils = processingEnv.getElementUtils();
-    this.defaultAdapterMap = defaultAdapterMap;
-    this.wrapperMap = wrapperMap;
+    this.defaultAdapters = defaultAdapters;
+    this.wrappers = wrappers;
   }
 
   public Set<DataClass> parseDataClasses(Set<TypeElement> unprocessedTypes) {
@@ -163,7 +165,8 @@ public class DataClassParser {
    */
   private DataClass createParcel(TypeElement typeElement) throws UnknownPropertyTypeException {
     ClassName className = ClassName.get(typeElement);
-    ClassName wrappedClassName = wrapperMap.get(className);
+    ClassName wrappedClassName = wrappers.get(className);
+    ClassName delegateClassName = delegates.get(className);
 
     List<Property> properties = new ArrayList<>();
     Set<Adapter> requiredTypeAdapters = new HashSet<>();
@@ -227,8 +230,8 @@ public class DataClassParser {
       }
     }
 
-    return new DataClass(properties, className.packageName(), wrappedClassName, className, requiresClassLoader,
-                         requiredTypeAdapters, isSingleton, initializationStrategy);
+    return new DataClass(properties, className.packageName(), wrappedClassName, className, delegateClassName,
+                         requiresClassLoader, requiredTypeAdapters, isSingleton, initializationStrategy);
   }
 
   private boolean applyTypeAdaptersFromElement(Element element, Map<TypeName, Adapter> typeAdapters) {
@@ -338,7 +341,7 @@ public class DataClassParser {
     TypeName erasedTypeName = TypeName.get(erasedType);
     Adapter typeAdapter = typeAdapterMap.get(erasedTypeName);
     if (typeAdapter == null) {
-      typeAdapter = defaultAdapterMap.get(erasedTypeName);
+      typeAdapter = defaultAdapters.get(erasedTypeName);
     }
     if (typeAdapter != null) {
       parcelableTypeName = TYPE_ADAPTER;
@@ -433,8 +436,8 @@ public class DataClassParser {
       return new SizeFProperty(isNullable, typeName, isInterface, name, accessorMethodName);
     } else if (TYPE_ADAPTER.equals(parcelableTypeName)) {
       return new TypeAdapterProperty(typeAdapter, isNullable, typeName, isInterface, name, accessorMethodName);
-    } else if (typeName instanceof ClassName && wrapperMap.containsKey(typeName)) {
-      return new WrapperProperty(wrapperMap.get(typeName), isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (typeName instanceof ClassName && wrappers.containsKey(typeName)) {
+      return new WrapperProperty(wrappers.get(typeName), isNullable, typeName, isInterface, name, accessorMethodName);
     } else {
       throw new UnknownPropertyTypeException("PaperParcel does not support type: " + typeName);
     }

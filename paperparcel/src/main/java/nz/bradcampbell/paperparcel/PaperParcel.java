@@ -1,7 +1,7 @@
 package nz.bradcampbell.paperparcel;
 
 import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.SOURCE;
+import static java.lang.annotation.RetentionPolicy.CLASS;
 
 import android.os.Parcelable;
 
@@ -14,15 +14,13 @@ import java.lang.annotation.Target;
  * knows how to parcel and un-parcel that object.
  *
  * To wrap the annotated class with its generated wrapper, you can use {@link PaperParcels#wrap(Object)}.
- *
- * To unwrap a wrapped type, you can use {@link PaperParcels#unwrap(TypedParcelable)} or
- * {@link PaperParcels#unsafeUnwrap(Parcelable)}
+ * To unwrap a wrapped type, you can use {@link PaperParcels#unwrap(Parcelable)}
  *
  * @see android.os.Parcel
  * @see android.os.Parcelable
  */
 @Documented
-@Retention(SOURCE)
+@Retention(CLASS)
 @Target(TYPE)
 public @interface PaperParcel {
 }

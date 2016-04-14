@@ -1,5 +1,7 @@
 package nz.bradcampbell.paperparcel;
 
+import static nz.bradcampbell.paperparcel.PaperParcels.DELEGATE_SUFFIX;
+import static nz.bradcampbell.paperparcel.PaperParcels.WRAPPER_SUFFIX;
 import static nz.bradcampbell.paperparcel.utils.TypeUtils.hasTypeArguments;
 import static nz.bradcampbell.paperparcel.utils.TypeUtils.isSingleton;
 
@@ -11,7 +13,7 @@ import nz.bradcampbell.paperparcel.model.Adapter;
 import nz.bradcampbell.paperparcel.model.DataClass;
 import nz.bradcampbell.paperparcel.utils.TypeUtils;
 
-import java.util.HashMap;
+import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
@@ -41,10 +43,14 @@ public class PaperParcelProcessor extends AbstractProcessor {
   private Types typeUtil;
   private Elements elementUtils;
 
-  private Map<TypeName, Adapter> defaultAdapterMap = new HashMap<>();
-  private Set<TypeElement> unprocessedTypes = new LinkedHashSet<>();
-  private Map<ClassName, ClassName> wrapperMap = new LinkedHashMap<>();
-  private Set<DataClass> dataClasses = new LinkedHashSet<>();
+  private Map<TypeName, Adapter> defaultAdapters;
+  private Set<TypeElement> unprocessedTypes;
+  private Map<ClassName, ClassName> wrappers;
+  private Map<ClassName, ClassName> delegates;
+
+  private DataClassParser dataClassParser;
+  private WrapperGenerator wrapperGenerator;
+  private DelegateGenerator delegateGenerator;
 
   @Override public Set<String> getSupportedAnnotationTypes() {
     Set<String> types = new LinkedHashSet<>();
@@ -60,9 +66,19 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
   @Override public synchronized void init(ProcessingEnvironment env) {
     super.init(env);
+
     typeUtil = env.getTypeUtils();
     elementUtils = env.getElementUtils();
     filer = env.getFiler();
+
+    defaultAdapters = new LinkedHashMap<>();
+    unprocessedTypes = new LinkedHashSet<>();
+    wrappers = new LinkedHashMap<>();
+    delegates = new LinkedHashMap<>();
+
+    dataClassParser = new DataClassParser(processingEnv, defaultAdapters, wrappers, delegates);
+    wrapperGenerator = new WrapperGenerator();
+    delegateGenerator = new DelegateGenerator();
   }
 
   @Override public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnvironment) {
@@ -70,23 +86,22 @@ public class PaperParcelProcessor extends AbstractProcessor {
     findPaperParcels(roundEnvironment);
 
     // Parse models
-    DataClassParser dataClassParser = new DataClassParser(processingEnv, defaultAdapterMap, wrapperMap);
     Set<DataClass> newDataClasses = dataClassParser.parseDataClasses(unprocessedTypes);
 
     // Generate wrappers
-    WrapperGenerator wrapperGenerator = new WrapperGenerator(filer);
-    wrapperGenerator.generateParcelableWrappers(newDataClasses);
-
-    dataClasses.addAll(newDataClasses);
+    for (DataClass dataClass : newDataClasses) {
+      try {
+        wrapperGenerator.generateParcelableWrapper(dataClass).writeTo(filer);
+        delegateGenerator.generatePaperParcelsDelegate(dataClass).writeTo(filer);
+      } catch (IOException e) {
+        throw new RuntimeException("An error occurred while writing to filer." + e.getMessage(), e);
+      }
+    }
 
     if (roundEnvironment.processingOver()) {
       if (!unprocessedTypes.isEmpty()) {
         error("Could not create Parcelable wrappers for " + unprocessedTypes);
       }
-
-      // Generate mapping file
-      MappingGenerator mappingGenerator = new MappingGenerator(filer);
-      mappingGenerator.generateParcelableMapping(dataClasses);
     }
 
     return true;
@@ -115,7 +130,7 @@ public class PaperParcelProcessor extends AbstractProcessor {
       TypeElement typeElement = (TypeElement) element;
       boolean singleton = isSingleton(typeUtil, typeElement);
       TypeName typeAdapterType = TypeUtils.getTypeAdapterType(typeUtil, (DeclaredType) typeElement.asType());
-      defaultAdapterMap.put(typeAdapterType, new Adapter(singleton, ClassName.get(typeElement)));
+      defaultAdapters.put(typeAdapterType, new Adapter(singleton, ClassName.get(typeElement)));
     }
   }
 
@@ -140,8 +155,12 @@ public class PaperParcelProcessor extends AbstractProcessor {
       unprocessedTypes.add(typeElement);
 
       ClassName className = ClassName.get(typeElement);
-      ClassName wrapperName = ClassName.get(className.packageName(), className.simpleName() + "Parcel");
-      wrapperMap.put(className, wrapperName);
+
+      ClassName wrapperName = ClassName.get(className.packageName(), className.simpleName() + WRAPPER_SUFFIX);
+      wrappers.put(className, wrapperName);
+
+      ClassName delegateName = ClassName.get(className.packageName(), className.simpleName() + DELEGATE_SUFFIX);
+      delegates.put(className, delegateName);
     }
   }
 

@@ -113,7 +113,7 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
     CodeBlock.Builder initializer = CodeBlock.builder()
         .beginControlFlow("new $T()", ParameterizedTypeName.get(creator, thisClass))
         .beginControlFlow("@$T public $T createFromParcel($T in)", ClassName.get(Override.class), thisClass, PARCEL);
-    initializer.addStatement("return $T.unsafeUnwrap(in.readParcelable($N))", PAPER_PARCELS, classLoader);
+    initializer.addStatement("return $T.unwrap(in.readParcelable($N))", PAPER_PARCELS, classLoader);
     initializer.endControlFlow()
         .beginControlFlow("@$T public $T[] newArray($T size)", ClassName.get(Override.class), thisClass, int.class)
         .addStatement("return new $T[size]", thisClass)

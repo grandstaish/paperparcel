@@ -23,7 +23,7 @@ public class WrapperProperty extends Property {
   @Override
   protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
                                           Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
-    return CodeBlock.of("$T.CREATOR.createFromParcel($N).data", wrapperType, in);
+    return CodeBlock.of("$T.CREATOR.createFromParcel($N).get()", wrapperType, in);
   }
 
   @Override

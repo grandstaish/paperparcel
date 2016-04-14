@@ -10,8 +10,6 @@ PaperParcel is an annotation processor that automatically generates type-safe [P
 
 Annotated data classes can contain any type that would normally be able to be parcelled. This includes all the basic Kotlin/Java types, Lists, Maps, Sets, Arrays, SparseArrays, [Kotlin object declarations](https://kotlinlang.org/docs/reference/object-declarations.html#object-declarations), and many more (the full list can be found [here](https://github.com/grandstaish/paperparcel/wiki/Supported-Types)). 
 
-PaperParcel is 100% generated code, no reflection or byte-code manipulation is involved. You can see all the generated classes yourself by viewing the auto-generated `PaperParcelMapping` class after a build.
-
 ## Usage 
 
 All documentation can be found in the [wiki](https://github.com/grandstaish/paperparcel/wiki):
@@ -98,10 +96,8 @@ In addition to the default Android rules set by proguard-android.txt in the SDK,
 
 ```
 -dontwarn org.jetbrains.annotations.**
--keepclassmembers class nz.bradcampbell.paperparcel.PaperParcelMapping {
-  static ** FROM_ORIGINAL;
-  static ** FROM_PARCELABLE;
-}
+-keep class * implements nz.bradcampbell.paperparcel.PaperParcels$Delegate { *; }
+-keep @nz.bradcampbell.paperparcel.PaperParcel class * { *; }
 ```
 
 ## Contributing

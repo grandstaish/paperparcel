@@ -2,6 +2,7 @@ package nz.bradcampbell.paperparcel.model;
 
 import com.squareup.javapoet.ClassName;
 import nz.bradcampbell.paperparcel.DataClassInitializer.InitializationStrategy;
+import nz.bradcampbell.paperparcel.PaperParcels.Delegate;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -15,6 +16,7 @@ public class DataClass {
   private final List<Property> properties;
   private final ClassName className;
   private final ClassName wrapperClassName;
+  private final ClassName delegateClassName;
   private final boolean requiresClassLoader;
   private final Set<Adapter> requiredTypeAdapters;
   private final boolean singleton;
@@ -24,18 +26,21 @@ public class DataClass {
    * Constructor.
    * @param properties All properties in the data class
    * @param classPackage The package of the data class
-   * @param wrapperTypeName The simple name of the wrapper class
+   * @param wrapperTypeName The class name of the wrapper class
    * @param className The data class type name
+   * @param delegateClassName The class name of the {@link Delegate} for this data class
    * @param requiresClassLoader True if a ClassLoader field is required, false otherwise
    * @param requiredTypeAdapters All of the TypeAdapter types required for this class
    * @param singleton True if the class is a singleton object
    * @param initializationStrategy The strategy to be used to re-create this object while un-parcelling
    */
   public DataClass(List<Property> properties, String classPackage, ClassName wrapperTypeName, ClassName className,
-                   boolean requiresClassLoader, Set<Adapter> requiredTypeAdapters, boolean singleton,
+                   ClassName delegateClassName, boolean requiresClassLoader, Set<Adapter> requiredTypeAdapters,
+                   boolean singleton,
                    @Nullable InitializationStrategy initializationStrategy) {
     this.properties = properties;
     this.classPackage = classPackage;
+    this.delegateClassName = delegateClassName;
     this.requiresClassLoader = requiresClassLoader;
     this.wrapperClassName = wrapperTypeName;
     this.className = className;
@@ -58,6 +63,10 @@ public class DataClass {
 
   public ClassName getClassName() {
     return className;
+  }
+
+  public ClassName getDelegateClassName() {
+    return delegateClassName;
   }
 
   public boolean getRequiresClassLoader() {

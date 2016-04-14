@@ -12,7 +12,7 @@ public interface PaperParcelable extends Parcelable {
     }
 
     public T createFromParcel(Parcel parcel) {
-      return PaperParcels.unsafeUnwrap(parcel.readParcelable(type.getClassLoader()));
+      return PaperParcels.unwrap(parcel.readParcelable(type.getClassLoader()));
     }
 
     @Override public T[] newArray(int i) {

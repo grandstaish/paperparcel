@@ -1,6 +1,7 @@
 package nz.bradcampbell.paperparcel;
 
 import static javax.lang.model.element.Modifier.FINAL;
+import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static nz.bradcampbell.paperparcel.PaperParcelProcessor.DATA_VARIABLE_NAME;
 import static nz.bradcampbell.paperparcel.utils.StringUtils.getUniqueName;
@@ -29,30 +30,13 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import javax.annotation.processing.Filer;
 import javax.lang.model.element.Modifier;
 
 public class WrapperGenerator {
   private static final ClassName PARCEL = ClassName.get("android.os", "Parcel");
-  private static final ClassName TYPED_PARCELABLE = ClassName.get("nz.bradcampbell.paperparcel", "TypedParcelable");
+  private static final ClassName TYPED_PARCELABLE = ClassName.get(TypedParcelable.class);
 
-  private final Filer filer;
-
-  public WrapperGenerator(Filer filer) {
-    this.filer = filer;
-  }
-
-  public void generateParcelableWrappers(Set<DataClass> dataClasses) {
-    for (DataClass dataClass : dataClasses) {
-      try {
-        generateParcelableWrapper(dataClass).writeTo(filer);
-      } catch (IOException e) {
-        throw new RuntimeException("An error occurred while writing to filer." + e.getMessage(), e);
-      }
-    }
-  }
-
-  private JavaFile generateParcelableWrapper(DataClass dataClass) throws IOException {
+  public JavaFile generateParcelableWrapper(DataClass dataClass) throws IOException {
     TypeSpec.Builder wrapperBuilder = TypeSpec.classBuilder(dataClass.getWrapperClassName().simpleName())
         .addModifiers(PUBLIC, FINAL)
         .addSuperinterface(ParameterizedTypeName.get(TYPED_PARCELABLE, dataClass.getClassName()));
@@ -69,6 +53,7 @@ public class WrapperGenerator {
 
     wrapperBuilder.addField(creator)
         .addField(generateContentsField(dataClass.getClassName()))
+        .addMethod(generateContentsGetter(dataClass.getClassName()))
         .addMethod(generateContentsConstructor(dataClass.getClassName()))
         .addMethod(generateDescribeContents())
         .addMethod(generateWriteToParcel(dataClass.getProperties(), dataClass.getRequiredTypeAdapters()));
@@ -153,7 +138,16 @@ public class WrapperGenerator {
   }
 
   private FieldSpec generateContentsField(TypeName className) {
-    return FieldSpec.builder(className, DATA_VARIABLE_NAME, PUBLIC, FINAL).build();
+    return FieldSpec.builder(className, DATA_VARIABLE_NAME, PRIVATE, FINAL).build();
+  }
+
+  private MethodSpec generateContentsGetter(TypeName className) {
+    return MethodSpec.methodBuilder("get")
+        .addAnnotation(Override.class)
+        .addModifiers(PUBLIC)
+        .returns(className)
+        .addStatement("return this.$N", DATA_VARIABLE_NAME)
+        .build();
   }
 
   private MethodSpec generateContentsConstructor(TypeName className) {
