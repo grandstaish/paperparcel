@@ -44,7 +44,6 @@ import nz.bradcampbell.paperparcel.model.properties.LongProperty;
 import nz.bradcampbell.paperparcel.model.properties.MapProperty;
 import nz.bradcampbell.paperparcel.model.properties.ParcelableProperty;
 import nz.bradcampbell.paperparcel.model.properties.PersistableBundleProperty;
-import nz.bradcampbell.paperparcel.model.properties.SerializableProperty;
 import nz.bradcampbell.paperparcel.model.properties.SetProperty;
 import nz.bradcampbell.paperparcel.model.properties.ShortProperty;
 import nz.bradcampbell.paperparcel.model.properties.SizeFProperty;
@@ -426,8 +425,6 @@ public class DataClassParser {
       return new IBinderProperty(isNullable, typeName, isInterface, name, accessorMethodName);
     } else if (ENUM.equals(parcelableTypeName)) {
       return new EnumProperty(isNullable, typeName, isInterface, name, accessorMethodName);
-    } else if (SERIALIZABLE.equals(parcelableTypeName)) {
-      return new SerializableProperty(isNullable, typeName, isInterface, name, accessorMethodName);
     } else if (PERSISTABLE_BUNDLE.equals(parcelableTypeName)) {
       return new PersistableBundleProperty(isNullable, typeName, isInterface, name, accessorMethodName);
     } else if (SIZE.equals(parcelableTypeName)) {
