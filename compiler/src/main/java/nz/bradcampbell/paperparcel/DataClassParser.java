@@ -33,6 +33,7 @@ import nz.bradcampbell.paperparcel.model.properties.ByteProperty;
 import nz.bradcampbell.paperparcel.model.properties.CharProperty;
 import nz.bradcampbell.paperparcel.model.properties.CharSequenceProperty;
 import nz.bradcampbell.paperparcel.model.properties.DoubleProperty;
+import nz.bradcampbell.paperparcel.model.properties.EnumProperty;
 import nz.bradcampbell.paperparcel.model.properties.FloatProperty;
 import nz.bradcampbell.paperparcel.model.properties.IBinderProperty;
 import nz.bradcampbell.paperparcel.model.properties.IntArrayProperty;
@@ -420,7 +421,9 @@ public class DataClassParser {
       return new CharSequenceProperty(isNullable, typeName, isInterface, name, accessorMethodName);
     } else if (IBINDER.equals(parcelableTypeName)) {
       return new IBinderProperty(isNullable, typeName, isInterface, name, accessorMethodName);
-    } else if (SERIALIZABLE.equals(parcelableTypeName) || ENUM.equals(parcelableTypeName)) {
+    } else if (ENUM.equals(parcelableTypeName)) {
+      return new EnumProperty(isNullable, typeName, isInterface, name, accessorMethodName);
+    } else if (SERIALIZABLE.equals(parcelableTypeName)) {
       return new SerializableProperty(isNullable, typeName, isInterface, name, accessorMethodName);
     } else if (PERSISTABLE_BUNDLE.equals(parcelableTypeName)) {
       return new PersistableBundleProperty(isNullable, typeName, isInterface, name, accessorMethodName);
