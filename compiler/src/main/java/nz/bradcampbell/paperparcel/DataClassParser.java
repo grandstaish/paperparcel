@@ -101,7 +101,6 @@ public class DataClassParser {
   public static final TypeName CHAR_SEQUENCE = ClassName.get("java.lang", "CharSequence");
   public static final TypeName IBINDER = ClassName.get("android.os", "IBinder");
   public static final TypeName OBJECT_ARRAY = ArrayTypeName.of(OBJECT);
-  public static final TypeName SERIALIZABLE = ClassName.get("java.io", "Serializable");
   public static final TypeName PERSISTABLE_BUNDLE = ClassName.get("android.os", "PersistableBundle");
   public static final TypeName SIZE = ClassName.get("android.util", "Size");
   public static final TypeName SIZEF = ClassName.get("android.util", "SizeF");
@@ -118,7 +117,7 @@ public class DataClassParser {
 
   private static final Set<TypeName> VALID_TYPES = ImmutableSet.of(
       STRING, MAP, LIST, SET, BOOLEAN_ARRAY, BYTE_ARRAY, INT_ARRAY, LONG_ARRAY, STRING_ARRAY, SPARSE_ARRAY,
-      SPARSE_BOOLEAN_ARRAY, BUNDLE, PARCELABLE, PARCELABLE_ARRAY, CHAR_SEQUENCE, IBINDER, OBJECT_ARRAY, SERIALIZABLE,
+      SPARSE_BOOLEAN_ARRAY, BUNDLE, PARCELABLE, PARCELABLE_ARRAY, CHAR_SEQUENCE, IBINDER, OBJECT_ARRAY,
       PERSISTABLE_BUNDLE, SIZE, SIZEF, ENUM, INT, BOXED_INT, LONG, BOXED_LONG, BYTE, BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN,
       FLOAT, BOXED_FLOAT, CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE, SHORT, BOXED_SHORT, TYPE_ADAPTER);
 
@@ -463,8 +462,7 @@ public class DataClassParser {
   }
 
   /**
-   * Gets the type that allows the given type mirror to be written to a Parcel, or null if it is not parcelable. Always
-   * prioritizes Serializable last as it is inefficient.
+   * Gets the type that allows the given type mirror to be written to a Parcel, or null if it is not parcelable
    *
    * @param types The type utilities class
    * @param typeMirror The type
@@ -472,8 +470,6 @@ public class DataClassParser {
    */
   private static TypeName getParcelableType(Types types, TypeMirror typeMirror) {
     TypeElement type = (TypeElement) types.asElement(typeMirror);
-
-    boolean isSerializable = false;
 
     while (typeMirror.getKind() != TypeKind.NONE) {
 
@@ -492,19 +488,10 @@ public class DataClassParser {
       }
 
       // then check if it implements valid interfaces
-      List<TypeMirror> allInterfaces = new ArrayList<>();
-      findAllInterfaceTypeMirrors(types, type, allInterfaces);
-      for (TypeMirror iface : allInterfaces) {
-        TypeName ifaceName = TypeName.get(iface);
-
-        if (ifaceName instanceof ParameterizedTypeName) {
-          ifaceName = ((ParameterizedTypeName) ifaceName).rawType;
-        }
-
-        if (SERIALIZABLE.equals(ifaceName)) {
-          isSerializable = true;
-        } else if (VALID_TYPES.contains(ifaceName)) {
-          return ifaceName;
+      for (TypeMirror iface : type.getInterfaces()) {
+        TypeName inherited = getParcelableType(types, iface);
+        if (inherited != null) {
+          return inherited;
         }
       }
 
@@ -513,20 +500,7 @@ public class DataClassParser {
       typeMirror = type.getSuperclass();
     }
 
-    // Serializable should be a last resort as it is slow
-    if (isSerializable) {
-      return SERIALIZABLE;
-    }
-
     return null;
-  }
-
-  private static void findAllInterfaceTypeMirrors(Types types, TypeElement typeElement, List<TypeMirror> outInterfaces) {
-    for (TypeMirror iface : typeElement.getInterfaces()) {
-      TypeElement interfaceElement = (TypeElement) types.asElement(iface);
-      findAllInterfaceTypeMirrors(types, interfaceElement, outInterfaces);
-      outInterfaces.add(iface);
-    }
   }
 
   private static void error(ProcessingEnvironment processingEnv, String message, Element element) {
