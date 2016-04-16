@@ -20,11 +20,12 @@ import java.util.Set;
 
 public class ListProperty extends Property {
   private final Property typeArgument;
+  private final boolean isInterface;
 
-  public ListProperty(Property typeArgument, boolean isNullable, TypeName typeName, boolean isInterface, String name,
-                      @Nullable String accessorMethodName) {
-    super(isNullable, typeName, isInterface, name, accessorMethodName);
+  public ListProperty(Property typeArgument, boolean isInterface, boolean isNullable, TypeName typeName, String name) {
+    super(isNullable, typeName, name);
     this.typeArgument = typeArgument;
+    this.isInterface = isInterface;
   }
 
   @Override
@@ -52,7 +53,7 @@ public class ListProperty extends Property {
       typeName = ParameterizedTypeName.get(originalType.rawType, parameterTypeName);
     }
 
-    if (isInterface()) {
+    if (isInterface) {
       block.addStatement("$T $N = new $T<$T>($N)", typeName, listName, ArrayList.class, parameterTypeName, listSize);
     } else {
       block.addStatement("$T $N = new $T()", typeName, listName, typeName);

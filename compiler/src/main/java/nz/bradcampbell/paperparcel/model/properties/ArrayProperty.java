@@ -21,9 +21,8 @@ import java.util.Set;
 public class ArrayProperty extends Property {
   private final Property componentType;
   
-  public ArrayProperty(Property componentType, TypeName typeName, boolean isInterface, boolean isNullable, String name,
-                       @Nullable String accessorMethodName) {
-    super(isNullable, typeName, isInterface, name, accessorMethodName);
+  public ArrayProperty(Property componentType, TypeName typeName, boolean isNullable, String name) {
+    super(isNullable, typeName, name);
     this.componentType = componentType;
   }
 

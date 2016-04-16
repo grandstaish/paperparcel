@@ -12,9 +12,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class ByteArrayProperty extends Property {
-  public ByteArrayProperty(boolean isNullable, TypeName typeName, boolean isInterface, String name,
-                           @Nullable String accessorMethodName) {
-    super(isNullable, typeName, isInterface, name, accessorMethodName);
+  public ByteArrayProperty(boolean isNullable, TypeName typeName, String name) {
+    super(isNullable, typeName, name);
   }
 
   @Override

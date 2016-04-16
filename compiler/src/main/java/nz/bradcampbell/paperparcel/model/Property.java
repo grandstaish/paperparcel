@@ -23,27 +23,24 @@ import java.util.Set;
 public abstract class Property {
   private final boolean isNullable;
   private final TypeName typeName;
-  private final boolean isInterface;
   private final String name;
-  @Nullable private final String accessorMethodName;
+
+  private boolean isVisible = false;
+  private int constructorPosition = -1;
+  private String getterMethodName = null;
+  private String setterMethodName = null;
 
   /**
    * Constructor.
    *
    * @param isNullable True if the property can be null, false otherwise
    * @param typeName The property TypeName
-   * @param isInterface True when the property TypeName is an interface and can't be instantiated by itself
    * @param name The name of the accessor method on the data object
-   * @param accessorMethodName The name of the accessor method, or null if the property is visible
    */
-  public Property(boolean isNullable, TypeName typeName, boolean isInterface, String name,
-                  @Nullable String accessorMethodName) {
-
+  public Property(boolean isNullable, TypeName typeName, String name) {
     this.isNullable = isNullable;
     this.typeName = typeName;
-    this.isInterface = isInterface;
     this.name = name;
-    this.accessorMethodName = accessorMethodName;
   }
 
   public final String getName() {
@@ -58,12 +55,36 @@ public abstract class Property {
     return typeName;
   }
 
-  public final boolean isInterface() {
-    return isInterface;
+  public void setVisible(boolean visible) {
+    isVisible = visible;
   }
 
-  @Nullable public final String getAccessorMethodName() {
-    return accessorMethodName;
+  public void setConstructorPosition(int constructorPosition) {
+    this.constructorPosition = constructorPosition;
+  }
+
+  public void setGetterMethodName(String getterMethodName) {
+    this.getterMethodName = getterMethodName;
+  }
+
+  public void setSetterMethodName(String setterMethodName) {
+    this.setterMethodName = setterMethodName;
+  }
+
+  public boolean isVisible() {
+    return isVisible;
+  }
+
+  public int getConstructorPosition() {
+    return constructorPosition;
+  }
+
+  public String getGetterMethodName() {
+    return getterMethodName;
+  }
+
+  public String getSetterMethodName() {
+    return setterMethodName;
   }
 
   /**

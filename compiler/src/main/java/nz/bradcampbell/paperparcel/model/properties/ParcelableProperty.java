@@ -13,9 +13,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class ParcelableProperty extends Property {
-  public ParcelableProperty(boolean isNullable, TypeName typeName, boolean isInterface, String name,
-                            @Nullable String accessorMethodName) {
-    super(isNullable, typeName, isInterface, name, accessorMethodName);
+  public ParcelableProperty(boolean isNullable, TypeName typeName, String name) {
+    super(isNullable, typeName, name);
   }
 
   @Override

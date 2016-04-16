@@ -14,9 +14,8 @@ import java.util.Set;
 public class WrapperProperty extends Property {
   private final TypeName wrapperType;
 
-  public WrapperProperty(TypeName wrapperType, boolean isNullable, TypeName typeName, boolean isInterface, String name,
-                         @Nullable String accessorMethodName) {
-    super(isNullable, typeName, isInterface, name, accessorMethodName);
+  public WrapperProperty(TypeName wrapperType, boolean isNullable, TypeName typeName, String name) {
+    super(isNullable, typeName, name);
     this.wrapperType = wrapperType;
   }
 

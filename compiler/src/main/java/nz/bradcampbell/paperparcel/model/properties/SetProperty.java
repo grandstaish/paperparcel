@@ -19,11 +19,12 @@ import java.util.Set;
 
 public class SetProperty extends Property {
   private final Property typeArgument;
+  private final boolean isInterface;
 
-  public SetProperty(Property typeArgument, boolean isNullable, TypeName typeName, boolean isInterface, String name,
-                     @Nullable String accessorMethodName) {
-    super(isNullable, typeName, isInterface, name, accessorMethodName);
+  public SetProperty(Property typeArgument, boolean isInterface, boolean isNullable, TypeName typeName, String name) {
+    super(isNullable, typeName, name);
     this.typeArgument = typeArgument;
+    this.isInterface = isInterface;
   }
 
   @Override
@@ -51,7 +52,7 @@ public class SetProperty extends Property {
       typeName = ParameterizedTypeName.get(originalType.rawType, parameterTypeName);
     }
 
-    if (isInterface()) {
+    if (isInterface) {
       block.addStatement("$T $N = new $T<$T>($N)", typeName, setName, LinkedHashSet.class, parameterTypeName, setSize);
     } else {
       block.addStatement("$T $N = new $T()", typeName, setName, typeName);

@@ -53,8 +53,8 @@ public class AnnotationUtils {
   }
 
   public static boolean isFieldRequired(Element element) {
-    return hasAnnotationWithName(element, NOT_NULL_ANNOTATION_NAME)
-           || hasAnnotationWithName(element, NON_NULL_ANNOTATION_NAME);
+    return element != null && (hasAnnotationWithName(element, NOT_NULL_ANNOTATION_NAME) ||
+                               hasAnnotationWithName(element, NON_NULL_ANNOTATION_NAME));
   }
 
   /**

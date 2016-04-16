@@ -16,9 +16,8 @@ import java.util.Set;
 public class TypeAdapterProperty extends Property {
   private final Adapter typeAdapter;
 
-  public TypeAdapterProperty(Adapter typeAdapter, boolean isNullable, TypeName typeName, boolean isInterface,
-                             String name, @Nullable String accessorMethodName) {
-    super(isNullable, typeName, isInterface, name, accessorMethodName);
+  public TypeAdapterProperty(Adapter typeAdapter, boolean isNullable, TypeName typeName, String name) {
+    super(isNullable, typeName, name);
     this.typeAdapter = typeAdapter;
   }
 

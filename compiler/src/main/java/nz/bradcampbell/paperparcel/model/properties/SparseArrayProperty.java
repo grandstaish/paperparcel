@@ -20,9 +20,8 @@ import java.util.Set;
 public class SparseArrayProperty extends Property {
   private Property typeArgument;
 
-  public SparseArrayProperty(Property typeArgument, boolean isNullable, TypeName typeName, boolean isInterface,
-                             String name, @Nullable String accessorMethodName) {
-    super(isNullable, typeName, isInterface, name, accessorMethodName);
+  public SparseArrayProperty(Property typeArgument, boolean isNullable, TypeName typeName, String name) {
+    super(isNullable, typeName, name);
     this.typeArgument = typeArgument;
   }
 

@@ -14,9 +14,8 @@ import java.util.Set;
 public class CharSequenceProperty extends Property {
   private static final TypeName TEXT_UTILS = ClassName.get("android.text", "TextUtils");
 
-  public CharSequenceProperty(boolean isNullable, TypeName typeName, boolean isInterface, String name,
-                              @Nullable String accessorMethodName) {
-    super(isNullable, typeName, isInterface, name, accessorMethodName);
+  public CharSequenceProperty(boolean isNullable, TypeName typeName, String name) {
+    super(isNullable, typeName, name);
   }
 
   @Override

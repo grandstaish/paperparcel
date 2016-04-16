@@ -22,12 +22,14 @@ import java.util.Set;
 public class MapProperty extends Property {
   private final Property keyProperty;
   private final Property valueProperty;
+  private final boolean isInterface;
 
-  public MapProperty(Property keyProperty, Property valueProperty, boolean isNullable, TypeName typeName,
-                     boolean isInterface, String name, @Nullable String accessorMethodName) {
-    super(isNullable, typeName, isInterface, name, accessorMethodName);
+  public MapProperty(Property keyProperty, Property valueProperty, boolean isInterface, boolean isNullable,
+                     TypeName typeName, String name) {
+    super(isNullable, typeName, name);
     this.keyProperty = keyProperty;
     this.valueProperty = valueProperty;
+    this.isInterface = isInterface;
   }
 
   @Override
@@ -67,7 +69,7 @@ public class MapProperty extends Property {
       typeName = ParameterizedTypeName.get(originalType.rawType, keyTypeName, valueTypeName);
     }
 
-    if (isInterface()) {
+    if (isInterface) {
       block.addStatement("$T $N = new $T<$T, $T>($N)", typeName, mapName, LinkedHashMap.class, keyTypeName,
                          valueTypeName, mapSize);
     } else {
