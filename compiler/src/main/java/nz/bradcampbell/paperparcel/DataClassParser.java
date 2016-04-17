@@ -153,49 +153,6 @@ public class DataClassParser {
     this.wrappers = wrappers;
   }
 
-  /**
-   * Gets the type that allows the given type mirror to be written to a Parcel, or null if it is not
-   * parcelable
-   *
-   * @param types The type utilities class
-   * @param typeMirror The type
-   * @return The parcelable type, or null
-   */
-  private static TypeName getParcelableType(Types types, TypeMirror typeMirror) {
-    TypeElement type = (TypeElement) types.asElement(typeMirror);
-
-    while (typeMirror.getKind() != TypeKind.NONE) {
-
-      // first, check if the class is valid.
-      TypeName typeName = TypeName.get(typeMirror);
-      if (typeName instanceof ParameterizedTypeName) {
-        typeName = ((ParameterizedTypeName) typeName).rawType;
-      }
-
-      if (typeName.isPrimitive() || VALID_TYPES.contains(typeName)) {
-        return typeName;
-      }
-
-      if (typeName instanceof ArrayTypeName) {
-        return OBJECT_ARRAY;
-      }
-
-      // then check if it implements valid interfaces
-      for (TypeMirror iface : type.getInterfaces()) {
-        TypeName inherited = getParcelableType(types, iface);
-        if (inherited != null) {
-          return inherited;
-        }
-      }
-
-      // then move on
-      type = (TypeElement) types.asElement(typeMirror);
-      typeMirror = type.getSuperclass();
-    }
-
-    return null;
-  }
-
   public Set<DataClass> parseDataClasses(Set<TypeElement> unprocessedTypes, boolean isLastRound) {
     Set<DataClass> dataClasses = new LinkedHashSet<>();
     for (Iterator<TypeElement> iterator = unprocessedTypes.iterator(); iterator.hasNext(); ) {
@@ -471,7 +428,7 @@ public class DataClassParser {
 
     TypeMirror erasedType = typeUtil.erasure(variable);
 
-    TypeName parcelableTypeName = getParcelableType(typeUtil, erasedType);
+    TypeName parcelableTypeName = getParcelableType(erasedType);
 
     TypeMirror type = variable;
     if (type instanceof WildcardType) {
@@ -612,6 +569,41 @@ public class DataClassParser {
     }
 
     return variable;
+  }
+
+  private TypeName getParcelableType(TypeMirror typeMirror) {
+    TypeElement type = (TypeElement) typeUtil.asElement(typeMirror);
+
+    while (typeMirror.getKind() != TypeKind.NONE) {
+
+      // first, check if the class is valid.
+      TypeName typeName = TypeName.get(typeMirror);
+      if (typeName instanceof ParameterizedTypeName) {
+        typeName = ((ParameterizedTypeName) typeName).rawType;
+      }
+
+      if (typeName.isPrimitive() || VALID_TYPES.contains(typeName)) {
+        return typeName;
+      }
+
+      if (typeName instanceof ArrayTypeName) {
+        return OBJECT_ARRAY;
+      }
+
+      // then check if it implements valid interfaces
+      for (TypeMirror iface : type.getInterfaces()) {
+        TypeName inherited = getParcelableType(iface);
+        if (inherited != null) {
+          return inherited;
+        }
+      }
+
+      // then move on
+      type = (TypeElement) typeUtil.asElement(typeMirror);
+      typeMirror = type.getSuperclass();
+    }
+
+    return null;
   }
 
   static class UnknownPropertyTypeException extends Exception {
