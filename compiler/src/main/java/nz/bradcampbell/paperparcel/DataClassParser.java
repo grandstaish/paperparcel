@@ -303,7 +303,8 @@ public class DataClassParser {
                 // Temporary workaround for https://youtrack.jetbrains.com/issue/KT-9609
                 Matcher nameMatcher = KT_9609_BUG_NAME_FORMAT.matcher(name);
                 if (nameMatcher.matches()) {
-                  int index = Integer.valueOf(nameMatcher.group(1));
+                  int offset = readableFields.size() - mainConstructor.getParameters().size();
+                  int index = Integer.valueOf(nameMatcher.group(1)) + offset;
                   name = readableFields.get(index).element.getSimpleName().toString();
                 }
 
