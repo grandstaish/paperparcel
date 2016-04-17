@@ -1,7 +1,5 @@
 package nz.bradcampbell.paperparcel.model.properties;
 
-import static nz.bradcampbell.paperparcel.utils.StringUtils.getUniqueName;
-
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
@@ -10,25 +8,26 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.WildcardTypeName;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 import nz.bradcampbell.paperparcel.model.Adapter;
 import nz.bradcampbell.paperparcel.model.Property;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import static nz.bradcampbell.paperparcel.utils.StringUtils.getUniqueName;
 
 public class ArrayProperty extends Property {
   private final Property componentType;
-  
+
   public ArrayProperty(Property componentType, TypeName typeName, boolean isNullable, String name) {
     super(isNullable, typeName, name);
     this.componentType = componentType;
   }
 
-  @Override
-  protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                          Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
+  @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in,
+      @Nullable FieldSpec classLoader, Map<ClassName, CodeBlock> typeAdaptersMap,
+      Set<String> scopedVariableNames) {
     // Read size
     String arraySize = getUniqueName(getName() + "Size", scopedVariableNames);
     block.addStatement("$T $N = $N.readInt()", int.class, arraySize, in);
@@ -46,7 +45,8 @@ public class ArrayProperty extends Property {
 
     // Write a loop to iterate through each component
     String indexName = getUniqueName(getName() + "Index", scopedVariableNames);
-    block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, arraySize, indexName);
+    block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, arraySize,
+        indexName);
 
     // Inside control flow, new scope
     Set<String> loopScopedVariableNames = new LinkedHashSet<>(scopedVariableNames);
@@ -55,8 +55,9 @@ public class ArrayProperty extends Property {
     loopScopedVariableNames.add(indexName);
 
     // Read in the component.
-    CodeBlock componentLiteral = componentType.readFromParcel(block, in, classLoader, typeAdaptersMap,
-                                                              loopScopedVariableNames);
+    CodeBlock componentLiteral =
+        componentType.readFromParcel(block, in, classLoader, typeAdaptersMap,
+            loopScopedVariableNames);
 
     // Add the parameter to the output array
     block.addStatement("$N[$N] = $L", arrayName, indexName, componentLiteral);
@@ -66,10 +67,9 @@ public class ArrayProperty extends Property {
     return CodeBlock.of("$N", arrayName);
   }
 
-  @Override
-  protected void writeToParcelInner(
-      CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
-      Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
+  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest,
+      ParameterSpec flags, CodeBlock sourceLiteral, Map<ClassName, CodeBlock> typeAdaptersMap,
+      Set<String> scopedVariableNames) {
 
     String arraySize = getUniqueName(getName() + "Size", scopedVariableNames);
     block.addStatement("$T $N = $L.length", int.class, arraySize, sourceLiteral);
@@ -82,7 +82,8 @@ public class ArrayProperty extends Property {
 
     // Write a loop to iterate through each component
     String indexName = getUniqueName(getName() + "Index", scopedVariableNames);
-    block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, arraySize, indexName);
+    block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, arraySize,
+        indexName);
 
     // Inside control flow, new scope
     Set<String> loopScopedVariableNames = new LinkedHashSet<>(scopedVariableNames);
@@ -101,7 +102,8 @@ public class ArrayProperty extends Property {
       componentTypeName = ((WildcardTypeName) componentTypeName).upperBounds.get(0);
     }
 
-    block.addStatement("$T $N = $L[$N]", componentTypeName, componentItemName, sourceLiteral, indexName);
+    block.addStatement("$T $N = $L[$N]", componentTypeName, componentItemName, sourceLiteral,
+        indexName);
 
     // Add componentItemName to scopedVariables
     loopScopedVariableNames.add(componentItemName);
@@ -109,7 +111,8 @@ public class ArrayProperty extends Property {
     CodeBlock componentSource = CodeBlock.of("$N", componentItemName);
 
     // Write in the component.
-    componentType.writeToParcel(block, dest, flags, componentSource, typeAdaptersMap, loopScopedVariableNames);
+    componentType.writeToParcel(block, dest, flags, componentSource, typeAdaptersMap,
+        loopScopedVariableNames);
 
     block.endControlFlow();
   }

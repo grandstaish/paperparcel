@@ -1,13 +1,7 @@
 package nz.bradcampbell.paperparcel.utils;
 
-import static javax.lang.model.element.Modifier.FINAL;
-import static javax.lang.model.element.Modifier.PUBLIC;
-import static javax.lang.model.element.Modifier.STATIC;
-
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
-import nz.bradcampbell.paperparcel.TypeAdapter;
-
 import java.util.List;
 import java.util.Set;
 import javax.lang.model.element.Element;
@@ -19,6 +13,11 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
+import nz.bradcampbell.paperparcel.TypeAdapter;
+
+import static javax.lang.model.element.Modifier.FINAL;
+import static javax.lang.model.element.Modifier.PUBLIC;
+import static javax.lang.model.element.Modifier.STATIC;
 
 public class TypeUtils {
   private TypeUtils() {
@@ -53,7 +52,8 @@ public class TypeUtils {
     return result.toString();
   }
 
-  public static void rawTypeToString(StringBuilder result, TypeElement type, char innerClassSeparator) {
+  public static void rawTypeToString(StringBuilder result, TypeElement type,
+      char innerClassSeparator) {
     String packageName = getPackage(type).getQualifiedName().toString();
     String qualifiedName = type.getQualifiedName().toString();
     if (packageName.isEmpty()) {
@@ -75,7 +75,8 @@ public class TypeUtils {
 
   public static TypeName getTypeAdapterType(Types typeUtil, DeclaredType typeAdapter) {
     TypeName typeAdapterTypeName = TypeName.get(TypeAdapter.class);
-    List<? extends TypeMirror> interfaces = ((TypeElement)typeUtil.asElement(typeAdapter)).getInterfaces();
+    List<? extends TypeMirror> interfaces =
+        ((TypeElement) typeUtil.asElement(typeAdapter)).getInterfaces();
     for (TypeMirror intf : interfaces) {
       TypeName typeName = TypeName.get(intf);
       if (typeName instanceof ParameterizedTypeName) {
@@ -89,7 +90,8 @@ public class TypeUtils {
   }
 
   /**
-   * A singleton is defined by a class with a public static final field named "INSTANCE" with a type assignable from
+   * A singleton is defined by a class with a public static final field named "INSTANCE" with a type
+   * assignable from
    * the class itself
    *
    * @param typeUtils Type utils

@@ -27,12 +27,15 @@ public class AnnotationUtils {
           }
           return s;
         }
+
         @Override public Object visitType(TypeMirror t, Void p) {
           return t;
         }
+
         @Override protected Object defaultAction(Object o, Void v) {
           return o;
         }
+
         @Override public Object visitArray(List<? extends AnnotationValue> values, Void v) {
           Object[] result = new Object[values.size()];
           for (int i = 0; i < values.size(); i++) {
@@ -53,8 +56,8 @@ public class AnnotationUtils {
   }
 
   public static boolean isFieldRequired(Element element) {
-    return element != null && (hasAnnotationWithName(element, NOT_NULL_ANNOTATION_NAME) ||
-                               hasAnnotationWithName(element, NON_NULL_ANNOTATION_NAME));
+    return element != null && (hasAnnotationWithName(element, NOT_NULL_ANNOTATION_NAME)
+        || hasAnnotationWithName(element, NON_NULL_ANNOTATION_NAME));
   }
 
   /**
@@ -74,16 +77,17 @@ public class AnnotationUtils {
       for (Method m : annotationType.getMethods()) {
         result.put(m.getName(), m.getDefaultValue());
       }
-      for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e
-          : annotation.getElementValues().entrySet()) {
+      for (Map.Entry<? extends ExecutableElement, ? extends AnnotationValue> e : annotation.getElementValues()
+          .entrySet()) {
         String name = e.getKey().getSimpleName().toString();
         Object value = e.getValue().accept(VALUE_EXTRACTOR, null);
         Object defaultValue = result.get(name);
         if (!lenientIsInstance(defaultValue.getClass(), value)) {
-          throw new IllegalStateException(String.format(
-              "Value of %s.%s is a %s but expected a %s\n    value: %s",
-              annotationType, name, value.getClass().getName(), defaultValue.getClass().getName(),
-              value instanceof Object[] ? Arrays.toString((Object[]) value) : value));
+          throw new IllegalStateException(
+              String.format("Value of %s.%s is a %s but expected a %s\n    value: %s",
+                  annotationType, name, value.getClass().getName(),
+                  defaultValue.getClass().getName(),
+                  value instanceof Object[] ? Arrays.toString((Object[]) value) : value));
         }
         result.put(name, value);
       }

@@ -1,7 +1,5 @@
 package nz.bradcampbell.paperparcel.model.properties;
 
-import static nz.bradcampbell.paperparcel.utils.StringUtils.getUniqueName;
-
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
@@ -9,25 +7,27 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.WildcardTypeName;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Set;
 import nz.bradcampbell.paperparcel.model.Adapter;
 import nz.bradcampbell.paperparcel.model.Property;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.LinkedHashSet;
-import java.util.Map;
-import java.util.Set;
+import static nz.bradcampbell.paperparcel.utils.StringUtils.getUniqueName;
 
 public class SparseArrayProperty extends Property {
   private Property typeArgument;
 
-  public SparseArrayProperty(Property typeArgument, boolean isNullable, TypeName typeName, String name) {
+  public SparseArrayProperty(Property typeArgument, boolean isNullable, TypeName typeName,
+      String name) {
     super(isNullable, typeName, name);
     this.typeArgument = typeArgument;
   }
 
-  @Override
-  protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                          Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
+  @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in,
+      @Nullable FieldSpec classLoader, Map<ClassName, CodeBlock> typeAdaptersMap,
+      Set<String> scopedVariableNames) {
     // Read size
     String sparseArraySize = getUniqueName(getName() + "Size", scopedVariableNames);
     block.addStatement("$T $N = $N.readInt()", int.class, sparseArraySize, in);
@@ -57,7 +57,8 @@ public class SparseArrayProperty extends Property {
 
     // Write a loop to iterate through each parameter
     String indexName = getUniqueName(getName() + "Index", scopedVariableNames);
-    block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, sparseArraySize, indexName);
+    block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, sparseArraySize,
+        indexName);
 
     // Control flow, new scope
     Set<String> loopScopedVariableNames = new LinkedHashSet<>(scopedVariableNames);
@@ -75,7 +76,7 @@ public class SparseArrayProperty extends Property {
 
     // Read in the value
     CodeBlock valueLiteral = typeArgument.readFromParcel(block, in, classLoader, typeAdaptersMap,
-                                                         loopScopedVariableNames);
+        loopScopedVariableNames);
 
     // Add the value to the output list
     block.addStatement("$N.put($N, $L)", sparseArrayName, keyName, valueLiteral);
@@ -85,10 +86,9 @@ public class SparseArrayProperty extends Property {
     return CodeBlock.of("$N", sparseArrayName);
   }
 
-  @Override
-  protected void writeToParcelInner(
-      CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
-      Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
+  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest,
+      ParameterSpec flags, CodeBlock sourceLiteral, Map<ClassName, CodeBlock> typeAdaptersMap,
+      Set<String> scopedVariableNames) {
 
     String sparseArraySize = getUniqueName(getName() + "Size", scopedVariableNames);
     block.addStatement("$T $N = $L.size()", int.class, sparseArraySize, sourceLiteral);
@@ -101,7 +101,8 @@ public class SparseArrayProperty extends Property {
 
     // Write a loop to iterate through each parameter
     String indexName = getUniqueName(getName() + "Index", scopedVariableNames);
-    block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, sparseArraySize, indexName);
+    block.beginControlFlow("for (int $N = 0; $N < $N; $N++)", indexName, indexName, sparseArraySize,
+        indexName);
 
     // Control flow, new scope
     Set<String> loopScopedVariableNames = new LinkedHashSet<>(scopedVariableNames);
@@ -133,7 +134,8 @@ public class SparseArrayProperty extends Property {
     CodeBlock parameterSource = CodeBlock.of("$N", valueName);
 
     // Write in the value
-    typeArgument.writeToParcel(block, dest, flags, parameterSource, typeAdaptersMap, loopScopedVariableNames);
+    typeArgument.writeToParcel(block, dest, flags, parameterSource, typeAdaptersMap,
+        loopScopedVariableNames);
 
     block.endControlFlow();
   }

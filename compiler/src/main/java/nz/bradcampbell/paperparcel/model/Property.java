@@ -1,24 +1,23 @@
 package nz.bradcampbell.paperparcel.model;
 
-import static nz.bradcampbell.paperparcel.utils.StringUtils.capitalizeFirstCharacter;
-import static nz.bradcampbell.paperparcel.utils.StringUtils.getUniqueName;
-
 import android.os.Parcel;
-
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.WildcardTypeName;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
+import org.jetbrains.annotations.Nullable;
+
+import static nz.bradcampbell.paperparcel.utils.StringUtils.capitalizeFirstCharacter;
+import static nz.bradcampbell.paperparcel.utils.StringUtils.getUniqueName;
 
 /**
- * A model object that can generate a code block for both reading and writing itself to/from a Parcel
+ * A model object that can generate a code block for both reading and writing itself to/from a
+ * Parcel
  */
 public abstract class Property {
   private final boolean isNullable;
@@ -55,40 +54,41 @@ public abstract class Property {
     return typeName;
   }
 
-  public void setVisible(boolean visible) {
-    isVisible = visible;
-  }
-
-  public void setConstructorPosition(int constructorPosition) {
-    this.constructorPosition = constructorPosition;
-  }
-
-  public void setGetterMethodName(String getterMethodName) {
-    this.getterMethodName = getterMethodName;
-  }
-
-  public void setSetterMethodName(String setterMethodName) {
-    this.setterMethodName = setterMethodName;
-  }
-
   public boolean isVisible() {
     return isVisible;
+  }
+
+  public void setVisible(boolean visible) {
+    isVisible = visible;
   }
 
   public int getConstructorPosition() {
     return constructorPosition;
   }
 
+  public void setConstructorPosition(int constructorPosition) {
+    this.constructorPosition = constructorPosition;
+  }
+
   public String getGetterMethodName() {
     return getterMethodName;
+  }
+
+  public void setGetterMethodName(String getterMethodName) {
+    this.getterMethodName = getterMethodName;
   }
 
   public String getSetterMethodName() {
     return setterMethodName;
   }
 
+  public void setSetterMethodName(String setterMethodName) {
+    this.setterMethodName = setterMethodName;
+  }
+
   /**
-   * Subclasses should override this if they require a class loader, or if they have child properties
+   * Subclasses should override this if they require a class loader, or if they have child
+   * properties
    * that might require class loaders.
    *
    * @return True if this property requires a class loader
@@ -98,7 +98,8 @@ public abstract class Property {
   }
 
   /**
-   * Subclasses should override this if they require a type adapter, or if they have child properties
+   * Subclasses should override this if they require a type adapter, or if they have child
+   * properties
    * that might require type adapters.
    *
    * @return A set of all the required type adapters for this property
@@ -108,7 +109,8 @@ public abstract class Property {
   }
 
   /**
-   * Generates a CodeBlock object that can read this property from the given Parcel parameter. This handles checks
+   * Generates a CodeBlock object that can read this property from the given Parcel parameter. This
+   * handles checks
    * if the property is nullable.
    *
    * @param block The code block for the read method
@@ -117,15 +119,17 @@ public abstract class Property {
    * @param typeAdaptersMap A Map of Types to TypeAdapters
    * @param scopedVariableNames All variable names that have been used in the current scope
    */
-  public final CodeBlock readFromParcel(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                        Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
+  public final CodeBlock readFromParcel(CodeBlock.Builder block, ParameterSpec in,
+      @Nullable FieldSpec classLoader, Map<ClassName, CodeBlock> typeAdaptersMap,
+      Set<String> scopedVariableNames) {
     TypeName typeName = getTypeName();
     if (typeName instanceof WildcardTypeName) {
       typeName = ((WildcardTypeName) typeName).upperBounds.get(0);
     }
 
     String defaultName = getUniqueName(name, scopedVariableNames);
-    String nullableName = getUniqueName("out" + capitalizeFirstCharacter(defaultName), scopedVariableNames);
+    String nullableName =
+        getUniqueName("out" + capitalizeFirstCharacter(defaultName), scopedVariableNames);
 
     CodeBlock defaultLiteral = CodeBlock.of("$N", defaultName);
     CodeBlock nullableLiteral = CodeBlock.of("$N", nullableName);
@@ -135,7 +139,8 @@ public abstract class Property {
       block.beginControlFlow("if ($N.readInt() == 0)", in);
     }
 
-    CodeBlock literal = readFromParcelInner(block, in, classLoader, typeAdaptersMap, scopedVariableNames);
+    CodeBlock literal =
+        readFromParcelInner(block, in, classLoader, typeAdaptersMap, scopedVariableNames);
     boolean alreadyDefined = defaultLiteral.toString().equals(literal.toString());
 
     CodeBlock result;
@@ -145,14 +150,12 @@ public abstract class Property {
 
       // Add nullableName to scoped names
       scopedVariableNames.add(nullableName);
-
     } else if (!alreadyDefined) {
       block.addStatement("$T $L = $L", typeName, defaultLiteral, literal);
       result = defaultLiteral;
 
       // Add defaultName to scoped names
       scopedVariableNames.add(defaultName);
-
     } else {
       result = defaultLiteral;
     }
@@ -167,7 +170,8 @@ public abstract class Property {
   /**
    * Generates code to read the property from the given parcel.
    *
-   * If any manual writing to the "block" is needed, ensure to keep "scopedVariableNames" up to date
+   * If any manual writing to the "block" is needed, ensure to keep "scopedVariableNames" up to
+   * date
    * with any new variables added to the method body.
    *
    * This method must return the un-parcelled value, e.g.
@@ -176,7 +180,8 @@ public abstract class Property {
    *   return CodeBlock.of("$N.readInt()", in);
    * </code></pre>
    *
-   * or alternatively, if pre-processing is required; you have to create the instance (with the name
+   * or alternatively, if pre-processing is required; you have to create the instance (with the
+   * name
    * returned by {@link #getName()}), and then return a {@link CodeBlock} which is just simply the
    * instance, e.g.:
    *
@@ -192,12 +197,13 @@ public abstract class Property {
    * @param typeAdaptersMap A Map of Types to TypeAdapters
    * @param scopedVariableNames All variable names that have been used in the current scope
    */
-  protected abstract CodeBlock readFromParcelInner(
-      CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-      Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames);
+  protected abstract CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in,
+      @Nullable FieldSpec classLoader, Map<ClassName, CodeBlock> typeAdaptersMap,
+      Set<String> scopedVariableNames);
 
   /**
-   * Generates a CodeBlock object that can be used to write the property to the given parcel. This handles checks
+   * Generates a CodeBlock object that can be used to write the property to the given parcel. This
+   * handles checks
    * if the property is nullable.
    *
    * @param block The code block for the write method
@@ -207,9 +213,9 @@ public abstract class Property {
    * @param typeAdaptersMap A Map of Types to TypeAdapters
    * @param scopedVariableNames All variable names that have been used in the current scope
    */
-  public final void writeToParcel(
-      CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
-      Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
+  public final void writeToParcel(CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags,
+      CodeBlock sourceLiteral, Map<ClassName, CodeBlock> typeAdaptersMap,
+      Set<String> scopedVariableNames) {
 
     if (isNullable) {
       block.beginControlFlow("if ($L == null)", sourceLiteral);
@@ -228,7 +234,8 @@ public abstract class Property {
   /**
    * Generates code to write the property to the given parcel.
    *
-   * If any manual writing to the "block" is needed, ensure to keep "scopedVariableNames" up to date
+   * If any manual writing to the "block" is needed, ensure to keep "scopedVariableNames" up to
+   * date
    * with any new variables added to the method body.
    *
    * @param block The CodeBlock builder to write the code to
@@ -238,7 +245,7 @@ public abstract class Property {
    * @param typeAdaptersMap A Map of Types to TypeAdapters
    * @param scopedVariableNames All variable names that have been used in the current scope
    */
-  protected abstract void writeToParcelInner(
-      CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
-      Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames);
+  protected abstract void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest,
+      ParameterSpec flags, CodeBlock sourceLiteral, Map<ClassName, CodeBlock> typeAdaptersMap,
+      Set<String> scopedVariableNames);
 }

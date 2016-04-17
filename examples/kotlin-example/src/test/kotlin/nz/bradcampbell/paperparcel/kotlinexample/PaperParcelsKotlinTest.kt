@@ -6,7 +6,7 @@ import com.google.common.truth.Truth.assertThat
 import nz.bradcampbell.paperparcel.PaperParcels
 import nz.bradcampbell.paperparcel.TypedParcelable
 import org.junit.Test
-import java.util.*
+import java.util.Date
 
 class PaperParcelsKotlinTest {
   @Test

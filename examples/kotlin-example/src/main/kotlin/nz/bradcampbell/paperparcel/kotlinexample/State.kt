@@ -3,7 +3,7 @@ package nz.bradcampbell.paperparcel.kotlinexample
 import nz.bradcampbell.paperparcel.PaperParcel
 import nz.bradcampbell.paperparcel.PaperParcelable
 import nz.bradcampbell.paperparcel.TypeAdapters
-import java.util.*
+import java.util.Date
 
 @PaperParcel
 @TypeAdapters(DateTypeAdapter::class)

@@ -1,22 +1,5 @@
 package nz.bradcampbell.paperparcel;
 
-import static com.google.auto.common.MoreElements.getLocalAndInheritedMethods;
-import static com.squareup.javapoet.TypeName.BOOLEAN;
-import static com.squareup.javapoet.TypeName.BYTE;
-import static com.squareup.javapoet.TypeName.CHAR;
-import static com.squareup.javapoet.TypeName.DOUBLE;
-import static com.squareup.javapoet.TypeName.FLOAT;
-import static com.squareup.javapoet.TypeName.INT;
-import static com.squareup.javapoet.TypeName.LONG;
-import static com.squareup.javapoet.TypeName.OBJECT;
-import static com.squareup.javapoet.TypeName.SHORT;
-import static javax.lang.model.element.Modifier.STATIC;
-import static javax.lang.model.element.Modifier.TRANSIENT;
-import static javax.lang.model.util.ElementFilter.constructorsIn;
-import static javax.lang.model.util.ElementFilter.fieldsIn;
-import static nz.bradcampbell.paperparcel.utils.AnnotationUtils.isFieldRequired;
-import static nz.bradcampbell.paperparcel.utils.TypeUtils.isSingleton;
-
 import com.google.auto.common.Visibility;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
@@ -24,11 +7,36 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Ordering;
 import com.google.common.primitives.Ints;
-
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.ArrayType;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.WildcardType;
+import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
+import javax.tools.Diagnostic;
 import nz.bradcampbell.paperparcel.model.Adapter;
 import nz.bradcampbell.paperparcel.model.DataClass;
 import nz.bradcampbell.paperparcel.model.Property;
@@ -66,31 +74,22 @@ import nz.bradcampbell.paperparcel.utils.AnnotationUtils;
 import nz.bradcampbell.paperparcel.utils.StringUtils;
 import nz.bradcampbell.paperparcel.utils.TypeUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.TypeParameterElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.ArrayType;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeKind;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.type.WildcardType;
-import javax.lang.model.util.Elements;
-import javax.lang.model.util.Types;
+import static com.google.auto.common.MoreElements.getLocalAndInheritedMethods;
+import static com.squareup.javapoet.TypeName.BOOLEAN;
+import static com.squareup.javapoet.TypeName.BYTE;
+import static com.squareup.javapoet.TypeName.CHAR;
+import static com.squareup.javapoet.TypeName.DOUBLE;
+import static com.squareup.javapoet.TypeName.FLOAT;
+import static com.squareup.javapoet.TypeName.INT;
+import static com.squareup.javapoet.TypeName.LONG;
+import static com.squareup.javapoet.TypeName.OBJECT;
+import static com.squareup.javapoet.TypeName.SHORT;
+import static javax.lang.model.element.Modifier.STATIC;
+import static javax.lang.model.element.Modifier.TRANSIENT;
+import static javax.lang.model.util.ElementFilter.constructorsIn;
+import static javax.lang.model.util.ElementFilter.fieldsIn;
+import static nz.bradcampbell.paperparcel.utils.AnnotationUtils.isFieldRequired;
+import static nz.bradcampbell.paperparcel.utils.TypeUtils.isSingleton;
 
 public class DataClassParser {
   public static final TypeName STRING = ClassName.get("java.lang", "String");
@@ -103,14 +102,16 @@ public class DataClassParser {
   public static final TypeName LONG_ARRAY = ArrayTypeName.of(long.class);
   public static final TypeName STRING_ARRAY = ArrayTypeName.of(String.class);
   public static final TypeName SPARSE_ARRAY = ClassName.get("android.util", "SparseArray");
-  public static final TypeName SPARSE_BOOLEAN_ARRAY = ClassName.get("android.util", "SparseBooleanArray");
+  public static final TypeName SPARSE_BOOLEAN_ARRAY =
+      ClassName.get("android.util", "SparseBooleanArray");
   public static final TypeName BUNDLE = ClassName.get("android.os", "Bundle");
   public static final TypeName PARCELABLE = ClassName.get("android.os", "Parcelable");
   public static final TypeName PARCELABLE_ARRAY = ArrayTypeName.of(PARCELABLE);
   public static final TypeName CHAR_SEQUENCE = ClassName.get("java.lang", "CharSequence");
   public static final TypeName IBINDER = ClassName.get("android.os", "IBinder");
   public static final TypeName OBJECT_ARRAY = ArrayTypeName.of(OBJECT);
-  public static final TypeName PERSISTABLE_BUNDLE = ClassName.get("android.os", "PersistableBundle");
+  public static final TypeName PERSISTABLE_BUNDLE =
+      ClassName.get("android.os", "PersistableBundle");
   public static final TypeName SIZE = ClassName.get("android.util", "Size");
   public static final TypeName SIZEF = ClassName.get("android.util", "SizeF");
   public static final TypeName ENUM = ClassName.get("java.lang", "Enum");
@@ -124,14 +125,16 @@ public class DataClassParser {
   public static final TypeName BOXED_SHORT = SHORT.box();
   public static final TypeName TYPE_ADAPTER = TypeName.get(TypeAdapter.class);
 
-  private static final Set<TypeName> VALID_TYPES = ImmutableSet.of(
-      STRING, MAP, LIST, SET, BOOLEAN_ARRAY, BYTE_ARRAY, INT_ARRAY, LONG_ARRAY, STRING_ARRAY, SPARSE_ARRAY,
-      SPARSE_BOOLEAN_ARRAY, BUNDLE, PARCELABLE, PARCELABLE_ARRAY, CHAR_SEQUENCE, IBINDER, OBJECT_ARRAY,
-      PERSISTABLE_BUNDLE, SIZE, SIZEF, ENUM, INT, BOXED_INT, LONG, BOXED_LONG, BYTE, BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN,
-      FLOAT, BOXED_FLOAT, CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE, SHORT, BOXED_SHORT, TYPE_ADAPTER);
+  private static final Set<TypeName> VALID_TYPES =
+      ImmutableSet.of(STRING, MAP, LIST, SET, BOOLEAN_ARRAY, BYTE_ARRAY, INT_ARRAY, LONG_ARRAY,
+          STRING_ARRAY, SPARSE_ARRAY, SPARSE_BOOLEAN_ARRAY, BUNDLE, PARCELABLE, PARCELABLE_ARRAY,
+          CHAR_SEQUENCE, IBINDER, OBJECT_ARRAY, PERSISTABLE_BUNDLE, SIZE, SIZEF, ENUM, INT,
+          BOXED_INT, LONG, BOXED_LONG, BYTE, BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT,
+          CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE, SHORT, BOXED_SHORT, TYPE_ADAPTER);
 
   private static final Pattern KT_9609_BUG_NAME_FORMAT = Pattern.compile("arg(\\d+)");
 
+  private final ProcessingEnvironment processingEnv;
   private final Types typeUtil;
   private final Elements elementUtils;
 
@@ -139,8 +142,10 @@ public class DataClassParser {
   private final Map<ClassName, ClassName> wrappers;
   private final Map<ClassName, ClassName> delegates;
 
-  public DataClassParser(ProcessingEnvironment processingEnv, Map<TypeName, Adapter> defaultAdapters,
-                         Map<ClassName, ClassName> wrappers, Map<ClassName, ClassName> delegates) {
+  public DataClassParser(ProcessingEnvironment processingEnv,
+      Map<TypeName, Adapter> defaultAdapters, Map<ClassName, ClassName> wrappers,
+      Map<ClassName, ClassName> delegates) {
+    this.processingEnv = processingEnv;
     this.delegates = delegates;
     this.typeUtil = processingEnv.getTypeUtils();
     this.elementUtils = processingEnv.getElementUtils();
@@ -148,9 +153,53 @@ public class DataClassParser {
     this.wrappers = wrappers;
   }
 
-  public Set<DataClass> parseDataClasses(Set<TypeElement> unprocessedTypes) {
+  /**
+   * Gets the type that allows the given type mirror to be written to a Parcel, or null if it is
+   * not
+   * parcelable
+   *
+   * @param types The type utilities class
+   * @param typeMirror The type
+   * @return The parcelable type, or null
+   */
+  private static TypeName getParcelableType(Types types, TypeMirror typeMirror) {
+    TypeElement type = (TypeElement) types.asElement(typeMirror);
+
+    while (typeMirror.getKind() != TypeKind.NONE) {
+
+      // first, check if the class is valid.
+      TypeName typeName = TypeName.get(typeMirror);
+      if (typeName instanceof ParameterizedTypeName) {
+        typeName = ((ParameterizedTypeName) typeName).rawType;
+      }
+
+      if (typeName.isPrimitive() || VALID_TYPES.contains(typeName)) {
+        return typeName;
+      }
+
+      if (typeName instanceof ArrayTypeName) {
+        return OBJECT_ARRAY;
+      }
+
+      // then check if it implements valid interfaces
+      for (TypeMirror iface : type.getInterfaces()) {
+        TypeName inherited = getParcelableType(types, iface);
+        if (inherited != null) {
+          return inherited;
+        }
+      }
+
+      // then move on
+      type = (TypeElement) types.asElement(typeMirror);
+      typeMirror = type.getSuperclass();
+    }
+
+    return null;
+  }
+
+  public Set<DataClass> parseDataClasses(Set<TypeElement> unprocessedTypes, boolean isLastRound) {
     Set<DataClass> dataClasses = new LinkedHashSet<>();
-    for (Iterator<TypeElement> iterator = unprocessedTypes.iterator(); iterator.hasNext();) {
+    for (Iterator<TypeElement> iterator = unprocessedTypes.iterator(); iterator.hasNext(); ) {
       TypeElement element = iterator.next();
       DataClass dataClass;
       try {
@@ -158,8 +207,12 @@ public class DataClassParser {
         dataClasses.add(dataClass);
         iterator.remove();
       } catch (UnknownPropertyTypeException e) {
-        // Some other @PaperParcel class needs to be processed first.
-        // Try to process on another pass.
+        if (isLastRound) {
+          processingEnv.getMessager()
+              .printMessage(Diagnostic.Kind.ERROR,
+                  "PaperParcel does not know how to process " + e.element.asType().toString(),
+                  e.element);
+        }
       }
     }
     return dataClasses;
@@ -182,30 +235,41 @@ public class DataClassParser {
     boolean requiresClassLoader = false;
     boolean isSingleton = isSingleton(typeUtil, typeElement);
 
-    // If the class is a singleton, we don't need to read/write variables. We can just use the static instance.
+    // If the class is a singleton, we don't need to read/write variables. We can just use
+    // the static instance.
     if (!isSingleton) {
 
       // Override the type adapters with the current element preferences
       TypeElement tempTypeElement = typeElement;
-      while (tempTypeElement != null && !applyTypeAdaptersFromElement(tempTypeElement, typeAdapters)) {
+      while (tempTypeElement != null && !applyTypeAdaptersFromElement(tempTypeElement,
+          typeAdapters)) {
         tempTypeElement = (TypeElement) typeUtil.asElement(tempTypeElement.getSuperclass());
       }
 
       for (FieldReadWriteInfo fieldInfo : getValidFields(typeElement)) {
 
-        Map<TypeName, Adapter> variableScopedTypeAdapters = getTypeAdapterMapForVariable(
-            typeAdapters, fieldInfo.element, fieldInfo.getterMethod);
+        Map<TypeName, Adapter> variableScopedTypeAdapters =
+            getTypeAdapterMapForVariable(typeAdapters, fieldInfo.element, fieldInfo.getterMethod);
 
         String name = fieldInfo.element.getSimpleName().toString();
 
-        // A field is considered "nullable" when it is a non-primitive and not annotated with @NonNull or @NotNull
+        // A field is considered "nullable" when it is a non-primitive and not annotated
+        // with @NonNull or @NotNull
         boolean isPrimitive = fieldInfo.element.asType().getKind().isPrimitive();
-        boolean annotatedWithNonNull = isFieldRequired(fieldInfo.getterMethod) || isFieldRequired(fieldInfo.element);
+        boolean annotatedWithNonNull =
+            isFieldRequired(fieldInfo.getterMethod) || isFieldRequired(fieldInfo.element);
         boolean isNullable = !isPrimitive && !annotatedWithNonNull;
 
-        // Parse the property type into a Property.Type object and find all recursive data class dependencies
-        Property property = parseProperty(fieldInfo.element.asType(), typeElement.asType(), isNullable, name,
-                                          variableScopedTypeAdapters);
+        // Parse the property type into a Property.Type object and find all recursive
+        // data class dependencies
+        Property property;
+        try {
+          TypeMirror type = fieldInfo.element.asType();
+          property = parseProperty(type, typeElement.asType(), isNullable, name,
+              variableScopedTypeAdapters);
+        } catch (IllegalArgumentException e) {
+          throw new UnknownPropertyTypeException(fieldInfo.element);
+        }
 
         requiredTypeAdapters.addAll(property.requiredTypeAdapters());
         requiresClassLoader |= property.requiresClassLoader();
@@ -229,33 +293,33 @@ public class DataClassParser {
       }
     }
 
-    return new DataClass(properties, className.packageName(), wrappedClassName, className, delegateClassName,
-                         requiresClassLoader, requiredTypeAdapters, isSingleton);
+    return new DataClass(properties, className.packageName(), wrappedClassName, className,
+        delegateClassName, requiresClassLoader, requiredTypeAdapters, isSingleton);
   }
 
   private List<FieldReadWriteInfo> getValidFields(TypeElement typeElement) {
-    final ImmutableSet<ExecutableElement> methods = getLocalAndInheritedMethods(typeElement, elementUtils);
+    final ImmutableSet<ExecutableElement> methods =
+        getLocalAndInheritedMethods(typeElement, elementUtils);
 
-    final FluentIterable<FieldReadInfo> readableFields = FluentIterable.from(getLocalAndInheritedFields(typeElement))
-        .filter(new Predicate<VariableElement>() {
-          @Override public boolean apply(VariableElement input) {
-            Set<Modifier> modifiers = input.getModifiers();
-            return !modifiers.contains(STATIC) && !modifiers.contains(TRANSIENT);
-          }
-        })
-        .transform(new Function<VariableElement, FieldReadInfo>() {
-          @Override public FieldReadInfo apply(final VariableElement field) {
-            return new FieldReadInfo(
-                Visibility.ofElement(field) != Visibility.PRIVATE,
-                getGetterMethod(methods, field),
-                field);
-          }
-        })
-        .filter(new Predicate<FieldReadInfo>() {
-          @Override public boolean apply(FieldReadInfo input) {
-            return input.visible || input.getterMethod != null;
-          }
-        });
+    final FluentIterable<FieldReadInfo> readableFields =
+        FluentIterable.from(getLocalAndInheritedFields(typeElement))
+            .filter(new Predicate<VariableElement>() {
+              @Override public boolean apply(VariableElement input) {
+                Set<Modifier> modifiers = input.getModifiers();
+                return !modifiers.contains(STATIC) && !modifiers.contains(TRANSIENT);
+              }
+            })
+            .transform(new Function<VariableElement, FieldReadInfo>() {
+              @Override public FieldReadInfo apply(final VariableElement field) {
+                return new FieldReadInfo(Visibility.ofElement(field) != Visibility.PRIVATE,
+                    getGetterMethod(methods, field), field);
+              }
+            })
+            .filter(new Predicate<FieldReadInfo>() {
+              @Override public boolean apply(FieldReadInfo input) {
+                return input.visible || input.getterMethod != null;
+              }
+            });
 
     Ordering<ExecutableElement> mostParametersOrdering = new Ordering<ExecutableElement>() {
       @Override public int compare(ExecutableElement left, ExecutableElement right) {
@@ -272,40 +336,36 @@ public class DataClassParser {
               }
             }));
 
-    final FluentIterable<ParameterInfo> constructorParameterInfo = FluentIterable.from(mainConstructor.getParameters())
-        .transform(new Function<VariableElement, ParameterInfo>() {
-          @Override public ParameterInfo apply(VariableElement input) {
-            String name = input.getSimpleName().toString();
+    final FluentIterable<ParameterInfo> constructorParameterInfo =
+        FluentIterable.from(mainConstructor.getParameters())
+            .transform(new Function<VariableElement, ParameterInfo>() {
+              @Override public ParameterInfo apply(VariableElement input) {
+                String name = input.getSimpleName().toString();
 
-            // Temporary workaround for https://youtrack.jetbrains.com/issue/KT-9609
-            Matcher nameMatcher = KT_9609_BUG_NAME_FORMAT.matcher(name);
-            if (nameMatcher.matches()) {
-              int index = Integer.valueOf(nameMatcher.group(1));
-              name = readableFields.get(index).element.getSimpleName().toString();
-            }
+                // Temporary workaround for https://youtrack.jetbrains.com/issue/KT-9609
+                Matcher nameMatcher = KT_9609_BUG_NAME_FORMAT.matcher(name);
+                if (nameMatcher.matches()) {
+                  int index = Integer.valueOf(nameMatcher.group(1));
+                  name = readableFields.get(index).element.getSimpleName().toString();
+                }
 
-            return new ParameterInfo(name, input.asType(), input);
-          }
-        });
+                return new ParameterInfo(name, input.asType(), input);
+              }
+            });
 
-    return readableFields
-        .transform(new Function<FieldReadInfo, FieldReadWriteInfo>() {
-          @Override public FieldReadWriteInfo apply(FieldReadInfo input) {
-            ExecutableElement setterMethod = getSetterMethod(methods, input.element);
-            VariableElement param = getConstructorParameter(constructorParameterInfo, input.element);
-            int constructorIndex = param == null ? -1 : mainConstructor.getParameters().indexOf(param);
-            return new FieldReadWriteInfo(
-                input.visible, input.getterMethod, input.element, setterMethod, constructorIndex);
-          }
-        })
-        .filter(new Predicate<FieldReadWriteInfo>() {
-          @Override public boolean apply(FieldReadWriteInfo input) {
-            return input.constructorIndex != -1
-                   || input.setterMethod != null
-                   || input.visible;
-          }
-        })
-        .toList();
+    return readableFields.transform(new Function<FieldReadInfo, FieldReadWriteInfo>() {
+      @Override public FieldReadWriteInfo apply(FieldReadInfo input) {
+        ExecutableElement setterMethod = getSetterMethod(methods, input.element);
+        VariableElement param = getConstructorParameter(constructorParameterInfo, input.element);
+        int constructorIndex = param == null ? -1 : mainConstructor.getParameters().indexOf(param);
+        return new FieldReadWriteInfo(input.visible, input.getterMethod, input.element,
+            setterMethod, constructorIndex);
+      }
+    }).filter(new Predicate<FieldReadWriteInfo>() {
+      @Override public boolean apply(FieldReadWriteInfo input) {
+        return input.constructorIndex != -1 || input.setterMethod != null || input.visible;
+      }
+    }).toList();
   }
 
   private List<VariableElement> getLocalAndInheritedFields(TypeElement el) {
@@ -317,57 +377,49 @@ public class DataClassParser {
     return variables;
   }
 
-  private VariableElement getConstructorParameter(
-      FluentIterable<ParameterInfo> parameterInfo, final VariableElement field) {
-    return parameterInfo
-        .filter(new Predicate<ParameterInfo>() {
-          @Override public boolean apply(ParameterInfo input) {
-            return input.name.equals(field.getSimpleName().toString())
-                   && typeUtil.isAssignable(input.type, field.asType());
-          }
-        })
-        .transform(new Function<ParameterInfo, VariableElement>() {
-          @Override public VariableElement apply(ParameterInfo input) {
-            return input.element;
-          }
-        })
-        .first()
-        .orNull();
+  private VariableElement getConstructorParameter(FluentIterable<ParameterInfo> parameterInfo,
+      final VariableElement field) {
+    return parameterInfo.filter(new Predicate<ParameterInfo>() {
+      @Override public boolean apply(ParameterInfo input) {
+        return input.name.equals(field.getSimpleName().toString()) && typeUtil.isAssignable(
+            input.type, field.asType());
+      }
+    }).transform(new Function<ParameterInfo, VariableElement>() {
+      @Override public VariableElement apply(ParameterInfo input) {
+        return input.element;
+      }
+    }).first().orNull();
   }
 
-  private ExecutableElement getSetterMethod(Set<ExecutableElement> methods, final VariableElement field) {
-    final String setterMethodName = "set" + StringUtils.capitalizeFirstCharacter(field.getSimpleName().toString());
-    return FluentIterable.from(methods)
-        .filter(new Predicate<ExecutableElement>() {
-          @Override public boolean apply(ExecutableElement input) {
-            return setterMethodName.equals(input.getSimpleName().toString());
-          }
-        })
-        .filter(new Predicate<ExecutableElement>() {
-          @Override public boolean apply(ExecutableElement input) {
-            List<? extends VariableElement> parameters = input.getParameters();
-            return parameters.size() == 1 && typeUtil.isAssignable(parameters.get(0).asType(), field.asType());
-          }
-        })
-        .first()
-        .orNull();
+  private ExecutableElement getSetterMethod(Set<ExecutableElement> methods,
+      final VariableElement field) {
+    final String setterMethodName =
+        "set" + StringUtils.capitalizeFirstCharacter(field.getSimpleName().toString());
+    return FluentIterable.from(methods).filter(new Predicate<ExecutableElement>() {
+      @Override public boolean apply(ExecutableElement input) {
+        return setterMethodName.equals(input.getSimpleName().toString());
+      }
+    }).filter(new Predicate<ExecutableElement>() {
+      @Override public boolean apply(ExecutableElement input) {
+        List<? extends VariableElement> parameters = input.getParameters();
+        return parameters.size() == 1 && typeUtil.isAssignable(parameters.get(0).asType(),
+            field.asType());
+      }
+    }).first().orNull();
   }
 
-  private ExecutableElement getGetterMethod(Set<ExecutableElement> methods, final VariableElement field) {
+  private ExecutableElement getGetterMethod(Set<ExecutableElement> methods,
+      final VariableElement field) {
     final Set<String> possibleGetterNames = possibleGetterNames(field.getSimpleName().toString());
-    return FluentIterable.from(methods)
-        .filter(new Predicate<ExecutableElement>() {
-          @Override public boolean apply(ExecutableElement input) {
-            return possibleGetterNames.contains(input.getSimpleName().toString());
-          }
-        })
-        .filter(new Predicate<ExecutableElement>() {
-          @Override public boolean apply(ExecutableElement input) {
-            return input.getParameters().size() == 0;
-          }
-        })
-        .first()
-        .orNull();
+    return FluentIterable.from(methods).filter(new Predicate<ExecutableElement>() {
+      @Override public boolean apply(ExecutableElement input) {
+        return possibleGetterNames.contains(input.getSimpleName().toString());
+      }
+    }).filter(new Predicate<ExecutableElement>() {
+      @Override public boolean apply(ExecutableElement input) {
+        return input.getParameters().size() == 0;
+      }
+    }).first().orNull();
   }
 
   private Set<String> possibleGetterNames(String name) {
@@ -378,7 +430,8 @@ public class DataClassParser {
     return possibleGetterNames;
   }
 
-  private boolean applyTypeAdaptersFromElement(Element element, Map<TypeName, Adapter> typeAdapters) {
+  private boolean applyTypeAdaptersFromElement(Element element,
+      Map<TypeName, Adapter> typeAdapters) {
     if (element != null) {
       Map<String, Object> annotation = AnnotationUtils.getAnnotation(TypeAdapters.class, element);
       if (annotation != null) {
@@ -409,8 +462,8 @@ public class DataClassParser {
     return tempTypeAdapters;
   }
 
-  private Property parseProperty(TypeMirror variable, TypeMirror dataClass, boolean isNullable, String name,
-                                 Map<TypeName, Adapter> typeAdapterMap) throws UnknownPropertyTypeException {
+  private Property parseProperty(TypeMirror variable, TypeMirror dataClass, boolean isNullable,
+      String name, Map<TypeName, Adapter> typeAdapterMap) throws UnknownPropertyTypeException {
 
     variable = getActualTypeParameter(variable, dataClass);
 
@@ -458,7 +511,7 @@ public class DataClassParser {
       return new FloatProperty(isNullable, typeName, name);
     } else if (CHAR.equals(parcelableTypeName)) {
       return new CharProperty(false, typeName, name);
-    } else if(BOXED_CHAR.equals(parcelableTypeName)) {
+    } else if (BOXED_CHAR.equals(parcelableTypeName)) {
       return new CharProperty(isNullable, typeName, name);
     } else if (DOUBLE.equals(parcelableTypeName)) {
       return new DoubleProperty(false, typeName, name);
@@ -471,18 +524,22 @@ public class DataClassParser {
     } else if (MAP.equals(parcelableTypeName)) {
       boolean isInterface = TypeUtils.isInterface(typeUtil, erasedType);
       List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
-      Property keyProperty = parseProperty(typeArguments.get(0), dataClass, true, name + "Key", typeAdapterMap);
-      Property valueProperty = parseProperty(typeArguments.get(1), dataClass, true, name + "Value", typeAdapterMap);
+      Property keyProperty =
+          parseProperty(typeArguments.get(0), dataClass, true, name + "Key", typeAdapterMap);
+      Property valueProperty =
+          parseProperty(typeArguments.get(1), dataClass, true, name + "Value", typeAdapterMap);
       return new MapProperty(keyProperty, valueProperty, isInterface, isNullable, typeName, name);
     } else if (LIST.equals(parcelableTypeName)) {
       boolean isInterface = TypeUtils.isInterface(typeUtil, erasedType);
       List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
-      Property typeArgument = parseProperty(typeArguments.get(0), dataClass, true, name + "Item", typeAdapterMap);
+      Property typeArgument =
+          parseProperty(typeArguments.get(0), dataClass, true, name + "Item", typeAdapterMap);
       return new ListProperty(typeArgument, isInterface, isNullable, typeName, name);
     } else if (SET.equals(parcelableTypeName)) {
       boolean isInterface = TypeUtils.isInterface(typeUtil, erasedType);
       List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
-      Property typeArgument = parseProperty(typeArguments.get(0), dataClass, true, name + "Item", typeAdapterMap);
+      Property typeArgument =
+          parseProperty(typeArguments.get(0), dataClass, true, name + "Item", typeAdapterMap);
       return new SetProperty(typeArgument, isInterface, isNullable, typeName, name);
     } else if (BOOLEAN_ARRAY.equals(parcelableTypeName)) {
       return new BooleanArrayProperty(isNullable, typeName, name);
@@ -496,7 +553,8 @@ public class DataClassParser {
       return new StringArrayProperty(isNullable, typeName, name);
     } else if (SPARSE_ARRAY.equals(parcelableTypeName)) {
       List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
-      Property typeArgument = parseProperty(typeArguments.get(0), dataClass, true, name + "Value", typeAdapterMap);
+      Property typeArgument =
+          parseProperty(typeArguments.get(0), dataClass, true, name + "Value", typeAdapterMap);
       return new SparseArrayProperty(typeArgument, isNullable, typeName, name);
     } else if (SPARSE_BOOLEAN_ARRAY.equals(parcelableTypeName)) {
       return new SparseBooleanArrayProperty(isNullable, typeName, name);
@@ -506,7 +564,8 @@ public class DataClassParser {
       return new ParcelableProperty(isNullable, typeName, name);
     } else if (OBJECT_ARRAY.equals(parcelableTypeName)) {
       TypeMirror componentType = ((ArrayType) type).getComponentType();
-      Property componentProperty = parseProperty(componentType, dataClass, true, name + "Component", typeAdapterMap);
+      Property componentProperty =
+          parseProperty(componentType, dataClass, true, name + "Component", typeAdapterMap);
       return new ArrayProperty(componentProperty, typeName, isNullable, name);
     } else if (CHAR_SEQUENCE.equals(parcelableTypeName)) {
       return new CharSequenceProperty(isNullable, typeName, name);
@@ -525,7 +584,7 @@ public class DataClassParser {
     } else if (typeName instanceof ClassName && wrappers.containsKey(typeName)) {
       return new WrapperProperty(wrappers.get(typeName), isNullable, typeName, name);
     } else {
-      throw new UnknownPropertyTypeException("PaperParcel does not support type: " + typeName);
+      throw new IllegalArgumentException();
     }
   }
 
@@ -533,11 +592,13 @@ public class DataClassParser {
     // The element associated, or null
     Element element = typeUtil.asElement(variable);
 
-    // Find and replace type parameter arguments with the provided type in the data class. e.g. a variable defined
-    // as ExampleClass<Integer>, this will replace type T with Integer when processing ExampleClassIntegerParcel.java.
+    // Find and replace type parameter arguments with the provided type in the data class.
+    // e.g. a variable defined as ExampleClass<Integer>, this will replace type T with Integer
+    // when processing ExampleClassIntegerParcel.java.
     if (element != null && element.getKind() == ElementKind.TYPE_PARAMETER) {
       TypeElement dataClassElement = (TypeElement) typeUtil.asElement(dataClass);
-      List<? extends TypeParameterElement> typeParameterElements = dataClassElement.getTypeParameters();
+      List<? extends TypeParameterElement> typeParameterElements =
+          dataClassElement.getTypeParameters();
       int numTypeParams = typeParameterElements.size();
       for (int i = 0; i < numTypeParams; i++) {
         TypeParameterElement p = typeParameterElements.get(i);
@@ -551,46 +612,12 @@ public class DataClassParser {
     return variable;
   }
 
-  /**
-   * Gets the type that allows the given type mirror to be written to a Parcel, or null if it is not parcelable
-   *
-   * @param types The type utilities class
-   * @param typeMirror The type
-   * @return The parcelable type, or null
-   */
-  private static TypeName getParcelableType(Types types, TypeMirror typeMirror) {
-    TypeElement type = (TypeElement) types.asElement(typeMirror);
+  static class UnknownPropertyTypeException extends Exception {
+    VariableElement element;
 
-    while (typeMirror.getKind() != TypeKind.NONE) {
-
-      // first, check if the class is valid.
-      TypeName typeName = TypeName.get(typeMirror);
-      if (typeName instanceof ParameterizedTypeName) {
-        typeName = ((ParameterizedTypeName) typeName).rawType;
-      }
-
-      if (typeName.isPrimitive() || VALID_TYPES.contains(typeName)) {
-        return typeName;
-      }
-
-      if (typeName instanceof ArrayTypeName) {
-        return OBJECT_ARRAY;
-      }
-
-      // then check if it implements valid interfaces
-      for (TypeMirror iface : type.getInterfaces()) {
-        TypeName inherited = getParcelableType(types, iface);
-        if (inherited != null) {
-          return inherited;
-        }
-      }
-
-      // then move on
-      type = (TypeElement) types.asElement(typeMirror);
-      typeMirror = type.getSuperclass();
+    UnknownPropertyTypeException(VariableElement element) {
+      this.element = element;
     }
-
-    return null;
   }
 
   private class FieldReadInfo {
@@ -609,8 +636,8 @@ public class DataClassParser {
     public final ExecutableElement setterMethod;
     public final int constructorIndex;
 
-    public FieldReadWriteInfo(boolean visible, ExecutableElement getterMethod, VariableElement element,
-                              ExecutableElement setterMethod, int constructorIndex) {
+    public FieldReadWriteInfo(boolean visible, ExecutableElement getterMethod,
+        VariableElement element, ExecutableElement setterMethod, int constructorIndex) {
       super(visible, getterMethod, element);
       this.setterMethod = setterMethod;
       this.constructorIndex = constructorIndex;
@@ -626,12 +653,6 @@ public class DataClassParser {
       this.name = name;
       this.type = type;
       this.element = element;
-    }
-  }
-
-  static class UnknownPropertyTypeException extends Exception {
-    UnknownPropertyTypeException(String message) {
-      super(message);
     }
   }
 }

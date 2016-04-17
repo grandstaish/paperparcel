@@ -1,10 +1,9 @@
 package nz.bradcampbell.paperparcel.model;
 
 import com.squareup.javapoet.ClassName;
-import nz.bradcampbell.paperparcel.PaperParcels.Delegate;
-
 import java.util.List;
 import java.util.Set;
+import nz.bradcampbell.paperparcel.PaperParcels.Delegate;
 
 /**
  * A model object that holds information needed to build a Parcelable data class wrapper
@@ -21,6 +20,7 @@ public class DataClass {
 
   /**
    * Constructor.
+   *
    * @param properties All properties in the data class
    * @param classPackage The package of the data class
    * @param wrapperTypeName The class name of the wrapper class
@@ -30,9 +30,9 @@ public class DataClass {
    * @param requiredTypeAdapters All of the TypeAdapter types required for this class
    * @param singleton True if the class is a singleton object
    */
-  public DataClass(List<Property> properties, String classPackage, ClassName wrapperTypeName, ClassName className,
-                   ClassName delegateClassName, boolean requiresClassLoader, Set<Adapter> requiredTypeAdapters,
-                   boolean singleton) {
+  public DataClass(List<Property> properties, String classPackage, ClassName wrapperTypeName,
+      ClassName className, ClassName delegateClassName, boolean requiresClassLoader,
+      Set<Adapter> requiredTypeAdapters, boolean singleton) {
     this.properties = properties;
     this.classPackage = classPackage;
     this.delegateClassName = delegateClassName;

@@ -2,7 +2,7 @@ package nz.bradcampbell.paperparcel.kotlinexample
 
 import android.os.Parcel
 import nz.bradcampbell.paperparcel.TypeAdapter
-import java.util.*
+import java.util.Date
 
 object DateTypeAdapter : TypeAdapter<Date> {
   override fun writeToParcel(value: Date, outParcel: Parcel, flags: Int) {

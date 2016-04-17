@@ -4,6 +4,14 @@ import android.os.Parcel;
 import android.os.Parcelable;
 
 public interface PaperParcelable extends Parcelable {
+  @Override default int describeContents() {
+    return 0;
+  }
+
+  @Override default void writeToParcel(Parcel parcel, int flags) {
+    parcel.writeParcelable(PaperParcels.wrap(this), flags);
+  }
+
   class Creator<T> implements Parcelable.Creator<T> {
     private final Class<? extends T> type;
 
@@ -18,13 +26,5 @@ public interface PaperParcelable extends Parcelable {
     @Override public T[] newArray(int i) {
       return PaperParcels.newArray(type, i);
     }
-  }
-
-  @Override default int describeContents() {
-    return 0;
-  }
-
-  @Override default void writeToParcel(Parcel parcel, int flags) {
-    parcel.writeParcelable(PaperParcels.wrap(this), flags);
   }
 }

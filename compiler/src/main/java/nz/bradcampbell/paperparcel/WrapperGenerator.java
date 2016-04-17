@@ -1,16 +1,8 @@
 package nz.bradcampbell.paperparcel;
 
-import static javax.lang.model.element.Modifier.FINAL;
-import static javax.lang.model.element.Modifier.PRIVATE;
-import static javax.lang.model.element.Modifier.PUBLIC;
-import static nz.bradcampbell.paperparcel.PaperParcelProcessor.DATA_VARIABLE_NAME;
-import static nz.bradcampbell.paperparcel.utils.StringUtils.getUniqueName;
-import static nz.bradcampbell.paperparcel.utils.StringUtils.uncapitalizeFirstCharacter;
-
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.primitives.Ints;
-
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
@@ -21,10 +13,6 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
-import nz.bradcampbell.paperparcel.model.Adapter;
-import nz.bradcampbell.paperparcel.model.DataClass;
-import nz.bradcampbell.paperparcel.model.Property;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -35,15 +23,27 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import javax.lang.model.element.Modifier;
+import nz.bradcampbell.paperparcel.model.Adapter;
+import nz.bradcampbell.paperparcel.model.DataClass;
+import nz.bradcampbell.paperparcel.model.Property;
+
+import static javax.lang.model.element.Modifier.FINAL;
+import static javax.lang.model.element.Modifier.PRIVATE;
+import static javax.lang.model.element.Modifier.PUBLIC;
+import static nz.bradcampbell.paperparcel.PaperParcelProcessor.DATA_VARIABLE_NAME;
+import static nz.bradcampbell.paperparcel.utils.StringUtils.getUniqueName;
+import static nz.bradcampbell.paperparcel.utils.StringUtils.uncapitalizeFirstCharacter;
 
 public class WrapperGenerator {
   private static final ClassName PARCEL = ClassName.get("android.os", "Parcel");
   private static final ClassName TYPED_PARCELABLE = ClassName.get(TypedParcelable.class);
 
   public JavaFile generateParcelableWrapper(DataClass dataClass) throws IOException {
-    TypeSpec.Builder wrapperBuilder = TypeSpec.classBuilder(dataClass.getWrapperClassName().simpleName())
-        .addModifiers(PUBLIC, FINAL)
-        .addSuperinterface(ParameterizedTypeName.get(TYPED_PARCELABLE, dataClass.getClassName()));
+    TypeSpec.Builder wrapperBuilder =
+        TypeSpec.classBuilder(dataClass.getWrapperClassName().simpleName())
+            .addModifiers(PUBLIC, FINAL)
+            .addSuperinterface(
+                ParameterizedTypeName.get(TYPED_PARCELABLE, dataClass.getClassName()));
 
     FieldSpec classLoader = null;
     if (dataClass.getRequiresClassLoader()) {
@@ -51,16 +51,17 @@ public class WrapperGenerator {
       wrapperBuilder.addField(classLoader);
     }
 
-    FieldSpec creator = generateCreator(
-        dataClass.getClassName(), dataClass.getWrapperClassName(), dataClass.isSingleton(), dataClass.getProperties(),
-        classLoader, dataClass.getRequiredTypeAdapters());
+    FieldSpec creator = generateCreator(dataClass.getClassName(), dataClass.getWrapperClassName(),
+        dataClass.isSingleton(), dataClass.getProperties(), classLoader,
+        dataClass.getRequiredTypeAdapters());
 
     wrapperBuilder.addField(creator)
         .addField(generateContentsField(dataClass.getClassName()))
         .addMethod(generateContentsGetter(dataClass.getClassName()))
         .addMethod(generateContentsConstructor(dataClass.getClassName()))
         .addMethod(generateDescribeContents())
-        .addMethod(generateWriteToParcel(dataClass.getProperties(), dataClass.getRequiredTypeAdapters()));
+        .addMethod(
+            generateWriteToParcel(dataClass.getProperties(), dataClass.getRequiredTypeAdapters()));
 
     // Build the java file
     return JavaFile.builder(dataClass.getClassPackage(), wrapperBuilder.build()).build();
@@ -70,14 +71,13 @@ public class WrapperGenerator {
     if (className instanceof ParameterizedTypeName) {
       className = ((ParameterizedTypeName) className).rawType;
     }
-    return FieldSpec.builder(ClassLoader.class, "CLASS_LOADER", Modifier.PRIVATE, Modifier.FINAL, Modifier.STATIC)
-        .initializer("$T.class.getClassLoader()", className)
-        .build();
+    return FieldSpec.builder(ClassLoader.class, "CLASS_LOADER", Modifier.PRIVATE, Modifier.FINAL,
+        Modifier.STATIC).initializer("$T.class.getClassLoader()", className).build();
   }
 
-  private FieldSpec generateCreator(
-      TypeName typeName, ClassName wrapperClassName, boolean isSingleton, List<Property> properties,
-      FieldSpec classLoader, Set<Adapter> typeAdapters) {
+  private FieldSpec generateCreator(TypeName typeName, ClassName wrapperClassName,
+      boolean isSingleton, List<Property> properties, FieldSpec classLoader,
+      Set<Adapter> typeAdapters) {
 
     ClassName creator = ClassName.get("android.os", "Parcelable", "Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, wrapperClassName);
@@ -87,7 +87,8 @@ public class WrapperGenerator {
 
     final CodeBlock.Builder block = CodeBlock.builder()
         .beginControlFlow("new $T()", ParameterizedTypeName.get(creator, wrapperClassName))
-        .beginControlFlow("@$T public $T createFromParcel($T $N)", Override.class, wrapperClassName, PARCEL, in);
+        .beginControlFlow("@$T public $T createFromParcel($T $N)", Override.class, wrapperClassName,
+            PARCEL, in);
 
     if (!isSingleton) {
       List<FieldWriteInfo> fields = new ArrayList<>();
@@ -95,23 +96,26 @@ public class WrapperGenerator {
       Set<String> scopedVariableNames = new LinkedHashSet<>();
       scopedVariableNames.add(inParameterName);
 
-      Map<ClassName, CodeBlock> typeAdapterMap = getTypeAdaptersMap(typeAdapters, block, scopedVariableNames);
+      Map<ClassName, CodeBlock> typeAdapterMap =
+          getTypeAdaptersMap(typeAdapters, block, scopedVariableNames);
 
       for (Property p : properties) {
         String name = p.getName();
-        CodeBlock value = p.readFromParcel(block, in, classLoader, typeAdapterMap, scopedVariableNames);
-        fields.add(new FieldWriteInfo(name, value, p.isVisible(), p.getConstructorPosition(), p.getSetterMethodName()));
+        CodeBlock value =
+            p.readFromParcel(block, in, classLoader, typeAdapterMap, scopedVariableNames);
+        fields.add(new FieldWriteInfo(name, value, p.isVisible(), p.getConstructorPosition(),
+            p.getSetterMethodName()));
       }
 
-      final String fieldName = getUniqueName(PaperParcelProcessor.DATA_VARIABLE_NAME, scopedVariableNames);
+      final String fieldName =
+          getUniqueName(PaperParcelProcessor.DATA_VARIABLE_NAME, scopedVariableNames);
 
-      List<FieldWriteInfo> constructorArgs = FluentIterable.from(fields)
-          .filter(new Predicate<FieldWriteInfo>() {
+      List<FieldWriteInfo> constructorArgs =
+          FluentIterable.from(fields).filter(new Predicate<FieldWriteInfo>() {
             @Override public boolean apply(FieldWriteInfo input) {
               return input.constructorPosition >= 0;
             }
-          })
-          .toSortedList(new Comparator<FieldWriteInfo>() {
+          }).toSortedList(new Comparator<FieldWriteInfo>() {
             @Override public int compare(FieldWriteInfo left, FieldWriteInfo right) {
               return Ints.compare(left.constructorPosition, right.constructorPosition);
             }
@@ -121,40 +125,34 @@ public class WrapperGenerator {
       constructType(constructorArgs, typeName, fieldName, block);
 
       // Write fields to data class directly
-      FluentIterable.from(fields)
-          .filter(new Predicate<FieldWriteInfo>() {
-            @Override public boolean apply(FieldWriteInfo input) {
-              return input.constructorPosition < 0;
-            }
-          })
-          .filter(new Predicate<FieldWriteInfo>() {
-            @Override public boolean apply(FieldWriteInfo input) {
-              return input.isVisible;
-            }
-          })
-          .forEach(new Consumer<FieldWriteInfo>() {
-            @Override public void accept(FieldWriteInfo field) {
-              block.addStatement("$N.$N = $L", fieldName, field.name, field.value);
-            }
-          });
+      FluentIterable.from(fields).filter(new Predicate<FieldWriteInfo>() {
+        @Override public boolean apply(FieldWriteInfo input) {
+          return input.constructorPosition < 0;
+        }
+      }).filter(new Predicate<FieldWriteInfo>() {
+        @Override public boolean apply(FieldWriteInfo input) {
+          return input.isVisible;
+        }
+      }).forEach(new Consumer<FieldWriteInfo>() {
+        @Override public void accept(FieldWriteInfo field) {
+          block.addStatement("$N.$N = $L", fieldName, field.name, field.value);
+        }
+      });
 
       // Write remaining fields via setters
-      FluentIterable.from(fields)
-          .filter(new Predicate<FieldWriteInfo>() {
-            @Override public boolean apply(FieldWriteInfo input) {
-              return input.constructorPosition < 0;
-            }
-          })
-          .filter(new Predicate<FieldWriteInfo>() {
-            @Override public boolean apply(FieldWriteInfo input) {
-              return !input.isVisible;
-            }
-          })
-          .forEach(new Consumer<FieldWriteInfo>() {
-            @Override public void accept(FieldWriteInfo field) {
-              block.addStatement("$N.$N($L)", fieldName, field.setterMethodName, field.value);
-            }
-          });
+      FluentIterable.from(fields).filter(new Predicate<FieldWriteInfo>() {
+        @Override public boolean apply(FieldWriteInfo input) {
+          return input.constructorPosition < 0;
+        }
+      }).filter(new Predicate<FieldWriteInfo>() {
+        @Override public boolean apply(FieldWriteInfo input) {
+          return !input.isVisible;
+        }
+      }).forEach(new Consumer<FieldWriteInfo>() {
+        @Override public void accept(FieldWriteInfo field) {
+          block.addStatement("$N.$N($L)", fieldName, field.setterMethodName, field.value);
+        }
+      });
 
       block.addStatement("return new $T($N)", wrapperClassName, fieldName);
     } else {
@@ -162,16 +160,15 @@ public class WrapperGenerator {
     }
 
     block.endControlFlow()
-        .beginControlFlow("@$T public $T[] newArray($T size)", Override.class, wrapperClassName, int.class)
+        .beginControlFlow("@$T public $T[] newArray($T size)", Override.class, wrapperClassName,
+            int.class)
         .addStatement("return new $T[size]", wrapperClassName)
         .endControlFlow()
         .unindent()
         .add("}");
 
-    return FieldSpec
-        .builder(creatorOfClass, "CREATOR", Modifier.PUBLIC, Modifier.FINAL, Modifier.STATIC)
-        .initializer(block.build())
-        .build();
+    return FieldSpec.builder(creatorOfClass, "CREATOR", Modifier.PUBLIC, Modifier.FINAL,
+        Modifier.STATIC).initializer(block.build()).build();
   }
 
   private FieldSpec generateContentsField(TypeName className) {
@@ -223,7 +220,8 @@ public class WrapperGenerator {
     scopedVariableNames.add(destParameterName);
     scopedVariableNames.add(flagsParameterName);
 
-    Map<ClassName, CodeBlock> typeAdapterMap = getTypeAdaptersMap(typeAdapters, block, scopedVariableNames);
+    Map<ClassName, CodeBlock> typeAdapterMap =
+        getTypeAdaptersMap(typeAdapters, block, scopedVariableNames);
 
     for (Property p : properties) {
       String accessorStrategy = p.isVisible() ? p.getName() : p.getGetterMethodName() + "()";
@@ -236,7 +234,8 @@ public class WrapperGenerator {
       String propertyName = getUniqueName(p.getName(), scopedVariableNames);
 
       String dataFieldName = "this." + DATA_VARIABLE_NAME;
-      block.addStatement("$T $N = $N.$N", wildCardTypeName, propertyName, dataFieldName, accessorStrategy);
+      block.addStatement("$T $N = $N.$N", wildCardTypeName, propertyName, dataFieldName,
+          accessorStrategy);
 
       // Add propertyName to scoped names
       scopedVariableNames.add(propertyName);
@@ -248,7 +247,8 @@ public class WrapperGenerator {
     return builder.addCode(block.build()).build();
   }
 
-  private void constructType(List<FieldWriteInfo> args, TypeName typeName, String fieldName, CodeBlock.Builder block) {
+  private void constructType(List<FieldWriteInfo> args, TypeName typeName, String fieldName,
+      CodeBlock.Builder block) {
     String initializer = "$1T $2N = new $1T(";
     int paramsOffset = 2;
     int numConstructorArgs = args.size();
@@ -267,8 +267,8 @@ public class WrapperGenerator {
     block.addStatement(initializer, params);
   }
 
-  private Map<ClassName, CodeBlock> getTypeAdaptersMap(Set<Adapter> typeAdapters, CodeBlock.Builder block,
-                                                       Set<String> scopedVariableNames) {
+  private Map<ClassName, CodeBlock> getTypeAdaptersMap(Set<Adapter> typeAdapters,
+      CodeBlock.Builder block, Set<String> scopedVariableNames) {
     Map<ClassName, CodeBlock> typeAdapterMap = new LinkedHashMap<>(typeAdapters.size());
     for (Adapter adapter : typeAdapters) {
       CodeBlock literal;
@@ -277,7 +277,8 @@ public class WrapperGenerator {
       } else {
         String simpleName = uncapitalizeFirstCharacter(adapter.getClassName().simpleName());
         String typeAdapterName = getUniqueName(simpleName, scopedVariableNames);
-        block.addStatement("$T $N = new $T()", adapter.getClassName(), typeAdapterName, adapter.getClassName());
+        block.addStatement("$T $N = new $T()", adapter.getClassName(), typeAdapterName,
+            adapter.getClassName());
         scopedVariableNames.add(typeAdapterName);
         literal = CodeBlock.of("$N", typeAdapterName);
       }
@@ -293,7 +294,8 @@ public class WrapperGenerator {
     private final int constructorPosition;
     private final String setterMethodName;
 
-    public FieldWriteInfo(String name, CodeBlock value, boolean isVisible, int constructorIndex, String setterMethod) {
+    public FieldWriteInfo(String name, CodeBlock value, boolean isVisible, int constructorIndex,
+        String setterMethod) {
       this.name = name;
       this.value = value;
       this.isVisible = isVisible;

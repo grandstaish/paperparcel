@@ -5,11 +5,10 @@ import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
 import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.TypeName;
-import nz.bradcampbell.paperparcel.model.Property;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.Map;
 import java.util.Set;
+import nz.bradcampbell.paperparcel.model.Property;
+import org.jetbrains.annotations.Nullable;
 
 public class WrapperProperty extends Property {
   private final TypeName wrapperType;
@@ -19,16 +18,15 @@ public class WrapperProperty extends Property {
     this.wrapperType = wrapperType;
   }
 
-  @Override
-  protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
-                                          Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
+  @Override protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in,
+      @Nullable FieldSpec classLoader, Map<ClassName, CodeBlock> typeAdaptersMap,
+      Set<String> scopedVariableNames) {
     return CodeBlock.of("$T.CREATOR.createFromParcel($N).get()", wrapperType, in);
   }
 
-  @Override
-  protected void writeToParcelInner(
-      CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
-      Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
+  @Override protected void writeToParcelInner(CodeBlock.Builder block, ParameterSpec dest,
+      ParameterSpec flags, CodeBlock sourceLiteral, Map<ClassName, CodeBlock> typeAdaptersMap,
+      Set<String> scopedVariableNames) {
     block.addStatement("new $T($L).writeToParcel($N, $N)", wrapperType, sourceLiteral, dest, flags);
   }
 }
