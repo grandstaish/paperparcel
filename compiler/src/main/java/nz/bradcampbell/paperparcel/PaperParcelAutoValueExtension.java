@@ -46,22 +46,20 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
     TypeMirror parcelable = processingEnv.getElementUtils().getTypeElement("android.os.Parcelable").asType();
     TypeMirror autoValueClass = context.autoValueClass().asType();
     // Disallow manual implementation of the CREATOR instance
-    if (!needsCreator(context)) {
-      context.processingEnvironment().getMessager().printMessage(
-          Diagnostic.Kind.ERROR,
-          "Manual implementation of a Parcelable.Creator<T> CREATOR field found when processing "
+    VariableElement creator = findCreator(context);
+    if (creator != null) {
+      context.processingEnvironment().getMessager().printMessage(Diagnostic.Kind.ERROR,
+          "Manual implementation of a static Parcelable.Creator<T> CREATOR field found when processing "
           + autoValueClass.toString() + ". Remove this so PaperParcel can automatically generate the implementation "
-          + "for you.");
-      return false;
+          + "for you.", creator);
     }
     // Disallow manual implementation of writeToParcel
-    if (!needsWriteToParcel(context)) {
-      context.processingEnvironment().getMessager().printMessage(
-          Diagnostic.Kind.ERROR,
+    ExecutableElement writeToParcel = findWriteToParcel(context);
+    if (writeToParcel != null) {
+      context.processingEnvironment().getMessager().printMessage(Diagnostic.Kind.ERROR,
           "Manual implementation of Parcelable#writeToParcel(Parcel,int) found when processing "
           + autoValueClass.toString() + ". Remove this so PaperParcel can automatically generate the implementation "
-          + "for you.");
-      return false;
+          + "for you.", writeToParcel);
     }
     return processingEnv.getTypeUtils().isAssignable(autoValueClass, parcelable);
   }
@@ -178,7 +176,7 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
     return true;
   }
 
-  private static boolean needsWriteToParcel(Context context) {
+  private static ExecutableElement findWriteToParcel(Context context) {
     ProcessingEnvironment env = context.processingEnvironment();
     TypeMirror parcel = env.getElementUtils().getTypeElement("android.os.Parcel").asType();
     for (ExecutableElement element : MoreElements.getLocalAndInheritedMethods(
@@ -190,14 +188,14 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
         if (parameters.size() == 2
             && env.getTypeUtils().isSameType(parcel, parameters.get(0).asType())
             && MoreTypes.isTypeOf(int.class, parameters.get(1).asType())) {
-          return false;
+          return element;
         }
       }
     }
-    return true;
+    return null;
   }
 
-  private static boolean needsCreator(Context context) {
+  private static VariableElement findCreator(Context context) {
     ProcessingEnvironment env = context.processingEnvironment();
     Types typeUtils = env.getTypeUtils();
     Elements elementUtils = env.getElementUtils();
@@ -207,9 +205,9 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
       if (field.getSimpleName().contentEquals("CREATOR")
           && typeUtils.isSameType(creatorType, typeUtils.erasure(field.asType()))
           && field.getModifiers().contains(Modifier.STATIC)) {
-        return false;
+        return field;
       }
     }
-    return true;
+    return null;
   }
 }

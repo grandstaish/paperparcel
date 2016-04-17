@@ -204,7 +204,12 @@ public class AutoValueTests {
 
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor(), new AutoValueProcessor())
-        .failsToCompile();
+        .failsToCompile()
+        .withErrorContaining("Manual implementation of Parcelable#writeToParcel(Parcel,int) found when "
+                             + "processing test.Test. Remove this so PaperParcel can automatically generate "
+                             + "the implementation for you.")
+        .in(source)
+        .onLine(10);
   }
 
   @Test public void failWhenCreatorAlreadyDefinedTest() throws Exception {
@@ -230,6 +235,11 @@ public class AutoValueTests {
 
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor(), new AutoValueProcessor())
-        .failsToCompile();
+        .failsToCompile()
+        .withErrorContaining("Manual implementation of a static Parcelable.Creator<T> CREATOR field found "
+                             + "when processing test.Test. Remove this so PaperParcel can automatically "
+                             + "generate the implementation for you.")
+        .in(source)
+        .onLine(9);
   }
 }
