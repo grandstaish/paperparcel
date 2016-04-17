@@ -154,8 +154,7 @@ public class DataClassParser {
   }
 
   /**
-   * Gets the type that allows the given type mirror to be written to a Parcel, or null if it is
-   * not
+   * Gets the type that allows the given type mirror to be written to a Parcel, or null if it is not
    * parcelable
    *
    * @param types The type utilities class
@@ -210,7 +209,10 @@ public class DataClassParser {
         if (isLastRound) {
           processingEnv.getMessager()
               .printMessage(Diagnostic.Kind.ERROR,
-                  "PaperParcel does not know how to process " + e.element.asType().toString(),
+                  "PaperParcel does not know how to process "
+                      + e.element.asType().toString()
+                      + " found in "
+                      + element.asType().toString(),
                   e.element);
         }
       }
