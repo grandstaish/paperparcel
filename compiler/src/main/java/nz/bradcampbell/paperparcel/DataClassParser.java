@@ -219,8 +219,7 @@ public class DataClassParser {
             isFieldRequired(fieldInfo.getterMethod) || isFieldRequired(fieldInfo.element);
         boolean isNullable = !isPrimitive && !annotatedWithNonNull;
 
-        // Parse the property type into a Property.Type object and find all recursive
-        // data class dependencies
+        // Parse the property 
         Property property;
         try {
           TypeMirror type = fieldInfo.element.asType();
