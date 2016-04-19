@@ -463,8 +463,8 @@ public class DataClassParser {
     }).filter(new Predicate<ExecutableElement>() {
       @Override public boolean apply(ExecutableElement input) {
         List<? extends VariableElement> parameters = input.getParameters();
-        return parameters.size() == 1 && typeUtil.isAssignable(parameters.get(0).asType(),
-            field.asType());
+        return parameters.size() == 1
+            && typeUtil.isAssignable(parameters.get(0).asType(), field.asType());
       }
     }).first().orNull();
   }
@@ -474,7 +474,8 @@ public class DataClassParser {
     final Set<String> possibleGetterNames = possibleGetterNames(field.getSimpleName().toString());
     return FluentIterable.from(methods).filter(new Predicate<ExecutableElement>() {
       @Override public boolean apply(ExecutableElement input) {
-        return possibleGetterNames.contains(input.getSimpleName().toString());
+        return possibleGetterNames.contains(input.getSimpleName().toString())
+            && input.getReturnType().toString().equals(field.asType().toString());
       }
     }).filter(new Predicate<ExecutableElement>() {
       @Override public boolean apply(ExecutableElement input) {

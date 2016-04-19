@@ -34,7 +34,8 @@ import javax.tools.Diagnostic;
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PUBLIC;
 
-@AutoService(AutoValueExtension.class) public class PaperParcelAutoValueExtension
+@AutoService(AutoValueExtension.class)
+public class PaperParcelAutoValueExtension
     extends AutoValueExtension {
   private static final TypeName PARCEL = ClassName.get("android.os", "Parcel");
   private static final TypeName PAPER_PARCELS =
