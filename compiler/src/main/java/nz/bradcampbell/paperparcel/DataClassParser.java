@@ -11,10 +11,13 @@ import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
+import java.lang.annotation.Annotation;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -31,12 +34,15 @@ import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.MirroredTypeException;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
+import nz.bradcampbell.paperparcel.FieldMatcher.AnyAnnotation;
+import nz.bradcampbell.paperparcel.FieldMatcher.AnyClass;
 import nz.bradcampbell.paperparcel.model.Adapter;
 import nz.bradcampbell.paperparcel.model.DataClass;
 import nz.bradcampbell.paperparcel.model.Property;
@@ -88,6 +94,8 @@ import static javax.lang.model.element.Modifier.STATIC;
 import static javax.lang.model.element.Modifier.TRANSIENT;
 import static javax.lang.model.util.ElementFilter.constructorsIn;
 import static javax.lang.model.util.ElementFilter.fieldsIn;
+import static nz.bradcampbell.paperparcel.FieldMatcher.ANY_NAME;
+import static nz.bradcampbell.paperparcel.utils.AnnotationUtils.getAnnotation;
 import static nz.bradcampbell.paperparcel.utils.AnnotationUtils.isFieldRequired;
 import static nz.bradcampbell.paperparcel.utils.TypeUtils.isSingleton;
 
@@ -163,6 +171,8 @@ public class DataClassParser {
         dataClasses.add(dataClass);
         iterator.remove();
       } catch (UnknownPropertyTypeException e) {
+        // Only log an error in the last round as the unknown type might
+        // be known in a later processing round
         if (isLastRound) {
           processingEnv.getMessager()
               .printMessage(Diagnostic.Kind.ERROR,
@@ -172,6 +182,37 @@ public class DataClassParser {
                       + element.asType().toString(),
                   e.element);
         }
+      } catch (NonReadablePropertyException e) {
+        processingEnv.getMessager()
+            .printMessage(Diagnostic.Kind.ERROR,
+                "PaperParcel cannot read from "
+                    + e.element.getSimpleName().toString()
+                    + " found in "
+                    + element.toString()
+                    + ". The field must either be non-private, or have a getter method with no"
+                    + " arguments and have one of the following names: "
+                    + possibleGetterNames(e.element.getSimpleName().toString())
+                    + ". Alternatively you can exclude the field by making it static, transient,"
+                    + " or using the ExcludeFields annotation on "
+                    + element.toString(),
+                e.element);
+      } catch (NonWritablePropertyException e) {
+        processingEnv.getMessager()
+            .printMessage(Diagnostic.Kind.ERROR,
+                "PaperParcel cannot write to "
+                    + e.element.getSimpleName().toString()
+                    + " found in "
+                    + element.toString()
+                    + ". The field must either be have a constructor argument named "
+                    + e.element.getSimpleName().toString()
+                    + ", be non-private, or have a setter method with one "
+                    + e.element.asType().toString()
+                    + " parameter and have one of the following names: "
+                    + possibleSetterNames(e.element.getSimpleName().toString())
+                    + ". Alternatively you can exclude the field by making it static, transient,"
+                    + " or using the ExcludeFields annotation on "
+                    + element.toString(),
+                e.element);
       }
     }
     return dataClasses;
@@ -182,7 +223,9 @@ public class DataClassParser {
    *
    * @param typeElement The data class
    */
-  private DataClass createParcel(TypeElement typeElement) throws UnknownPropertyTypeException {
+  private DataClass createParcel(TypeElement typeElement)
+      throws UnknownPropertyTypeException, NonReadablePropertyException,
+      NonWritablePropertyException {
     ClassName className = ClassName.get(typeElement);
     ClassName wrappedClassName = wrappers.get(className);
     ClassName delegateClassName = delegates.get(className);
@@ -199,16 +242,22 @@ public class DataClassParser {
     if (!isSingleton) {
 
       // Override the type adapters with the current element preferences
-      TypeElement tempTypeElement = typeElement;
-      while (tempTypeElement != null && !applyTypeAdaptersFromElement(tempTypeElement,
-          typeAdapters)) {
-        tempTypeElement = (TypeElement) typeUtil.asElement(tempTypeElement.getSuperclass());
-      }
+      applyTypeAdapters(getLocalOrInheritedAnnotationAsMap(TypeAdapters.class, typeElement),
+          typeAdapters);
 
-      for (FieldReadWriteInfo fieldInfo : getValidFields(typeElement)) {
+      // Get exclusions
+      List<FieldMatcher> fieldMatchers = getFieldMatchers(
+          getLocalOrInheritedAnnotation(ExcludeFields.class, typeElement));
 
-        Map<TypeName, Adapter> variableScopedTypeAdapters =
-            getTypeAdapterMapForVariable(typeAdapters, fieldInfo.element, fieldInfo.getterMethod);
+      for (FieldInfo fieldInfo : getValidFields(typeElement, fieldMatchers)) {
+
+        // Get the variable scoped type adapters
+        Map<TypeName, Adapter> variableScopedTypeAdapters = new LinkedHashMap<>(typeAdapters);
+        Map<String, Object> annotation = getAnnotation(TypeAdapters.class, fieldInfo.element);
+        if (annotation == null) {
+          annotation = getAnnotation(TypeAdapters.class, fieldInfo.element);
+        }
+        applyTypeAdapters(annotation, variableScopedTypeAdapters);
 
         String name = fieldInfo.element.getSimpleName().toString();
 
@@ -255,11 +304,13 @@ public class DataClassParser {
         delegateClassName, requiresClassLoader, requiredTypeAdapters, isSingleton);
   }
 
-  private List<FieldReadWriteInfo> getValidFields(TypeElement typeElement) {
+  private List<FieldInfo> getValidFields(final TypeElement typeElement,
+      final List<FieldMatcher> fieldMatchers)
+      throws NonReadablePropertyException, NonWritablePropertyException {
     final ImmutableSet<ExecutableElement> methods =
         getLocalAndInheritedMethods(typeElement, elementUtils);
 
-    final FluentIterable<FieldReadInfo> readableFields =
+    final FluentIterable<FieldInfo> readableFields =
         FluentIterable.from(getLocalAndInheritedFields(typeElement))
             .filter(new Predicate<VariableElement>() {
               @Override public boolean apply(VariableElement input) {
@@ -267,15 +318,54 @@ public class DataClassParser {
                 return !modifiers.contains(STATIC) && !modifiers.contains(TRANSIENT);
               }
             })
-            .transform(new Function<VariableElement, FieldReadInfo>() {
-              @Override public FieldReadInfo apply(final VariableElement field) {
-                return new FieldReadInfo(Visibility.ofElement(field) != Visibility.PRIVATE,
-                    getGetterMethod(methods, field), field);
+            .filter(new Predicate<VariableElement>() {
+              @Override public boolean apply(VariableElement input) {
+                for (FieldMatcher fieldMatcher : fieldMatchers) {
+                  boolean matches = fieldMatcher.name().equals(ANY_NAME)
+                      || input.getSimpleName().contentEquals(fieldMatcher.name());
+
+                  TypeMirror declaring = null;
+                  try {
+                    fieldMatcher.declaringClass();
+                  } catch (MirroredTypeException mte) {
+                    declaring = mte.getTypeMirror();
+                  }
+                  assert declaring != null;
+                  matches &= AnyClass.class.getCanonicalName().equals(declaring.toString())
+                      || declaring.toString().equals(input.getEnclosingElement().toString());
+
+                  TypeMirror type = null;
+                  try {
+                    fieldMatcher.type();
+                  } catch (MirroredTypeException mte) {
+                    type = mte.getTypeMirror();
+                  }
+                  assert type != null;
+                  matches &= AnyClass.class.getCanonicalName().equals(type.toString())
+                      || type.toString().equals(input.asType().toString());
+
+                  TypeMirror annotation = null;
+                  try {
+                    fieldMatcher.annotation();
+                  } catch (MirroredTypeException mte) {
+                    annotation = mte.getTypeMirror();
+                  }
+                  assert annotation != null;
+                  matches &= AnyAnnotation.class.getCanonicalName().equals(annotation.toString())
+                      || AnnotationUtils.hasAnnotation(input, annotation);
+
+                  if (matches) {
+                    return false;
+                  }
+                }
+                return true;
               }
             })
-            .filter(new Predicate<FieldReadInfo>() {
-              @Override public boolean apply(FieldReadInfo input) {
-                return input.visible || input.getterMethod != null;
+            .transform(new Function<VariableElement, FieldInfo>() {
+              @Override public FieldInfo apply(final VariableElement field) {
+                boolean visible = Visibility.ofElement(field) != Visibility.PRIVATE;
+                ExecutableElement getterMethod = getGetterMethod(methods, field);
+                return new FieldInfo(visible, getterMethod, field);
               }
             });
 
@@ -312,19 +402,32 @@ public class DataClassParser {
               }
             });
 
-    return readableFields.transform(new Function<FieldReadInfo, FieldReadWriteInfo>() {
-      @Override public FieldReadWriteInfo apply(FieldReadInfo input) {
-        ExecutableElement setterMethod = getSetterMethod(methods, input.element);
-        VariableElement param = getConstructorParameter(constructorParameterInfo, input.element);
-        int constructorIndex = param == null ? -1 : mainConstructor.getParameters().indexOf(param);
-        return new FieldReadWriteInfo(input.visible, input.getterMethod, input.element,
-            setterMethod, constructorIndex);
+    List<FieldInfo> result =
+        readableFields.transform(new Function<FieldInfo, FieldInfo>() {
+          @Override public FieldInfo apply(FieldInfo input) {
+            ExecutableElement setterMethod = getSetterMethod(methods, input.element);
+            VariableElement param =
+                getConstructorParameter(constructorParameterInfo, input.element);
+            int constructorIndex =
+                param == null ? -1 : mainConstructor.getParameters().indexOf(param);
+            return new FieldInfo(input.visible, input.getterMethod, input.element,
+                setterMethod, constructorIndex);
+          }
+        }).toList();
+
+    // Validation
+    for (FieldInfo fieldInfo : result) {
+      if (!fieldInfo.visible && fieldInfo.getterMethod == null) {
+        throw new NonReadablePropertyException(fieldInfo.element);
       }
-    }).filter(new Predicate<FieldReadWriteInfo>() {
-      @Override public boolean apply(FieldReadWriteInfo input) {
-        return input.constructorIndex != -1 || input.setterMethod != null || input.visible;
+      if (!fieldInfo.visible
+          && fieldInfo.constructorIndex == -1
+          && fieldInfo.setterMethod == null) {
+        throw new NonWritablePropertyException(fieldInfo.element);
       }
-    }).toList();
+    }
+
+    return result;
   }
 
   private List<VariableElement> getLocalAndInheritedFields(TypeElement el) {
@@ -352,11 +455,10 @@ public class DataClassParser {
 
   private ExecutableElement getSetterMethod(Set<ExecutableElement> methods,
       final VariableElement field) {
-    final String setterMethodName =
-        "set" + StringUtils.capitalizeFirstCharacter(field.getSimpleName().toString());
+    final Set<String> possibleSetterNames = possibleSetterNames(field.getSimpleName().toString());
     return FluentIterable.from(methods).filter(new Predicate<ExecutableElement>() {
       @Override public boolean apply(ExecutableElement input) {
-        return setterMethodName.equals(input.getSimpleName().toString());
+        return possibleSetterNames.contains(input.getSimpleName().toString());
       }
     }).filter(new Predicate<ExecutableElement>() {
       @Override public boolean apply(ExecutableElement input) {
@@ -389,36 +491,53 @@ public class DataClassParser {
     return possibleGetterNames;
   }
 
-  private boolean applyTypeAdaptersFromElement(Element element,
-      Map<TypeName, Adapter> typeAdapters) {
-    if (element != null) {
-      Map<String, Object> annotation = AnnotationUtils.getAnnotation(TypeAdapters.class, element);
-      if (annotation != null) {
-        Object[] typeAdaptersArray = (Object[]) annotation.get("value");
-        for (Object o : typeAdaptersArray) {
-          DeclaredType ta = (DeclaredType) o;
-          TypeElement typeElement = (TypeElement) typeUtil.asElement(ta);
-          TypeName typeAdapterType = TypeUtils.getTypeAdapterType(typeUtil, ta);
-          boolean singleton = isSingleton(typeUtil, typeElement);
-          typeAdapters.put(typeAdapterType, new Adapter(singleton, ClassName.get(typeElement)));
-        }
-        return true;
-      }
-    }
-    return false;
+  private Set<String> possibleSetterNames(String name) {
+    Set<String> possibleSetterNames = new LinkedHashSet<>(2);
+    possibleSetterNames.add(name);
+    possibleSetterNames.add("set" + StringUtils.capitalizeFirstCharacter(name));
+    return possibleSetterNames;
   }
 
-  private Map<TypeName, Adapter> getTypeAdapterMapForVariable(
-      Map<TypeName, Adapter> classScopedTypeAdapters, VariableElement variableElement,
-      ExecutableElement accessorMethod) {
-
-    Map<TypeName, Adapter> tempTypeAdapters = new HashMap<>(classScopedTypeAdapters);
-    boolean applied = applyTypeAdaptersFromElement(variableElement, tempTypeAdapters);
-    if (!applied) {
-      applyTypeAdaptersFromElement(accessorMethod, tempTypeAdapters);
+  private <T extends Annotation> T getLocalOrInheritedAnnotation(Class<T> annotationType,
+      TypeElement element) {
+    while (element != null) {
+      T annotation = element.getAnnotation(annotationType);
+      if (annotation != null) return annotation;
+      element = (TypeElement) typeUtil.asElement(element.getSuperclass());
     }
+    return null;
+  }
 
-    return tempTypeAdapters;
+  private Map<String, Object> getLocalOrInheritedAnnotationAsMap(Class<?> annotationType,
+      TypeElement element) {
+    while (element != null) {
+      Map<String, Object> annotation = getAnnotation(annotationType, element);
+      if (annotation != null) return annotation;
+      element = (TypeElement) typeUtil.asElement(element.getSuperclass());
+    }
+    return null;
+  }
+
+  private List<FieldMatcher> getFieldMatchers(ExcludeFields annotation) {
+    List<FieldMatcher> fieldMatchers = new ArrayList<>();
+    if (annotation != null) {
+      Collections.addAll(fieldMatchers, annotation.value());
+    }
+    return fieldMatchers;
+  }
+
+  private void applyTypeAdapters(Map<String, Object> annotation,
+      Map<TypeName, Adapter> typeAdapters) {
+    if (annotation != null) {
+      Object[] typeAdaptersArray = (Object[]) annotation.get("value");
+      for (Object o : typeAdaptersArray) {
+        DeclaredType ta = (DeclaredType) o;
+        TypeElement typeElement = (TypeElement) typeUtil.asElement(ta);
+        TypeName typeAdapterType = TypeUtils.getTypeAdapterType(typeUtil, ta);
+        boolean singleton = isSingleton(typeUtil, typeElement);
+        typeAdapters.put(typeAdapterType, new Adapter(singleton, ClassName.get(typeElement)));
+      }
+    }
   }
 
   private Property parseProperty(TypeMirror variable, TypeMirror dataClass, boolean isNullable,
@@ -606,7 +725,7 @@ public class DataClassParser {
     return null;
   }
 
-  static class UnknownPropertyTypeException extends Exception {
+  public static class UnknownPropertyTypeException extends Exception {
     VariableElement element;
 
     UnknownPropertyTypeException(VariableElement element) {
@@ -614,31 +733,44 @@ public class DataClassParser {
     }
   }
 
-  private class FieldReadInfo {
-    public final boolean visible;
-    public final ExecutableElement getterMethod;
-    public final VariableElement element;
+  public static class NonReadablePropertyException extends Exception {
+    VariableElement element;
 
-    public FieldReadInfo(boolean visible, ExecutableElement getterMethod, VariableElement element) {
-      this.visible = visible;
-      this.getterMethod = getterMethod;
+    NonReadablePropertyException(VariableElement element) {
       this.element = element;
     }
   }
 
-  private class FieldReadWriteInfo extends FieldReadInfo {
+  public static class NonWritablePropertyException extends Exception {
+    VariableElement element;
+
+    NonWritablePropertyException(VariableElement element) {
+      this.element = element;
+    }
+  }
+
+  private static class FieldInfo {
+    public final boolean visible;
+    public final ExecutableElement getterMethod;
+    public final VariableElement element;
     public final ExecutableElement setterMethod;
     public final int constructorIndex;
 
-    public FieldReadWriteInfo(boolean visible, ExecutableElement getterMethod,
+    public FieldInfo(boolean visible, ExecutableElement getterMethod, VariableElement field) {
+      this(visible, getterMethod, field, null, -1);
+    }
+
+    public FieldInfo(boolean visible, ExecutableElement getterMethod,
         VariableElement element, ExecutableElement setterMethod, int constructorIndex) {
-      super(visible, getterMethod, element);
+      this.visible = visible;
+      this.getterMethod = getterMethod;
+      this.element = element;
       this.setterMethod = setterMethod;
       this.constructorIndex = constructorIndex;
     }
   }
 
-  private class ParameterInfo {
+  private static class ParameterInfo {
     private final String name;
     private final TypeMirror type;
     private final VariableElement element;

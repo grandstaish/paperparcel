@@ -34,7 +34,8 @@ import static nz.bradcampbell.paperparcel.utils.TypeUtils.isSingleton;
  * An annotation processor that creates Parcelable wrappers for all Kotlin data classes annotated
  * with @PaperParcel
  */
-@AutoService(Processor.class) public class PaperParcelProcessor extends AbstractProcessor {
+@AutoService(Processor.class)
+public class PaperParcelProcessor extends AbstractProcessor {
   public static final String DATA_VARIABLE_NAME = "data";
 
   private Filer filer;
@@ -54,7 +55,6 @@ import static nz.bradcampbell.paperparcel.utils.TypeUtils.isSingleton;
     Set<String> types = new LinkedHashSet<>();
     types.add(PaperParcel.class.getCanonicalName());
     types.add(DefaultAdapter.class.getCanonicalName());
-    types.add(TypeAdapters.class.getCanonicalName());
     return types;
   }
 

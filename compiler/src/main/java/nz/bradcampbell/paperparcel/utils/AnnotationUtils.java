@@ -45,7 +45,16 @@ public class AnnotationUtils {
         }
       };
 
-  public static boolean hasAnnotationWithName(Element element, String simpleName) {
+  public static boolean hasAnnotation(Element element, TypeMirror annotationType) {
+    for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
+      if (mirror.getAnnotationType().toString().equals(annotationType.toString())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  public static boolean hasAnnotationWithSimpleName(Element element, String simpleName) {
     for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
       String annotationName = mirror.getAnnotationType().asElement().getSimpleName().toString();
       if (simpleName.equals(annotationName)) {
@@ -56,8 +65,8 @@ public class AnnotationUtils {
   }
 
   public static boolean isFieldRequired(Element element) {
-    return element != null && (hasAnnotationWithName(element, NOT_NULL_ANNOTATION_NAME)
-        || hasAnnotationWithName(element, NON_NULL_ANNOTATION_NAME));
+    return element != null && (hasAnnotationWithSimpleName(element, NOT_NULL_ANNOTATION_NAME)
+        || hasAnnotationWithSimpleName(element, NON_NULL_ANNOTATION_NAME));
   }
 
   /**
