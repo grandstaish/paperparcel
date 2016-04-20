@@ -488,6 +488,7 @@ public class DataClassParser {
     Set<String> possibleGetterNames = new LinkedHashSet<>(3);
     possibleGetterNames.add(name);
     possibleGetterNames.add("is" + StringUtils.capitalizeFirstCharacter(name));
+    possibleGetterNames.add("has" + StringUtils.capitalizeFirstCharacter(name));
     possibleGetterNames.add("get" + StringUtils.capitalizeFirstCharacter(name));
     return possibleGetterNames;
   }
