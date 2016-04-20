@@ -30,11 +30,11 @@ public class InvalidPropertyTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining("PaperParcel cannot read from child found in test.Test. The field "
-            + "must either be non-private, or have a getter method with no arguments and have one "
-            + "of the following names: [child, isChild, getChild]. Alternatively you can exclude "
-            + "the field by making it static, transient, or using the ExcludeFields annotation "
-            + "on test.Test")
+        .withErrorContaining("PaperParcel cannot read from the field named \"child\" which was "
+            + "found when processing test.Test. The field must either be non-private, or have a "
+            + "getter method with no arguments and have one of the following names: [child, "
+            + "isChild, getChild]. Alternatively you can exclude the field by making it static, "
+            + "transient, or using the ExcludeFields annotation on test.Test")
         .in(source)
         .onLine(5);
   }
@@ -59,11 +59,11 @@ public class InvalidPropertyTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining("PaperParcel cannot read from child found in test.Test. The field "
-            + "must either be non-private, or have a getter method with no arguments and have one "
-            + "of the following names: [child, isChild, getChild]. Alternatively you can exclude "
-            + "the field by making it static, transient, or using the ExcludeFields annotation "
-            + "on test.Test")
+        .withErrorContaining("PaperParcel cannot read from the field named \"child\" which was "
+            + "found when processing test.Test. The field must either be non-private, or have a "
+            + "getter method with no arguments and have one of the following names: [child, "
+            + "isChild, getChild]. Alternatively you can exclude the field by making it static, "
+            + "transient, or using the ExcludeFields annotation on test.Test")
         .in(source)
         .onLine(5);
   }
@@ -88,11 +88,11 @@ public class InvalidPropertyTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining("PaperParcel cannot read from child found in test.Test. The field "
-            + "must either be non-private, or have a getter method with no arguments and have one "
-            + "of the following names: [child, isChild, getChild]. Alternatively you can exclude "
-            + "the field by making it static, transient, or using the ExcludeFields annotation "
-            + "on test.Test")
+        .withErrorContaining("PaperParcel cannot read from the field named \"child\" which was "
+            + "found when processing test.Test. The field must either be non-private, or have a "
+            + "getter method with no arguments and have one of the following names: [child, "
+            + "isChild, getChild]. Alternatively you can exclude the field by making it static, "
+            + "transient, or using the ExcludeFields annotation on test.Test")
         .in(source)
         .onLine(5);
   }

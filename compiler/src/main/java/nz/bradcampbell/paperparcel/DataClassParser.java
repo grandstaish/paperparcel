@@ -177,21 +177,21 @@ public class DataClassParser {
           processingEnv.getMessager()
               .printMessage(Diagnostic.Kind.ERROR,
                   "PaperParcel does not know how to process "
-                      + e.element.asType().toString()
-                      + " found in "
-                      + element.asType().toString(),
+                      + e.element.toString()
+                      + " found when processing "
+                      + element.toString(),
                   e.element);
         }
       } catch (NonReadablePropertyException e) {
         processingEnv.getMessager()
             .printMessage(Diagnostic.Kind.ERROR,
-                "PaperParcel cannot read from "
-                    + e.element.getSimpleName().toString()
-                    + " found in "
+                "PaperParcel cannot read from the field named \""
+                    + e.element.toString()
+                    + "\" which was found when processing "
                     + element.toString()
                     + ". The field must either be non-private, or have a getter method with no"
                     + " arguments and have one of the following names: "
-                    + possibleGetterNames(e.element.getSimpleName().toString())
+                    + possibleGetterNames(e.element.toString())
                     + ". Alternatively you can exclude the field by making it static, transient,"
                     + " or using the ExcludeFields annotation on "
                     + element.toString(),
@@ -199,16 +199,16 @@ public class DataClassParser {
       } catch (NonWritablePropertyException e) {
         processingEnv.getMessager()
             .printMessage(Diagnostic.Kind.ERROR,
-                "PaperParcel cannot write to "
-                    + e.element.getSimpleName().toString()
-                    + " found in "
+                "PaperParcel cannot write to the field named \""
+                    + e.element.toString()
+                    + "\" which was found when processing "
                     + element.toString()
                     + ". The field must either be have a constructor argument named "
-                    + e.element.getSimpleName().toString()
+                    + e.element.toString()
                     + ", be non-private, or have a setter method with one "
                     + e.element.asType().toString()
                     + " parameter and have one of the following names: "
-                    + possibleSetterNames(e.element.getSimpleName().toString())
+                    + possibleSetterNames(e.element.toString())
                     + ". Alternatively you can exclude the field by making it static, transient,"
                     + " or using the ExcludeFields annotation on "
                     + element.toString(),
