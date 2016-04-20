@@ -693,37 +693,26 @@ public class DataClassParser {
   }
 
   private TypeName getParcelableType(TypeMirror typeMirror) {
-    TypeElement type = (TypeElement) typeUtil.asElement(typeMirror);
-
     while (typeMirror.getKind() != TypeKind.NONE) {
-
-      // first, check if the class is valid.
+      TypeElement type = (TypeElement) typeUtil.asElement(typeMirror);
       TypeName typeName = TypeName.get(typeMirror);
       if (typeName instanceof ParameterizedTypeName) {
         typeName = ((ParameterizedTypeName) typeName).rawType;
       }
-
       if (typeName.isPrimitive() || VALID_TYPES.contains(typeName)) {
         return typeName;
       }
-
       if (typeName instanceof ArrayTypeName) {
         return OBJECT_ARRAY;
       }
-
-      // then check if it implements valid interfaces
-      for (TypeMirror iface : type.getInterfaces()) {
-        TypeName inherited = getParcelableType(iface);
+      for (TypeMirror interfaceType : type.getInterfaces()) {
+        TypeName inherited = getParcelableType(interfaceType);
         if (inherited != null) {
           return inherited;
         }
       }
-
-      // then move on
-      type = (TypeElement) typeUtil.asElement(typeMirror);
       typeMirror = type.getSuperclass();
     }
-
     return null;
   }
 
