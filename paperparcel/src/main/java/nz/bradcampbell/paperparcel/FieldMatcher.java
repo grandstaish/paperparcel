@@ -17,6 +17,10 @@
 package nz.bradcampbell.paperparcel;
 
 import java.lang.annotation.Annotation;
+import java.lang.annotation.Documented;
+import java.lang.annotation.Retention;
+
+import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 /**
  * An annotation for matching fields via {@link #name()}, {@link #declaringClass()},
@@ -24,6 +28,7 @@ import java.lang.annotation.Annotation;
  *
  * @see ExcludeFields
  */
+@Documented @Retention(SOURCE)
 public @interface FieldMatcher {
 
   /** A string that matches any variable name */

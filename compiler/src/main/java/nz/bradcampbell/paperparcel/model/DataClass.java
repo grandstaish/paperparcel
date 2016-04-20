@@ -1,5 +1,6 @@
 package nz.bradcampbell.paperparcel.model;
 
+import com.google.common.base.Objects;
 import com.squareup.javapoet.ClassName;
 import java.util.List;
 import java.util.Set;
@@ -73,5 +74,24 @@ public class DataClass {
 
   public boolean isSingleton() {
     return singleton;
+  }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+    DataClass dataClass = (DataClass) o;
+    return requiresClassLoader == dataClass.requiresClassLoader &&
+        singleton == dataClass.singleton &&
+        Objects.equal(classPackage, dataClass.classPackage) &&
+        Objects.equal(properties, dataClass.properties) &&
+        Objects.equal(className, dataClass.className) &&
+        Objects.equal(wrapperClassName, dataClass.wrapperClassName) &&
+        Objects.equal(delegateClassName, dataClass.delegateClassName) &&
+        Objects.equal(requiredTypeAdapters, dataClass.requiredTypeAdapters);
+  }
+
+  @Override public int hashCode() {
+    return Objects.hashCode(classPackage, properties, className, wrapperClassName,
+        delegateClassName, requiresClassLoader, requiredTypeAdapters, singleton);
   }
 }

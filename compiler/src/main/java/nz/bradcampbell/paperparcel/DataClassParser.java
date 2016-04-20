@@ -542,7 +542,7 @@ public class DataClassParser {
   }
 
   private Property parseProperty(TypeMirror variable, TypeMirror dataClass, boolean isNullable,
-      String name, Map<TypeName, Adapter> typeAdapterMap) throws UnknownPropertyTypeException {
+      String name, Map<TypeName, Adapter> typeAdapterMap) {
 
     variable = getActualTypeParameter(variable, dataClass);
 

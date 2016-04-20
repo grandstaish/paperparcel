@@ -11,28 +11,57 @@ import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 public class ShortTests {
 
   @Test public void primitiveShortTest() throws Exception {
-    JavaFileObject source = JavaFileObjects.forSourceString("test.Test", Joiner.on('\n')
-        .join("package test;", "import nz.bradcampbell.paperparcel.PaperParcel;", "@PaperParcel",
-            "public final class Test {", "private final short child;", "public Test(short child) {",
-            "this.child = child;", "}", "public short getChild() {", "return this.child;", "}",
-            "}"));
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import nz.bradcampbell.paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public final class Test {",
+            "  private final short child;",
+            "  public Test(short child) {",
+            "    this.child = child;",
+            "  }",
+            "  public short getChild() {",
+            "    return this.child;",
+            "  }",
+            "}"
+        ));
 
-    JavaFileObject expectedSource = JavaFileObjects.forSourceString("test/TestParcel",
-        Joiner.on('\n')
-            .join("package test;", "import android.os.Parcel;", "import android.os.Parcelable;",
-                "import java.lang.Override;", "import nz.bradcampbell.paperparcel.TypedParcelable;",
-                "public final class TestParcel implements TypedParcelable<Test> {",
-                "public static final Parcelable.Creator<TestParcel> CREATOR = new Parcelable.Creator<TestParcel>() {",
-                "@Override public TestParcel createFromParcel(Parcel in) {",
-                "short child = (short) in.readInt();", "Test data = new Test(child);",
-                "return new TestParcel(data);", "}",
-                "@Override public TestParcel[] newArray(int size) {",
-                "return new TestParcel[size];", "}", "};", "private final Test data;",
-                "public TestParcel(Test data) {", "this.data = data;", "}",
-                "@Override public Test get() {", "return this.data;", "}",
-                "@Override public int describeContents() {", "return 0;", "}",
-                "@Override public void writeToParcel(Parcel dest, int flags) {",
-                "short child = this.data.getChild();", "dest.writeInt(child);", "}", "}"));
+    JavaFileObject expectedSource =
+        JavaFileObjects.forSourceString("test/TestParcel", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import java.lang.Override;",
+            "import nz.bradcampbell.paperparcel.TypedParcelable;",
+            "public final class TestParcel implements TypedParcelable<Test> {",
+            "  public static final Parcelable.Creator<TestParcel> CREATOR = ",
+            "      new Parcelable.Creator<TestParcel>() {",
+            "    @Override public TestParcel createFromParcel(Parcel in) {",
+            "      short child = (short) in.readInt();",
+            "      Test data = new Test(child);",
+            "      return new TestParcel(data);",
+            "    }",
+            "    @Override public TestParcel[] newArray(int size) {",
+            "      return new TestParcel[size];",
+            "    }",
+            "  };",
+            "  private final Test data;",
+            "  public TestParcel(Test data) {",
+            "    this.data = data;",
+            "  }",
+            "  @Override public Test get() {",
+            "    return this.data;",
+            "  }",
+            "  @Override public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  @Override public void writeToParcel(Parcel dest, int flags) {",
+            "    short child = this.data.getChild();",
+            "    dest.writeInt(child);",
+            "  }",
+            "}"
+        ));
 
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())

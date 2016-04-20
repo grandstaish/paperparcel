@@ -5,7 +5,9 @@ import nz.bradcampbell.paperparcel.PaperParcel;
 import nz.bradcampbell.paperparcel.PaperParcelable;
 import nz.bradcampbell.paperparcel.TypeAdapters;
 
-@PaperParcel @TypeAdapters(DateTypeAdapter.class) public final class State extends PaperParcelable {
+@PaperParcel
+@TypeAdapters(DateTypeAdapter.class)
+public final class State extends PaperParcelable {
   public static final PaperParcelable.Creator<State> CREATOR =
       new PaperParcelable.Creator<>(State.class);
 
