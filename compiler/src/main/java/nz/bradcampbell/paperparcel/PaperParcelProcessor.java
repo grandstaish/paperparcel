@@ -15,6 +15,8 @@ import javax.annotation.processing.Processor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
@@ -95,9 +97,11 @@ public class PaperParcelProcessor extends AbstractProcessor {
         wrapperGenerator.generateParcelableWrapper(dataClass).writeTo(filer);
         delegateGenerator.generatePaperParcelsDelegate(dataClass).writeTo(filer);
       } catch (IOException e) {
-        processingEnv.getMessager()
-            .printMessage(Diagnostic.Kind.ERROR,
-                "Could not write generated class " + dataClass.getClassName() + ": " + e);
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+            "Could not write generated class "
+            + dataClass.getClassName()
+            + ": "
+            + e);
       }
     }
 
@@ -113,8 +117,23 @@ public class PaperParcelProcessor extends AbstractProcessor {
           elementUtils.getTypeElement(TypeAdapter.class.getCanonicalName()).asType());
 
       if (!(typeUtil.isAssignable(elementMirror, typeAdapterMirror))) {
-        String message = "@DefaultAdapter must be applied to a TypeAdapter<T>";
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, element);
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+            "@DefaultAdapter must be applied to a TypeAdapter<T>",
+            element);
+        continue;
+      }
+
+      if (element.getKind() == ElementKind.INTERFACE) {
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+            "@DefaultAdapter cannot be applied to an interface",
+            element);
+        continue;
+      }
+
+      if (element.getModifiers().contains(Modifier.ABSTRACT)) {
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+            "@DefaultAdapter cannot be applied to an abstract class",
+            element);
         continue;
       }
 
@@ -132,8 +151,23 @@ public class PaperParcelProcessor extends AbstractProcessor {
 
       // Ensure the element isn't parameterized
       if (hasTypeArguments(typeElement)) {
-        String message = "PaperParcel types cannot have type parameters";
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, message, typeElement);
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+            "@PaperParcel cannot be applied to a class with type parameters",
+            typeElement);
+        continue;
+      }
+
+      if (element.getKind() == ElementKind.INTERFACE) {
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+            "@PaperParcel cannot be applied to an interface",
+            element);
+        continue;
+      }
+
+      if (element.getModifiers().contains(Modifier.ABSTRACT)) {
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+            "@PaperParcel cannot be applied to an abstract class",
+            element);
         continue;
       }
 

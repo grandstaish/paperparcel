@@ -8,7 +8,7 @@ import org.junit.Test;
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
 
-public class InvalidPropertyTests {
+public class ErrorTests {
 
   @Test public void getterHasAParameterTest() throws Exception {
     JavaFileObject source =
@@ -97,68 +97,63 @@ public class InvalidPropertyTests {
         .onLine(5);
   }
 
-  @Test public void transientPropertyTest() throws Exception {
+  @Test public void setterHasNoParametersTest() throws Exception {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
             "import nz.bradcampbell.paperparcel.PaperParcel;",
             "@PaperParcel",
             "public final class Test {",
-            "  private transient final int child1 = 0;",
-            "  private final int child2;",
-            "  public Test(int child2) {",
-            "    this.child2 = child2;",
+            "  private final int child;",
+            "  public int getChild() {",
+            "    return this.child;",
             "  }",
-            "  public int getChild1() {",
-            "    return this.child1;",
-            "  }",
-            "  public int getChild2() {",
-            "    return this.child2;",
-            "  }",
-            "}"
-        ));
-
-    JavaFileObject expectedSource =
-        JavaFileObjects.forSourceString("test/TestParcel", Joiner.on('\n').join(
-            "package test;",
-            "import android.os.Parcel;",
-            "import android.os.Parcelable;",
-            "import java.lang.Override;",
-            "import nz.bradcampbell.paperparcel.TypedParcelable;",
-            "public final class TestParcel implements TypedParcelable<Test> {",
-            "  public static final Parcelable.Creator<TestParcel> CREATOR = ",
-            "      new Parcelable.Creator<TestParcel>() {",
-            "    @Override public TestParcel createFromParcel(Parcel in) {",
-            "      int child2 = in.readInt();",
-            "      Test data = new Test(child2);",
-            "      return new TestParcel(data);",
-            "    }",
-            "    @Override public TestParcel[] newArray(int size) {",
-            "      return new TestParcel[size];",
-            "    }",
-            "  };",
-            "  private final Test data;",
-            "  public TestParcel(Test data) {",
-            "    this.data = data;",
-            "  }",
-            "  @Override public Test get() {",
-            "    return this.data;",
-            "  }",
-            "  @Override public int describeContents() {",
-            "    return 0;",
-            "  }",
-            "  @Override public void writeToParcel(Parcel dest, int flags) {",
-            "    int child2 = this.data.getChild2();",
-            "    dest.writeInt(child2);",
+            "  public void setChild() {",
             "  }",
             "}"
         ));
 
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
-        .compilesWithoutError()
-        .and()
-        .generatesSources(expectedSource);
+        .failsToCompile()
+        .withErrorContaining("PaperParcel cannot write to the field named \"child\" which was "
+            + "found when processing test.Test. The field must either be have a constructor "
+            + "argument named child, be non-private, or have a setter method with one int "
+            + "parameter and have one of the following names: [child, setChild]. Alternatively "
+            + "you can exclude the field by making it static, transient, or using the "
+            + "ExcludeFields annotation on test.Test")
+        .in(source)
+        .onLine(5);
+  }
+
+  @Test public void constructorArgHasWrongNameTest() throws Exception {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import nz.bradcampbell.paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public final class Test {",
+            "  private final int child;",
+            "  public Test(int kid) {",
+            "    this.child = kid;",
+            "  }",
+            "  public int getChild() {",
+            "    return this.child;",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining("PaperParcel cannot write to the field named \"child\" which was "
+            + "found when processing test.Test. The field must either be have a constructor "
+            + "argument named child, be non-private, or have a setter method with one int "
+            + "parameter and have one of the following names: [child, setChild]. Alternatively "
+            + "you can exclude the field by making it static, transient, or using the "
+            + "ExcludeFields annotation on test.Test")
+        .in(source)
+        .onLine(5);
   }
 
   @Test public void genericClassAnnotatedTest() throws Exception {
@@ -168,18 +163,90 @@ public class InvalidPropertyTests {
             "import nz.bradcampbell.paperparcel.PaperParcel;",
             "@PaperParcel",
             "public final class Test<T> {",
-            "  private final T child;",
-            "  public Test(T child) {",
-            "    this.child = child;",
-            "  }",
+            "  public T child;",
             "}"
         ));
 
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining("PaperParcel types cannot have type parameters")
+        .withErrorContaining("@PaperParcel cannot be applied to a class with type parameters")
         .in(source)
         .onLine(4);
+  }
+
+  @Test public void abstractClassAnnotatedTest() throws Exception {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import nz.bradcampbell.paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public abstract class Test {",
+            "  public int child;",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining("@PaperParcel cannot be applied to an abstract class")
+        .in(source)
+        .onLine(4);
+  }
+
+  @Test public void interfaceClassAnnotatedTest() throws Exception {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import nz.bradcampbell.paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public interface Test {",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining("@PaperParcel cannot be applied to an interface")
+        .in(source)
+        .onLine(4);
+  }
+
+  @Test public void defaultAdapterIsAnInterfaceTest() throws Exception {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import nz.bradcampbell.paperparcel.DefaultAdapter;",
+            "import nz.bradcampbell.paperparcel.TypeAdapter;",
+            "@DefaultAdapter",
+            "public interface Test extends TypeAdapter<Integer> {",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining("@DefaultAdapter cannot be applied to an interface")
+        .in(source)
+        .onLine(5);
+  }
+
+  @Test public void defaultAdapterIsAbstractTest() throws Exception {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import nz.bradcampbell.paperparcel.DefaultAdapter;",
+            "import nz.bradcampbell.paperparcel.TypeAdapter;",
+            "@DefaultAdapter",
+            "public abstract class Test implements TypeAdapter<Integer> {",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining("@DefaultAdapter cannot be applied to an abstract class")
+        .in(source)
+        .onLine(5);
   }
 }
