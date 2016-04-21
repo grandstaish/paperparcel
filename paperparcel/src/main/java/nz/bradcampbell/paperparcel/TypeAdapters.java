@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.METHOD;
 import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.SOURCE;
+import static java.lang.annotation.RetentionPolicy.CLASS;
 
 /**
  * Scope custom type adapters directly to variables or classes. You can apply as many type adapters
@@ -19,7 +19,7 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
  * {@link DefaultAdapter}). Additionally, variable-scoped adapters will take precedence over
  * class-scoped adapters.
  */
-@Documented @Retention(SOURCE) @Target({ FIELD, METHOD, TYPE })
+@Documented @Retention(CLASS) @Target({ FIELD, METHOD, TYPE })
 public @interface TypeAdapters {
   Class<? extends TypeAdapter<?>>[] value() default {};
 }

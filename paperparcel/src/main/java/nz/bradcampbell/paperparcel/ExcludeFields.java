@@ -5,13 +5,13 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.SOURCE;
+import static java.lang.annotation.RetentionPolicy.CLASS;
 
 /**
  * An annotation for excluding certain fields from the parcelling/unparcelling process. Can
  * be applied to any class annotated with {@link PaperParcel}
  */
-@Documented @Retention(SOURCE) @Target({ TYPE })
+@Documented @Retention(CLASS) @Target({ TYPE })
 public @interface ExcludeFields {
   FieldMatcher[] value();
 }

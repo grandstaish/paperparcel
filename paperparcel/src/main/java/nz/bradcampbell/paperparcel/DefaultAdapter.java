@@ -5,7 +5,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.SOURCE;
+import static java.lang.annotation.RetentionPolicy.CLASS;
 
 /**
  * Annotate any {@link TypeAdapter} with this annotation to set the default method for
@@ -16,6 +16,6 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
  * variable) will
  * take precedence over any TypeAdapters annotated with this annotation.
  */
-@Documented @Retention(SOURCE) @Target(TYPE)
+@Documented @Retention(CLASS) @Target(TYPE)
 public @interface DefaultAdapter {
 }

@@ -20,7 +20,7 @@ import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 
-import static java.lang.annotation.RetentionPolicy.SOURCE;
+import static java.lang.annotation.RetentionPolicy.CLASS;
 
 /**
  * An annotation for matching fields via {@link #name()}, {@link #declaringClass()},
@@ -28,7 +28,7 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
  *
  * @see ExcludeFields
  */
-@Documented @Retention(SOURCE)
+@Documented @Retention(CLASS)
 public @interface FieldMatcher {
 
   /** A string that matches any variable name */
