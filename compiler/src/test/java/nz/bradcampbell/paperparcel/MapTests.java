@@ -28,8 +28,8 @@ public class MapTests {
             "}"
         ));
 
-    JavaFileObject testParcel =
-        JavaFileObjects.forSourceString("test/TestParcel", Joiner.on('\n').join(
+    JavaFileObject expectedSource =
+        JavaFileObjects.forSourceString("test/Test$$Wrapper", Joiner.on('\n').join(
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
@@ -37,11 +37,11 @@ public class MapTests {
             "import java.lang.Override;",
             "import java.util.LinkedHashMap;",
             "import java.util.Map;",
-            "import nz.bradcampbell.paperparcel.TypedParcelable;",
-            "public final class TestParcel implements TypedParcelable<Test> {",
-            "  public static final Parcelable.Creator<TestParcel> CREATOR = ",
-            "      new Parcelable.Creator<TestParcel>() {",
-            "    @Override public TestParcel createFromParcel(Parcel in) {",
+            "import nz.bradcampbell.paperparcel.internal.ParcelableWrapper;",
+            "public final class Test$$Wrapper implements ParcelableWrapper<Test> {",
+            "  public static final Parcelable.Creator<Test$$Wrapper> CREATOR = ",
+            "      new Parcelable.Creator<Test$$Wrapper>() {",
+            "    @Override public Test$$Wrapper createFromParcel(Parcel in) {",
             "      Map<Integer, Integer> outChild = null;",
             "      if (in.readInt() == 0) {",
             "        int childSize = in.readInt();",
@@ -60,14 +60,14 @@ public class MapTests {
             "        outChild = child;",
             "      }",
             "      Test data = new Test(outChild);",
-            "      return new TestParcel(data);",
+            "      return new Test$$Wrapper(data);",
             "    }",
-            "    @Override public TestParcel[] newArray(int size) {",
-            "      return new TestParcel[size];",
+            "    @Override public Test$$Wrapper[] newArray(int size) {",
+            "      return new Test$$Wrapper[size];",
             "    }",
             "  };",
             "  private final Test data;",
-            "  public TestParcel(Test data) {",
+            "  public Test$$Wrapper(Test data) {",
             "    this.data = data;",
             "  }",
             "  @Override public Test get() {",
@@ -106,7 +106,7 @@ public class MapTests {
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
-        .generatesSources(testParcel);
+        .generatesSources(expectedSource);
   }
 
   @Test public void mapWithParcelableListAsValueTest() throws Exception {
@@ -129,8 +129,8 @@ public class MapTests {
             "}"
         ));
 
-    JavaFileObject rootParcel =
-        JavaFileObjects.forSourceString("test/RootParcel", Joiner.on('\n').join(
+    JavaFileObject expectedSource =
+        JavaFileObjects.forSourceString("test/Root$$Wrapper", Joiner.on('\n').join(
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
@@ -140,11 +140,11 @@ public class MapTests {
             "import java.util.LinkedHashMap;",
             "import java.util.List;",
             "import java.util.Map;",
-            "import nz.bradcampbell.paperparcel.TypedParcelable;",
-            "public final class RootParcel implements TypedParcelable<Root> {",
-            "  public static final Parcelable.Creator<RootParcel> CREATOR = ",
-            "      new Parcelable.Creator<RootParcel>() {",
-            "    @Override public RootParcel createFromParcel(Parcel in) {",
+            "import nz.bradcampbell.paperparcel.internal.ParcelableWrapper;",
+            "public final class Root$$Wrapper implements ParcelableWrapper<Root> {",
+            "  public static final Parcelable.Creator<Root$$Wrapper> CREATOR = ",
+            "      new Parcelable.Creator<Root$$Wrapper>() {",
+            "    @Override public Root$$Wrapper createFromParcel(Parcel in) {",
             "      Map<Integer, List<Integer>> outChild = null;",
             "      if (in.readInt() == 0) {",
             "        int childSize = in.readInt();",
@@ -174,14 +174,14 @@ public class MapTests {
             "        outChild = child;",
             "      }",
             "      Root data = new Root(outChild);",
-            "      return new RootParcel(data);",
+            "      return new Root$$Wrapper(data);",
             "    }",
-            "    @Override public RootParcel[] newArray(int size) {",
-            "      return new RootParcel[size];",
+            "    @Override public Root$$Wrapper[] newArray(int size) {",
+            "      return new Root$$Wrapper[size];",
             "    }",
             "  };",
             "  private final Root data;",
-            "  public RootParcel(Root data) {",
+            "  public Root$$Wrapper(Root data) {",
             "    this.data = data;",
             "  }",
             "  @Override public Root get() {",
@@ -231,7 +231,7 @@ public class MapTests {
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
-        .generatesSources(rootParcel);
+        .generatesSources(expectedSource);
   }
 
   @Test public void treeMapOfParcelableTypesTest() throws Exception {
@@ -252,8 +252,8 @@ public class MapTests {
             "}"
         ));
 
-    JavaFileObject testParcel =
-        JavaFileObjects.forSourceString("test/TestParcel", Joiner.on('\n').join(
+    JavaFileObject expectedSource =
+        JavaFileObjects.forSourceString("test/Test$$Wrapper", Joiner.on('\n').join(
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
@@ -261,11 +261,11 @@ public class MapTests {
             "import java.lang.Override;",
             "import java.util.Map;",
             "import java.util.TreeMap;",
-            "import nz.bradcampbell.paperparcel.TypedParcelable;",
-            "public final class TestParcel implements TypedParcelable<Test> {",
-            "  public static final Parcelable.Creator<TestParcel> CREATOR = ",
-            "      new Parcelable.Creator<TestParcel>() {",
-            "    @Override public TestParcel createFromParcel(Parcel in) {",
+            "import nz.bradcampbell.paperparcel.internal.ParcelableWrapper;",
+            "public final class Test$$Wrapper implements ParcelableWrapper<Test> {",
+            "  public static final Parcelable.Creator<Test$$Wrapper> CREATOR = ",
+            "      new Parcelable.Creator<Test$$Wrapper>() {",
+            "    @Override public Test$$Wrapper createFromParcel(Parcel in) {",
             "      TreeMap<Integer, Integer> outChild = null;",
             "      if (in.readInt() == 0) {",
             "        int childSize = in.readInt();",
@@ -284,14 +284,14 @@ public class MapTests {
             "        outChild = child;",
             "      }",
             "      Test data = new Test(outChild);",
-            "      return new TestParcel(data);",
+            "      return new Test$$Wrapper(data);",
             "    }",
-            "    @Override public TestParcel[] newArray(int size) {",
-            "      return new TestParcel[size];",
+            "    @Override public Test$$Wrapper[] newArray(int size) {",
+            "      return new Test$$Wrapper[size];",
             "    }",
             "  };",
             "  private final Test data;",
-            "  public TestParcel(Test data) {",
+            "  public Test$$Wrapper(Test data) {",
             "    this.data = data;",
             "  }",
             "  @Override public Test get() {",
@@ -330,6 +330,6 @@ public class MapTests {
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
-        .generatesSources(testParcel);
+        .generatesSources(expectedSource);
   }
 }

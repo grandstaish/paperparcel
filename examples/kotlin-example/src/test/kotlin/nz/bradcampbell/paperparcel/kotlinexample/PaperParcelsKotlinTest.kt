@@ -4,9 +4,8 @@ import android.os.Parcel
 import android.os.Parcelable
 import com.google.common.truth.Truth.assertThat
 import nz.bradcampbell.paperparcel.PaperParcels
-import nz.bradcampbell.paperparcel.TypedParcelable
 import org.junit.Test
-import java.util.Date
+import java.util.*
 
 class PaperParcelsKotlinTest {
   @Test
@@ -32,41 +31,6 @@ class PaperParcelsKotlinTest {
       PaperParcels.unwrap<Any>(NonPaperParcelable("taco"))
     } catch (e: Throwable) {
       assertThat(e).isInstanceOf(IllegalArgumentException::class.java)
-    }
-  }
-
-  @Test
-  fun unwrapNonGeneratedTypedParcelable() {
-    try {
-      PaperParcels.unwrap<Any>(NonGeneratedTypedParcelable(Taco("taco")))
-    } catch (e: Throwable) {
-      assertThat(e).isInstanceOf(IllegalArgumentException::class.java)
-    }
-  }
-
-  private class NonGeneratedTypedParcelable(private val taco: Taco) : TypedParcelable<Taco> {
-    override fun get(): Taco {
-      return taco;
-    }
-
-    override fun describeContents(): Int {
-      return 0
-    }
-
-    override fun writeToParcel(dest: Parcel, flags: Int) {
-      dest.writeString(taco.taco)
-    }
-
-    companion object {
-      @JvmField val CREATOR: Parcelable.Creator<Taco> = object : Parcelable.Creator<Taco> {
-        override fun createFromParcel(parcel: Parcel): Taco {
-          return Taco(parcel)
-        }
-
-        override fun newArray(size: Int): Array<Taco?> {
-          return arrayOfNulls(size)
-        }
-      }
     }
   }
 

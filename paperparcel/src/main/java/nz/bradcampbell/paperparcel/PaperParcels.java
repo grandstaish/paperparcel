@@ -3,13 +3,14 @@ package nz.bradcampbell.paperparcel;
 import android.os.Parcelable;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import nz.bradcampbell.paperparcel.internal.ParcelableWrapper;
 
 /**
  * Central mechanism for {@link #wrap(Object)}ing/{@link #unwrap(Parcelable)}ping PaperParcel
  * objects.
  */
 public final class PaperParcels {
-  public static final String WRAPPER_SUFFIX = "Parcel";
+  public static final String WRAPPER_SUFFIX = "$$Wrapper";
   public static final String DELEGATE_SUFFIX = "$$Delegate";
 
   private static final Map<Class, Delegate> DELEGATES = new LinkedHashMap<>();
@@ -46,9 +47,9 @@ public final class PaperParcels {
     if (parcelable == null) {
       return null;
     }
-    TypedParcelable wrapper;
-    if (parcelable instanceof TypedParcelable) {
-      wrapper = (TypedParcelable) parcelable;
+    ParcelableWrapper wrapper;
+    if (parcelable instanceof ParcelableWrapper) {
+      wrapper = (ParcelableWrapper) parcelable;
     } else {
       throw new IllegalArgumentException(
           parcelable.getClass().getName() + " is not recognised by PaperParcel");
@@ -106,7 +107,7 @@ public final class PaperParcels {
     return delegateClass;
   }
 
-  public interface Delegate<T1, T2 extends TypedParcelable<T1>> {
+  public interface Delegate<T1, T2 extends ParcelableWrapper<T1>> {
     T2 wrap(T1 original);
 
     T1[] newArray(int size);
