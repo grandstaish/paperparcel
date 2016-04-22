@@ -1,5 +1,6 @@
 package nz.bradcampbell.paperparcel.utils;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -45,9 +46,21 @@ public class AnnotationUtils {
         }
       };
 
+  public static boolean hasAnnotation(Element element, Class<? extends Annotation> annotation) {
+    return hasAnnotationWithName(element, annotation.getCanonicalName());
+  }
+
   public static boolean hasAnnotation(Element element, TypeMirror annotationType) {
+    return hasAnnotationWithName(element, annotationType.toString());
+  }
+
+  private static boolean hasAnnotationWithName(Element element, String name) {
+    if (element == null || name == null) {
+      return false;
+    }
     for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
-      if (mirror.getAnnotationType().toString().equals(annotationType.toString())) {
+      String annotationName = mirror.getAnnotationType().asElement().toString();
+      if (name.equals(annotationName)) {
         return true;
       }
     }
