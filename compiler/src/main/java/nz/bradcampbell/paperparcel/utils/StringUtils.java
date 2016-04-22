@@ -26,4 +26,8 @@ public class StringUtils {
     }
     return result;
   }
+
+  public static boolean startsWithVowel(String s) {
+    return s != null && s.length() > 0 && "AEIOUaeiou".indexOf(s.charAt(0)) != -1;
+  }
 }

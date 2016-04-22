@@ -256,17 +256,18 @@ public class ErrorTests {
             "package test;",
             "import nz.bradcampbell.paperparcel.PaperParcel;",
             "import java.util.Date;",
+            "import java.util.List;",
             "@PaperParcel",
             "public final class Test {",
-            "  public Date child;",
+            "  public List<Date> child;",
             "}"
         ));
 
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining("PaperParcel does not know how to process test.Test because it "
-            + "contains a java.util.Date field named \"child\" and java.util.Date is not a "
+        .withErrorContaining("PaperParcel does not know how to process test.Test because the "
+            + "child field is a java.util.List<java.util.Date> and java.util.Date is not a "
             + "supported PaperParcel type. Define a TypeAdapter<java.util.Date> to add support "
             + "for java.util.Date objects. Alternatively you can exclude the field by making it "
             + "static, transient, or using the ExcludeFields annotation on test.Test");

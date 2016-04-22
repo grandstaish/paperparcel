@@ -97,6 +97,7 @@ import static javax.lang.model.util.ElementFilter.fieldsIn;
 import static nz.bradcampbell.paperparcel.FieldMatcher.ANY_NAME;
 import static nz.bradcampbell.paperparcel.utils.AnnotationUtils.getAnnotation;
 import static nz.bradcampbell.paperparcel.utils.AnnotationUtils.isFieldRequired;
+import static nz.bradcampbell.paperparcel.utils.StringUtils.startsWithVowel;
 import static nz.bradcampbell.paperparcel.utils.TypeUtils.isSingleton;
 
 public class DataClassParser {
@@ -174,20 +175,22 @@ public class DataClassParser {
         // Only log an error in the last round as the unknown type might
         // be known in a later processing round
         if (isLastRound) {
+          String aOrAn = startsWithVowel(e.element.asType().toString()) ? "an " : "a ";
           processingEnv.getMessager()
               .printMessage(Diagnostic.Kind.ERROR,
                   "PaperParcel does not know how to process "
                       + element.toString()
-                      + " because it contains a "
-                      +  e.element.asType().toString()
-                      + " field named \""
+                      + " because the "
                       + e.element.toString()
-                      + "\" and "
-                      + e.element.asType().toString()
+                      + " field is "
+                      + aOrAn
+                      +  e.element.asType().toString()
+                      + " and "
+                      + e.unknownType.toString()
                       + " is not a supported PaperParcel type. Define a TypeAdapter<"
-                      + e.element.asType().toString()
+                      + e.unknownType.toString()
                       + "> to add support for "
-                      + e.element.asType().toString()
+                      + e.unknownType.toString()
                       + " objects. Alternatively you can exclude the field by making it static,"
                       + " transient, or using the ExcludeFields annotation on "
                       + element.toString(),
@@ -285,8 +288,8 @@ public class DataClassParser {
           TypeMirror type = fieldInfo.element.asType();
           property = parseProperty(type, typeElement.asType(), isNullable, name,
               variableScopedTypeAdapters);
-        } catch (IllegalArgumentException e) {
-          throw new UnknownPropertyTypeException(fieldInfo.element);
+        } catch (UnknownTypeException e) {
+          throw new UnknownPropertyTypeException(fieldInfo.element, e.unknownType);
         }
 
         requiredTypeAdapters.addAll(property.requiredTypeAdapters());
@@ -554,7 +557,7 @@ public class DataClassParser {
   }
 
   private Property parseProperty(TypeMirror variable, TypeMirror dataClass, boolean isNullable,
-      String name, Map<TypeName, Adapter> typeAdapterMap) {
+      String name, Map<TypeName, Adapter> typeAdapterMap) throws UnknownTypeException {
 
     variable = getActualTypeParameter(variable, dataClass);
 
@@ -675,7 +678,7 @@ public class DataClassParser {
     } else if (typeName instanceof ClassName && wrappers.containsKey(typeName)) {
       return new WrapperProperty(wrappers.get(typeName), isNullable, typeName, name);
     } else {
-      throw new IllegalArgumentException();
+      throw new UnknownTypeException(erasedType);
     }
   }
 
@@ -727,11 +730,21 @@ public class DataClassParser {
     return null;
   }
 
+  public static class UnknownTypeException extends Exception {
+    TypeMirror unknownType;
+
+    UnknownTypeException(TypeMirror unknownType) {
+      this.unknownType = unknownType;
+    }
+  }
+
   public static class UnknownPropertyTypeException extends Exception {
     VariableElement element;
+    TypeMirror unknownType;
 
-    UnknownPropertyTypeException(VariableElement element) {
+    UnknownPropertyTypeException(VariableElement element, TypeMirror unknownType) {
       this.element = element;
+      this.unknownType = unknownType;
     }
   }
 
