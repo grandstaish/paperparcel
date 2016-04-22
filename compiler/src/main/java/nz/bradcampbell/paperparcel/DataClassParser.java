@@ -233,6 +233,30 @@ public class DataClassParser {
                 "PaperParcel requires at least one non-private constructor, but could not find "
                     + "one in " + element.toString(),
                 element);
+      } catch (UnsatisfiableConstructorException e) {
+        processingEnv.getMessager()
+            .printMessage(Diagnostic.Kind.ERROR,
+                "PaperParcel cannot satisfy constructor "
+                + e.constructor
+                + ". PaperParcel was able to find "
+                + e.fieldsToPassToConstructorCount
+                + " arguments, but needed "
+                + e.constructor.getParameters().size()
+                + ". The missing arguments were "
+                + e.missingArguments,
+                e.constructor);
+      } catch (DuplicateFieldNameException e) {
+        processingEnv.getMessager()
+            .printMessage(Diagnostic.Kind.ERROR,
+                "PaperParcel cannot process "
+                + element.toString()
+                + " because it has two non-ignored fields named \""
+                + e.first.toString()
+                + "\". The first can be found in "
+                + e.first.getEnclosingElement().toString()
+                + " and the second can be found in "
+                + e.second.getEnclosingElement().toString(),
+                e.first);
       }
     }
     return dataClasses;
@@ -245,7 +269,8 @@ public class DataClassParser {
    */
   private DataClass createParcel(TypeElement typeElement)
       throws UnknownPropertyTypeException, NonReadablePropertyException,
-      NonWritablePropertyException, NoVisibleConstructorException {
+      NonWritablePropertyException, NoVisibleConstructorException,
+      UnsatisfiableConstructorException, DuplicateFieldNameException {
     ClassName className = ClassName.get(typeElement);
     ClassName wrappedClassName = wrappers.get(className);
     ClassName delegateClassName = delegates.get(className);
@@ -327,7 +352,8 @@ public class DataClassParser {
   private List<FieldInfo> getValidFields(final TypeElement typeElement,
       final List<FieldMatcher> fieldMatchers)
       throws NonReadablePropertyException, NonWritablePropertyException,
-      NoVisibleConstructorException {
+      NoVisibleConstructorException, UnsatisfiableConstructorException,
+      DuplicateFieldNameException {
     final ImmutableSet<ExecutableElement> methods =
         getLocalAndInheritedMethods(typeElement, elementUtils);
 
@@ -442,16 +468,48 @@ public class DataClassParser {
           }
         }).toList();
 
-    // Validation
+    Map<String, VariableElement> nameToFieldMap = new HashMap<>();
+
+    int mainConstructorSize = mainConstructor.getParameters().size();
+    int fieldsToPassToConstructorCount = 0;
+    VariableElement[] fieldsToPassToConstructor = new VariableElement[mainConstructorSize];
+
     for (FieldInfo fieldInfo : result) {
+      // Ensure that the field can be read
       if (!fieldInfo.visible && fieldInfo.getterMethod == null) {
         throw new NonReadablePropertyException(fieldInfo.element);
       }
+      // Ensure that the field can be written
       if (!fieldInfo.visible
           && fieldInfo.constructorIndex == -1
           && fieldInfo.setterMethod == null) {
         throw new NonWritablePropertyException(fieldInfo.element);
       }
+      // Keep track of constructor arguments for later validation
+      if (fieldInfo.constructorIndex != -1) {
+        fieldsToPassToConstructor[fieldInfo.constructorIndex] = fieldInfo.element;
+        fieldsToPassToConstructorCount++;
+      }
+      // Ensure there are no duplicate variable names. This can happen with inheritance.
+      String variableName = fieldInfo.element.toString();
+      if (nameToFieldMap.containsKey(variableName)) {
+        throw new DuplicateFieldNameException(nameToFieldMap.get(variableName), fieldInfo.element);
+      }
+      nameToFieldMap.put(variableName, fieldInfo.element);
+    }
+
+    // Ensure that the main constructor can be satisfied
+    int constructorArgumentSizeDifference = mainConstructorSize - fieldsToPassToConstructorCount;
+    if (constructorArgumentSizeDifference > 0) {
+      List<VariableElement> missingArguments = new ArrayList<>(constructorArgumentSizeDifference);
+      List<? extends VariableElement> constructorArguments = mainConstructor.getParameters();
+      for (int i = 0; i < constructorArguments.size(); i++) {
+        if (fieldsToPassToConstructor[i] == null) {
+          missingArguments.add(constructorArguments.get(i));
+        }
+      }
+      throw new UnsatisfiableConstructorException(fieldsToPassToConstructorCount,
+          mainConstructor, missingArguments);
     }
 
     return result;
@@ -743,11 +801,34 @@ public class DataClassParser {
     return null;
   }
 
+  public static class DuplicateFieldNameException extends Exception {
+    final VariableElement first;
+    final VariableElement second;
+
+    public DuplicateFieldNameException(VariableElement first, VariableElement second) {
+      this.first = first;
+      this.second = second;
+    }
+  }
+
+  public static class UnsatisfiableConstructorException extends Exception {
+    final int fieldsToPassToConstructorCount;
+    final ExecutableElement constructor;
+    final List<VariableElement> missingArguments;
+
+    public UnsatisfiableConstructorException(int fieldsToPassToConstructorCount,
+        ExecutableElement constructor, List<VariableElement> missingArguments) {
+      this.fieldsToPassToConstructorCount = fieldsToPassToConstructorCount;
+      this.constructor = constructor;
+      this.missingArguments = missingArguments;
+    }
+  }
+
   public static class NoVisibleConstructorException extends Exception {
   }
 
   public static class UnknownTypeException extends Exception {
-    TypeMirror unknownType;
+    final TypeMirror unknownType;
 
     UnknownTypeException(TypeMirror unknownType) {
       this.unknownType = unknownType;
@@ -755,8 +836,8 @@ public class DataClassParser {
   }
 
   public static class UnknownPropertyTypeException extends Exception {
-    VariableElement element;
-    TypeMirror unknownType;
+    final VariableElement element;
+    final TypeMirror unknownType;
 
     UnknownPropertyTypeException(VariableElement element, TypeMirror unknownType) {
       this.element = element;
@@ -765,7 +846,7 @@ public class DataClassParser {
   }
 
   public static class NonReadablePropertyException extends Exception {
-    VariableElement element;
+    final VariableElement element;
 
     NonReadablePropertyException(VariableElement element) {
       this.element = element;
@@ -773,7 +854,7 @@ public class DataClassParser {
   }
 
   public static class NonWritablePropertyException extends Exception {
-    VariableElement element;
+    final VariableElement element;
 
     NonWritablePropertyException(VariableElement element) {
       this.element = element;

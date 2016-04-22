@@ -2,11 +2,13 @@ package nz.bradcampbell.paperparcel;
 
 import com.google.common.base.Joiner;
 import com.google.testing.compile.JavaFileObjects;
+import java.util.Arrays;
 import javax.tools.JavaFileObject;
 import org.junit.Test;
 
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
+import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
 
 public class ErrorTests {
 
@@ -273,7 +275,7 @@ public class ErrorTests {
             + "static, transient, or using the ExcludeFields annotation on test.Test");
   }
 
-  @Test public void noVisibleConstructorTypeTest() throws Exception {
+  @Test public void noVisibleConstructorTest() throws Exception {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -294,5 +296,83 @@ public class ErrorTests {
             + "could not find one in test.Test")
         .in(source)
         .onLine(6);
+  }
+
+  @Test public void unsatisfiableConstructorTest() throws Exception {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import nz.bradcampbell.paperparcel.PaperParcel;",
+            "import java.util.Date;",
+            "import java.util.List;",
+            "@PaperParcel",
+            "public final class Test {",
+            "  private final String s1;",
+            "  private final String s2;",
+            "  public Test(String s1, String missing, String s2) {",
+            "    this.s1 = s1;",
+            "    this.s2 = s2;",
+            "  }",
+            "  public String s1() {",
+            "    return s1;",
+            "  }",
+            "  public String s2() {",
+            "    return s2;",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining("PaperParcel cannot satisfy constructor "
+            + "Test(java.lang.String,java.lang.String,java.lang.String). PaperParcel was able to "
+            + "find 2 arguments, but needed 3. The missing arguments were [missing]")
+        .in(source)
+        .onLine(9);
+  }
+
+  @Test public void baseClassHasFieldWithTheSameNameAsSuperclassTest() throws Exception {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import nz.bradcampbell.paperparcel.PaperParcel;",
+            "import java.util.Date;",
+            "import java.util.List;",
+            "@PaperParcel",
+            "public final class Test extends Base {",
+            "  private final String test;",
+            "  public Test(String test) {",
+            "    super(test);",
+            "    this.test = test;",
+            "  }",
+            "  public String test() {",
+            "    return test;",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject base =
+        JavaFileObjects.forSourceString("test.Base", Joiner.on('\n').join(
+            "package test;",
+            "import nz.bradcampbell.paperparcel.PaperParcel;",
+            "import java.util.Date;",
+            "import java.util.List;",
+            "public class Base {",
+            "  private final String test;",
+            "  public Base(String test) {",
+            "    this.test = test;",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(source, base))
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining("PaperParcel cannot process test.Test because it has two non-ignored "
+            + "fields named \"test\". The first can be found in test.Test and the second can be "
+            + "found in test.Base")
+        .in(source)
+        .onLine(7);
   }
 }
