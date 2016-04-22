@@ -227,6 +227,12 @@ public class DataClassParser {
                     + " or using the ExcludeFields annotation on "
                     + element.toString(),
                 e.element);
+      } catch (NoVisibleConstructorException e) {
+        processingEnv.getMessager()
+            .printMessage(Diagnostic.Kind.ERROR,
+                "PaperParcel requires at least one non-private constructor, but could not find "
+                    + "one in " + element.toString(),
+                element);
       }
     }
     return dataClasses;
@@ -239,7 +245,7 @@ public class DataClassParser {
    */
   private DataClass createParcel(TypeElement typeElement)
       throws UnknownPropertyTypeException, NonReadablePropertyException,
-      NonWritablePropertyException {
+      NonWritablePropertyException, NoVisibleConstructorException {
     ClassName className = ClassName.get(typeElement);
     ClassName wrappedClassName = wrappers.get(className);
     ClassName delegateClassName = delegates.get(className);
@@ -320,7 +326,8 @@ public class DataClassParser {
 
   private List<FieldInfo> getValidFields(final TypeElement typeElement,
       final List<FieldMatcher> fieldMatchers)
-      throws NonReadablePropertyException, NonWritablePropertyException {
+      throws NonReadablePropertyException, NonWritablePropertyException,
+      NoVisibleConstructorException {
     final ImmutableSet<ExecutableElement> methods =
         getLocalAndInheritedMethods(typeElement, elementUtils);
 
@@ -389,14 +396,20 @@ public class DataClassParser {
       }
     };
 
-    // Main constructor being the constructor with the most parameters
-    final ExecutableElement mainConstructor = mostParametersOrdering.max(
+    FluentIterable<ExecutableElement> visibleConstructors =
         FluentIterable.from(constructorsIn(typeElement.getEnclosedElements()))
             .filter(new Predicate<ExecutableElement>() {
               @Override public boolean apply(ExecutableElement input) {
                 return Visibility.ofElement(input) != Visibility.PRIVATE;
               }
-            }));
+            });
+
+    if (visibleConstructors.size() == 0) {
+      throw new NoVisibleConstructorException();
+    }
+
+    // Main constructor being the constructor with the most parameters
+    final ExecutableElement mainConstructor = mostParametersOrdering.max(visibleConstructors);
 
     final FluentIterable<ParameterInfo> constructorParameterInfo =
         FluentIterable.from(mainConstructor.getParameters())
@@ -728,6 +741,9 @@ public class DataClassParser {
       typeMirror = type.getSuperclass();
     }
     return null;
+  }
+
+  public static class NoVisibleConstructorException extends Exception {
   }
 
   public static class UnknownTypeException extends Exception {

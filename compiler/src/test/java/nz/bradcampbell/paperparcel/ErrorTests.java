@@ -272,4 +272,27 @@ public class ErrorTests {
             + "for java.util.Date objects. Alternatively you can exclude the field by making it "
             + "static, transient, or using the ExcludeFields annotation on test.Test");
   }
+
+  @Test public void noVisibleConstructorTypeTest() throws Exception {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import nz.bradcampbell.paperparcel.PaperParcel;",
+            "import java.util.Date;",
+            "import java.util.List;",
+            "@PaperParcel",
+            "public final class Test {",
+            "  private Test() {",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining("PaperParcel requires at least one non-private constructor, but "
+            + "could not find one in test.Test")
+        .in(source)
+        .onLine(6);
+  }
 }
