@@ -177,8 +177,19 @@ public class DataClassParser {
           processingEnv.getMessager()
               .printMessage(Diagnostic.Kind.ERROR,
                   "PaperParcel does not know how to process "
+                      + element.toString()
+                      + " because it contains a "
+                      +  e.element.asType().toString()
+                      + " field named \""
                       + e.element.toString()
-                      + " found when processing "
+                      + "\" and "
+                      + e.element.asType().toString()
+                      + " is not a supported PaperParcel type. Define a TypeAdapter<"
+                      + e.element.asType().toString()
+                      + "> to add support for "
+                      + e.element.asType().toString()
+                      + " objects. Alternatively you can exclude the field by making it static,"
+                      + " transient, or using the ExcludeFields annotation on "
                       + element.toString(),
                   e.element);
         }
