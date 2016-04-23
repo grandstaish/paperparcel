@@ -17,6 +17,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.Currency;
 import java.util.Date;
@@ -55,6 +56,7 @@ import nz.bradcampbell.paperparcel.model.Property;
 import nz.bradcampbell.paperparcel.model.properties.ArrayProperty;
 import nz.bradcampbell.paperparcel.model.properties.BigDecimalProperty;
 import nz.bradcampbell.paperparcel.model.properties.BigIntegerProperty;
+import nz.bradcampbell.paperparcel.model.properties.BitSetProperty;
 import nz.bradcampbell.paperparcel.model.properties.BooleanArrayProperty;
 import nz.bradcampbell.paperparcel.model.properties.BooleanProperty;
 import nz.bradcampbell.paperparcel.model.properties.BundleProperty;
@@ -163,6 +165,7 @@ public class DataClassParser {
   public static final TypeName PATTERN = TypeName.get(Pattern.class);
   public static final TypeName CLASS = TypeName.get(Class.class);
   public static final TypeName CURRENCY = TypeName.get(Currency.class);
+  public static final TypeName BIT_SET = TypeName.get(BitSet.class);
 
   private static final Set<TypeName> VALID_TYPES =
       ImmutableSet.of(STRING, MAP, LIST, SET, BOOLEAN_ARRAY, BYTE_ARRAY, INT_ARRAY, LONG_ARRAY,
@@ -171,7 +174,7 @@ public class DataClassParser {
           BOXED_INT, LONG, BOXED_LONG, BYTE, BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT,
           CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE, SHORT, BOXED_SHORT, TYPE_ADAPTER, DATE,
           BIG_INTEGER, BIG_DECIMAL, MATH_CONTEXT, UUID, FILE, STACK_TRACE_ELEMENT, URL, URI,
-          PATTERN, CLASS, CURRENCY);
+          PATTERN, CLASS, CURRENCY, BIT_SET);
 
   private static final Pattern KT_9609_BUG_NAME_FORMAT = Pattern.compile("arg(\\d+)");
 
@@ -808,6 +811,8 @@ public class DataClassParser {
       return new ClassProperty(isNullable, typeName, name);
     } else if (CURRENCY.equals(parcelableTypeName)) {
       return new CurrencyProperty(isNullable, typeName, name);
+    } else if (BIT_SET.equals(parcelableTypeName)) {
+      return new BitSetProperty(isNullable, typeName, name);
     } else if (typeName instanceof ClassName && wrappers.containsKey(typeName)) {
       return new WrapperProperty(wrappers.get(typeName), isNullable, typeName, name);
     } else {
