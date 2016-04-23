@@ -14,6 +14,7 @@ import com.squareup.javapoet.TypeName;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -54,6 +55,7 @@ import nz.bradcampbell.paperparcel.model.properties.ByteArrayProperty;
 import nz.bradcampbell.paperparcel.model.properties.ByteProperty;
 import nz.bradcampbell.paperparcel.model.properties.CharProperty;
 import nz.bradcampbell.paperparcel.model.properties.CharSequenceProperty;
+import nz.bradcampbell.paperparcel.model.properties.DateProperty;
 import nz.bradcampbell.paperparcel.model.properties.DoubleProperty;
 import nz.bradcampbell.paperparcel.model.properties.EnumProperty;
 import nz.bradcampbell.paperparcel.model.properties.FloatProperty;
@@ -133,13 +135,14 @@ public class DataClassParser {
   public static final TypeName BOXED_DOUBLE = DOUBLE.box();
   public static final TypeName BOXED_SHORT = SHORT.box();
   public static final TypeName TYPE_ADAPTER = TypeName.get(TypeAdapter.class);
+  public static final TypeName DATE = TypeName.get(Date.class);
 
   private static final Set<TypeName> VALID_TYPES =
       ImmutableSet.of(STRING, MAP, LIST, SET, BOOLEAN_ARRAY, BYTE_ARRAY, INT_ARRAY, LONG_ARRAY,
           STRING_ARRAY, SPARSE_ARRAY, SPARSE_BOOLEAN_ARRAY, BUNDLE, PARCELABLE, PARCELABLE_ARRAY,
           CHAR_SEQUENCE, IBINDER, OBJECT_ARRAY, PERSISTABLE_BUNDLE, SIZE, SIZEF, ENUM, INT,
           BOXED_INT, LONG, BOXED_LONG, BYTE, BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT,
-          CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE, SHORT, BOXED_SHORT, TYPE_ADAPTER);
+          CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE, SHORT, BOXED_SHORT, TYPE_ADAPTER, DATE);
 
   private static final Pattern KT_9609_BUG_NAME_FORMAT = Pattern.compile("arg(\\d+)");
 
@@ -752,6 +755,8 @@ public class DataClassParser {
       return new SizeFProperty(isNullable, typeName, name);
     } else if (TYPE_ADAPTER.equals(parcelableTypeName)) {
       return new TypeAdapterProperty(typeAdapter, isNullable, typeName, name);
+    } else if (DATE.equals(parcelableTypeName)) {
+      return new DateProperty(isNullable, typeName, name);
     } else if (typeName instanceof ClassName && wrappers.containsKey(typeName)) {
       return new WrapperProperty(wrappers.get(typeName), isNullable, typeName, name);
     } else {
