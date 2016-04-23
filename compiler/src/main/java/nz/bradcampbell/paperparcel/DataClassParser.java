@@ -11,6 +11,7 @@ import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
+import java.io.File;
 import java.lang.annotation.Annotation;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -62,6 +63,7 @@ import nz.bradcampbell.paperparcel.model.properties.CharSequenceProperty;
 import nz.bradcampbell.paperparcel.model.properties.DateProperty;
 import nz.bradcampbell.paperparcel.model.properties.DoubleProperty;
 import nz.bradcampbell.paperparcel.model.properties.EnumProperty;
+import nz.bradcampbell.paperparcel.model.properties.FileProperty;
 import nz.bradcampbell.paperparcel.model.properties.FloatProperty;
 import nz.bradcampbell.paperparcel.model.properties.IBinderProperty;
 import nz.bradcampbell.paperparcel.model.properties.IntArrayProperty;
@@ -144,6 +146,7 @@ public class DataClassParser {
   public static final TypeName BIG_INTEGER = TypeName.get(BigInteger.class);
   public static final TypeName BIG_DECIMAL = TypeName.get(BigDecimal.class);
   public static final TypeName UUID = ClassName.get("java.util", "UUID");
+  public static final TypeName FILE = TypeName.get(File.class);
 
   private static final Set<TypeName> VALID_TYPES =
       ImmutableSet.of(STRING, MAP, LIST, SET, BOOLEAN_ARRAY, BYTE_ARRAY, INT_ARRAY, LONG_ARRAY,
@@ -151,7 +154,7 @@ public class DataClassParser {
           CHAR_SEQUENCE, IBINDER, OBJECT_ARRAY, PERSISTABLE_BUNDLE, SIZE, SIZEF, ENUM, INT,
           BOXED_INT, LONG, BOXED_LONG, BYTE, BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT,
           CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE, SHORT, BOXED_SHORT, TYPE_ADAPTER, DATE,
-          BIG_INTEGER, BIG_DECIMAL, UUID);
+          BIG_INTEGER, BIG_DECIMAL, UUID, FILE);
 
   private static final Pattern KT_9609_BUG_NAME_FORMAT = Pattern.compile("arg(\\d+)");
 
@@ -772,6 +775,8 @@ public class DataClassParser {
       return new BigDecimalProperty(isNullable, typeName, name);
     } else if (UUID.equals(parcelableTypeName)) {
       return new UuidProperty(isNullable, typeName, name);
+    } else if (FILE.equals(parcelableTypeName)) {
+      return new FileProperty(isNullable, typeName, name);
     } else if (typeName instanceof ClassName && wrappers.containsKey(typeName)) {
       return new WrapperProperty(wrappers.get(typeName), isNullable, typeName, name);
     } else {
