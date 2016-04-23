@@ -15,6 +15,7 @@ import java.io.File;
 import java.lang.annotation.Annotation;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -72,6 +73,7 @@ import nz.bradcampbell.paperparcel.model.properties.ListProperty;
 import nz.bradcampbell.paperparcel.model.properties.LongArrayProperty;
 import nz.bradcampbell.paperparcel.model.properties.LongProperty;
 import nz.bradcampbell.paperparcel.model.properties.MapProperty;
+import nz.bradcampbell.paperparcel.model.properties.MathContextProperty;
 import nz.bradcampbell.paperparcel.model.properties.ParcelableProperty;
 import nz.bradcampbell.paperparcel.model.properties.PersistableBundleProperty;
 import nz.bradcampbell.paperparcel.model.properties.SetProperty;
@@ -146,6 +148,7 @@ public class DataClassParser {
   public static final TypeName DATE = TypeName.get(Date.class);
   public static final TypeName BIG_INTEGER = TypeName.get(BigInteger.class);
   public static final TypeName BIG_DECIMAL = TypeName.get(BigDecimal.class);
+  public static final TypeName MATH_CONTEXT = TypeName.get(MathContext.class);
   public static final TypeName UUID = ClassName.get("java.util", "UUID");
   public static final TypeName FILE = TypeName.get(File.class);
   public static final TypeName STACK_TRACE_ELEMENT = TypeName.get(StackTraceElement.class);
@@ -156,7 +159,7 @@ public class DataClassParser {
           CHAR_SEQUENCE, IBINDER, OBJECT_ARRAY, PERSISTABLE_BUNDLE, SIZE, SIZEF, ENUM, INT,
           BOXED_INT, LONG, BOXED_LONG, BYTE, BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT,
           CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE, SHORT, BOXED_SHORT, TYPE_ADAPTER, DATE,
-          BIG_INTEGER, BIG_DECIMAL, UUID, FILE, STACK_TRACE_ELEMENT);
+          BIG_INTEGER, BIG_DECIMAL, MATH_CONTEXT, UUID, FILE, STACK_TRACE_ELEMENT);
 
   private static final Pattern KT_9609_BUG_NAME_FORMAT = Pattern.compile("arg(\\d+)");
 
@@ -775,6 +778,8 @@ public class DataClassParser {
       return new BigIntegerProperty(isNullable, typeName, name);
     } else if (BIG_DECIMAL.equals(parcelableTypeName)) {
       return new BigDecimalProperty(isNullable, typeName, name);
+    } else if (MATH_CONTEXT.equals(parcelableTypeName)) {
+      return new MathContextProperty(isNullable, typeName, name);
     } else if (UUID.equals(parcelableTypeName)) {
       return new UuidProperty(isNullable, typeName, name);
     } else if (FILE.equals(parcelableTypeName)) {
