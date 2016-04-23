@@ -365,22 +365,13 @@ public class DataClassParser {
                 return !modifiers.contains(STATIC) && !modifiers.contains(TRANSIENT);
               }
             })
-            .transform(new Function<VariableElement, FieldInfo>() {
-              @Override public FieldInfo apply(final VariableElement field) {
-                boolean visible = Visibility.ofElement(field) != Visibility.PRIVATE;
-                ExecutableElement getterMethod = getGetterMethod(methods, field);
-                return new FieldInfo(visible, getterMethod, field);
-              }
-            })
-            .filter(new Predicate<FieldInfo>() {
-              @Override public boolean apply(FieldInfo fieldInfo) {
-                VariableElement input = fieldInfo.element;
-
-                if (AnnotationUtils.hasAnnotation(input, ExcludeField.class)
-                    || AnnotationUtils.hasAnnotation(fieldInfo.getterMethod, ExcludeField.class)) {
+            .filter(new Predicate<VariableElement>() {
+              @Override public boolean apply(VariableElement input) {
+                // Remove field immediately if annotated with @ExcludeField
+                if (AnnotationUtils.hasAnnotation(input, ExcludeField.class)) {
                   return false;
                 }
-
+                // Remove all fields that match the rules set in each the field matchers
                 for (FieldMatcher fieldMatcher : fieldMatchers) {
                   boolean matches = fieldMatcher.name().equals(ANY_NAME)
                       || input.getSimpleName().contentEquals(fieldMatcher.name());
@@ -413,14 +404,21 @@ public class DataClassParser {
                   }
                   assert annotation != null;
                   matches &= AnyAnnotation.class.getCanonicalName().equals(annotation.toString())
-                      || AnnotationUtils.hasAnnotation(input, annotation)
-                      || AnnotationUtils.hasAnnotation(fieldInfo.getterMethod, annotation);
+                      || AnnotationUtils.hasAnnotation(input, annotation);
 
                   if (matches) {
                     return false;
                   }
                 }
+                // Keep the remaining fields
                 return true;
+              }
+            })
+            .transform(new Function<VariableElement, FieldInfo>() {
+              @Override public FieldInfo apply(final VariableElement field) {
+                boolean visible = Visibility.ofElement(field) != Visibility.PRIVATE;
+                ExecutableElement getterMethod = getGetterMethod(methods, field);
+                return new FieldInfo(visible, getterMethod, field);
               }
             });
 
