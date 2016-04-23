@@ -12,6 +12,7 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import java.lang.annotation.Annotation;
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,6 +50,7 @@ import nz.bradcampbell.paperparcel.model.Adapter;
 import nz.bradcampbell.paperparcel.model.DataClass;
 import nz.bradcampbell.paperparcel.model.Property;
 import nz.bradcampbell.paperparcel.model.properties.ArrayProperty;
+import nz.bradcampbell.paperparcel.model.properties.BigDecimalProperty;
 import nz.bradcampbell.paperparcel.model.properties.BigIntegerProperty;
 import nz.bradcampbell.paperparcel.model.properties.BooleanArrayProperty;
 import nz.bradcampbell.paperparcel.model.properties.BooleanProperty;
@@ -139,6 +141,7 @@ public class DataClassParser {
   public static final TypeName TYPE_ADAPTER = TypeName.get(TypeAdapter.class);
   public static final TypeName DATE = TypeName.get(Date.class);
   public static final TypeName BIG_INTEGER = TypeName.get(BigInteger.class);
+  public static final TypeName BIG_DECIMAL = TypeName.get(BigDecimal.class);
 
   private static final Set<TypeName> VALID_TYPES =
       ImmutableSet.of(STRING, MAP, LIST, SET, BOOLEAN_ARRAY, BYTE_ARRAY, INT_ARRAY, LONG_ARRAY,
@@ -146,7 +149,7 @@ public class DataClassParser {
           CHAR_SEQUENCE, IBINDER, OBJECT_ARRAY, PERSISTABLE_BUNDLE, SIZE, SIZEF, ENUM, INT,
           BOXED_INT, LONG, BOXED_LONG, BYTE, BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT,
           CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE, SHORT, BOXED_SHORT, TYPE_ADAPTER, DATE,
-          BIG_INTEGER);
+          BIG_INTEGER, BIG_DECIMAL);
 
   private static final Pattern KT_9609_BUG_NAME_FORMAT = Pattern.compile("arg(\\d+)");
 
@@ -763,6 +766,8 @@ public class DataClassParser {
       return new DateProperty(isNullable, typeName, name);
     } else if (BIG_INTEGER.equals(parcelableTypeName)) {
       return new BigIntegerProperty(isNullable, typeName, name);
+    } else if (BIG_DECIMAL.equals(parcelableTypeName)) {
+      return new BigDecimalProperty(isNullable, typeName, name);
     } else if (typeName instanceof ClassName && wrappers.containsKey(typeName)) {
       return new WrapperProperty(wrappers.get(typeName), isNullable, typeName, name);
     } else {
