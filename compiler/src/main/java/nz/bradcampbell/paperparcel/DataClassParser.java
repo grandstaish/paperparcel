@@ -18,6 +18,7 @@ import java.math.BigInteger;
 import java.math.MathContext;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Currency;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -62,6 +63,7 @@ import nz.bradcampbell.paperparcel.model.properties.ByteProperty;
 import nz.bradcampbell.paperparcel.model.properties.CharProperty;
 import nz.bradcampbell.paperparcel.model.properties.CharSequenceProperty;
 import nz.bradcampbell.paperparcel.model.properties.ClassProperty;
+import nz.bradcampbell.paperparcel.model.properties.CurrencyProperty;
 import nz.bradcampbell.paperparcel.model.properties.DateProperty;
 import nz.bradcampbell.paperparcel.model.properties.DoubleProperty;
 import nz.bradcampbell.paperparcel.model.properties.EnumProperty;
@@ -160,6 +162,7 @@ public class DataClassParser {
   public static final TypeName URI = ClassName.get("java.net", "URI");
   public static final TypeName PATTERN = TypeName.get(Pattern.class);
   public static final TypeName CLASS = TypeName.get(Class.class);
+  public static final TypeName CURRENCY = TypeName.get(Currency.class);
 
   private static final Set<TypeName> VALID_TYPES =
       ImmutableSet.of(STRING, MAP, LIST, SET, BOOLEAN_ARRAY, BYTE_ARRAY, INT_ARRAY, LONG_ARRAY,
@@ -168,7 +171,7 @@ public class DataClassParser {
           BOXED_INT, LONG, BOXED_LONG, BYTE, BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT,
           CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE, SHORT, BOXED_SHORT, TYPE_ADAPTER, DATE,
           BIG_INTEGER, BIG_DECIMAL, MATH_CONTEXT, UUID, FILE, STACK_TRACE_ELEMENT, URL, URI,
-          PATTERN, CLASS);
+          PATTERN, CLASS, CURRENCY);
 
   private static final Pattern KT_9609_BUG_NAME_FORMAT = Pattern.compile("arg(\\d+)");
 
@@ -803,6 +806,8 @@ public class DataClassParser {
       return new PatternProperty(isNullable, typeName, name);
     } else if (CLASS.equals(parcelableTypeName)) {
       return new ClassProperty(isNullable, typeName, name);
+    } else if (CURRENCY.equals(parcelableTypeName)) {
+      return new CurrencyProperty(isNullable, typeName, name);
     } else if (typeName instanceof ClassName && wrappers.containsKey(typeName)) {
       return new WrapperProperty(wrappers.get(typeName), isNullable, typeName, name);
     } else {
