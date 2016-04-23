@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -75,6 +76,7 @@ import nz.bradcampbell.paperparcel.model.properties.IBinderProperty;
 import nz.bradcampbell.paperparcel.model.properties.IntArrayProperty;
 import nz.bradcampbell.paperparcel.model.properties.IntProperty;
 import nz.bradcampbell.paperparcel.model.properties.ListProperty;
+import nz.bradcampbell.paperparcel.model.properties.LocaleProperty;
 import nz.bradcampbell.paperparcel.model.properties.LongArrayProperty;
 import nz.bradcampbell.paperparcel.model.properties.LongProperty;
 import nz.bradcampbell.paperparcel.model.properties.MapProperty;
@@ -166,6 +168,7 @@ public class DataClassParser {
   public static final TypeName CLASS = TypeName.get(Class.class);
   public static final TypeName CURRENCY = TypeName.get(Currency.class);
   public static final TypeName BIT_SET = TypeName.get(BitSet.class);
+  public static final TypeName LOCALE = TypeName.get(Locale.class);
 
   private static final Set<TypeName> VALID_TYPES =
       ImmutableSet.of(STRING, MAP, LIST, SET, BOOLEAN_ARRAY, BYTE_ARRAY, INT_ARRAY, LONG_ARRAY,
@@ -174,7 +177,7 @@ public class DataClassParser {
           BOXED_INT, LONG, BOXED_LONG, BYTE, BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT,
           CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE, SHORT, BOXED_SHORT, TYPE_ADAPTER, DATE,
           BIG_INTEGER, BIG_DECIMAL, MATH_CONTEXT, UUID, FILE, STACK_TRACE_ELEMENT, URL, URI,
-          PATTERN, CLASS, CURRENCY, BIT_SET);
+          PATTERN, CLASS, CURRENCY, BIT_SET, LOCALE);
 
   private static final Pattern KT_9609_BUG_NAME_FORMAT = Pattern.compile("arg(\\d+)");
 
@@ -813,6 +816,8 @@ public class DataClassParser {
       return new CurrencyProperty(isNullable, typeName, name);
     } else if (BIT_SET.equals(parcelableTypeName)) {
       return new BitSetProperty(isNullable, typeName, name);
+    } else if (LOCALE.equals(parcelableTypeName)) {
+      return new LocaleProperty(isNullable, typeName, name);
     } else if (typeName instanceof ClassName && wrappers.containsKey(typeName)) {
       return new WrapperProperty(wrappers.get(typeName), isNullable, typeName, name);
     } else {
