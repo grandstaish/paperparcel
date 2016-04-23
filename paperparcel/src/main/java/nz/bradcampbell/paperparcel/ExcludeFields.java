@@ -11,7 +11,7 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
  * An annotation for excluding certain fields from the parcelling/unparcelling process. Can
  * be applied to any class annotated with {@link PaperParcel}
  */
-@Documented @Retention(CLASS) @Target({ TYPE })
+@Documented @Retention(CLASS) @Target(TYPE)
 public @interface ExcludeFields {
   FieldMatcher[] value();
 }
