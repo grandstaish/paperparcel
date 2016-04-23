@@ -89,6 +89,9 @@ public class AnnotationUtils {
    * See http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=5089128
    */
   public static Map<String, Object> getAnnotation(Class<?> annotationType, Element element) {
+    if (element == null) {
+      return null;
+    }
     for (AnnotationMirror annotation : element.getAnnotationMirrors()) {
       if (!TypeUtils.rawTypeToString(annotation.getAnnotationType(), '$')
           .equals(annotationType.getName())) {

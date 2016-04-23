@@ -300,7 +300,7 @@ public class DataClassParser {
         Map<TypeName, Adapter> variableScopedTypeAdapters = new LinkedHashMap<>(typeAdapters);
         Map<String, Object> annotation = getAnnotation(TypeAdapters.class, fieldInfo.element);
         if (annotation == null) {
-          annotation = getAnnotation(TypeAdapters.class, fieldInfo.element);
+          annotation = getAnnotation(TypeAdapters.class, fieldInfo.getterMethod);
         }
         applyTypeAdapters(annotation, variableScopedTypeAdapters);
 
