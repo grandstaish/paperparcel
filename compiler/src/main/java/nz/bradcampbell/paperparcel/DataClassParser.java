@@ -81,6 +81,7 @@ import nz.bradcampbell.paperparcel.model.properties.SparseBooleanArrayProperty;
 import nz.bradcampbell.paperparcel.model.properties.StringArrayProperty;
 import nz.bradcampbell.paperparcel.model.properties.StringProperty;
 import nz.bradcampbell.paperparcel.model.properties.TypeAdapterProperty;
+import nz.bradcampbell.paperparcel.model.properties.UuidProperty;
 import nz.bradcampbell.paperparcel.model.properties.WrapperProperty;
 import nz.bradcampbell.paperparcel.utils.AnnotationUtils;
 import nz.bradcampbell.paperparcel.utils.StringUtils;
@@ -142,6 +143,7 @@ public class DataClassParser {
   public static final TypeName DATE = TypeName.get(Date.class);
   public static final TypeName BIG_INTEGER = TypeName.get(BigInteger.class);
   public static final TypeName BIG_DECIMAL = TypeName.get(BigDecimal.class);
+  public static final TypeName UUID = ClassName.get("java.util", "UUID");
 
   private static final Set<TypeName> VALID_TYPES =
       ImmutableSet.of(STRING, MAP, LIST, SET, BOOLEAN_ARRAY, BYTE_ARRAY, INT_ARRAY, LONG_ARRAY,
@@ -149,7 +151,7 @@ public class DataClassParser {
           CHAR_SEQUENCE, IBINDER, OBJECT_ARRAY, PERSISTABLE_BUNDLE, SIZE, SIZEF, ENUM, INT,
           BOXED_INT, LONG, BOXED_LONG, BYTE, BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT,
           CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE, SHORT, BOXED_SHORT, TYPE_ADAPTER, DATE,
-          BIG_INTEGER, BIG_DECIMAL);
+          BIG_INTEGER, BIG_DECIMAL, UUID);
 
   private static final Pattern KT_9609_BUG_NAME_FORMAT = Pattern.compile("arg(\\d+)");
 
@@ -768,6 +770,8 @@ public class DataClassParser {
       return new BigIntegerProperty(isNullable, typeName, name);
     } else if (BIG_DECIMAL.equals(parcelableTypeName)) {
       return new BigDecimalProperty(isNullable, typeName, name);
+    } else if (UUID.equals(parcelableTypeName)) {
+      return new UuidProperty(isNullable, typeName, name);
     } else if (typeName instanceof ClassName && wrappers.containsKey(typeName)) {
       return new WrapperProperty(wrappers.get(typeName), isNullable, typeName, name);
     } else {
