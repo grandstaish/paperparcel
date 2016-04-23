@@ -75,6 +75,7 @@ import nz.bradcampbell.paperparcel.model.properties.LongProperty;
 import nz.bradcampbell.paperparcel.model.properties.MapProperty;
 import nz.bradcampbell.paperparcel.model.properties.MathContextProperty;
 import nz.bradcampbell.paperparcel.model.properties.ParcelableProperty;
+import nz.bradcampbell.paperparcel.model.properties.PatternProperty;
 import nz.bradcampbell.paperparcel.model.properties.PersistableBundleProperty;
 import nz.bradcampbell.paperparcel.model.properties.SetProperty;
 import nz.bradcampbell.paperparcel.model.properties.ShortProperty;
@@ -156,6 +157,7 @@ public class DataClassParser {
   public static final TypeName STACK_TRACE_ELEMENT = TypeName.get(StackTraceElement.class);
   public static final TypeName URL = ClassName.get("java.net", "URL");
   public static final TypeName URI = ClassName.get("java.net", "URI");
+  public static final TypeName PATTERN = TypeName.get(Pattern.class);
 
   private static final Set<TypeName> VALID_TYPES =
       ImmutableSet.of(STRING, MAP, LIST, SET, BOOLEAN_ARRAY, BYTE_ARRAY, INT_ARRAY, LONG_ARRAY,
@@ -163,7 +165,8 @@ public class DataClassParser {
           CHAR_SEQUENCE, IBINDER, OBJECT_ARRAY, PERSISTABLE_BUNDLE, SIZE, SIZEF, ENUM, INT,
           BOXED_INT, LONG, BOXED_LONG, BYTE, BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT,
           CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE, SHORT, BOXED_SHORT, TYPE_ADAPTER, DATE,
-          BIG_INTEGER, BIG_DECIMAL, MATH_CONTEXT, UUID, FILE, STACK_TRACE_ELEMENT, URL, URI);
+          BIG_INTEGER, BIG_DECIMAL, MATH_CONTEXT, UUID, FILE, STACK_TRACE_ELEMENT, URL, URI,
+          PATTERN);
 
   private static final Pattern KT_9609_BUG_NAME_FORMAT = Pattern.compile("arg(\\d+)");
 
@@ -794,6 +797,8 @@ public class DataClassParser {
       return new UrlProperty(isNullable, typeName, name);
     } else if (URI.equals(parcelableTypeName)) {
       return new UriProperty(isNullable, typeName, name);
+    } else if (PATTERN.equals(parcelableTypeName)) {
+      return new PatternProperty(isNullable, typeName, name);
     } else if (typeName instanceof ClassName && wrappers.containsKey(typeName)) {
       return new WrapperProperty(wrappers.get(typeName), isNullable, typeName, name);
     } else {
