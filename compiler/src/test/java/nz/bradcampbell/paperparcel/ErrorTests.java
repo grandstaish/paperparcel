@@ -257,21 +257,27 @@ public class ErrorTests {
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
             "import nz.bradcampbell.paperparcel.PaperParcel;",
-            "import java.util.Date;",
             "import java.util.List;",
             "@PaperParcel",
             "public final class Test {",
-            "  public List<Date> child;",
+            "  public List<MyCustomType> child;",
             "}"
         ));
 
-    assertAbout(javaSource()).that(source)
+    JavaFileObject unknownType =
+        JavaFileObjects.forSourceString("test.MyCustomType", Joiner.on('\n').join(
+            "package test;",
+            "public final class MyCustomType {",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(source, unknownType))
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
         .withErrorContaining("PaperParcel does not know how to process test.Test because the "
-            + "child field is a java.util.List<java.util.Date> and java.util.Date is not a "
-            + "supported PaperParcel type. Define a TypeAdapter<java.util.Date> to add support "
-            + "for java.util.Date objects. Alternatively you can exclude the field by making it "
+            + "child field is a java.util.List<test.MyCustomType> and test.MyCustomType is not a "
+            + "supported PaperParcel type. Define a TypeAdapter<test.MyCustomType> to add support "
+            + "for test.MyCustomType objects. Alternatively you can exclude the field by making it "
             + "static, transient, or using the ExcludeFields annotation on test.Test");
   }
 
