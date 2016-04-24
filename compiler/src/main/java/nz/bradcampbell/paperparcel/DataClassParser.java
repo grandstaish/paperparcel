@@ -84,6 +84,7 @@ import nz.bradcampbell.paperparcel.model.properties.MathContextProperty;
 import nz.bradcampbell.paperparcel.model.properties.ParcelableProperty;
 import nz.bradcampbell.paperparcel.model.properties.PatternProperty;
 import nz.bradcampbell.paperparcel.model.properties.PersistableBundleProperty;
+import nz.bradcampbell.paperparcel.model.properties.QueueProperty;
 import nz.bradcampbell.paperparcel.model.properties.SetProperty;
 import nz.bradcampbell.paperparcel.model.properties.ShortProperty;
 import nz.bradcampbell.paperparcel.model.properties.SizeFProperty;
@@ -127,6 +128,7 @@ public class DataClassParser {
   public static final TypeName MAP = ClassName.get("java.util", "Map");
   public static final TypeName LIST = ClassName.get("java.util", "List");
   public static final TypeName SET = ClassName.get("java.util", "Set");
+  public static final TypeName QUEUE = ClassName.get("java.util", "Queue");
   public static final TypeName BOOLEAN_ARRAY = ArrayTypeName.of(boolean.class);
   public static final TypeName BYTE_ARRAY = ArrayTypeName.of(byte.class);
   public static final TypeName INT_ARRAY = ArrayTypeName.of(int.class);
@@ -177,7 +179,7 @@ public class DataClassParser {
           BOXED_INT, LONG, BOXED_LONG, BYTE, BOXED_BYTE, BOOLEAN, BOXED_BOOLEAN, FLOAT, BOXED_FLOAT,
           CHAR, BOXED_CHAR, DOUBLE, BOXED_DOUBLE, SHORT, BOXED_SHORT, TYPE_ADAPTER, DATE,
           BIG_INTEGER, BIG_DECIMAL, MATH_CONTEXT, UUID, FILE, STACK_TRACE_ELEMENT, URL, URI,
-          PATTERN, CLASS, CURRENCY, BIT_SET, LOCALE);
+          PATTERN, CLASS, CURRENCY, BIT_SET, LOCALE, QUEUE);
 
   private static final Pattern KT_9609_BUG_NAME_FORMAT = Pattern.compile("arg(\\d+)");
 
@@ -750,6 +752,12 @@ public class DataClassParser {
       Property typeArgument =
           parseProperty(typeArguments.get(0), dataClass, true, name + "Item", typeAdapterMap);
       return new SetProperty(typeArgument, isInterface, isNullable, typeName, name);
+    } else if (QUEUE.equals(parcelableTypeName)) {
+      boolean isInterface = TypeUtils.isInterface(typeUtil, erasedType);
+      List<? extends TypeMirror> typeArguments = ((DeclaredType) type).getTypeArguments();
+      Property typeArgument =
+          parseProperty(typeArguments.get(0), dataClass, true, name + "Item", typeAdapterMap);
+      return new QueueProperty(typeArgument, isInterface, isNullable, typeName, name);
     } else if (BOOLEAN_ARRAY.equals(parcelableTypeName)) {
       return new BooleanArrayProperty(isNullable, typeName, name);
     } else if (BYTE_ARRAY.equals(parcelableTypeName)) {

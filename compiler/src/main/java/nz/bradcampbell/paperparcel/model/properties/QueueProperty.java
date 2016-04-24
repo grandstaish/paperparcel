@@ -1,22 +1,22 @@
 package nz.bradcampbell.paperparcel.model.properties;
 
 import com.squareup.javapoet.TypeName;
-import java.util.LinkedHashSet;
-import java.util.Set;
+import java.util.LinkedList;
+import java.util.Queue;
 import nz.bradcampbell.paperparcel.model.Property;
 import nz.bradcampbell.paperparcel.model.properties.base.CollectionProperty;
 
-public class SetProperty extends CollectionProperty<Set> {
+public class QueueProperty extends CollectionProperty<Queue> {
   private final boolean isInterface;
 
-  public SetProperty(Property typeArgument, boolean isInterface, boolean isNullable,
+  public QueueProperty(Property typeArgument, boolean isInterface, boolean isNullable,
       TypeName typeName, String name) {
     super(typeArgument, isNullable, typeName, name);
     this.isInterface = isInterface;
   }
 
-  @Override public Class<? extends Set> getDefaultType() {
-    return LinkedHashSet.class;
+  @Override public Class<? extends Queue> getDefaultType() {
+    return LinkedList.class;
   }
 
   @Override public boolean isDefaultType() {
@@ -24,6 +24,6 @@ public class SetProperty extends CollectionProperty<Set> {
   }
 
   @Override public boolean defaultTypeHasDefaultCapacityConstructor() {
-    return true;
+    return false;
   }
 }
