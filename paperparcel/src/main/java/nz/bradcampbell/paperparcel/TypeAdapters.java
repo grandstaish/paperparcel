@@ -1,13 +1,13 @@
 package nz.bradcampbell.paperparcel;
 
-import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.SOURCE;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.CLASS;
 
 /**
  * Scope custom type adapters directly to variables or classes. You can apply as many type adapters as you want
@@ -17,7 +17,7 @@ import java.lang.annotation.Target;
  * {@link DefaultAdapter}). Additionally, variable-scoped adapters will take precedence over class-scoped adapters.
  */
 @Documented
-@Retention(SOURCE)
+@Retention(CLASS)
 @Target({ FIELD, METHOD, TYPE })
 public @interface TypeAdapters {
   Class<? extends TypeAdapter<?>>[] value() default {};

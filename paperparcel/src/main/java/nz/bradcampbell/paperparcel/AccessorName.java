@@ -1,11 +1,11 @@
 package nz.bradcampbell.paperparcel;
 
-import static java.lang.annotation.ElementType.FIELD;
-import static java.lang.annotation.RetentionPolicy.SOURCE;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.RetentionPolicy.CLASS;
 
 /**
  * Annotate a property to specify what the exact name of the getter method is. By default, if "x" is the property name,
@@ -18,7 +18,7 @@ import java.lang.annotation.Target;
  * </code></pre>
  */
 @Documented
-@Retention(SOURCE)
+@Retention(CLASS)
 @Target(FIELD)
 public @interface AccessorName {
   String value();

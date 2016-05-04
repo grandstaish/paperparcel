@@ -1,11 +1,11 @@
 package nz.bradcampbell.paperparcel;
 
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.SOURCE;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.CLASS;
 
 /**
  * Annotate any {@link TypeAdapter} with this annotation to set the default method for parcelling/unparcelling an
@@ -15,7 +15,7 @@ import java.lang.annotation.Target;
  * take precedence over any TypeAdapters annotated with this annotation.
  */
 @Documented
-@Retention(SOURCE)
+@Retention(CLASS)
 @Target(TYPE)
 public @interface DefaultAdapter {
 }

@@ -1,13 +1,12 @@
 package nz.bradcampbell.paperparcel;
 
-import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.SOURCE;
-
 import android.os.Parcelable;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.TYPE;
+import static java.lang.annotation.RetentionPolicy.CLASS;
 
 /**
  * Can be applied to an BEAN-formatted object to automatically generate a "wrapper" class which
@@ -22,7 +21,7 @@ import java.lang.annotation.Target;
  * @see android.os.Parcelable
  */
 @Documented
-@Retention(SOURCE)
+@Retention(CLASS)
 @Target(TYPE)
 public @interface PaperParcel {
 }
