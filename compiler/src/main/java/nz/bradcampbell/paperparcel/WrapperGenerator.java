@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import javax.lang.model.element.Modifier;
-import nz.bradcampbell.paperparcel.internal.ParcelableWrapper;
 import nz.bradcampbell.paperparcel.model.Adapter;
 import nz.bradcampbell.paperparcel.model.DataClass;
 import nz.bradcampbell.paperparcel.model.Property;
@@ -38,7 +37,7 @@ import static nz.bradcampbell.paperparcel.utils.StringUtils.uncapitalizeFirstCha
 public class WrapperGenerator {
   private static final ClassName PARCEL = ClassName.get("android.os", "Parcel");
   private static final ClassName PARCELABLE_WRAPPER = ClassName.get(
-      ParcelableWrapper.class);
+      "nz.bradcampbell.paperparcel.internal", "ParcelableWrapper");
 
   public JavaFile generateParcelableWrapper(DataClass dataClass) throws IOException {
     TypeSpec.Builder wrapperBuilder =
