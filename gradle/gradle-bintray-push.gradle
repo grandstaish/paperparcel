@@ -4,25 +4,35 @@ apply plugin: 'com.github.dcendents.android-maven'
 version = VERSION_NAME
 group = GROUP
 
-Properties properties = new Properties()
-properties.load(project.rootProject.file('local.properties').newDataInputStream())
+def getRepositoryUsername() {
+  return hasProperty('BINTRAY_USER') ? BINTRAY_USER : ""
+}
+
+def getRepositoryApiKey() {
+  return hasProperty('BINTRAY_API_KEY') ? BINTRAY_API_KEY : ""
+}
+
+def getRepositoryPassword() {
+  return hasProperty('BINTRAY_GPG_PASSWORD') ? BINTRAY_GPG_PASSWORD : ""
+}
 
 bintray {
-  user = properties.getProperty("bintray.user")
-  key = properties.getProperty("bintray.apikey")
+  user = getRepositoryUsername()
+  key = getRepositoryApiKey()
   configurations = ['archives']
   pkg {
     repo = 'maven'
     name = 'paperparcel'
     desc = POM_DESCRIPTION
     websiteUrl = POM_URL
+    vcsUrl = VCS_URL
     publish = true
     publicDownloadNumbers = true
     version {
       desc = POM_DESCRIPTION
       gpg {
         sign = true
-        passphrase = properties.getProperty("bintray.gpg.password")
+        passphrase = getRepositoryPassword()
       }
     }
   }
