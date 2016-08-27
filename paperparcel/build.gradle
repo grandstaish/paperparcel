@@ -24,3 +24,5 @@ dependencies {
   testCompile deps.truth
   testCompile deps.robolectric
 }
+
+apply from: rootProject.file('gradle/gradle-bintray-push.gradle')

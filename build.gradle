@@ -1,3 +1,8 @@
+subprojects { project ->
+  group = GROUP
+  version = VERSION_NAME
+}
+
 ext.kotlin_version = '1.0.4-eap-100'
 
 allprojects {
@@ -20,6 +25,8 @@ allprojects {
       classpath 'net.ltgt.gradle:gradle-apt-plugin:0.8'
       classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
       classpath "io.realm:realm-gradle-plugin:1.2.0"
+      classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7'
+      classpath 'com.github.dcendents:android-maven-gradle-plugin:1.4.1'
     }
   }
 
