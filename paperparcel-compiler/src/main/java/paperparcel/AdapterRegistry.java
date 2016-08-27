@@ -53,6 +53,7 @@ final class AdapterRegistry {
           "paperparcel.adapter.DequeAdapter",
           "paperparcel.adapter.DoubleAdapter",
           "paperparcel.adapter.DoubleArrayAdapter",
+          "paperparcel.adapter.EnumAdapter",
           "paperparcel.adapter.FloatAdapter",
           "paperparcel.adapter.FloatArrayAdapter",
           "paperparcel.adapter.HashMapAdapter",

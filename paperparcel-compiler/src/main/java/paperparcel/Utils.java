@@ -165,10 +165,17 @@ final class Utils {
    */
   static TypeMirror getParcelableType(Elements elements, Types types, TypeMirror type) {
     TypeMirror parcelableType = elements.getTypeElement(PARCELABLE_CLASS_NAME).asType();
-    if (!types.isAssignable(type, parcelableType)) {
-      return types.erasure(type);
+
+    if (types.isAssignable(type, parcelableType)) {
+      return parcelableType;
     }
-    return parcelableType;
+
+    TypeMirror enumType = types.erasure(elements.getTypeElement(Enum.class.getName()).asType());
+    if (types.isAssignable(type, enumType)) {
+      return enumType;
+    }
+
+    return types.erasure(type);
   }
 
   private Utils() {}
