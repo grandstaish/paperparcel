@@ -1,60 +1,45 @@
 apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-kapt'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+  compileSdkVersion rootProject.ext.compileSdkVersion
+  buildToolsVersion rootProject.ext.buildToolsVersion
 
-    defaultConfig {
-        applicationId "nz.bradcampbell.paperparcel.kotlinexample"
-        minSdkVersion 16
-        targetSdkVersion 23
-        versionCode 1
-        versionName "1.0"
-    }
+  defaultConfig {
+    applicationId "nz.bradcampbell.kotlinexample"
+    minSdkVersion rootProject.ext.minSdkVersion
+    targetSdkVersion rootProject.ext.targetSdkVersion
+    versionCode 1
+    versionName "1.0"
+  }
 
-    sourceSets {
-        main.java.srcDirs += 'src/main/kotlin'
-        test.java.srcDirs += 'src/test/kotlin'
-    }
+  sourceSets {
+    main.java.srcDirs += 'src/main/kotlin'
+    test.java.srcDirs += 'src/test/kotlin'
+  }
 
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_7
-        targetCompatibility JavaVersion.VERSION_1_7
-    }
-
-    lintOptions {
-        abortOnError false
-    }
-}
-
-kapt {
-    generateStubs = true
+  compileOptions {
+    sourceCompatibility rootProject.ext.sourceCompatibilityVersion
+    targetCompatibility rootProject.ext.targetCompatibilityVersion
+  }
 }
 
 dependencies {
-    compile deps.appCompat 
-    compile deps.design
+  compile deps.appCompat
+  compile deps.design
 
-    compile project(':paperparcel')
-    compile project(':paperparcel-kotlin')
-    kapt project(':compiler')
+  compile project(':paperparcel')
+  kapt project(':paperparcel-compiler')
 
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version" 
+  compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
-    testCompile deps.junit
-    testCompile deps.compiletesting
-}
-
-buildscript {
-    dependencies {
-        classpath 'com.android.tools.build:gradle:2.0.0'
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-    }
+  testCompile deps.junit
+  testCompile deps.compiletesting
 }
 
 tasks.withType(Test) {
-    testLogging {
-        events "passed", "skipped", "failed"
-    }
+  testLogging {
+    events "passed", "skipped", "failed"
+  }
 }

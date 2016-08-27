@@ -5,12 +5,18 @@ jdk:
   
 android:
   components:
-    - platform-tools
     - tools
-    - android-23
-    - build-tools-23.0.2
+    - platform-tools
+    - build-tools-24.0.1
+    - android-24
     - extra-android-m2repository
 
 sudo: false
 
-script: ./gradlew test
+before_cache:
+  - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
+
+cache:
+  directories:
+    - $HOME/.gradle/caches/
+    - $HOME/.gradle/wrapper/

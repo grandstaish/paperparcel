@@ -1,51 +1,38 @@
 apply plugin: 'com.android.application'
-apply plugin: 'com.neenbedankt.android-apt'
+apply plugin: 'android-apt'
 
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+  compileSdkVersion rootProject.ext.compileSdkVersion
+  buildToolsVersion rootProject.ext.buildToolsVersion
 
-    defaultConfig {
-        applicationId "nz.bradcampbell.paperparcel.java7example"
-        minSdkVersion 16
-        targetSdkVersion 23
-        versionCode 1
-        versionName "1.0"
-    }
+  defaultConfig {
+    applicationId "nz.bradcampbell.java7example"
+    minSdkVersion rootProject.ext.minSdkVersion
+    targetSdkVersion rootProject.ext.targetSdkVersion
+    versionCode 1
+    versionName "1.0"
+  }
 
-    compileOptions {
-        sourceCompatibility JavaVersion.VERSION_1_7
-        targetCompatibility JavaVersion.VERSION_1_7
-    }
-
-    lintOptions {
-        abortOnError false
-    }
+  compileOptions {
+    sourceCompatibility rootProject.ext.sourceCompatibilityVersion
+    targetCompatibility rootProject.ext.targetCompatibilityVersion
+  }
 }
 
 dependencies {
-    compile deps.intellijAnnotations
+  compile deps.supportAnnotations
+  compile deps.appCompat
+  compile deps.design
 
-    compile deps.appCompat 
-    compile deps.design 
+  compile project(':paperparcel')
+  apt project(':paperparcel-compiler')
 
-    compile project(':paperparcel')
-    compile project(':paperparcel-java7')
-    apt project(':compiler')
-
-    testCompile deps.junit
-    testCompile deps.compiletesting
-}
-
-buildscript {
-    dependencies {
-        classpath 'com.android.tools.build:gradle:2.0.0'
-        classpath 'com.neenbedankt.gradle.plugins:android-apt:1.4'
-    }
+  testCompile deps.junit
+  testCompile deps.compiletesting
 }
 
 tasks.withType(Test) {
-    testLogging {
-        events "passed", "skipped", "failed"
-    }
+  testLogging {
+    events "passed", "skipped", "failed"
+  }
 }

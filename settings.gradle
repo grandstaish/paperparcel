@@ -1,14 +1,13 @@
-include ':compiler'
-
 include ':paperparcel'
-include ':paperparcel-kotlin'
-include ':paperparcel-java7'
-include ':paperparcel-java8'
+include ':paperparcel-annotations'
+include ':paperparcel-compiler'
 
 include ':kotlin-example'
 include ':java7-example'
 include ':autovalue-example'
+include ':realm-example'
 
 project(':kotlin-example').projectDir = new File("examples/kotlin-example")
 project(':java7-example').projectDir = new File("examples/java7-example")
 project(':autovalue-example').projectDir = new File("examples/autovalue-example")
+project(':realm-example').projectDir = new File("examples/realm-example")

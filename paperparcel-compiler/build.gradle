@@ -1,0 +1,40 @@
+apply plugin: 'java'
+apply plugin: 'net.ltgt.apt'
+apply plugin: 'idea'
+apply plugin: 'nebula.provided-base'
+
+sourceCompatibility = rootProject.ext.sourceCompatibilityVersion
+targetCompatibility = rootProject.ext.targetCompatibilityVersion
+
+task fatJar(type: Jar) {
+  baseName = project.name + '-all'
+  from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+  with jar
+}
+
+test {
+  testLogging {
+    events "passed", "skipped", "failed", "standardOut", "standardError"
+  }
+}
+
+dependencies {
+  compile project(':paperparcel-annotations')
+
+  compile deps.autovalue
+  compile deps.autoservice
+  compile deps.autocommon
+  compile deps.javapoet
+
+  testCompile files('libs/android.jar')
+  testCompile deps.junit
+  testCompile deps.truth
+  testCompile deps.compiletesting
+  testCompile files(org.gradle.internal.jvm.Jvm.current().getToolsJar())
+}
+
+tasks.withType(Test) {
+  testLogging {
+    events "passed", "skipped", "failed"
+  }
+}

@@ -1,60 +1,85 @@
+ext.kotlin_version = '1.0.4-eap-100'
+
 allprojects {
+  repositories {
+    jcenter()
+    maven { url "https://dl.bintray.com/kotlin/kotlin-eap" }
+  }
+
+  buildscript {
     repositories {
-        mavenCentral()
-        jcenter()
+      jcenter()
+      maven { url "https://plugins.gradle.org/m2/" }
+      maven { url "https://dl.bintray.com/kotlin/kotlin-eap" }
     }
 
-    buildscript {
-        repositories {
-            mavenCentral()
-            jcenter()
-        }
+    dependencies {
+      classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+      classpath 'com.android.tools.build:gradle:2.2.0-beta3'
+      classpath 'com.netflix.nebula:gradle-extra-configurations-plugin:3.0.3'
+      classpath 'net.ltgt.gradle:gradle-apt-plugin:0.8'
+      classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
+      classpath "io.realm:realm-gradle-plugin:1.2.0"
     }
+  }
 
-    /**
-     * Prevents sporadic compilation error: 'Bad service configuration file, or exception thrown while constructing
-     * Processor object: javax.annotation.processing.Processor: Error reading configuration file'
-     *
-     * See https://discuss.gradle.org/t/gradle-not-compiles-with-solder-tooling-jar/7583/20
-     */
-    tasks.withType(JavaCompile) { options.fork = true }
+  /**
+   * Prevents sporadic compilation error: 'Bad service configuration file, or exception thrown while constructing
+   * Processor object: javax.annotation.processing.Processor: Error reading configuration file'
+   *
+   * See https://discuss.gradle.org/t/gradle-not-compiles-with-solder-tooling-jar/7583/20*/
+  tasks.withType(JavaCompile) { options.fork = true }
+}
+
+subprojects {
+  tasks.withType(Javadoc).all { enabled = false }
+}
+
+ext {
+  minSdkVersion = 9
+  targetSdkVersion = 24
+  compileSdkVersion = 24
+  buildToolsVersion = '24.0.1'
+  sourceCompatibilityVersion = JavaVersion.VERSION_1_7
+  targetCompatibilityVersion = JavaVersion.VERSION_1_7
 }
 
 // Skip pre-dexing when running on Travis CI or when disabled via -Dpre-dex=false.
 project.ext.isCi = "true".equals(System.getenv("CI"))
 project.ext.preDexEnabled = "true".equals(System.getProperty("pre-dex", "true"))
 project.plugins.whenPluginAdded { plugin ->
-    if ("com.android.build.gradle.AppPlugin".equals(plugin.class.name)) {
-        project.android.dexOptions.preDexLibraries = rootProject.ext.preDexEnabled && !rootProject.ext.isCi
-    } else if ("com.android.build.gradle.LibraryPlugin".equals(plugin.class.name)) {
-        project.android.dexOptions.preDexLibraries = rootProject.ext.preDexEnabled && !rootProject.ext.isCi
-    }
+  if ("com.android.build.gradle.AppPlugin".equals(plugin.class.name)) {
+    project.android.dexOptions.preDexLibraries =
+        rootProject.ext.preDexEnabled && !rootProject.ext.isCi
+  } else if ("com.android.build.gradle.LibraryPlugin".equals(plugin.class.name)) {
+    project.android.dexOptions.preDexLibraries =
+        rootProject.ext.preDexEnabled && !rootProject.ext.isCi
+  }
 }
 
-ext.kotlin_version = '1.0.1-2'
+def androidSupportVersion = '24.1.0'
 
 ext.deps = [
-    // Intellij
-    intellijAnnotations: 'com.intellij:annotations:+@jar',
-
     // Android
-    appCompat: 'com.android.support:appcompat-v7:23.1.1',
-    design: 'com.android.support:design:23.1.1',
+    supportAnnotations : "com.android.support:support-annotations:$androidSupportVersion",
+    appCompat          : "com.android.support:appcompat-v7:$androidSupportVersion",
+    design             : "com.android.support:design:$androidSupportVersion",
 
     // Square
-    javapoet: 'com.squareup:javapoet:1.6.1',
+    javapoet           : 'com.squareup:javapoet:1.7.0',
 
     // Auto
-    autovalue: 'com.google.auto.value:auto-value:1.2',
-    autocommon: 'com.google.auto:auto-common:0.6',
-    autoservice: 'com.google.auto.service:auto-service:1.0-rc2',
+    autovalue          : 'com.google.auto.value:auto-value:1.2',
+    autocommon         : 'com.google.auto:auto-common:0.6',
+    autoservice        : 'com.google.auto.service:auto-service:1.0-rc2',
 
     // Test dependencies
-    junit: 'junit:junit:4.12',
-    truth: 'com.google.truth:truth:0.27',
-    compiletesting: 'com.google.testing.compile:compile-testing:0.7'
+    junit              : 'junit:junit:4.12',
+    truth              : 'com.google.truth:truth:0.28',
+    robolectric        : 'org.robolectric:robolectric:3.1.2',
+    compiletesting     : 'com.google.testing.compile:compile-testing:0.7'
 ]
 
 task clean(type: Delete) {
-    delete rootProject.buildDir
+  delete rootProject.buildDir
 }

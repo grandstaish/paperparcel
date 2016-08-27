@@ -1,0 +1,29 @@
+apply plugin: 'com.android.application'
+apply plugin: 'realm-android'
+apply plugin: 'com.neenbedankt.android-apt'
+
+android {
+  compileSdkVersion rootProject.ext.compileSdkVersion
+  buildToolsVersion rootProject.ext.buildToolsVersion
+
+  defaultConfig {
+    applicationId "nz.bradcampbell.realmexample"
+    minSdkVersion 11
+    targetSdkVersion rootProject.ext.targetSdkVersion
+    versionCode 1
+    versionName "1.0"
+  }
+
+  compileOptions {
+    sourceCompatibility rootProject.ext.sourceCompatibilityVersion
+    targetCompatibility rootProject.ext.targetCompatibilityVersion
+  }
+}
+
+dependencies {
+  compile deps.supportAnnotations
+  compile deps.appCompat
+
+  compile project(':paperparcel')
+  apt project(':paperparcel-compiler')
+}
