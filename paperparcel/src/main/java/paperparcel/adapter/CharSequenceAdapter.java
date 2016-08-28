@@ -19,7 +19,9 @@ package paperparcel.adapter;
 import android.os.Parcel;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
+import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link CharSequence} types */
 public final class CharSequenceAdapter extends AbstractAdapter<CharSequence> {
   public static final CharSequenceAdapter INSTANCE = new CharSequenceAdapter();
 

@@ -21,7 +21,9 @@ import android.os.Build;
 import android.os.Parcel;
 import android.support.annotation.NonNull;
 import android.util.SizeF;
+import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link SizeF} types */
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 public final class SizeFAdapter extends AbstractAdapter<SizeF> {
   public static final SizeFAdapter INSTANCE = new SizeFAdapter();

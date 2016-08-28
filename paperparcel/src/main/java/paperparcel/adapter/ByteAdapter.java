@@ -18,7 +18,9 @@ package paperparcel.adapter;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
+import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link Byte} types */
 public final class ByteAdapter extends AbstractAdapter<Byte> {
   public static final ByteAdapter INSTANCE = new ByteAdapter();
 

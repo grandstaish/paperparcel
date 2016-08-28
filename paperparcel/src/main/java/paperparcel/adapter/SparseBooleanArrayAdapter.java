@@ -19,7 +19,9 @@ package paperparcel.adapter;
 import android.os.Parcel;
 import android.support.annotation.NonNull;
 import android.util.SparseBooleanArray;
+import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link SparseBooleanArray} types */
 public final class SparseBooleanArrayAdapter extends AbstractAdapter<SparseBooleanArray> {
   public static final SparseBooleanArrayAdapter INSTANCE = new SparseBooleanArrayAdapter();
 

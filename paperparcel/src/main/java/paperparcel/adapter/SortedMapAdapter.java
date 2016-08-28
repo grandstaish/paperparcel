@@ -20,6 +20,11 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import paperparcel.TypeAdapter;
 
+/**
+ * Default {@link TypeAdapter} for {@link SortedMap} types
+ *
+ * <p>The {@link SortedMap} used by default is {@link TreeMap}
+ */
 public final class SortedMapAdapter<K, V> extends AbstractMutableMapAdapter<SortedMap<K, V>, K, V> {
   public SortedMapAdapter(TypeAdapter<K> keyAdapter, TypeAdapter<V> valueAdapter) {
     super(keyAdapter, valueAdapter);

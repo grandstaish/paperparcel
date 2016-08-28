@@ -21,6 +21,7 @@ import android.support.annotation.NonNull;
 import android.util.SparseArray;
 import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link SparseArray} types */
 public final class SparseArrayAdapter<T> extends AbstractAdapter<SparseArray<T>> {
   private final TypeAdapter<T> itemAdapter;
 

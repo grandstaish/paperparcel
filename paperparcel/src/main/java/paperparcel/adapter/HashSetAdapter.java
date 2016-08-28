@@ -19,6 +19,7 @@ package paperparcel.adapter;
 import java.util.HashSet;
 import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link HashSet} types */
 public final class HashSetAdapter<T> extends AbstractMutableCollectionAdapter<HashSet<T>, T> {
   public HashSetAdapter(TypeAdapter<T> itemAdapter) {
     super(itemAdapter);

@@ -18,7 +18,9 @@ package paperparcel.adapter;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
+import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link Double} types */
 public final class DoubleAdapter extends AbstractAdapter<Double> {
   public static final DoubleAdapter INSTANCE = new DoubleAdapter();
 

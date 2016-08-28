@@ -23,6 +23,7 @@ import android.support.annotation.NonNull;
 import android.util.LongSparseArray;
 import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link LongSparseArray} types */
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 public final class LongSparseArrayAdapter<T> extends AbstractAdapter<LongSparseArray<T>> {
   private final TypeAdapter<T> itemAdapter;

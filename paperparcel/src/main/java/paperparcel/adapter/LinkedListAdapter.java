@@ -19,6 +19,7 @@ package paperparcel.adapter;
 import java.util.LinkedList;
 import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link LinkedList} types */
 public final class LinkedListAdapter<T> extends AbstractMutableCollectionAdapter<LinkedList<T>, T> {
   public LinkedListAdapter(TypeAdapter<T> itemAdapter) {
     super(itemAdapter);

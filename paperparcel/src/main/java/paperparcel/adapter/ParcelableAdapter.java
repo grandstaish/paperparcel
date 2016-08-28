@@ -19,7 +19,9 @@ package paperparcel.adapter;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
+import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link Parcelable} types */
 public final class ParcelableAdapter<T extends Parcelable> extends AbstractAdapter<T> {
   @NonNull @Override protected T read(@NonNull Parcel source) {
     return source.readParcelable(ParcelableAdapter.class.getClassLoader());

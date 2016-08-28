@@ -21,6 +21,7 @@ import android.os.Build;
 import android.util.ArraySet;
 import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link ArraySet} types */
 @TargetApi(Build.VERSION_CODES.M)
 public final class ArraySetAdapter<T> extends AbstractMutableCollectionAdapter<ArraySet<T>, T> {
   public ArraySetAdapter(TypeAdapter<T> itemAdapter) {

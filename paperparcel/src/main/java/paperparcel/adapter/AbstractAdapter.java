@@ -21,6 +21,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import paperparcel.TypeAdapter;
 
+/** Convenience base class for {@link TypeAdapter}s that handles null-checking */
 public abstract class AbstractAdapter<T> implements TypeAdapter<T> {
   @Nullable @Override public final T readFromParcel(@NonNull Parcel source) {
     T value = null;
