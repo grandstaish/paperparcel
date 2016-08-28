@@ -18,7 +18,9 @@ package paperparcel.adapter;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
+import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link Float} types */
 public final class FloatAdapter extends AbstractAdapter<Float> {
   public static final FloatAdapter INSTANCE = new FloatAdapter();
 

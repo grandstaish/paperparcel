@@ -18,7 +18,9 @@ package paperparcel.adapter;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
+import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@code int[]} types */
 public final class IntArrayAdapter extends AbstractAdapter<int[]> {
   public static final IntArrayAdapter INSTANCE = new IntArrayAdapter();
 

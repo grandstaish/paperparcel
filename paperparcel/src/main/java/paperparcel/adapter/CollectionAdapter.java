@@ -20,6 +20,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import paperparcel.TypeAdapter;
 
+/**
+ * Default {@link TypeAdapter} for {@link Collection} types.
+ *
+ * <p>The {@link Collection} used by default is {@link ArrayList}
+ */
 public final class CollectionAdapter<T> extends AbstractMutableCollectionAdapter<Collection<T>, T> {
   public CollectionAdapter(TypeAdapter<T> itemAdapter) {
     super(itemAdapter);

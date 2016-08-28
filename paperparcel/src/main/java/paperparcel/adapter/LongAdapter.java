@@ -18,7 +18,9 @@ package paperparcel.adapter;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
+import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link Long} types */
 public final class LongAdapter extends AbstractAdapter<Long> {
   public static final LongAdapter INSTANCE = new LongAdapter();
 

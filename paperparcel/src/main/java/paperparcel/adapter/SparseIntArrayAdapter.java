@@ -19,7 +19,9 @@ package paperparcel.adapter;
 import android.os.Parcel;
 import android.support.annotation.NonNull;
 import android.util.SparseIntArray;
+import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link SparseIntArray} types */
 public final class SparseIntArrayAdapter extends AbstractAdapter<SparseIntArray> {
   public static final SparseIntArrayAdapter INSTANCE = new SparseIntArrayAdapter();
 

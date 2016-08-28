@@ -21,6 +21,7 @@ import android.os.Build;
 import android.util.ArrayMap;
 import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link ArrayMap} types */
 @TargetApi(Build.VERSION_CODES.KITKAT)
 public final class ArrayMapAdapter<K, V> extends AbstractMutableMapAdapter<ArrayMap<K, V>, K, V> {
   public ArrayMapAdapter(TypeAdapter<K> keyAdapter, TypeAdapter<V> valueAdapter) {

@@ -20,6 +20,11 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import paperparcel.TypeAdapter;
 
+/**
+ * Default {@link TypeAdapter} for {@link SortedSet} types
+ *
+ * <p>The {@link SortedSet} used by default is {@link TreeSet}
+ */
 public final class SortedSetAdapter<T> extends AbstractMutableCollectionAdapter<SortedSet<T>, T> {
   public SortedSetAdapter(TypeAdapter<T> itemAdapter) {
     super(itemAdapter);

@@ -20,6 +20,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import paperparcel.TypeAdapter;
 
+/**
+ * Default {@link TypeAdapter} for {@link Map} types
+ *
+ * <p>The {@link Map} used by default is {@link LinkedHashMap}
+ */
 public final class MapAdapter<K, V> extends AbstractMutableMapAdapter<Map<K, V>, K, V> {
   public MapAdapter(TypeAdapter<K> keyAdapter, TypeAdapter<V> valueAdapter) {
     super(keyAdapter, valueAdapter);

@@ -19,7 +19,9 @@ package paperparcel.adapter;
 import android.os.Parcel;
 import android.support.annotation.NonNull;
 import java.math.BigDecimal;
+import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link BigDecimal} types */
 public final class BigDecimalAdapter extends AbstractAdapter<BigDecimal> {
   public static final BigDecimalAdapter INSTANCE = new BigDecimalAdapter();
 

@@ -18,7 +18,9 @@ package paperparcel.adapter;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
+import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link Boolean} types */
 public final class BooleanAdapter extends AbstractAdapter<Boolean> {
   public static final BooleanAdapter INSTANCE = new BooleanAdapter();
 

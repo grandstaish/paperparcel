@@ -19,6 +19,7 @@ package paperparcel.adapter;
 import java.util.ArrayDeque;
 import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link ArrayDeque} types */
 public final class ArrayDequeAdapter<T> extends AbstractMutableCollectionAdapter<ArrayDeque<T>, T> {
   public ArrayDequeAdapter(TypeAdapter<T> itemAdapter) {
     super(itemAdapter);

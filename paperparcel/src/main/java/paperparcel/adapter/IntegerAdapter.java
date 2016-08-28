@@ -18,7 +18,9 @@ package paperparcel.adapter;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
+import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link Integer} types */
 public final class IntegerAdapter extends AbstractAdapter<Integer> {
   public static final IntegerAdapter INSTANCE = new IntegerAdapter();
 

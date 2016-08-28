@@ -19,6 +19,7 @@ package paperparcel.adapter;
 import java.util.LinkedHashSet;
 import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link LinkedHashSet} types */
 public final class LinkedHashSetAdapter<T> extends
     AbstractMutableCollectionAdapter<LinkedHashSet<T>, T> {
   public LinkedHashSetAdapter(TypeAdapter<T> itemAdapter) {

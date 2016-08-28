@@ -19,6 +19,7 @@ package paperparcel.adapter;
 import java.util.LinkedHashMap;
 import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link LinkedHashMap} types */
 public final class LinkedHashMapAdapter<K, V> extends
     AbstractMutableMapAdapter<LinkedHashMap<K, V>, K, V> {
   public LinkedHashMapAdapter(TypeAdapter<K> keyAdapter, TypeAdapter<V> valueAdapter) {

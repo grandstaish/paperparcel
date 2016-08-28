@@ -16,12 +16,48 @@
 
 package paperparcel;
 
+import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.CLASS;
 
+/**
+ * Annotates {@code Parcelable} classes to automatically generate the {@code Parcelable.Creator}
+ * and {@code writeToParcel} boilerplate code that is required as a part of the {@code Parcelable}
+ * contract. The generated code will be contained in a class with the name of the type annotated
+ * with {@code @PaperParcel} prepended with {@code PaperParcel}. For example,
+ * {@code @PaperParcel class MyModel {...}} will produce a class named {@code PaperParcelMyModel}.
+ * {@code PaperParcelMyModel} will have a static field named {@code CREATOR} which can be added to
+ * your model class. Finally, {@code PaperParcelMyModel} will include a static method named
+ * {@code writeToParcel} which you can call from {@code MyModel#writeToParcel}.
+ *
+ * For example: <pre><code>
+ *   {@literal @}PaperParcel
+ *   class User {
+ *     public static final {@literal Parcelable.Creator<User>} CREATOR = PaperParcelUser.CREATOR;
+ *
+ *     long id;
+ *     String firstName;
+ *     String lastName;
+ *
+ *     {@literal @}Override
+ *     public void writeToParcel(Parcel dest, int flags) {
+ *       PaperParcelUser.writeToParcel(this, dest, flags);
+ *     }
+ *
+ *     {@literal @}Override
+ *     public int describeContents() {
+ *       return 0;
+ *     }
+ *   }
+ * </code></pre>
+ *
+ * <p>This annotation must be applied to a top-level class. It can't be applied to a base class,
+ * an interface, or an abstract class.
+ */
+@Documented
 @Retention(CLASS)
 @Target(TYPE)
 public @interface PaperParcel {
