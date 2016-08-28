@@ -24,7 +24,7 @@ import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.CLASS;
 
 /**
- * Annotate TypeAdapter classes with this to register them in PaperParcel's type system.
+ * Annotate {@code TypeAdapter} classes with this to register them in PaperParcel's type system.
  *
  * <p>This annotation must be applied to the top-level adapter class. It can't be applied to a base
  * class, an interface, or an abstract class.

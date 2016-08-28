@@ -25,11 +25,12 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
 
 /**
  * Can be applied to any field in a {@link PaperParcel}-annotated class to tell the compiler
- * to ignore that field when generating the Parcelable.Creator and writeToParcel implementations.
+ * to ignore that field when generating the {@code Parcelable.Creator} and {@code writeToParcel}
+ * implementations.
  *
  * <p>This cannot be applied to anything that is required to construct the
  * {@link PaperParcel}-annotated class, otherwise PaperParcel will not know how to re-construct
- * your object.
+ * your object in the generated {@code Parcelable.Creator} implementation.
  *
  * <p>Note that any data associated with the excluded field will be lost when parcelled.
  */
