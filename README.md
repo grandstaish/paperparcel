@@ -26,7 +26,7 @@ public class User implements Parcelable { // (2)
   }
 
   @Override public void writeToParcel(Parcel dest, int flags) {
-    PaperParcelEmail.writeToParcel(this, dest, flags); // (5)
+    PaperParcelUser.writeToParcel(this, dest, flags); // (5)
   }
 }
 ```
@@ -96,6 +96,7 @@ public final class IntegerAdapter extends AbstractAdapter<Integer> {
   @NonNull @Override protected Integer read(@NonNull Parcel source) {
     return source.readInt();
   }
+  
   @Override protected void write(@NonNull Integer value, @NonNull Parcel dest, int flags) {
     dest.writeInt(value);
   }
