@@ -31,9 +31,9 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
  * {@code @PaperParcel class MyModel {...}} will produce a class named {@code PaperParcelMyModel}.
  * {@code PaperParcelMyModel} will have a static field named {@code CREATOR} which can be added to
  * your model class. Finally, {@code PaperParcelMyModel} will include a static method named
- * {@code writeToParcel} which you can call from the {@code MyModel#writeToParcel}. E.g:
+ * {@code writeToParcel} which you can call from {@code MyModel#writeToParcel}.
  *
- * <pre><code>
+ * For example: <pre><code>
  *   {@literal @}PaperParcel
  *   class User {
  *     public static final {@literal Parcelable.Creator<User>} CREATOR = PaperParcelUser.CREATOR;
