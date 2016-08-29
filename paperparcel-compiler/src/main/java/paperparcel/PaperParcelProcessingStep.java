@@ -35,20 +35,17 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
   private final Messager messager;
   private final PaperParcelValidator paperParcelValidator;
   private final PaperParcelDescriptor.Factory paperParcelDescriptorFactory;
-  private final ParcelableImplDescriptor.Factory parcelableImplDescriptorFactory;
-  private final ParcelableImplGenerator parcelableImplGenerator;
+  private final PaperParcelGenerator paperParcelGenerator;
 
   PaperParcelProcessingStep(
       Messager messager,
       PaperParcelValidator paperParcelValidator,
       PaperParcelDescriptor.Factory paperParcelDescriptorFactory,
-      ParcelableImplDescriptor.Factory parcelableImplDescriptorFactory,
-      ParcelableImplGenerator parcelableImplGenerator) {
+      PaperParcelGenerator paperParcelGenerator) {
     this.messager = messager;
     this.paperParcelValidator = paperParcelValidator;
     this.paperParcelDescriptorFactory = paperParcelDescriptorFactory;
-    this.parcelableImplDescriptorFactory = parcelableImplDescriptorFactory;
-    this.parcelableImplGenerator = parcelableImplGenerator;
+    this.paperParcelGenerator = paperParcelGenerator;
   }
 
   @Override public Set<? extends Class<? extends Annotation>> annotations() {
@@ -63,17 +60,16 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
           paperParcelValidator.validate(paperParcelElement);
       validationReport.report().printMessagesTo(messager);
       if (validationReport.report().isClean()) {
-        PaperParcelDescriptor descriptor = paperParcelDescriptorFactory.create(
-            paperParcelElement, validationReport.writeInfo(), validationReport.readInfo());
-        generateParcelableImpl(parcelableImplDescriptorFactory.create(descriptor));
+        generatePaperParcel(paperParcelDescriptorFactory.create(
+            paperParcelElement, validationReport.writeInfo(), validationReport.readInfo()));
       }
     }
     return ImmutableSet.of();
   }
 
-  private void generateParcelableImpl(ParcelableImplDescriptor descriptor) {
+  private void generatePaperParcel(PaperParcelDescriptor descriptor) {
     try {
-      parcelableImplGenerator.generate(descriptor);
+      paperParcelGenerator.generate(descriptor);
     } catch (SourceFileGenerationException e) {
       e.printMessageTo(messager);
     }

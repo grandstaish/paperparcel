@@ -49,17 +49,17 @@ import static javax.lang.model.element.Modifier.STATIC;
  * Responsible for creating a {@link TypeSpec.Builder} for the Parcelable read and write
  * implementations
  */
-final class ParcelableImplWriter {
+final class PaperParcelWriter {
   private static final String FIELD_NAME = "data";
   private static final ClassName PARCEL = ClassName.get("android.os", "Parcel");
 
   private final ClassName name;
-  private final ParcelableImplDescriptor descriptor;
+  private final PaperParcelDescriptor descriptor;
   private final Map<TypeName, String> nameCache;
 
-  ParcelableImplWriter(
+  PaperParcelWriter(
       ClassName name,
-      ParcelableImplDescriptor descriptor) {
+      PaperParcelDescriptor descriptor) {
     this.name = name;
     this.descriptor = descriptor;
     this.nameCache = Maps.newLinkedHashMap();
@@ -67,7 +67,7 @@ final class ParcelableImplWriter {
 
   final TypeSpec.Builder write() {
     Set<AdapterGraph> emptySet = Sets.newLinkedHashSet();
-    ClassName className = ClassName.get(descriptor.paperParcelClass().element());
+    ClassName className = ClassName.get(descriptor.element());
     return TypeSpec.classBuilder(name)
         .addModifiers(FINAL)
         .addFields(adapterDependencies(descriptor.adapters().values(), emptySet))
@@ -86,7 +86,7 @@ final class ParcelableImplWriter {
         .addModifiers(PUBLIC)
         .returns(className)
         .addParameter(in);
-    if (descriptor.paperParcelClass().isSingleton()) {
+    if (descriptor.isSingleton()) {
       createFromParcel.addStatement("return $T.INSTANCE", className);
     } else {
       createFromParcel.addCode(readFields(in))
@@ -115,7 +115,7 @@ final class ParcelableImplWriter {
   @SuppressWarnings("ConstantConditions")
   private CodeBlock readFields(ParameterSpec in) {
     CodeBlock.Builder block = CodeBlock.builder();
-    ImmutableList<FieldDescriptor> fields = descriptor.paperParcelClass().fields();
+    ImmutableList<FieldDescriptor> fields = descriptor.fields();
     for (FieldDescriptor fieldDescriptor : fields) {
       AdapterGraph graph = descriptor.adapters().get(fieldDescriptor.normalizedType());
       TypeName fieldTypeName = TypeName.get(fieldDescriptor.type().get());
@@ -133,8 +133,7 @@ final class ParcelableImplWriter {
 
   private CodeBlock createModel(ClassName className) {
     CodeBlock.Builder block = CodeBlock.builder();
-    PaperParcelDescriptor paperParcelClass = descriptor.paperParcelClass();
-    WriteInfo writeInfo = paperParcelClass.writeInfo();
+    WriteInfo writeInfo = descriptor.writeInfo();
     Preconditions.checkNotNull(writeInfo);
     ImmutableList<FieldDescriptor> constructorFields = writeInfo.constructorFields();
     block.addStatement("$1T $2N = new $1T($3L)",
@@ -171,8 +170,8 @@ final class ParcelableImplWriter {
         .addParameter(dest)
         .addParameter(flags);
 
-    if (!descriptor.paperParcelClass().isSingleton()) {
-      ReadInfo readInfo = descriptor.paperParcelClass().readInfo();
+    if (!descriptor.isSingleton()) {
+      ReadInfo readInfo = descriptor.readInfo();
       Preconditions.checkNotNull(readInfo);
       ImmutableList<FieldDescriptor> readableFields = readInfo.readableFields();
       for (FieldDescriptor field : readableFields) {
