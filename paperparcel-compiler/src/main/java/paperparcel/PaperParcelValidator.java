@@ -16,31 +16,60 @@
 
 package paperparcel;
 
-import com.google.auto.common.MoreTypes;
-import com.google.common.base.Objects;
+import com.google.auto.common.MoreElements;
+import com.google.auto.value.AutoValue;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import com.squareup.javapoet.TypeName;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.PrimitiveType;
+import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
+import org.jetbrains.annotations.Nullable;
 
 /** A validator for any {@link PaperParcel} annotated {@link TypeElement} */
 final class PaperParcelValidator {
   private final Elements elements;
   private final Types types;
+  private final WriteInfo.Factory writeInfoFactory;
+  private final ReadInfo.Factory readInfoFactory;
+  private final AdapterRegistry adapterRegistry;
 
   PaperParcelValidator(
       Elements elements,
-      Types types) {
+      Types types,
+      WriteInfo.Factory writeInfoFactory,
+      ReadInfo.Factory readInfoFactory,
+      AdapterRegistry adapterRegistry) {
     this.elements = elements;
     this.types = types;
+    this.writeInfoFactory = writeInfoFactory;
+    this.readInfoFactory = readInfoFactory;
+    this.adapterRegistry = adapterRegistry;
   }
 
-  ValidationReport<TypeElement> validate(TypeElement element) {
+  @AutoValue
+  static abstract class PaperParcelValidation {
+    abstract ValidationReport<TypeElement> report();
+    @Nullable abstract WriteInfo writeInfo();
+    @Nullable abstract ReadInfo readInfo();
+
+    private static PaperParcelValidation create(
+        ValidationReport<TypeElement> report, WriteInfo writeInfo, ReadInfo readInfo) {
+      return new AutoValue_PaperParcelValidator_PaperParcelValidation(report, writeInfo, readInfo);
+    }
+  }
+
+  PaperParcelValidation validate(TypeElement element) {
     ValidationReport.Builder<TypeElement> builder = ValidationReport.about(element);
     if (Utils.getTypeArguments(element.asType()).size() > 0) {
       builder.addError(ErrorMessages.PAPERPARCEL_ON_GENERIC_CLASS);
@@ -54,45 +83,144 @@ final class PaperParcelValidator {
     if (!Utils.isParcelable(elements, types, element.asType())) {
       builder.addError(ErrorMessages.PAPERPARCEL_ON_NON_PARCELABLE);
     }
-    Optional<ExecutableElement> mainConstructor = Utils.findLargestConstructor(element);
-    if (mainConstructor.isPresent()) {
-      builder.addSubreport(validateConstructor(element, mainConstructor.get()));
-    } else if (!Utils.isSingleton(types, element)) {
+    WriteInfo writeInfo = null;
+    ReadInfo readInfo = null;
+    if (!Utils.isSingleton(types, element)) {
+      ImmutableList<VariableElement> fields = Utils.getLocalAndInheritedFields(types, element);
+      ImmutableList<ExecutableElement> methods =
+          Utils.getLocalAndInheritedMethods(elements, element);
+      ImmutableList<ExecutableElement> constructors = Utils.orderedConstructorsIn(element);
+      try {
+        writeInfo = writeInfoFactory.create(fields, methods, constructors);
+      } catch (WriteInfo.NonWritableFieldsException e) {
+        addErrorsForNonWritableFields(e, builder);
+      }
+      try {
+        readInfo = readInfoFactory.create(fields, methods);
+      } catch (ReadInfo.NonReadableFieldsException e) {
+        addErrorsForNonReadableFields(e, builder);
+      }
+      for (VariableElement field : fields) {
+        ensureAdaptersExistForField(field, builder);
+        ensureGenericFieldsAreNotRaw(field, builder);
+      }
+    }
+    return PaperParcelValidation.create(builder.build(), writeInfo, readInfo);
+  }
+
+  private void addErrorsForNonWritableFields(
+      WriteInfo.NonWritableFieldsException e, ValidationReport.Builder<TypeElement> builder) {
+    ImmutableSet<ExecutableElement> validConstructors = e.allNonWritableFieldsMap().keySet();
+    ImmutableSet<ExecutableElement> invalidConstructors =
+        e.unassignableConstructorParameterMap().keySet();
+    if (validConstructors.size() == 0 && invalidConstructors.size() == 0) {
+      // If there were no constructors found, they must have all been private
       builder.addError(ErrorMessages.NO_VISIBLE_CONSTRUCTOR);
-    }
-    return builder.build();
-  }
-
-  /** Validate all of the constructor arguments have a corresponding field */
-  private ValidationReport<ExecutableElement> validateConstructor(
-      TypeElement element, ExecutableElement constructor) {
-    ValidationReport.Builder<ExecutableElement> report = ValidationReport.about(constructor);
-    ImmutableList<VariableElement> fields = Utils.getLocalAndInheritedFields(types, element);
-    for (VariableElement parameter : constructor.getParameters()) {
-      String name = parameter.getSimpleName().toString();
-      Optional<VariableElement> field = findFieldWithName(fields, name);
-      if (!field.isPresent() || !matchesType(field.get(), parameter)) {
-        ValidationReport.Builder<VariableElement> subReport =
-            ValidationReport.about(parameter);
-        subReport.addError(String.format(ErrorMessages.UNMATCHED_CONSTRUCTOR_PARAMETER,
-            name, element.getQualifiedName()));
-        report.addSubreport(subReport.build());
+    } else if (validConstructors.size() > 0) {
+      // Log errors for each non-writable field in each valid constructor
+      for (ExecutableElement validConstructor : validConstructors) {
+        ImmutableList<VariableElement> nonWritableFields =
+            e.allNonWritableFieldsMap().get(validConstructor);
+        for (VariableElement nonWritableField : nonWritableFields) {
+          String fieldName = nonWritableField.getSimpleName().toString();
+          builder.addError(String.format(ErrorMessages.FIELD_NOT_WRITABLE,
+              builder.getSubject().getQualifiedName(),
+              fieldName,
+              validConstructor.toString(),
+              ErrorMessages.SITE_URL),
+              nonWritableField);
+        }
+      }
+    } else {
+      // Log errors for unassignable parameters in each invalid constructor
+      for (ExecutableElement invalidConstructor : invalidConstructors) {
+        ValidationReport.Builder<ExecutableElement> constructorValidationReport =
+            ValidationReport.about(invalidConstructor);
+        ImmutableList<VariableElement> unassignableFields =
+            e.unassignableConstructorParameterMap().get(invalidConstructor);
+        for (VariableElement unassignableField : unassignableFields) {
+          String fieldName = unassignableField.getSimpleName().toString();
+          constructorValidationReport.addError(
+              String.format(ErrorMessages.UNMATCHED_CONSTRUCTOR_PARAMETER,
+                  fieldName, builder.getSubject().getQualifiedName()), invalidConstructor);
+        }
+        builder.addSubreport(constructorValidationReport.build());
       }
     }
-    return report.build();
   }
 
-  private boolean matchesType(VariableElement a, VariableElement b) {
-    return MoreTypes.equivalence().equivalent(a.asType(), b.asType());
-  }
-
-  private Optional<VariableElement> findFieldWithName(
-      ImmutableList<VariableElement> fields, String name) {
-    for (VariableElement field : fields) {
-      if (Objects.equal(field.getSimpleName().toString(), name)) {
-        return Optional.of(field);
-      }
+  private void addErrorsForNonReadableFields(
+      ReadInfo.NonReadableFieldsException e, ValidationReport.Builder<TypeElement> builder) {
+    for (VariableElement nonReadableField : e.nonReadableFields()) {
+      String fieldName = nonReadableField.getSimpleName().toString();
+      builder.addError(String.format(ErrorMessages.FIELD_NOT_ACCESSIBLE,
+          builder.getSubject().getQualifiedName(),
+          fieldName,
+          ErrorMessages.SITE_URL),
+          nonReadableField);
     }
-    return Optional.absent();
+  }
+
+  /** Add an error to {@code builder} if field is a generic type missing its type arguments */
+  private void ensureGenericFieldsAreNotRaw(
+      final VariableElement field,
+      final ValidationReport.Builder<TypeElement> builder) {
+    field.asType().accept(new SimpleTypeVisitor6<Void, Void>() {
+      @Override public Void visitDeclared(DeclaredType t, Void p) {
+        int expected = MoreElements.asType(t.asElement()).getTypeParameters().size();
+        int actual = t.getTypeArguments().size();
+        if (expected != actual) {
+          builder.addError(String.format(ErrorMessages.RAW_FIELD,
+              builder.getSubject().getQualifiedName(),
+              field.getSimpleName()),
+              field);
+        }
+        return null;
+      }
+    }, null);
+  }
+
+  /**
+   * Finds all referenced types of a field and checks the {@link AdapterRegistry} to ensure
+   * that type can be handled by PaperParcel. Adds an error to {@code builder} for every missing
+   * type.
+   */
+  private void ensureAdaptersExistForField(
+      final VariableElement field,
+      final ValidationReport.Builder<TypeElement> builder) {
+
+    field.asType().accept(new SimpleTypeVisitor6<Void, Void>() {
+
+      @Override public Void visitWildcard(WildcardType t, Void p) {
+        if (t.getExtendsBound() != null) {
+          t.getExtendsBound().accept(this, p);
+        }
+        if (t.getSuperBound() != null) {
+          t.getSuperBound().accept(this, p);
+        }
+        return null;
+      }
+
+      @Override public Void visitPrimitive(PrimitiveType t, Void p) {
+        return defaultAction(types.boxedClass(t).asType(), p);
+      }
+
+      @Override public Void visitDeclared(DeclaredType t, Void p) {
+        for (TypeMirror arg : t.getTypeArguments()) {
+          arg.accept(this, p);
+        }
+        return defaultAction(t, p);
+      }
+
+      @Override protected Void defaultAction(TypeMirror t, Void p) {
+        TypeMirror erased = Utils.getParcelableType(elements, types, t);
+        if (!adapterRegistry.getAdapter(TypeName.get(erased)).isPresent()) {
+          builder.addError(String.format(ErrorMessages.MISSING_TYPE_ADAPTER,
+              t.toString(), ErrorMessages.SITE_URL),
+              field);
+        }
+        return null;
+      }
+    }, null);
   }
 }

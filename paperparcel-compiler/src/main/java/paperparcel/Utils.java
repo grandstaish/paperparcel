@@ -17,7 +17,6 @@
 package paperparcel;
 
 import com.google.auto.common.MoreElements;
-import com.google.auto.common.MoreTypes;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
@@ -50,6 +49,7 @@ import static paperparcel.Constants.PARCELABLE_CLASS_NAME;
 
 /** A grab bag of shared utility methods with no home. FeelsBadMan. */
 final class Utils {
+
   private static final TypeVisitor<List<? extends TypeMirror>, Void> TYPE_ARGUMENTS_VISITOR =
       new SimpleTypeVisitor7<List<? extends TypeMirror>, Void>(
           Collections.<TypeMirror>emptyList()) {
@@ -91,6 +91,33 @@ final class Utils {
     }
 
     return Optional.of(PARAMETER_COUNT_ORDER.max(constructors));
+  }
+
+  /**
+   * Returns all of the constructors in a {@link TypeElement} ordered from highest parameter count
+   * to lowest
+   */
+  static ImmutableList<ExecutableElement> orderedConstructorsIn(TypeElement element) {
+    return PARAMETER_COUNT_ORDER.reverse().immutableSortedCopy(
+        ElementFilter.constructorsIn(element.getEnclosedElements()));
+  }
+
+  /**
+   * Returns a list of all non-private local and inherited methods (excluding methods
+   * defined in {@link Object})
+   */
+  static ImmutableList<ExecutableElement> getLocalAndInheritedMethods(
+      Elements elements, TypeElement element) {
+    return FluentIterable.from(MoreElements.getLocalAndInheritedMethods(element, elements))
+        .filter(new Predicate<ExecutableElement>() {
+          @Override public boolean apply(ExecutableElement method) {
+            // Filter out any methods defined in java.lang.Object as they are just
+            // wasted cycles
+            return !method.getEnclosingElement().asType().toString()
+                .equals("java.lang.Object");
+          }
+        })
+        .toList();
   }
 
   /**

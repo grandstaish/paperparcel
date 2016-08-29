@@ -25,6 +25,7 @@ import java.util.Set;
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import paperparcel.PaperParcelValidator.PaperParcelValidation;
 
 /**
  * A {@link BasicAnnotationProcessor.ProcessingStep} that is responsible for dealing with all
@@ -33,7 +34,6 @@ import javax.lang.model.element.TypeElement;
 final class PaperParcelProcessingStep implements BasicAnnotationProcessor.ProcessingStep {
   private final Messager messager;
   private final PaperParcelValidator paperParcelValidator;
-  private final FieldsValidator fieldsValidator;
   private final PaperParcelDescriptor.Factory paperParcelDescriptorFactory;
   private final ParcelableImplDescriptor.Factory parcelableImplDescriptorFactory;
   private final ParcelableImplGenerator parcelableImplGenerator;
@@ -41,13 +41,11 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
   PaperParcelProcessingStep(
       Messager messager,
       PaperParcelValidator paperParcelValidator,
-      FieldsValidator fieldsValidator,
       PaperParcelDescriptor.Factory paperParcelDescriptorFactory,
       ParcelableImplDescriptor.Factory parcelableImplDescriptorFactory,
       ParcelableImplGenerator parcelableImplGenerator) {
     this.messager = messager;
     this.paperParcelValidator = paperParcelValidator;
-    this.fieldsValidator = fieldsValidator;
     this.paperParcelDescriptorFactory = paperParcelDescriptorFactory;
     this.parcelableImplDescriptorFactory = parcelableImplDescriptorFactory;
     this.parcelableImplGenerator = parcelableImplGenerator;
@@ -61,16 +59,13 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
       SetMultimap<Class<? extends Annotation>, Element> elementsByAnnotation) {
     for (Element element : elementsByAnnotation.get(PaperParcel.class)) {
       TypeElement paperParcelElement = MoreElements.asType(element);
-      ValidationReport<TypeElement> typeValidationReport =
+      PaperParcelValidation validationReport =
           paperParcelValidator.validate(paperParcelElement);
-      typeValidationReport.printMessagesTo(messager);
-      if (typeValidationReport.isClean()) {
-        PaperParcelDescriptor descriptor = paperParcelDescriptorFactory.create(paperParcelElement);
-        ValidationReport<TypeElement> fieldsValidationReport = fieldsValidator.validate(descriptor);
-        fieldsValidationReport.printMessagesTo(messager);
-        if (fieldsValidationReport.isClean()) {
-          generateParcelableImpl(parcelableImplDescriptorFactory.create(descriptor));
-        }
+      validationReport.report().printMessagesTo(messager);
+      if (validationReport.report().isClean()) {
+        PaperParcelDescriptor descriptor = paperParcelDescriptorFactory.create(
+            paperParcelElement, validationReport.writeInfo(), validationReport.readInfo());
+        generateParcelableImpl(parcelableImplDescriptorFactory.create(descriptor));
       }
     }
     return ImmutableSet.of();

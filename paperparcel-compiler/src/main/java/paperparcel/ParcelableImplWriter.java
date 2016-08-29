@@ -19,9 +19,11 @@ package paperparcel;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.squareup.javapoet.ArrayTypeName;
@@ -36,6 +38,7 @@ import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
 import java.util.Map;
 import java.util.Set;
+import javax.lang.model.element.ExecutableElement;
 
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
@@ -131,29 +134,30 @@ final class ParcelableImplWriter {
   private CodeBlock createModel(ClassName className) {
     CodeBlock.Builder block = CodeBlock.builder();
     PaperParcelDescriptor paperParcelClass = descriptor.paperParcelClass();
-    ImmutableList<String> constructorArgumentNames = paperParcelClass.constructorArgumentNames();
+    WriteInfo writeInfo = paperParcelClass.writeInfo();
+    Preconditions.checkNotNull(writeInfo);
+    ImmutableList<FieldDescriptor> constructorFields = writeInfo.constructorFields();
     block.addStatement("$1T $2N = new $1T($3L)",
-        className, FIELD_NAME, getConstructorParameterList(constructorArgumentNames));
-    for (FieldDescriptor field : paperParcelClass.fields()) {
-      if (!constructorArgumentNames.contains(field.name())) {
-        if (field.isPrivate()) {
-          // Assume there is a setter method because of prior validation
-          block.addStatement("$N.$N($N)", FIELD_NAME,
-              field.setterMethod().get().getSimpleName(), field.name());
-        } else {
-          // Assume the field is non-final as it is not found in the constructor
-          block.addStatement("$1N.$2N = $2N", FIELD_NAME, field.name());
-        }
-      }
+        className, FIELD_NAME, getConstructorParameterList(constructorFields));
+    for (FieldDescriptor field : writeInfo.writableFields()) {
+      block.addStatement("$1N.$2N = $2N", FIELD_NAME, field.name());
+    }
+    ImmutableSet<Map.Entry<FieldDescriptor, ExecutableElement>> fieldSetterEntries =
+        writeInfo.setterMethodMap().entrySet();
+    for (Map.Entry<FieldDescriptor, ExecutableElement> fieldSetterEntry : fieldSetterEntries) {
+      block.addStatement("$N.$N($N)",
+          FIELD_NAME,
+          fieldSetterEntry.getValue().getSimpleName(),
+          fieldSetterEntry.getKey().name());
     }
     return block.build();
   }
 
-  private CodeBlock getConstructorParameterList(ImmutableList<String> argumentNames) {
-    return CodeBlocks.join(FluentIterable.from(argumentNames)
-        .transform(new Function<String, CodeBlock>() {
-          @Override public CodeBlock apply(String fieldName) {
-            return CodeBlock.of("$N", fieldName);
+  private CodeBlock getConstructorParameterList(ImmutableList<FieldDescriptor> fields) {
+    return CodeBlocks.join(FluentIterable.from(fields)
+        .transform(new Function<FieldDescriptor, CodeBlock>() {
+          @Override public CodeBlock apply(FieldDescriptor field) {
+            return CodeBlock.of("$N", field.name());
           }
         }), ", ");
   }
@@ -166,28 +170,39 @@ final class ParcelableImplWriter {
         .addParameter(className, FIELD_NAME)
         .addParameter(dest)
         .addParameter(flags);
-    // Write all of the field values to the Parcel object using the static adapter instances
-    ImmutableList<FieldDescriptor> fields = descriptor.paperParcelClass().fields();
-    for (FieldDescriptor field : fields) {
-      AdapterGraph graph = descriptor.adapters().get(field.normalizedType());
-      CodeBlock adapterInstance;
-      if (graph.adapter().isSingleton()) {
-        adapterInstance = CodeBlock.of("$T.INSTANCE", graph.typeName());
-      } else {
-        adapterInstance = CodeBlock.of("$N", getName(graph.typeName()));
-      }
-      if (!field.isPrivate()) {
-        // Read the field directly
-        String fieldName = field.name();
+
+    if (!descriptor.paperParcelClass().isSingleton()) {
+      ReadInfo readInfo = descriptor.paperParcelClass().readInfo();
+      Preconditions.checkNotNull(readInfo);
+      ImmutableList<FieldDescriptor> readableFields = readInfo.readableFields();
+      for (FieldDescriptor field : readableFields) {
+        AdapterGraph graph = descriptor.adapters().get(field.normalizedType());
+        CodeBlock adapterInstance = adapterInstance(graph);
         builder.addStatement("$L.writeToParcel($N.$N, $N, $N)",
-            adapterInstance, FIELD_NAME, fieldName, dest, flags);
-      } else {
-        // Assume the accessor is defined because of prior validation
+            adapterInstance, FIELD_NAME, field.name(), dest, flags);
+      }
+
+      ImmutableSet<Map.Entry<FieldDescriptor, ExecutableElement>> fieldGetterEntries =
+          readInfo.getterMethodMap().entrySet();
+      for (Map.Entry<FieldDescriptor, ExecutableElement> fieldGetterEntry : fieldGetterEntries) {
+        AdapterGraph graph = descriptor.adapters().get(fieldGetterEntry.getKey().normalizedType());
+        CodeBlock adapterInstance = adapterInstance(graph);
         builder.addStatement("$L.writeToParcel($N.$N(), $N, $N)",
-            adapterInstance, FIELD_NAME, field.accessorMethod().get().getSimpleName(), dest, flags);
+            adapterInstance, FIELD_NAME, fieldGetterEntry.getValue().getSimpleName(), dest, flags);
       }
     }
+
     return builder.build();
+  }
+
+  private CodeBlock adapterInstance(AdapterGraph graph) {
+    CodeBlock adapterInstance;
+    if (graph.adapter().isSingleton()) {
+      adapterInstance = CodeBlock.of("$T.INSTANCE", graph.typeName());
+    } else {
+      adapterInstance = CodeBlock.of("$N", getName(graph.typeName()));
+    }
+    return adapterInstance;
   }
 
   /** Returns a list of all of the {@link FieldSpec}s that define the required TypeAdapters */

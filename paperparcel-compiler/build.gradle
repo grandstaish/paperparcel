@@ -20,7 +20,7 @@ test {
 
 dependencies {
   compile project(':paperparcel-annotations')
-
+  compile deps.intellijAnnotations
   compile deps.autovalue
   compile deps.autoservice
   compile deps.autocommon

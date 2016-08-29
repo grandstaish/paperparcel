@@ -18,7 +18,7 @@ package paperparcel;
 
 /** The collection of error messages to be reported back to users. */
 final class ErrorMessages {
-  static final String WIKI_URL = "https://github.com/grandstaish/paperparcel/wiki";
+  static final String SITE_URL = "https://github.com/grandstaish/paperparcel";
 
   static final String NO_VISIBLE_CONSTRUCTOR =
       "No visible constructor found";
@@ -58,15 +58,13 @@ final class ErrorMessages {
 
   /* FieldDescriptor errors */
   static final String FIELD_NOT_ACCESSIBLE =
-      "Field %1$s.%2$s not accessible. It needs to be non-private, or have an accessor method "
-          + "with one of the following names: %3$s.";
+      "Field %1$s.%2$s not accessible. See %3$s for more info.";
   static final String FIELD_NOT_WRITABLE =
-      "Field %1$s.%2$s not writable. It needs to be either non-private and non-final, have a "
-          + "corresponding constructor parameter, or have a setter method with one of the "
-          + "following names: %3$s.";
+      "Field %1$s.%2$s not writable when constructing an instance of %1$s using the constructor "
+          + "%3$s. See %4$s for more info.";
   static final String MISSING_TYPE_ADAPTER =
       "Unknown type %1$s. Define a TypeAdapter to handle custom types. For more info, "
-          + "see %2$s/Type-Adapters";
+          + "see %2$s";
   static final String RAW_FIELD =
       "Missing type information on %1$s.%2$s";
 
