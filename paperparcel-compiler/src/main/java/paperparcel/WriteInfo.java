@@ -32,6 +32,10 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
+/**
+ * Contains all of the information on how to re-construct an object and populate all of its
+ * data via either constructor arguments, setter methods, or directly setting fields.
+ */
 @AutoValue
 abstract class WriteInfo {
 
@@ -211,7 +215,7 @@ abstract class WriteInfo {
     }
   }
 
-  static ImmutableSet<String> possibleSetterNames(String name) {
+  private static ImmutableSet<String> possibleSetterNames(String name) {
     ImmutableSet.Builder<String> possibleGetterNames = new ImmutableSet.Builder<>();
     possibleGetterNames.add(name);
     possibleGetterNames.add("set" + Strings.capitalizeFirstCharacter(name));

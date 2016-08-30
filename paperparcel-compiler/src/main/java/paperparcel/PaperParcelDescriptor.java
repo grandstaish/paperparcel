@@ -32,10 +32,13 @@ abstract class PaperParcelDescriptor {
   /** The original {@link TypeElement} that this class is describing */
   abstract TypeElement element();
 
+  /** A full list of all of the fields in to parcel */
   abstract ImmutableList<FieldDescriptor> fields();
 
+  /** Information on how to write each field, or null if not required (i.e. is a singleton) */
   @Nullable abstract WriteInfo writeInfo();
 
+  /** Information on how to read each field, or null if not required (i.e. is a singleton) */
   @Nullable abstract ReadInfo readInfo();
 
   /**

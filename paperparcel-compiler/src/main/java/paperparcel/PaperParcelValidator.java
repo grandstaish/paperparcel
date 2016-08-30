@@ -18,7 +18,6 @@ package paperparcel;
 
 import com.google.auto.common.MoreElements;
 import com.google.auto.value.AutoValue;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.squareup.javapoet.TypeName;

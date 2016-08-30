@@ -28,6 +28,10 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
+/**
+ * Contains all of the information on how to read the data from an object, either by reading
+ * fields directly, or via getter methods.
+ */
 @AutoValue
 abstract class ReadInfo {
 
@@ -122,7 +126,7 @@ abstract class ReadInfo {
     }
   }
 
-  static ImmutableSet<String> possibleGetterNames(String name) {
+  private static ImmutableSet<String> possibleGetterNames(String name) {
     ImmutableSet.Builder<String> possibleGetterNames = new ImmutableSet.Builder<>();
     possibleGetterNames.add(name);
     possibleGetterNames.add("is" + Strings.capitalizeFirstCharacter(name));
