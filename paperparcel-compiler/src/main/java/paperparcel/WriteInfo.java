@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Set;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.Name;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
@@ -101,7 +100,7 @@ abstract class WriteInfo {
         ImmutableList<ExecutableElement> constructors)
         throws NonWritableFieldsException {
 
-      ImmutableMap<Name, VariableElement> fieldNamesToField = fieldNamesToField(fields);
+      ImmutableMap<String, VariableElement> fieldNamesToField = fieldNamesToField(fields);
       ImmutableMap.Builder<ExecutableElement, ImmutableList<VariableElement>>
           allNonWritableFieldsMapBuilder = ImmutableMap.builder();
       ImmutableMap.Builder<ExecutableElement, ImmutableList<VariableElement>>
@@ -112,7 +111,7 @@ abstract class WriteInfo {
         if (constructor.getModifiers().contains(Modifier.PRIVATE)) continue;
         // Create a mutable copy of fieldNamesToField so we can remove elements from it as we iterate
         // to keep track of which elements we have seen
-        Map<Name, VariableElement> nonConstructorFieldsMap = new LinkedHashMap<>(fieldNamesToField);
+        Map<String, VariableElement> nonConstructorFieldsMap = new LinkedHashMap<>(fieldNamesToField);
         ImmutableList.Builder<VariableElement> unassignableParametersBuilder =
             ImmutableList.builder();
         ImmutableList.Builder<FieldDescriptor> constructorFieldDescriptorsBuilder =
@@ -122,7 +121,7 @@ abstract class WriteInfo {
         // 2) The parameter type is assignable to the field
         List<? extends VariableElement> parameters = constructor.getParameters();
         for (VariableElement parameter : parameters) {
-          Name parameterName = parameter.getSimpleName();
+          String parameterName = parameter.getSimpleName().toString();
           TypeMirror parameterType = parameter.asType();
           VariableElement fieldOrNull = fieldNamesToField.get(parameterName);
           if (fieldOrNull != null && types.isAssignable(parameterType, fieldOrNull.asType())) {
@@ -199,11 +198,11 @@ abstract class WriteInfo {
       return Optional.absent();
     }
 
-    private ImmutableMap<Name, VariableElement> fieldNamesToField(
+    private ImmutableMap<String, VariableElement> fieldNamesToField(
         ImmutableList<VariableElement> fields) {
-      ImmutableMap.Builder<Name, VariableElement> fieldNamesToField = ImmutableMap.builder();
+      ImmutableMap.Builder<String, VariableElement> fieldNamesToField = ImmutableMap.builder();
       for (VariableElement field : fields) {
-        fieldNamesToField.put(field.getSimpleName(), field);
+        fieldNamesToField.put(field.getSimpleName().toString(), field);
       }
       return fieldNamesToField.build();
     }
