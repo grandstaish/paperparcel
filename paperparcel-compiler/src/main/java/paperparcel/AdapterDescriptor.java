@@ -55,7 +55,7 @@ abstract class AdapterDescriptor {
   abstract TypeName adaptedType();
 
   /** Returns the fully qualified class name for this TypeAdapter */
-  abstract Name adapterQualifiedName();
+  abstract String adapterQualifiedName();
 
   /**
    * Returns all type parameter information pertaining to this TypeAdapter, or an empty
@@ -75,12 +75,12 @@ abstract class AdapterDescriptor {
     static final int NO_INDEX = -1;
 
     /** The simple name of the type parameter */
-    abstract Name name();
+    abstract String name();
 
     /** TODO(brad): define index */
     abstract int index();
 
-    static TypeParameter create(Name name, int index) {
+    static TypeParameter create(String name, int index) {
       return new AutoValue_AdapterDescriptor_TypeParameter(name, index);
     }
   }
@@ -111,7 +111,7 @@ abstract class AdapterDescriptor {
       boolean singleton = Utils.isSingleton(types, adapterElement);
       return new AutoValue_AdapterDescriptor(
           TypeName.get(types.erasure(adaptedType)),
-          adapterElement.getQualifiedName(),
+          adapterElement.getQualifiedName().toString(),
           typeParameters,
           singleton);
     }
@@ -126,7 +126,7 @@ abstract class AdapterDescriptor {
         ExecutableElement mainConstructor) {
       ImmutableList.Builder<TypeParameter> typeParameters = new ImmutableList.Builder<>();
       for (TypeParameterElement adapterParameter : adapterTypeParameters) {
-        final Name parameterName = adapterParameter.getSimpleName();
+        final String parameterName = adapterParameter.getSimpleName().toString();
         if (isUsedInConstructor(mainConstructor, adapterParameter)) {
           int index = AdapterDescriptor.TypeParameter.NO_INDEX;
           for (int i = 0; i < adaptedTypeTypeVariables.size(); i++) {

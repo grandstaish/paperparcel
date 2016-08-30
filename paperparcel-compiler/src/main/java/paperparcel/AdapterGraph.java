@@ -25,7 +25,6 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
@@ -66,6 +65,7 @@ abstract class AdapterGraph {
       this.adapterRegistry = adapterRegistry;
     }
 
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
     AdapterGraph create(TypeMirror normalizedType) {
       TypeName normalizedTypeName = TypeName.get(normalizedType);
       Optional<AdapterGraph> cached = adapterRegistry.getGraph(normalizedTypeName);
@@ -75,7 +75,7 @@ abstract class AdapterGraph {
       TypeName parcelableTypeName = TypeName.get(
           Utils.getParcelableType(elements, types, normalizedType));
       AdapterDescriptor adapterDescriptor = adapterRegistry.getAdapter(parcelableTypeName).get();
-      Name adapterQualifiedName = adapterDescriptor.adapterQualifiedName();
+      String adapterQualifiedName = adapterDescriptor.adapterQualifiedName();
       TypeElement adapterElement = elements.getTypeElement(adapterQualifiedName);
       TypeMirror[] typeArguments = getTypeArguments(normalizedType, adapterDescriptor);
       DeclaredType resolvedAdapterType = types.getDeclaredType(adapterElement, typeArguments);

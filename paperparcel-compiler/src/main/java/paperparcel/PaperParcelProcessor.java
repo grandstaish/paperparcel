@@ -55,21 +55,22 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
       return ImmutableList.of();
     }
 
-    AdapterValidator adapterValidator = new AdapterValidator();
-    PaperParcelValidator paperParcelValidator = new PaperParcelValidator(elements, types);
-    RegisterAdapterValidator registerAdapterValidator =
-        new RegisterAdapterValidator(elements, types);
-    FieldsValidator fieldsValidator = new FieldsValidator(elements, types, adapterRegistry);
-
     FieldDescriptor.Factory fieldDescriptorFactory = new FieldDescriptor.Factory(types);
-    PaperParcelDescriptor.Factory paperParcelDescriptorFactory =
-        new PaperParcelDescriptor.Factory(elements, types, fieldDescriptorFactory);
+    WriteInfo.Factory writeInfoFactory = new WriteInfo.Factory(types, fieldDescriptorFactory);
+    ReadInfo.Factory readInfoFactory = new ReadInfo.Factory(types, fieldDescriptorFactory);
     AdapterGraph.Factory adapterGraphFactory =
         new AdapterGraph.Factory(elements, types, adapterRegistry);
-    ParcelableImplDescriptor.Factory parcelableImplDescriptorFactory =
-        new ParcelableImplDescriptor.Factory(adapterGraphFactory);
+    PaperParcelDescriptor.Factory paperParcelDescriptorFactory =
+        new PaperParcelDescriptor.Factory(types, adapterGraphFactory);
 
-    ParcelableImplGenerator parcelableImplGenerator = new ParcelableImplGenerator(filer, elements);
+    AdapterValidator adapterValidator = new AdapterValidator();
+    PaperParcelValidator paperParcelValidator =
+        new PaperParcelValidator(
+            elements, types, writeInfoFactory, readInfoFactory, adapterRegistry);
+    RegisterAdapterValidator registerAdapterValidator =
+        new RegisterAdapterValidator(elements, types);
+
+    PaperParcelGenerator paperParcelGenerator = new PaperParcelGenerator(filer, elements);
 
     return ImmutableList.of(
         new RegisterAdapterProcessingStep(
@@ -81,9 +82,7 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
         new PaperParcelProcessingStep(
             messager,
             paperParcelValidator,
-            fieldsValidator,
             paperParcelDescriptorFactory,
-            parcelableImplDescriptorFactory,
-            parcelableImplGenerator));
+            paperParcelGenerator));
   }
 }

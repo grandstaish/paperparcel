@@ -16,21 +16,11 @@
 
 package paperparcel;
 
-import com.google.auto.common.MoreElements;
 import com.google.auto.value.AutoValue;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import javax.lang.model.element.ExecutableElement;
+import com.google.common.collect.ImmutableMap;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-
-import static paperparcel.Constants.PARCELABLE_CLASS_NAME;
+import org.jetbrains.annotations.Nullable;
 
 /** Represents a {@link PaperParcel} annotated object */
 @AutoValue
@@ -39,11 +29,17 @@ abstract class PaperParcelDescriptor {
   /** The original {@link TypeElement} that this class is describing */
   abstract TypeElement element();
 
-  /** All of the fields to be serialized */
-  abstract ImmutableList<FieldDescriptor> fields();
+  /** Information on how to write each field, or null if not required (i.e. is a singleton) */
+  @Nullable abstract WriteInfo writeInfo();
 
-  /** All of the field names that can be found in the primary constructor */
-  abstract ImmutableList<String> constructorArgumentNames();
+  /** Information on how to read each field, or null if not required (i.e. is a singleton) */
+  @Nullable abstract ReadInfo readInfo();
+
+  /**
+   * Returns all of the adapters required for each field in the annotated class, indexed by the
+   * field they are required for
+   */
+  abstract ImmutableMap<FieldDescriptor, AdapterGraph> adapters();
 
   /**
    * Returns true if this class is a singleton. Singletons are defined as per
@@ -51,72 +47,34 @@ abstract class PaperParcelDescriptor {
    */
   abstract boolean isSingleton();
 
-  /** Returns true if the class is assignable from Parcelable */
-  abstract boolean isParcelable();
-
   static final class Factory {
-    private final Elements elements;
     private final Types types;
-    private final FieldDescriptor.Factory fieldDescriptorFactory;
+    private final AdapterGraph.Factory adapterGraphFactory;
 
     Factory(
-        Elements elements,
         Types types,
-        FieldDescriptor.Factory fieldDescriptorFactory) {
-      this.elements = elements;
+        AdapterGraph.Factory adapterGraphFactory) {
       this.types = types;
-      this.fieldDescriptorFactory = fieldDescriptorFactory;
+      this.adapterGraphFactory = adapterGraphFactory;
     }
 
-    PaperParcelDescriptor create(TypeElement element) {
-      ImmutableList<FieldDescriptor> fields = getFieldDescriptors(element);
-      ImmutableList<String> constructorArguments = getConstructorArgumentNames(element);
+    PaperParcelDescriptor create(TypeElement element, WriteInfo writeInfo, ReadInfo readInfo) {
+      ImmutableMap<FieldDescriptor, AdapterGraph> adapters = getAdapterMap(readInfo);
       boolean singleton = Utils.isSingleton(types, element);
-      TypeMirror parcelableType = elements.getTypeElement(PARCELABLE_CLASS_NAME).asType();
-      boolean parcelable = types.isAssignable(element.asType(), parcelableType);
-      return new AutoValue_PaperParcelDescriptor(
-          element, fields, constructorArguments, singleton, parcelable);
+      return new AutoValue_PaperParcelDescriptor(element, writeInfo, readInfo, adapters, singleton);
     }
 
-    /** Finds the primary constructor and returns a list of all the argument names */
-    private ImmutableList<String> getConstructorArgumentNames(TypeElement element) {
-      ImmutableList.Builder<String> builder = ImmutableList.builder();
-      Optional<ExecutableElement> mainConstructor = Utils.findLargestConstructor(element);
-      if (mainConstructor.isPresent()) {
-        ExecutableElement it = mainConstructor.get();
-        for (VariableElement variableElement : it.getParameters()) {
-          builder.add(variableElement.getSimpleName().toString());
+    private ImmutableMap<FieldDescriptor, AdapterGraph> getAdapterMap(ReadInfo readInfo) {
+      ImmutableMap.Builder<FieldDescriptor, AdapterGraph> fieldAdapterMap = ImmutableMap.builder();
+      if (readInfo != null) {
+        for (FieldDescriptor field : readInfo.readableFields()) {
+          fieldAdapterMap.put(field, adapterGraphFactory.create(field.normalizedType().get()));
+        }
+        for (FieldDescriptor field : readInfo.getterMethodMap().keySet()) {
+          fieldAdapterMap.put(field, adapterGraphFactory.create(field.normalizedType().get()));
         }
       }
-      return builder.build();
-    }
-
-    /** Creates all of the {@link FieldDescriptor} instances for the given element */
-    private ImmutableList<FieldDescriptor> getFieldDescriptors(TypeElement element) {
-      ImmutableList.Builder<FieldDescriptor> builder = ImmutableList.builder();
-      ImmutableSet<ExecutableElement> allMethods = getLocalAndInheritedMethods(element);
-      ImmutableList<VariableElement> fields = Utils.getLocalAndInheritedFields(types, element);
-      for (VariableElement field : fields) {
-        builder.add(fieldDescriptorFactory.create(field, allMethods));
-      }
-      return builder.build();
-    }
-
-    /**
-     * Returns a list of all non-private local and inherited methods (excluding methods
-     * defined in {@link Object})
-     */
-    private ImmutableSet<ExecutableElement> getLocalAndInheritedMethods(TypeElement element) {
-      return FluentIterable.from(MoreElements.getLocalAndInheritedMethods(element, elements))
-          .filter(new Predicate<ExecutableElement>() {
-            @Override public boolean apply(ExecutableElement method) {
-              // Filter out any methods defined in java.lang.Object as they are just
-              // wasted cycles
-              return !method.getEnclosingElement().asType().toString()
-                  .equals("java.lang.Object");
-            }
-          })
-          .toSet();
+      return fieldAdapterMap.build();
     }
   }
 }
