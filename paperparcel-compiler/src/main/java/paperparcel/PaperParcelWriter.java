@@ -251,13 +251,7 @@ final class PaperParcelWriter {
     return CodeBlocks.join(FluentIterable.from(dependencies)
         .transform(new Function<AdapterGraph, CodeBlock>() {
           @Override public CodeBlock apply(AdapterGraph graph) {
-            CodeBlock instance;
-            if (graph.adapter().isSingleton()) {
-              instance = CodeBlock.of("$T.INSTANCE", graph.typeName());
-            } else {
-              instance = CodeBlock.of("$N", getName(graph.typeName()));
-            }
-            return instance;
+            return adapterInstance(graph);
           }
         })
         .toList(), ", ");
