@@ -17,9 +17,6 @@
 package paperparcel;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.base.Function;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Types;
@@ -31,9 +28,6 @@ abstract class PaperParcelDescriptor {
 
   /** The original {@link TypeElement} that this class is describing */
   abstract TypeElement element();
-
-  /** A full list of all of the fields to parcel */
-  abstract ImmutableList<FieldDescriptor> fields();
 
   /** Information on how to write each field, or null if not required (i.e. is a singleton) */
   @Nullable abstract WriteInfo writeInfo();
@@ -65,26 +59,22 @@ abstract class PaperParcelDescriptor {
     }
 
     PaperParcelDescriptor create(TypeElement element, WriteInfo writeInfo, ReadInfo readInfo) {
-      ImmutableList.Builder<FieldDescriptor> fieldsBuilder = ImmutableList.builder();
-      if (readInfo != null) {
-        fieldsBuilder.addAll(readInfo.readableFields());
-        fieldsBuilder.addAll(readInfo.getterMethodMap().keySet());
-      }
-      ImmutableList<FieldDescriptor> fields = fieldsBuilder.build();
-      ImmutableMap<FieldDescriptor, AdapterGraph> adapters = getAdapterMap(fields);
+      ImmutableMap<FieldDescriptor, AdapterGraph> adapters = getAdapterMap(readInfo);
       boolean singleton = Utils.isSingleton(types, element);
-      return new AutoValue_PaperParcelDescriptor(
-          element, fields, writeInfo, readInfo, adapters, singleton);
+      return new AutoValue_PaperParcelDescriptor(element, writeInfo, readInfo, adapters, singleton);
     }
 
-    private ImmutableMap<FieldDescriptor, AdapterGraph> getAdapterMap(
-        ImmutableList<FieldDescriptor> fields) {
-      return FluentIterable.from(fields)
-          .toMap(new Function<FieldDescriptor, AdapterGraph>() {
-            @Override public AdapterGraph apply(FieldDescriptor field) {
-              return adapterGraphFactory.create(field.normalizedType().get());
-            }
-          });
+    private ImmutableMap<FieldDescriptor, AdapterGraph> getAdapterMap(ReadInfo readInfo) {
+      ImmutableMap.Builder<FieldDescriptor, AdapterGraph> fieldAdapterMap = ImmutableMap.builder();
+      if (readInfo != null) {
+        for (FieldDescriptor field : readInfo.readableFields()) {
+          fieldAdapterMap.put(field, adapterGraphFactory.create(field.normalizedType().get()));
+        }
+        for (FieldDescriptor field : readInfo.getterMethodMap().keySet()) {
+          fieldAdapterMap.put(field, adapterGraphFactory.create(field.normalizedType().get()));
+        }
+      }
+      return fieldAdapterMap.build();
     }
   }
 }

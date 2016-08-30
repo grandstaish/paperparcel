@@ -112,23 +112,35 @@ final class PaperParcelWriter {
         .build();
   }
 
-  @SuppressWarnings("ConstantConditions")
   private CodeBlock readFields(ParameterSpec in) {
     CodeBlock.Builder block = CodeBlock.builder();
-    ImmutableList<FieldDescriptor> fields = descriptor.fields();
-    for (FieldDescriptor fieldDescriptor : fields) {
-      AdapterGraph graph = descriptor.adapters().get(fieldDescriptor);
-      TypeName fieldTypeName = TypeName.get(fieldDescriptor.type().get());
-      CodeBlock adapterInstance;
-      if (graph.adapter().isSingleton()) {
-        adapterInstance = CodeBlock.of("$T.INSTANCE", graph.typeName());
-      } else {
-        adapterInstance = CodeBlock.of("$N", getName(graph.typeName()));
-      }
-      block.addStatement("$T $N = $L.readFromParcel($N)",
-          fieldTypeName, fieldDescriptor.name(), adapterInstance, in);
+    ReadInfo readInfo = descriptor.readInfo();
+    Preconditions.checkNotNull(readInfo);
+    // Read the fields in the exact same order that they were written to the Parcel. Currently
+    // directly readable fields first, then all fields that are read via getters.
+    ImmutableList<FieldDescriptor> readableFields = readInfo.readableFields();
+    for (FieldDescriptor field : readableFields) {
+      readField(block, field, in);
+    }
+    ImmutableSet<FieldDescriptor> getterFields = readInfo.getterMethodMap().keySet();
+    for (FieldDescriptor field : getterFields) {
+      readField(block, field, in);
     }
     return block.build();
+  }
+
+  @SuppressWarnings("ConstantConditions")
+  private void readField(CodeBlock.Builder block, FieldDescriptor field, ParameterSpec in) {
+    AdapterGraph graph = descriptor.adapters().get(field);
+    TypeName fieldTypeName = TypeName.get(field.type().get());
+    CodeBlock adapterInstance;
+    if (graph.adapter().isSingleton()) {
+      adapterInstance = CodeBlock.of("$T.INSTANCE", graph.typeName());
+    } else {
+      adapterInstance = CodeBlock.of("$N", getName(graph.typeName()));
+    }
+    block.addStatement("$T $N = $L.readFromParcel($N)",
+        fieldTypeName, field.name(), adapterInstance, in);
   }
 
   private CodeBlock createModel(ClassName className) {
