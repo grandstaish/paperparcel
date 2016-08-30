@@ -117,7 +117,7 @@ final class PaperParcelWriter {
     CodeBlock.Builder block = CodeBlock.builder();
     ImmutableList<FieldDescriptor> fields = descriptor.fields();
     for (FieldDescriptor fieldDescriptor : fields) {
-      AdapterGraph graph = descriptor.adapters().get(fieldDescriptor.normalizedType());
+      AdapterGraph graph = descriptor.adapters().get(fieldDescriptor);
       TypeName fieldTypeName = TypeName.get(fieldDescriptor.type().get());
       CodeBlock adapterInstance;
       if (graph.adapter().isSingleton()) {
@@ -175,7 +175,7 @@ final class PaperParcelWriter {
       Preconditions.checkNotNull(readInfo);
       ImmutableList<FieldDescriptor> readableFields = readInfo.readableFields();
       for (FieldDescriptor field : readableFields) {
-        AdapterGraph graph = descriptor.adapters().get(field.normalizedType());
+        AdapterGraph graph = descriptor.adapters().get(field);
         CodeBlock adapterInstance = adapterInstance(graph);
         builder.addStatement("$L.writeToParcel($N.$N, $N, $N)",
             adapterInstance, FIELD_NAME, field.name(), dest, flags);
@@ -184,7 +184,7 @@ final class PaperParcelWriter {
       ImmutableSet<Map.Entry<FieldDescriptor, ExecutableElement>> fieldGetterEntries =
           readInfo.getterMethodMap().entrySet();
       for (Map.Entry<FieldDescriptor, ExecutableElement> fieldGetterEntry : fieldGetterEntries) {
-        AdapterGraph graph = descriptor.adapters().get(fieldGetterEntry.getKey().normalizedType());
+        AdapterGraph graph = descriptor.adapters().get(fieldGetterEntry.getKey());
         CodeBlock adapterInstance = adapterInstance(graph);
         builder.addStatement("$L.writeToParcel($N.$N(), $N, $N)",
             adapterInstance, FIELD_NAME, fieldGetterEntry.getValue().getSimpleName(), dest, flags);

@@ -17,13 +17,11 @@
 package paperparcel;
 
 import com.google.auto.value.AutoValue;
-import com.google.common.base.Equivalence;
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 import org.jetbrains.annotations.Nullable;
 
@@ -42,9 +40,9 @@ abstract class PaperParcelDescriptor {
 
   /**
    * Returns all of the adapters required for each field in the annotated class, indexed by the
-   * field types
+   * field they are required for
    */
-  abstract ImmutableMap<Equivalence.Wrapper<TypeMirror>, AdapterGraph> adapters();
+  abstract ImmutableMap<FieldDescriptor, AdapterGraph> adapters();
 
   /**
    * Returns true if this class is a singleton. Singletons are defined as per
@@ -70,24 +68,18 @@ abstract class PaperParcelDescriptor {
         fieldsBuilder.addAll(readInfo.getterMethodMap().keySet());
       }
       ImmutableList<FieldDescriptor> fields = fieldsBuilder.build();
-      ImmutableMap<Equivalence.Wrapper<TypeMirror>, AdapterGraph> adapters =
-          getAdapterMap(fields);
+      ImmutableMap<FieldDescriptor, AdapterGraph> adapters = getAdapterMap(fields);
       boolean singleton = Utils.isSingleton(types, element);
       return new AutoValue_PaperParcelDescriptor(
           element, fields, writeInfo, readInfo, adapters, singleton);
     }
 
-    private ImmutableMap<Equivalence.Wrapper<TypeMirror>, AdapterGraph> getAdapterMap(
+    private ImmutableMap<FieldDescriptor, AdapterGraph> getAdapterMap(
         ImmutableList<FieldDescriptor> fields) {
       return FluentIterable.from(fields)
-          .transform(new Function<FieldDescriptor, Equivalence.Wrapper<TypeMirror>>() {
-            @Override public Equivalence.Wrapper<TypeMirror> apply(FieldDescriptor field) {
-              return field.normalizedType();
-            }
-          })
-          .toMap(new Function<Equivalence.Wrapper<TypeMirror>, AdapterGraph>() {
-            @Override public AdapterGraph apply(Equivalence.Wrapper<TypeMirror> type) {
-              return adapterGraphFactory.create(type.get());
+          .toMap(new Function<FieldDescriptor, AdapterGraph>() {
+            @Override public AdapterGraph apply(FieldDescriptor field) {
+              return adapterGraphFactory.create(field.normalizedType().get());
             }
           });
     }
