@@ -34,19 +34,16 @@ final class RegisterAdapterProcessingStep implements BasicAnnotationProcessor.Pr
   private final Messager messager;
   private final RegisterAdapterValidator registerAdapterValidator;
   private final AdapterDescriptor.Factory adapterDescriptorFactory;
-  private final AdapterValidator adapterValidator;
   private final AdapterRegistry adapterRegistry;
 
   RegisterAdapterProcessingStep(
       Messager messager,
       RegisterAdapterValidator registerAdapterValidator,
       AdapterDescriptor.Factory adapterDescriptorFactory,
-      AdapterValidator adapterValidator,
       AdapterRegistry adapterRegistry) {
     this.messager = messager;
     this.registerAdapterValidator = registerAdapterValidator;
     this.adapterDescriptorFactory = adapterDescriptorFactory;
-    this.adapterValidator = adapterValidator;
     this.adapterRegistry = adapterRegistry;
   }
 
@@ -58,18 +55,11 @@ final class RegisterAdapterProcessingStep implements BasicAnnotationProcessor.Pr
       SetMultimap<Class<? extends Annotation>, Element> elementsByAnnotation) {
     for (Element element : elementsByAnnotation.get(RegisterAdapter.class)) {
       TypeElement adapterElement = MoreElements.asType(element);
-      ValidationReport<TypeElement> validationReport =
-          registerAdapterValidator.validate(adapterElement);
-      validationReport.printMessagesTo(messager);
-      if (validationReport.isClean()) {
-        AdapterDescriptor adapterDescriptor =
-            adapterDescriptorFactory.fromAdapterElement(adapterElement);
-        ValidationReport<TypeElement> adapterValidationReport =
-            adapterValidator.validate(adapterElement, adapterDescriptor);
-        adapterValidationReport.printMessagesTo(messager);
-        if (adapterValidationReport.isClean()) {
-          adapterRegistry.registerAdapter(adapterDescriptor);
-        }
+      ValidationReport<TypeElement> report = registerAdapterValidator.validate(adapterElement);
+      report.printMessagesTo(messager);
+      if (report.isClean()) {
+        adapterRegistry.registerAdapter(
+            adapterDescriptorFactory.fromAdapterElement(adapterElement));
       }
     }
     return ImmutableSet.of();

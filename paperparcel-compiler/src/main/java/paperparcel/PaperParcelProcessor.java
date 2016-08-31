@@ -63,7 +63,6 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
     PaperParcelDescriptor.Factory paperParcelDescriptorFactory =
         new PaperParcelDescriptor.Factory(types, adapterGraphFactory);
 
-    AdapterValidator adapterValidator = new AdapterValidator();
     PaperParcelValidator paperParcelValidator =
         new PaperParcelValidator(
             elements, types, writeInfoFactory, readInfoFactory, adapterRegistry);
@@ -77,7 +76,6 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
             messager,
             registerAdapterValidator,
             adapterDescriptorFactory,
-            adapterValidator,
             adapterRegistry),
         new PaperParcelProcessingStep(
             messager,
