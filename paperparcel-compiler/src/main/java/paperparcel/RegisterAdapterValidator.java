@@ -103,7 +103,7 @@ final class RegisterAdapterValidator {
    * Ensure that the adapter's type arguments are all passed to the adapted type so that we
    * can use a field's type to resolve the adapter's type arguments at compile time.
    */
-  private boolean hasValidTypeParameters(final TypeElement element, TypeMirror adaptedType) {
+  private boolean hasValidTypeParameters(TypeElement element, TypeMirror adaptedType) {
     TypeVariable maybeTypeVariable = asTypeVariableSafe(adaptedType);
     if (maybeTypeVariable != null) {
       // For this type variable to have any meaning, it must have an extends bounds

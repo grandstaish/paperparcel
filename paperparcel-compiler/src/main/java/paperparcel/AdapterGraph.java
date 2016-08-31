@@ -31,7 +31,8 @@ import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import paperparcel.AdapterDescriptor.TypeParameter;
+
+import static paperparcel.Constants.TYPE_ADAPTER_CLASS_NAME;
 
 /**
  * Describes the {@link AdapterDescriptor} required for a particular field, and all of its
@@ -72,46 +73,31 @@ abstract class AdapterGraph {
       if (cached.isPresent()) {
         return cached.get();
       }
-      TypeName parcelableTypeName = TypeName.get(
-          Utils.getParcelableType(elements, types, normalizedType));
+      TypeName parcelableTypeName =
+          TypeName.get(Utils.getParcelableType(elements, types, normalizedType));
       AdapterDescriptor adapterDescriptor = adapterRegistry.getAdapter(parcelableTypeName).get();
       String adapterQualifiedName = adapterDescriptor.adapterQualifiedName();
       TypeElement adapterElement = elements.getTypeElement(adapterQualifiedName);
-      TypeMirror[] typeArguments = getTypeArguments(normalizedType, adapterDescriptor);
+      TypeMirror[] typeArguments = adapterDescriptor.typeArgumentsRequiredForType(normalizedType);
       DeclaredType resolvedAdapterType = types.getDeclaredType(adapterElement, typeArguments);
       ImmutableList.Builder<AdapterGraph> dependencies = new ImmutableList.Builder<>();
       Optional<ExecutableElement> mainConstructor = Utils.findLargestConstructor(adapterElement);
       if (mainConstructor.isPresent()) {
-        ExecutableType resolvedConstructorType = MoreTypes.asExecutable(
-            types.asMemberOf(resolvedAdapterType, mainConstructor.get()));
-        TypeMirror typeAdapterType = elements.getTypeElement(Constants.TYPE_ADAPTER_CLASS_NAME).asType();
+        ExecutableType resolvedConstructorType =
+            MoreTypes.asExecutable(types.asMemberOf(resolvedAdapterType, mainConstructor.get()));
+        TypeMirror typeAdapterType = elements.getTypeElement(TYPE_ADAPTER_CLASS_NAME).asType();
         for (TypeMirror adapterDependencyType : resolvedConstructorType.getParameterTypes()) {
-          TypeMirror dependencyAdaptedType = Utils.getTypeArgumentsOfTypeFromType(
-              types, adapterDependencyType, typeAdapterType).get(0);
+          TypeMirror dependencyAdaptedType =
+              Utils.getTypeArgumentsOfTypeFromType(types, adapterDependencyType, typeAdapterType)
+                  .get(0);
           dependencies.add(create(dependencyAdaptedType));
         }
       }
       TypeName typeName = TypeName.get(resolvedAdapterType);
-      AdapterGraph adapterGraph = new AutoValue_AdapterGraph(
-          dependencies.build(), adapterDescriptor, typeName);
+      AdapterGraph adapterGraph =
+          new AutoValue_AdapterGraph(dependencies.build(), adapterDescriptor, typeName);
       adapterRegistry.registerGraph(normalizedTypeName, adapterGraph);
       return adapterGraph;
-    }
-
-    private TypeMirror[] getTypeArguments(TypeMirror type, AdapterDescriptor adapter) {
-      ImmutableList<TypeParameter> typeParameters = adapter.typeParameters();
-      TypeMirror[] adapterTypeArguments = new TypeMirror[typeParameters.size()];
-      for (int i = 0; i < typeParameters.size(); i++) {
-        TypeParameter parameter = typeParameters.get(i);
-        int index = parameter.index();
-        if (index != TypeParameter.NO_INDEX) {
-          DeclaredType declaredFieldType = MoreTypes.asDeclared(type);
-          adapterTypeArguments[i] = declaredFieldType.getTypeArguments().get(index);
-        } else {
-          adapterTypeArguments[i] = type;
-        }
-      }
-      return adapterTypeArguments;
     }
   }
 }

@@ -18,28 +18,22 @@ package paperparcel;
 
 import com.google.auto.common.MoreTypes;
 import com.google.auto.value.AutoValue;
-import com.google.common.base.Optional;
-import com.google.common.base.Predicate;
-import com.google.common.collect.FluentIterable;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.squareup.javapoet.TypeName;
-import java.util.List;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ExecutableElement;
-import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
-import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Elements;
-import javax.lang.model.util.SimpleTypeVisitor7;
+import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
+
+import static paperparcel.Constants.TYPE_ADAPTER_CLASS_NAME;
 
 /**
  * Represents all class information about a TypeAdapter. Instances of {@link AdapterDescriptor}
@@ -48,6 +42,26 @@ import javax.lang.model.util.Types;
  */
 @AutoValue
 abstract class AdapterDescriptor {
+  private enum Op {
+    SKIP,
+    SKIP_TYPE_VARIABLE,
+    PROCESS
+  }
+
+  private static class Index {
+    private int index;
+
+    void increment() {
+      index++;
+    }
+
+    int get() {
+      return index;
+    }
+  }
+
+  private ImmutableList<ImmutableList<Op>> typeParameterData = null;
+
   /**
    * Returns the type for which this TypeAdapter is responsible for handling. This type
    * is always erased.
@@ -58,31 +72,71 @@ abstract class AdapterDescriptor {
   abstract String adapterQualifiedName();
 
   /**
-   * Returns all type parameter information pertaining to this TypeAdapter, or an empty
-   * list if there are none.
-   */
-  abstract ImmutableList<TypeParameter> typeParameters();
-
-  /**
    * Returns true if this class is a singleton. Singletons are defined as per
    * {@link Utils#isSingleton(Types, TypeElement)}
    */
   abstract boolean isSingleton();
 
-  /** Represents the purpose of a single type parameter on this adapter */
-  @AutoValue
-  static abstract class TypeParameter {
-    static final int NO_INDEX = -1;
+  /**
+   * Returns all of the TypeMirrors that should be used as arguments for an instance of
+   * this adapter when processing {@code type}
+   */
+  TypeMirror[] typeArgumentsRequiredForType(TypeMirror type) {
+    Preconditions.checkNotNull(typeParameterData, "typeParameterData == null");
+    TypeMirror[] result = new TypeMirror[typeParameterData.size()];
+    for (int i = 0; i < typeParameterData.size(); i++) {
+      final ImmutableList<Op> ops = typeParameterData.get(i);
+      if (ops.size() == 0) {
+        result[i] = type;
+      } else {
+        // Find the TypeMirror that should be used as the argument for the current type
+        // parameter by following the operations recorded when parsing.
+        result[i] = type.accept(new SimpleTypeVisitor6<TypeMirror, Index>() {
+          @Override
+          public TypeMirror visitArray(ArrayType type, Index index) {
+            switch (ops.get(index.get())) {
+              case PROCESS:
+                return type;
+              case SKIP:
+                index.increment();
+                return type.getComponentType().accept(this, index);
+              default:
+              case SKIP_TYPE_VARIABLE:
+                index.increment();
+                return null;
+            }
+          }
 
-    /** The simple name of the type parameter */
-    abstract String name();
+          @Override
+          public TypeMirror visitDeclared(DeclaredType type, Index index) {
+            switch (ops.get(index.get())) {
+              case PROCESS:
+                return type;
+              case SKIP:
+                index.increment();
+                for (TypeMirror arg : type.getTypeArguments()) {
+                  index.increment();
+                  TypeMirror result = arg.accept(this, index);
+                  if (result != null) return result;
+                }
+                return null;
+              default:
+              case SKIP_TYPE_VARIABLE:
+                index.increment();
+                return null;
+            }
+          }
 
-    /** TODO(brad): define index */
-    abstract int index();
-
-    static TypeParameter create(String name, int index) {
-      return new AutoValue_AdapterDescriptor_TypeParameter(name, index);
+          @Override
+          public TypeMirror visitWildcard(WildcardType type, Index index) {
+            type.getSuperBound().accept(this, index);
+            type.getExtendsBound().accept(this, index);
+            return null;
+          }
+        }, new Index());
+      }
     }
+    return result;
   }
 
   static final class Factory {
@@ -98,115 +152,85 @@ abstract class AdapterDescriptor {
 
     AdapterDescriptor fromAdapterElement(TypeElement adapterElement) {
       DeclaredType adapterType = MoreTypes.asDeclared(adapterElement.asType());
-      TypeMirror typeAdapterType = elements.getTypeElement(Constants.TYPE_ADAPTER_CLASS_NAME).asType();
+      TypeMirror typeAdapterType = elements.getTypeElement(TYPE_ADAPTER_CLASS_NAME).asType();
       TypeMirror adaptedType = Utils.getTypeArgumentsOfTypeFromType(
           types, adapterType, typeAdapterType).get(0);
-      ImmutableList<TypeVariable> adaptedTypeTypeVariables =
-          adaptedType.accept(TYPE_VAR_VISITOR, null);
-      List<? extends TypeParameterElement> adapterTypeParameters = adapterElement.getTypeParameters();
-      Optional<ExecutableElement> mainConstructor = Utils.findLargestConstructor(adapterElement);
-      ImmutableList<TypeParameter> typeParameters = mainConstructor.isPresent()
-          ? getTypeParameters(adapterTypeParameters, adaptedTypeTypeVariables, mainConstructor.get())
-          : ImmutableList.<TypeParameter>of();
+      TypeName adaptedTypeName = TypeName.get(types.erasure(adaptedType));
+      String adapterQualifiedName = adapterElement.getQualifiedName().toString();
       boolean singleton = Utils.isSingleton(types, adapterElement);
-      return new AutoValue_AdapterDescriptor(
-          TypeName.get(types.erasure(adaptedType)),
-          adapterElement.getQualifiedName().toString(),
-          typeParameters,
-          singleton);
+      AdapterDescriptor instance =
+          new AutoValue_AdapterDescriptor(adaptedTypeName, adapterQualifiedName, singleton);
+      instance.typeParameterData = getTypeParameterData(adapterElement, adaptedType);
+      return instance;
     }
 
-    /**
-     * Gets the list of {@link TypeParameter}s for this TypeAdapter. Returns an empty
-     * list if there are none.
-     */
-    private ImmutableList<TypeParameter> getTypeParameters(
-        List<? extends TypeParameterElement> adapterTypeParameters,
-        ImmutableList<TypeVariable> adaptedTypeTypeVariables,
-        ExecutableElement mainConstructor) {
-      ImmutableList.Builder<TypeParameter> typeParameters = new ImmutableList.Builder<>();
-      for (TypeParameterElement adapterParameter : adapterTypeParameters) {
-        final String parameterName = adapterParameter.getSimpleName().toString();
-        if (isUsedInConstructor(mainConstructor, adapterParameter)) {
-          int index = AdapterDescriptor.TypeParameter.NO_INDEX;
-          for (int i = 0; i < adaptedTypeTypeVariables.size(); i++) {
-            TypeVariable typeVariable = adaptedTypeTypeVariables.get(i);
-            if (parameterName.contentEquals(typeVariable.toString())) {
-              index = i;
-              break;
+    private ImmutableList<ImmutableList<Op>> getTypeParameterData(
+        final TypeElement element, TypeMirror adaptedType) {
+      // If the adapted type is a type variable itself, we know that it must be the only one
+      // thanks to the validation step. For resolving this argument, we should use the field's
+      // full type, hence we don't need to do any processing of the type.
+      TypeVariable maybeTypeVariable = asTypeVariableSafe(adaptedType);
+      if (maybeTypeVariable != null) {
+        return ImmutableList.of(ImmutableList.<Op>of());
+      }
+      // For each type parameter on the adapter element, search through the adapted type
+      // until the usage of it is found. While searching, record the steps that were taken in
+      // order to find the type parameter usage. These steps will be used later to determine
+      // the type arguments needed for an instance of this adapter for the type of field it
+      // is adapting.
+      ImmutableList.Builder<ImmutableList<Op>> result = ImmutableList.builder();
+      for (TypeParameterElement adapterParameter : element.getTypeParameters()) {
+        final ImmutableList.Builder<Op> ops = ImmutableList.builder();
+        final String target = adapterParameter.getSimpleName().toString();
+        adaptedType.accept(new SimpleTypeVisitor6<Boolean, Void>() {
+          @Override
+          public Boolean visitTypeVariable(TypeVariable type, Void p) {
+            if (target.contentEquals(type.toString())) {
+              ops.add(Op.PROCESS);
+              return true;
+            } else {
+              ops.add(Op.SKIP_TYPE_VARIABLE);
+              return false;
             }
           }
-          typeParameters.add(TypeParameter.create(parameterName, index));
-        } else {
-          typeParameters.add(TypeParameter.create(parameterName, TypeParameter.NO_INDEX));
-        }
-      }
-      return typeParameters.build();
-    }
 
-    /**
-     * Returns true if the given {@link TypeParameterElement} is used anywhere in the given
-     * constructor, false otherwise
-     */
-    private boolean isUsedInConstructor(
-        ExecutableElement constructor, TypeParameterElement typeParameterElement) {
-      for (VariableElement parameter : constructor.getParameters()) {
-        Name name = typeParameterElement.getSimpleName();
-        ImmutableList<TypeVariable> typeVariables =
-            parameter.asType().accept(TYPE_VAR_VISITOR, null);
-        Optional<TypeVariable> match = FluentIterable.from(typeVariables)
-            .firstMatch(matchesName(name));
-        if (match.isPresent()) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    private static Predicate<TypeVariable> matchesName(final Name name) {
-      return new Predicate<TypeVariable>() {
-        @Override public boolean apply(TypeVariable input) {
-          return name.contentEquals(input.toString());
-        }
-      };
-    }
-
-    /**
-     * Traverses all sub types of a type to find any {@link TypeVariable} instances and returns
-     * them in a list.
-     */
-    private static final TypeVisitor<ImmutableList<TypeVariable>, Void> TYPE_VAR_VISITOR =
-        new SimpleTypeVisitor7<ImmutableList<TypeVariable>, Void>() {
-          @Override protected ImmutableList<TypeVariable> defaultAction(TypeMirror t, Void p) {
-            throw new AssertionError();
+          @Override
+          public Boolean visitArray(ArrayType type, Void p) {
+            ops.add(Op.SKIP);
+            return type.getComponentType().accept(this, p);
           }
 
-          @Override public ImmutableList<TypeVariable> visitPrimitive(PrimitiveType t, Void p) {
-            return ImmutableList.of();
-          }
-
-          @Override public ImmutableList<TypeVariable> visitTypeVariable(TypeVariable t, Void p) {
-            return ImmutableList.of(t);
-          }
-
-          @Override public ImmutableList<TypeVariable> visitArray(ArrayType t, Void p) {
-            return t.getComponentType().accept(this, p);
-          }
-
-          @Override public ImmutableList<TypeVariable> visitDeclared(DeclaredType t, Void p) {
-            ImmutableList.Builder<TypeVariable> result = new ImmutableList.Builder<>();
-            for (TypeMirror arg : t.getTypeArguments()) {
-              result.addAll(arg.accept(this, p));
+          @Override
+          public Boolean visitDeclared(DeclaredType type, Void p) {
+            ops.add(Op.SKIP);
+            for (TypeMirror arg : type.getTypeArguments()) {
+              ops.add(Op.SKIP);
+              if (arg.accept(this, p)) return true;
             }
-            return result.build();
+            return false;
           }
 
-          @Override public ImmutableList<TypeVariable> visitWildcard(WildcardType t, Void p) {
-            ImmutableList.Builder<TypeVariable> result = new ImmutableList.Builder<>();
-            result.addAll(t.getSuperBound().accept(this, p));
-            result.addAll(t.getExtendsBound().accept(this, p));
-            return result.build();
+          @Override
+          public Boolean visitWildcard(WildcardType type, Void p) {
+            return type.getSuperBound().accept(this, p)
+                || type.getExtendsBound().accept(this, p);
           }
-        };
+        }, null);
+        result.add(ops.build());
+      }
+      return result.build();
+    }
+
+    /**
+     * Returns a {@link TypeVariable} if the {@link TypeMirror} represents a type variable
+     * or null if not.
+     */
+    private static TypeVariable asTypeVariableSafe(TypeMirror maybeTypeVariable) {
+      return maybeTypeVariable.accept(new SimpleTypeVisitor6<TypeVariable, Void>() {
+        @Override public TypeVariable visitTypeVariable(TypeVariable type, Void p) {
+          return type;
+        }
+      }, null);
+    }
   }
 }
