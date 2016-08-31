@@ -16,9 +16,11 @@
 
 package paperparcel;
 
+import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import java.util.List;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -102,7 +104,6 @@ final class RegisterAdapterValidator {
    * can use a field's type to resolve the adapter's type arguments at compile time.
    */
   private boolean hasValidTypeParameters(final TypeElement element, TypeMirror adaptedType) {
-
     TypeVariable maybeTypeVariable = asTypeVariableSafe(adaptedType);
     if (maybeTypeVariable != null) {
       // For this type variable to have any meaning, it must have an extends bounds
@@ -112,67 +113,49 @@ final class RegisterAdapterValidator {
       }
     }
 
-    // Only other possible types that can be adapted are arrays and classes.
-    ImmutableList<? extends TypeMirror> typesToCheck =
-        adaptedType.accept(new SimpleTypeVisitor6<ImmutableList<? extends TypeMirror>, Void>() {
-          @Override
-          public ImmutableList<? extends TypeMirror> visitTypeVariable(TypeVariable type, Void p) {
-            return ImmutableList.of(type);
-          }
+    // Collect all of the unique type variables used in the adapted type
+    ImmutableSet.Builder<String> adaptedTypeArguments = ImmutableSet.builder();
+    adaptedType.accept(new SimpleTypeVisitor6<Void, ImmutableSet.Builder<String>>() {
+      @Override
+      public Void visitTypeVariable(TypeVariable type, ImmutableSet.Builder<String> set) {
+        set.add(type.toString());
+        return null;
+      }
 
-          @Override
-          public ImmutableList<? extends TypeMirror> visitArray(ArrayType type, Void p) {
-            return ImmutableList.of(type.getComponentType());
-          }
+      @Override
+      public Void visitArray(ArrayType type, ImmutableSet.Builder<String> set) {
+        type.getComponentType().accept(this, set);
+        return null;
+      }
 
-          @Override
-          public ImmutableList<? extends TypeMirror> visitDeclared(DeclaredType type, Void p) {
-            return ImmutableList.copyOf(type.getTypeArguments());
-          }
-
-          @Override
-          protected ImmutableList<? extends TypeMirror> defaultAction(TypeMirror type, Void p) {
-            throw new AssertionError("Invalid type argument in " + element.toString());
-          }
-        }, null);
-
-    // Collect all of the unique type variables used in types to check
-    ImmutableSet.Builder<String> uniqueTypeVariableNames = ImmutableSet.builder();
-    for (TypeMirror type : typesToCheck) {
-      type.accept(new SimpleTypeVisitor6<Void, ImmutableSet.Builder<String>>() {
-        @Override
-        public Void visitTypeVariable(TypeVariable type, ImmutableSet.Builder<String> set) {
-          set.add(type.toString());
-          return null;
+      @Override
+      public Void visitDeclared(DeclaredType type, ImmutableSet.Builder<String> set) {
+        for (TypeMirror arg : type.getTypeArguments()) {
+          arg.accept(this, set);
         }
+        return null;
+      }
 
-        @Override
-        public Void visitArray(ArrayType type, ImmutableSet.Builder<String> set) {
-          type.getComponentType().accept(this, set);
-          return null;
-        }
+      @Override
+      public Void visitWildcard(WildcardType type, ImmutableSet.Builder<String> set) {
+        type.getSuperBound().accept(this, set);
+        type.getExtendsBound().accept(this, set);
+        return null;
+      }
+    }, adaptedTypeArguments);
 
-        @Override
-        public Void visitDeclared(DeclaredType type, ImmutableSet.Builder<String> set) {
-          for (TypeMirror arg : type.getTypeArguments()) {
-            arg.accept(this, set);
+    // Get a set of all of the adapter's type parameter names
+    ImmutableSet<String> adapterParameters = FluentIterable.from(element.getTypeParameters())
+        .transform(new Function<TypeParameterElement, String>() {
+          @Override public String apply(TypeParameterElement input) {
+            return input.getSimpleName().toString();
           }
-          return null;
-        }
+        })
+        .toSet();
 
-        @Override
-        public Void visitWildcard(WildcardType type, ImmutableSet.Builder<String> set) {
-          type.getSuperBound().accept(this, set);
-          type.getExtendsBound().accept(this, set);
-          return null;
-        }
-      }, uniqueTypeVariableNames);
-    }
-
-    // Verify the amount of type parameters on this adapter match the number of type variables
-    // used in the array component type or the declared types' type arguments.
-    List<? extends TypeParameterElement> adapterTypeParameters = element.getTypeParameters();
-    return adapterTypeParameters.size() == uniqueTypeVariableNames.build().size();
+    // Verify the type parameters on the adapter are all passed to the adapted type by getting
+    // the difference between the two sets and verifying it is empty.
+    return Sets.difference(adapterParameters, adaptedTypeArguments.build()).size() == 0;
   }
 
   /**
