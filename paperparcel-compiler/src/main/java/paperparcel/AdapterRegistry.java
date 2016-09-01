@@ -23,6 +23,7 @@ import com.google.common.collect.Maps;
 import com.squareup.javapoet.TypeName;
 import java.util.List;
 import java.util.Map;
+
 /**
  * Responsible for caching the qualified class names of all of the TypeAdapters discovered across
  * the various processing rounds and also cache {@link Adapter} instances as these can be
