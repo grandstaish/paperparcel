@@ -66,7 +66,7 @@ final class PaperParcelWriter {
   }
 
   final TypeSpec.Builder write() {
-    Set<AdapterGraph> emptySet = Sets.newLinkedHashSet();
+    Set<Adapter> emptySet = Sets.newLinkedHashSet();
     ClassName className = ClassName.get(descriptor.element());
     return TypeSpec.classBuilder(name)
         .addModifiers(FINAL)
@@ -131,14 +131,9 @@ final class PaperParcelWriter {
 
   @SuppressWarnings("ConstantConditions")
   private void readField(CodeBlock.Builder block, FieldDescriptor field, ParameterSpec in) {
-    AdapterGraph graph = descriptor.adapters().get(field);
+    Adapter adapter = descriptor.adapters().get(field);
     TypeName fieldTypeName = TypeName.get(field.type().get());
-    CodeBlock adapterInstance;
-    if (graph.adapter().isSingleton()) {
-      adapterInstance = CodeBlock.of("$T.INSTANCE", graph.typeName());
-    } else {
-      adapterInstance = CodeBlock.of("$N", getName(graph.typeName()));
-    }
+    CodeBlock adapterInstance = adapterInstance(adapter);
     block.addStatement("$T $N = $L.readFromParcel($N)",
         fieldTypeName, field.name(), adapterInstance, in);
   }
@@ -187,8 +182,8 @@ final class PaperParcelWriter {
       Preconditions.checkNotNull(readInfo);
       ImmutableList<FieldDescriptor> readableFields = readInfo.readableFields();
       for (FieldDescriptor field : readableFields) {
-        AdapterGraph graph = descriptor.adapters().get(field);
-        CodeBlock adapterInstance = adapterInstance(graph);
+        Adapter adapter = descriptor.adapters().get(field);
+        CodeBlock adapterInstance = adapterInstance(adapter);
         builder.addStatement("$L.writeToParcel($N.$N, $N, $N)",
             adapterInstance, FIELD_NAME, field.name(), dest, flags);
       }
@@ -196,8 +191,8 @@ final class PaperParcelWriter {
       ImmutableSet<Map.Entry<FieldDescriptor, ExecutableElement>> fieldGetterEntries =
           readInfo.getterMethodMap().entrySet();
       for (Map.Entry<FieldDescriptor, ExecutableElement> fieldGetterEntry : fieldGetterEntries) {
-        AdapterGraph graph = descriptor.adapters().get(fieldGetterEntry.getKey());
-        CodeBlock adapterInstance = adapterInstance(graph);
+        Adapter adapter = descriptor.adapters().get(fieldGetterEntry.getKey());
+        CodeBlock adapterInstance = adapterInstance(adapter);
         builder.addStatement("$L.writeToParcel($N.$N(), $N, $N)",
             adapterInstance, FIELD_NAME, fieldGetterEntry.getValue().getSimpleName(), dest, flags);
       }
@@ -206,37 +201,37 @@ final class PaperParcelWriter {
     return builder.build();
   }
 
-  private CodeBlock adapterInstance(AdapterGraph graph) {
+  private CodeBlock adapterInstance(Adapter adapter) {
     CodeBlock adapterInstance;
-    if (graph.adapter().isSingleton()) {
-      adapterInstance = CodeBlock.of("$T.INSTANCE", graph.typeName());
+    if (adapter.isSingleton()) {
+      adapterInstance = CodeBlock.of("$T.INSTANCE", adapter.typeName());
     } else {
-      adapterInstance = CodeBlock.of("$N", getName(graph.typeName()));
+      adapterInstance = CodeBlock.of("$N", getName(adapter.typeName()));
     }
     return adapterInstance;
   }
 
   /** Returns a list of all of the {@link FieldSpec}s that define the required TypeAdapters */
   private ImmutableList<FieldSpec> adapterDependencies(
-      ImmutableCollection<AdapterGraph> graphs, Set<AdapterGraph> scoped) {
+      ImmutableCollection<Adapter> adapters, Set<Adapter> scoped) {
     ImmutableList.Builder<FieldSpec> adapterFields = new ImmutableList.Builder<>();
-    for (AdapterGraph graph : graphs) {
+    for (Adapter adapter : adapters) {
       // Don't define the same adapter twice
-      if (scoped.contains(graph)) {
+      if (scoped.contains(adapter)) {
         continue;
       }
-      scoped.add(graph);
-      if (!graph.adapter().isSingleton()) {
+      scoped.add(adapter);
+      if (!adapter.isSingleton()) {
         // Add dependencies, then create and add the current adapter
-        if (graph.dependencies().size() > 0) {
-          adapterFields.addAll(adapterDependencies(graph.dependencies(), scoped));
+        if (adapter.dependencies().size() > 0) {
+          adapterFields.addAll(adapterDependencies(adapter.dependencies(), scoped));
         }
         // Construct the single instance of this type adapter
-        String adapterName = getName(graph.typeName());
-        CodeBlock parameters = getAdapterParameterList(graph.dependencies());
+        String adapterName = getName(adapter.typeName());
+        CodeBlock parameters = getAdapterParameterList(adapter.dependencies());
         FieldSpec.Builder adapterSpec =
-            FieldSpec.builder(graph.typeName(), adapterName, PRIVATE, STATIC, FINAL)
-                .initializer(CodeBlock.of("new $T($L)", graph.typeName(), parameters));
+            FieldSpec.builder(adapter.typeName(), adapterName, PRIVATE, STATIC, FINAL)
+                .initializer(CodeBlock.of("new $T($L)", adapter.typeName(), parameters));
         adapterFields.add(adapterSpec.build());
       }
     }
@@ -247,11 +242,11 @@ final class PaperParcelWriter {
    * Returns a comma-separated {@link CodeBlock} for all of the adapter instances in
    * {@code dependencies}.
    */
-  private CodeBlock getAdapterParameterList(ImmutableList<AdapterGraph> dependencies) {
+  private CodeBlock getAdapterParameterList(ImmutableList<Adapter> dependencies) {
     return CodeBlocks.join(FluentIterable.from(dependencies)
-        .transform(new Function<AdapterGraph, CodeBlock>() {
-          @Override public CodeBlock apply(AdapterGraph graph) {
-            return adapterInstance(graph);
+        .transform(new Function<Adapter, CodeBlock>() {
+          @Override public CodeBlock apply(Adapter adapter) {
+            return adapterInstance(adapter);
           }
         })
         .toList(), ", ");

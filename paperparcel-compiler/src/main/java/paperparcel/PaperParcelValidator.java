@@ -28,8 +28,8 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.PrimitiveType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
@@ -41,19 +41,19 @@ final class PaperParcelValidator {
   private final Types types;
   private final WriteInfo.Factory writeInfoFactory;
   private final ReadInfo.Factory readInfoFactory;
-  private final AdapterRegistry adapterRegistry;
+  private final Adapter.Factory adapterFactory;
 
   PaperParcelValidator(
       Elements elements,
       Types types,
       WriteInfo.Factory writeInfoFactory,
       ReadInfo.Factory readInfoFactory,
-      AdapterRegistry adapterRegistry) {
+      Adapter.Factory adapterFactory) {
     this.elements = elements;
     this.types = types;
     this.writeInfoFactory = writeInfoFactory;
     this.readInfoFactory = readInfoFactory;
-    this.adapterRegistry = adapterRegistry;
+    this.adapterFactory = adapterFactory;
   }
 
   @AutoValue
@@ -100,8 +100,8 @@ final class PaperParcelValidator {
         addErrorsForNonReadableFields(e, builder);
       }
       for (VariableElement field : fields) {
-        ensureAdaptersExistForField(field, builder);
         ensureGenericFieldsAreNotRaw(field, builder);
+        ensureAdaptersExistForField(field, builder);
       }
     }
     return PaperParcelValidation.create(builder.build(), writeInfo, readInfo);
@@ -179,47 +179,22 @@ final class PaperParcelValidator {
     }, null);
   }
 
-  /**
-   * Finds all referenced types of a field and checks the {@link AdapterRegistry} to ensure
-   * that type can be handled by PaperParcel. Adds an error to {@code builder} for every missing
-   * type.
-   */
   private void ensureAdaptersExistForField(
-      final VariableElement field,
-      final ValidationReport.Builder<TypeElement> builder) {
+      VariableElement field, ValidationReport.Builder<TypeElement> builder) {
+    TypeMirror normalizedType = normalize(field.asType());
+    if (adapterFactory.create(normalizedType) == null) {
+      builder.addError(
+          String.format(ErrorMessages.MISSING_TYPE_ADAPTER,
+              normalizedType.toString(),
+              ErrorMessages.SITE_URL),
+          field);
+    }
+  }
 
-    field.asType().accept(new SimpleTypeVisitor6<Void, Void>() {
-
-      @Override public Void visitWildcard(WildcardType t, Void p) {
-        if (t.getExtendsBound() != null) {
-          t.getExtendsBound().accept(this, p);
-        }
-        if (t.getSuperBound() != null) {
-          t.getSuperBound().accept(this, p);
-        }
-        return null;
-      }
-
-      @Override public Void visitPrimitive(PrimitiveType t, Void p) {
-        return defaultAction(types.boxedClass(t).asType(), p);
-      }
-
-      @Override public Void visitDeclared(DeclaredType t, Void p) {
-        for (TypeMirror arg : t.getTypeArguments()) {
-          arg.accept(this, p);
-        }
-        return defaultAction(t, p);
-      }
-
-      @Override protected Void defaultAction(TypeMirror t, Void p) {
-        TypeMirror erased = Utils.getParcelableType(elements, types, t);
-        if (!adapterRegistry.getAdapter(TypeName.get(erased)).isPresent()) {
-          builder.addError(String.format(ErrorMessages.MISSING_TYPE_ADAPTER,
-              t.toString(), ErrorMessages.SITE_URL),
-              field);
-        }
-        return null;
-      }
-    }, null);
+  private TypeMirror normalize(TypeMirror type) {
+    TypeKind kind = type.getKind();
+    return kind.isPrimitive()
+        ? types.boxedClass((PrimitiveType) type).asType()
+        : type;
   }
 }

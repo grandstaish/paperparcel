@@ -33,17 +33,14 @@ import javax.lang.model.element.TypeElement;
 final class RegisterAdapterProcessingStep implements BasicAnnotationProcessor.ProcessingStep {
   private final Messager messager;
   private final RegisterAdapterValidator registerAdapterValidator;
-  private final AdapterDescriptor.Factory adapterDescriptorFactory;
   private final AdapterRegistry adapterRegistry;
 
   RegisterAdapterProcessingStep(
       Messager messager,
       RegisterAdapterValidator registerAdapterValidator,
-      AdapterDescriptor.Factory adapterDescriptorFactory,
       AdapterRegistry adapterRegistry) {
     this.messager = messager;
     this.registerAdapterValidator = registerAdapterValidator;
-    this.adapterDescriptorFactory = adapterDescriptorFactory;
     this.adapterRegistry = adapterRegistry;
   }
 
@@ -58,8 +55,7 @@ final class RegisterAdapterProcessingStep implements BasicAnnotationProcessor.Pr
       ValidationReport<TypeElement> report = registerAdapterValidator.validate(adapterElement);
       report.printMessagesTo(messager);
       if (report.isClean()) {
-        adapterRegistry.registerAdapter(
-            adapterDescriptorFactory.fromAdapterElement(adapterElement));
+        adapterRegistry.registerAdapter(adapterElement.getQualifiedName().toString());
       }
     }
     return ImmutableSet.of();

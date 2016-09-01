@@ -185,18 +185,5 @@ final class Utils {
     return types.isAssignable(type, parcelableType);
   }
 
-  /**
-   * Converts {@code type} into a {@link TypeMirror} that an {@link AdapterDescriptor} is
-   * intended to be able to handle. Results of this call can be used to look up an
-   * {@link AdapterDescriptor} from the {@link AdapterRegistry}.
-   */
-  static TypeMirror getParcelableType(Elements elements, Types types, TypeMirror type) {
-    TypeMirror parcelableType = elements.getTypeElement(PARCELABLE_CLASS_NAME).asType();
-    if (!types.isAssignable(type, parcelableType)) {
-      return types.erasure(type);
-    }
-    return parcelableType;
-  }
-
   private Utils() {}
 }

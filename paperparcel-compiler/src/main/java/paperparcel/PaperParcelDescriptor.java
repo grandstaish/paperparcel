@@ -39,7 +39,7 @@ abstract class PaperParcelDescriptor {
    * Returns all of the adapters required for each field in the annotated class, indexed by the
    * field they are required for
    */
-  abstract ImmutableMap<FieldDescriptor, AdapterGraph> adapters();
+  abstract ImmutableMap<FieldDescriptor, Adapter> adapters();
 
   /**
    * Returns true if this class is a singleton. Singletons are defined as per
@@ -49,29 +49,29 @@ abstract class PaperParcelDescriptor {
 
   static final class Factory {
     private final Types types;
-    private final AdapterGraph.Factory adapterGraphFactory;
+    private final Adapter.Factory adapterFactory;
 
     Factory(
         Types types,
-        AdapterGraph.Factory adapterGraphFactory) {
+        Adapter.Factory adapterFactory) {
       this.types = types;
-      this.adapterGraphFactory = adapterGraphFactory;
+      this.adapterFactory = adapterFactory;
     }
 
     PaperParcelDescriptor create(TypeElement element, WriteInfo writeInfo, ReadInfo readInfo) {
-      ImmutableMap<FieldDescriptor, AdapterGraph> adapters = getAdapterMap(readInfo);
+      ImmutableMap<FieldDescriptor, Adapter> adapters = getAdapterMap(readInfo);
       boolean singleton = Utils.isSingleton(types, element);
       return new AutoValue_PaperParcelDescriptor(element, writeInfo, readInfo, adapters, singleton);
     }
 
-    private ImmutableMap<FieldDescriptor, AdapterGraph> getAdapterMap(ReadInfo readInfo) {
-      ImmutableMap.Builder<FieldDescriptor, AdapterGraph> fieldAdapterMap = ImmutableMap.builder();
+    private ImmutableMap<FieldDescriptor, Adapter> getAdapterMap(ReadInfo readInfo) {
+      ImmutableMap.Builder<FieldDescriptor, Adapter> fieldAdapterMap = ImmutableMap.builder();
       if (readInfo != null) {
         for (FieldDescriptor field : readInfo.readableFields()) {
-          fieldAdapterMap.put(field, adapterGraphFactory.create(field.normalizedType().get()));
+          fieldAdapterMap.put(field, adapterFactory.create(field.normalizedType().get()));
         }
         for (FieldDescriptor field : readInfo.getterMethodMap().keySet()) {
-          fieldAdapterMap.put(field, adapterGraphFactory.create(field.normalizedType().get()));
+          fieldAdapterMap.put(field, adapterFactory.create(field.normalizedType().get()));
         }
       }
       return fieldAdapterMap.build();
