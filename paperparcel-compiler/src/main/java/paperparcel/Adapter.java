@@ -149,7 +149,10 @@ abstract class Adapter {
         @Override
         public TypeMirror visitTypeVariable(TypeVariable paramType, TypeMirror argType) {
           if (target.contentEquals(paramType.toString())) {
-            return argType;
+            TypeMirror extendsBounds = types.erasure(paramType);
+            if (types.isAssignable(argType, extendsBounds)) {
+              return argType;
+            }
           }
           return null;
         }
