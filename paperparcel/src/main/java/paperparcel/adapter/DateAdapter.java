@@ -19,7 +19,9 @@ package paperparcel.adapter;
 import android.os.Parcel;
 import android.support.annotation.NonNull;
 import java.util.Date;
+import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link Date} types */
 public final class DateAdapter extends AbstractAdapter<Date> {
   public static final DateAdapter INSTANCE = new DateAdapter();
 

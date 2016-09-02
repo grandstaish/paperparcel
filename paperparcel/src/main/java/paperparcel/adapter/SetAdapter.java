@@ -20,6 +20,11 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 import paperparcel.TypeAdapter;
 
+/**
+ * Default {@link TypeAdapter} for {@link Set} types
+ *
+ * <p>The {@link Set} used by default is {@link LinkedHashSet}
+ */
 public final class SetAdapter<T> extends AbstractMutableCollectionAdapter<Set<T>, T> {
   public SetAdapter(TypeAdapter<T> itemAdapter) {
     super(itemAdapter);

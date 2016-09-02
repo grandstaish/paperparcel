@@ -26,31 +26,30 @@ import javax.lang.model.util.Elements;
 
 /**
  * The class responsible for generating the Parcelable implementation code classes for the
- * specified {@link ParcelableImplDescriptor}
+ * specified {@link PaperParcelDescriptor}
  */
-final class ParcelableImplGenerator extends SourceFileGenerator<ParcelableImplDescriptor> {
-  ParcelableImplGenerator(
+final class PaperParcelGenerator extends SourceFileGenerator<PaperParcelDescriptor> {
+  PaperParcelGenerator(
       Filer filer,
       Elements elements) {
     super(filer, elements);
   }
 
-  @Override ClassName nameGeneratedType(ParcelableImplDescriptor input) {
-    ClassName paperParcelClassName = ClassName.get(input.paperParcelClass().element());
+  @Override ClassName nameGeneratedType(PaperParcelDescriptor input) {
+    ClassName paperParcelClassName = ClassName.get(input.element());
     String implName =
         "PaperParcel" + Joiner.on('_').join(paperParcelClassName.simpleNames());
     return paperParcelClassName.topLevelClassName().peerClass(implName);
   }
 
-  @Override Optional<? extends Element> getElementForErrorReporting(
-      ParcelableImplDescriptor input) {
-    return Optional.of(input.paperParcelClass().element());
+  @Override Optional<? extends Element> getElementForErrorReporting(PaperParcelDescriptor input) {
+    return Optional.of(input.element());
   }
 
-  @Override Optional<TypeSpec.Builder> write(ClassName generatedTypeName,
-      ParcelableImplDescriptor input) {
+  @Override Optional<TypeSpec.Builder> write(
+      ClassName generatedTypeName, PaperParcelDescriptor input) {
     return Optional.of(
-        new ParcelableImplWriter(generatedTypeName, input)
+        new PaperParcelWriter(generatedTypeName, input)
             .write());
   }
 }

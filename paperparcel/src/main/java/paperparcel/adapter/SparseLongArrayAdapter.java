@@ -21,7 +21,9 @@ import android.os.Build;
 import android.os.Parcel;
 import android.support.annotation.NonNull;
 import android.util.SparseLongArray;
+import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link SparseLongArray} types */
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 public final class SparseLongArrayAdapter extends AbstractAdapter<SparseLongArray> {
   public static final SparseLongArrayAdapter INSTANCE = new SparseLongArrayAdapter();

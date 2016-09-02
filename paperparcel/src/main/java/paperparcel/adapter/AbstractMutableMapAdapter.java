@@ -21,6 +21,15 @@ import android.support.annotation.NonNull;
 import java.util.Map;
 import paperparcel.TypeAdapter;
 
+/**
+ * A convenience base class for making it easy to write {@link TypeAdapter}s to handle classes
+ * that implement the {@link Map} interface. The {@link Map} type must support the
+ * {@link Map#put(Object, Object)} method.
+ *
+ * @param <M> The Map type to handle
+ * @param <K> The Key type of the Map (may be generic)
+ * @param <V> The Value type of the Map (may be generic)
+ */
 public abstract class AbstractMutableMapAdapter<M extends Map<K, V>, K, V>
     extends AbstractAdapter<M> {
   private final TypeAdapter<K> keyAdapter;
@@ -48,5 +57,6 @@ public abstract class AbstractMutableMapAdapter<M extends Map<K, V>, K, V>
     }
   }
 
+  /** Creates a new instance of the {@link Map} of the given {@code size} */
   protected abstract M newMap(int size);
 }

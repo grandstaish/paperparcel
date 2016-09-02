@@ -19,6 +19,7 @@ package paperparcel.adapter;
 import java.util.TreeSet;
 import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link TreeSet} types */
 public final class TreeSetAdapter<T> extends AbstractMutableCollectionAdapter<TreeSet<T>, T> {
   public TreeSetAdapter(TypeAdapter<T> itemAdapter) {
     super(itemAdapter);

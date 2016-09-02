@@ -19,6 +19,7 @@ package paperparcel.adapter;
 import java.util.ArrayList;
 import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link ArrayList} types */
 public final class ArrayListAdapter<T> extends AbstractMutableCollectionAdapter<ArrayList<T>, T> {
   public ArrayListAdapter(TypeAdapter<T> itemAdapter) {
     super(itemAdapter);

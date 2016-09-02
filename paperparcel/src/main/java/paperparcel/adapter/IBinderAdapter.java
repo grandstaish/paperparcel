@@ -19,7 +19,9 @@ package paperparcel.adapter;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.support.annotation.NonNull;
+import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link IBinder} types */
 public final class IBinderAdapter extends AbstractAdapter<IBinder> {
   public static final IBinderAdapter INSTANCE = new IBinderAdapter();
 

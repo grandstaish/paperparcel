@@ -21,6 +21,14 @@ import android.support.annotation.NonNull;
 import java.util.Collection;
 import paperparcel.TypeAdapter;
 
+/**
+ * A convenience base class for making it easy to write {@link TypeAdapter}s to handle classes
+ * that implement the {@link Collection} interface. The {@link Collection} type must support the
+ * {@link Collection#add(Object)} method.
+ *
+ * @param <C> The Collection type to handle
+ * @param <T> The Collection's item type (can be generic)
+ */
 public abstract class AbstractMutableCollectionAdapter<C extends Collection<T>, T>
     extends AbstractAdapter<C> {
   private final TypeAdapter<T> itemAdapter;
@@ -45,5 +53,6 @@ public abstract class AbstractMutableCollectionAdapter<C extends Collection<T>, 
     }
   }
 
+  /** Creates a new instance of the {@link Collection} of the given {@code size} */
   protected abstract C newCollection(int size);
 }

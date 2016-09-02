@@ -20,7 +20,7 @@ test {
 
 dependencies {
   compile project(':paperparcel-annotations')
-
+  compile deps.intellijAnnotations
   compile deps.autovalue
   compile deps.autoservice
   compile deps.autocommon
@@ -38,3 +38,5 @@ tasks.withType(Test) {
     events "passed", "skipped", "failed"
   }
 }
+
+apply from: rootProject.file('gradle/gradle-bintray-push.gradle')

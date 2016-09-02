@@ -20,6 +20,11 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import paperparcel.TypeAdapter;
 
+/**
+ * Default {@link TypeAdapter} for {@link Deque} types
+ *
+ * <p>The {@link Deque} used by default is {@link ArrayDeque}
+ */
 public final class DequeAdapter<T> extends AbstractMutableCollectionAdapter<Deque<T>, T> {
   public DequeAdapter(TypeAdapter<T> itemAdapter) {
     super(itemAdapter);

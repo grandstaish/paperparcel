@@ -19,6 +19,7 @@ package paperparcel.adapter;
 import java.util.HashMap;
 import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link HashMap} types */
 public final class HashMapAdapter<K, V> extends AbstractMutableMapAdapter<HashMap<K, V>, K, V> {
   public HashMapAdapter(TypeAdapter<K> keyAdapter, TypeAdapter<V> valueAdapter) {
     super(keyAdapter, valueAdapter);

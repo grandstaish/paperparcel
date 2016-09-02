@@ -19,6 +19,7 @@ package paperparcel.adapter;
 import java.util.TreeMap;
 import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link TreeMap} types */
 public final class TreeMapAdapter<K, V> extends AbstractMutableMapAdapter<TreeMap<K, V>, K, V> {
   public TreeMapAdapter(TypeAdapter<K> keyAdapter, TypeAdapter<V> valueAdapter) {
     super(keyAdapter, valueAdapter);

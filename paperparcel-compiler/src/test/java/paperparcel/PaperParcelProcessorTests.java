@@ -610,7 +610,7 @@ public class PaperParcelProcessorTests {
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
         .withErrorContaining(String.format(ErrorMessages.FIELD_NOT_ACCESSIBLE,
-            "test.Test", "child", "[child, isChild, hasChild, getChild]"))
+            "test.Test", "child", ErrorMessages.SITE_URL))
         .in(source)
         .onLine(7);
   }
@@ -640,7 +640,7 @@ public class PaperParcelProcessorTests {
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
         .withErrorContaining(String.format(ErrorMessages.FIELD_NOT_WRITABLE,
-            "test.Test", "child", "[child, setChild]"))
+            "test.Test", "child", "Test()", ErrorMessages.SITE_URL))
         .in(source)
         .onLine(7);
   }
@@ -935,6 +935,432 @@ public class PaperParcelProcessorTests {
         ));
 
     assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void usesSmallerConstructorWhenLargerConstructorCannotBeUsed() throws Exception {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.Exclude;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public class Test implements Parcelable {",
+            "  private int count;",
+            "  @Exclude",
+            "  private long someLong;",
+            "  public Test(int count, long someLong) {",
+            "    this.count = count;",
+            "    this.someLong = someLong;",
+            "  }",
+            "  public Test(int count) {",
+            "    this.count = count;",
+            "    this.someLong = someLong;",
+            "  }",
+            "  public int count() {",
+            "    return count;",
+            "  }",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import javax.annotation.Generated;",
+            "import paperparcel.adapter.IntegerAdapter;",
+            GeneratedLines.GENERATED_ANNOTATION,
+            "final class PaperParcelTest {",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      int count = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      Test data = new Test(count);",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "    IntegerAdapter.INSTANCE.writeToParcel(data.count(), dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void prioritisesDirectAccessOverSetterAndGetterMethods() throws Exception {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.Exclude;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public class Test implements Parcelable {",
+            "  int count;",
+            "  public int count() {",
+            "    return count;",
+            "  }",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void setCount(int count) {}",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import javax.annotation.Generated;",
+            "import paperparcel.adapter.IntegerAdapter;",
+            GeneratedLines.GENERATED_ANNOTATION,
+            "final class PaperParcelTest {",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      int count = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      Test data = new Test();",
+            "      data.count = count;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "    IntegerAdapter.INSTANCE.writeToParcel(data.count, dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void usesSetterAndGetterMethodsForPrivateFields() throws Exception {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.Exclude;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public class Test implements Parcelable {",
+            "  private int count;",
+            "  public int count() {",
+            "    return count;",
+            "  }",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void count(int count) {}",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import javax.annotation.Generated;",
+            "import paperparcel.adapter.IntegerAdapter;",
+            GeneratedLines.GENERATED_ANNOTATION,
+            "final class PaperParcelTest {",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      int count = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      Test data = new Test();",
+            "      data.count(count);",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "    IntegerAdapter.INSTANCE.writeToParcel(data.count(), dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void handlesMixedConstructorDirectAccessAndSetterFields() throws Exception {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.Exclude;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public class Test implements Parcelable {",
+            "  private int count1;",
+            "  int count2;",
+            "  private int count3;",
+            "  public Test(int count3) {}",
+            "  public int count1() {",
+            "    return count1;",
+            "  }",
+            "  public int count3() {",
+            "    return count1;",
+            "  }",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void count1(int count1) {}",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import javax.annotation.Generated;",
+            "import paperparcel.adapter.IntegerAdapter;",
+            GeneratedLines.GENERATED_ANNOTATION,
+            "final class PaperParcelTest {",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      int count2 = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      int count1 = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      int count3 = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      Test data = new Test(count3);",
+            "      data.count2 = count2;",
+            "      data.count1(count1);",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "    IntegerAdapter.INSTANCE.writeToParcel(data.count2, dest, flags);",
+            "    IntegerAdapter.INSTANCE.writeToParcel(data.count1(), dest, flags);",
+            "    IntegerAdapter.INSTANCE.writeToParcel(data.count3(), dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void complexTypeAdapterTest() throws Exception {
+    JavaFileObject reallySpecificAdapter =
+        JavaFileObjects.forSourceString("test.ReallySpecificTypeAdapter", Joiner.on('\n').join(
+            "package test;",
+            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.TypeAdapter;",
+            "import java.util.List;",
+            "import java.util.Map;",
+            "import android.os.Parcel;",
+            "@RegisterAdapter",
+            "public class ReallySpecificTypeAdapter<T1, T2> implements TypeAdapter<Map<List<T1>[], Map<T1, T2>>> {",
+            "  public Map<List<T1>[], Map<T1, T2>> readFromParcel(Parcel in) {",
+            "    return null;",
+            "  }",
+            "  public void writeToParcel(Map<List<T1>[], Map<T1, T2>> value, Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "import java.util.List;",
+            "import java.util.Map;",
+            "@PaperParcel",
+            "public class Test implements Parcelable {",
+            "  public Map<List<Integer>[], Map<Integer, Boolean>> field1;",
+            "  public Map<Integer, Integer> field2;",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import java.util.List;",
+            "import java.util.Map;",
+            "import javax.annotation.Generated;",
+            "import paperparcel.adapter.IntegerAdapter;",
+            "import paperparcel.adapter.MapAdapter;",
+            GeneratedLines.GENERATED_ANNOTATION,
+            "final class PaperParcelTest {",
+            "  private static final ReallySpecificTypeAdapter<Integer, Boolean> INTEGER_BOOLEAN_REALLY_SPECIFIC_TYPE_ADAPTER = new ReallySpecificTypeAdapter<Integer, Boolean>();",
+            "  private static final MapAdapter<Integer, Integer> INTEGER_INTEGER_MAP_ADAPTER = new MapAdapter<Integer, Integer>(IntegerAdapter.INSTANCE, IntegerAdapter.INSTANCE);",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      Map<List<Integer>[], Map<Integer, Boolean>> field1 = INTEGER_BOOLEAN_REALLY_SPECIFIC_TYPE_ADAPTER.readFromParcel(in);",
+            "      Map<Integer, Integer> field2 = INTEGER_INTEGER_MAP_ADAPTER.readFromParcel(in);",
+            "      Test data = new Test();",
+            "      data.field1 = field1;",
+            "      data.field2 = field2;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "    INTEGER_BOOLEAN_REALLY_SPECIFIC_TYPE_ADAPTER.writeToParcel(data.field1, dest, flags);",
+            "    INTEGER_INTEGER_MAP_ADAPTER.writeToParcel(data.field2, dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(reallySpecificAdapter, source))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void genericArrayTypeAdapterTest() throws Exception {
+    JavaFileObject genericArrayAdapter =
+        JavaFileObjects.forSourceString("test.GenericArrayAdapter", Joiner.on('\n').join(
+            "package test;",
+            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.TypeAdapter;",
+            "import android.os.Parcel;",
+            "@RegisterAdapter",
+            "public class GenericArrayAdapter<T> implements TypeAdapter<T[]> {",
+            "  public T[] readFromParcel(Parcel in) {",
+            "    return null;",
+            "  }",
+            "  public void writeToParcel(T[] value, Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public class Test implements Parcelable {",
+            "  public Integer[] field;",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import javax.annotation.Generated;",
+            GeneratedLines.GENERATED_ANNOTATION,
+            "final class PaperParcelTest {",
+            "  private static final GenericArrayAdapter<Integer> INTEGER_GENERIC_ARRAY_ADAPTER = new GenericArrayAdapter<Integer>();",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      Integer[] field = INTEGER_GENERIC_ARRAY_ADAPTER.readFromParcel(in);",
+            "      Test data = new Test();",
+            "      data.field = field;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "    INTEGER_GENERIC_ARRAY_ADAPTER.writeToParcel(data.field, dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(genericArrayAdapter, source))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()

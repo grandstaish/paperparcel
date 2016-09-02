@@ -19,7 +19,9 @@ package paperparcel.adapter;
 import android.os.Parcel;
 import android.support.annotation.NonNull;
 import java.math.BigInteger;
+import paperparcel.TypeAdapter;
 
+/** Default {@link TypeAdapter} for {@link BigInteger} types */
 public final class BigIntegerAdapter extends AbstractAdapter<BigInteger> {
   public static final BigIntegerAdapter INSTANCE = new BigIntegerAdapter();
 

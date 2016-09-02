@@ -19,9 +19,11 @@ package paperparcel;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.squareup.javapoet.ArrayTypeName;
@@ -36,6 +38,7 @@ import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.WildcardTypeName;
 import java.util.Map;
 import java.util.Set;
+import javax.lang.model.element.ExecutableElement;
 
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
@@ -46,25 +49,25 @@ import static javax.lang.model.element.Modifier.STATIC;
  * Responsible for creating a {@link TypeSpec.Builder} for the Parcelable read and write
  * implementations
  */
-final class ParcelableImplWriter {
+final class PaperParcelWriter {
   private static final String FIELD_NAME = "data";
   private static final ClassName PARCEL = ClassName.get("android.os", "Parcel");
 
   private final ClassName name;
-  private final ParcelableImplDescriptor descriptor;
+  private final PaperParcelDescriptor descriptor;
   private final Map<TypeName, String> nameCache;
 
-  ParcelableImplWriter(
+  PaperParcelWriter(
       ClassName name,
-      ParcelableImplDescriptor descriptor) {
+      PaperParcelDescriptor descriptor) {
     this.name = name;
     this.descriptor = descriptor;
     this.nameCache = Maps.newLinkedHashMap();
   }
 
   final TypeSpec.Builder write() {
-    Set<AdapterGraph> emptySet = Sets.newLinkedHashSet();
-    ClassName className = ClassName.get(descriptor.paperParcelClass().element());
+    Set<Adapter> emptySet = Sets.newLinkedHashSet();
+    ClassName className = ClassName.get(descriptor.element());
     return TypeSpec.classBuilder(name)
         .addModifiers(FINAL)
         .addFields(adapterDependencies(descriptor.adapters().values(), emptySet))
@@ -83,7 +86,7 @@ final class ParcelableImplWriter {
         .addModifiers(PUBLIC)
         .returns(className)
         .addParameter(in);
-    if (descriptor.paperParcelClass().isSingleton()) {
+    if (descriptor.isSingleton()) {
       createFromParcel.addStatement("return $T.INSTANCE", className);
     } else {
       createFromParcel.addCode(readFields(in))
@@ -109,51 +112,58 @@ final class ParcelableImplWriter {
         .build();
   }
 
-  @SuppressWarnings("ConstantConditions")
   private CodeBlock readFields(ParameterSpec in) {
     CodeBlock.Builder block = CodeBlock.builder();
-    ImmutableList<FieldDescriptor> fields = descriptor.paperParcelClass().fields();
-    for (FieldDescriptor fieldDescriptor : fields) {
-      AdapterGraph graph = descriptor.adapters().get(fieldDescriptor.normalizedType());
-      TypeName fieldTypeName = TypeName.get(fieldDescriptor.type().get());
-      CodeBlock adapterInstance;
-      if (graph.adapter().isSingleton()) {
-        adapterInstance = CodeBlock.of("$T.INSTANCE", graph.typeName());
-      } else {
-        adapterInstance = CodeBlock.of("$N", getName(graph.typeName()));
-      }
-      block.addStatement("$T $N = $L.readFromParcel($N)",
-          fieldTypeName, fieldDescriptor.name(), adapterInstance, in);
+    ReadInfo readInfo = descriptor.readInfo();
+    Preconditions.checkNotNull(readInfo);
+    // Read the fields in the exact same order that they were written to the Parcel. Currently
+    // directly readable fields first, then all fields that are read via getters.
+    ImmutableList<FieldDescriptor> readableFields = readInfo.readableFields();
+    for (FieldDescriptor field : readableFields) {
+      readField(block, field, in);
+    }
+    ImmutableSet<FieldDescriptor> getterFields = readInfo.getterMethodMap().keySet();
+    for (FieldDescriptor field : getterFields) {
+      readField(block, field, in);
     }
     return block.build();
+  }
+
+  @SuppressWarnings("ConstantConditions")
+  private void readField(CodeBlock.Builder block, FieldDescriptor field, ParameterSpec in) {
+    Adapter adapter = descriptor.adapters().get(field);
+    TypeName fieldTypeName = TypeName.get(field.type().get());
+    CodeBlock adapterInstance = adapterInstance(adapter);
+    block.addStatement("$T $N = $L.readFromParcel($N)",
+        fieldTypeName, field.name(), adapterInstance, in);
   }
 
   private CodeBlock createModel(ClassName className) {
     CodeBlock.Builder block = CodeBlock.builder();
-    PaperParcelDescriptor paperParcelClass = descriptor.paperParcelClass();
-    ImmutableList<String> constructorArgumentNames = paperParcelClass.constructorArgumentNames();
+    WriteInfo writeInfo = descriptor.writeInfo();
+    Preconditions.checkNotNull(writeInfo);
+    ImmutableList<FieldDescriptor> constructorFields = writeInfo.constructorFields();
     block.addStatement("$1T $2N = new $1T($3L)",
-        className, FIELD_NAME, getConstructorParameterList(constructorArgumentNames));
-    for (FieldDescriptor field : paperParcelClass.fields()) {
-      if (!constructorArgumentNames.contains(field.name())) {
-        if (field.isPrivate()) {
-          // Assume there is a setter method because of prior validation
-          block.addStatement("$N.$N($N)", FIELD_NAME,
-              field.setterMethod().get().getSimpleName(), field.name());
-        } else {
-          // Assume the field is non-final as it is not found in the constructor
-          block.addStatement("$1N.$2N = $2N", FIELD_NAME, field.name());
-        }
-      }
+        className, FIELD_NAME, getConstructorParameterList(constructorFields));
+    for (FieldDescriptor field : writeInfo.writableFields()) {
+      block.addStatement("$1N.$2N = $2N", FIELD_NAME, field.name());
+    }
+    ImmutableSet<Map.Entry<FieldDescriptor, ExecutableElement>> fieldSetterEntries =
+        writeInfo.setterMethodMap().entrySet();
+    for (Map.Entry<FieldDescriptor, ExecutableElement> fieldSetterEntry : fieldSetterEntries) {
+      block.addStatement("$N.$N($N)",
+          FIELD_NAME,
+          fieldSetterEntry.getValue().getSimpleName(),
+          fieldSetterEntry.getKey().name());
     }
     return block.build();
   }
 
-  private CodeBlock getConstructorParameterList(ImmutableList<String> argumentNames) {
-    return CodeBlocks.join(FluentIterable.from(argumentNames)
-        .transform(new Function<String, CodeBlock>() {
-          @Override public CodeBlock apply(String fieldName) {
-            return CodeBlock.of("$N", fieldName);
+  private CodeBlock getConstructorParameterList(ImmutableList<FieldDescriptor> fields) {
+    return CodeBlocks.join(FluentIterable.from(fields)
+        .transform(new Function<FieldDescriptor, CodeBlock>() {
+          @Override public CodeBlock apply(FieldDescriptor field) {
+            return CodeBlock.of("$N", field.name());
           }
         }), ", ");
   }
@@ -166,51 +176,62 @@ final class ParcelableImplWriter {
         .addParameter(className, FIELD_NAME)
         .addParameter(dest)
         .addParameter(flags);
-    // Write all of the field values to the Parcel object using the static adapter instances
-    ImmutableList<FieldDescriptor> fields = descriptor.paperParcelClass().fields();
-    for (FieldDescriptor field : fields) {
-      AdapterGraph graph = descriptor.adapters().get(field.normalizedType());
-      CodeBlock adapterInstance;
-      if (graph.adapter().isSingleton()) {
-        adapterInstance = CodeBlock.of("$T.INSTANCE", graph.typeName());
-      } else {
-        adapterInstance = CodeBlock.of("$N", getName(graph.typeName()));
-      }
-      if (!field.isPrivate()) {
-        // Read the field directly
-        String fieldName = field.name();
+
+    if (!descriptor.isSingleton()) {
+      ReadInfo readInfo = descriptor.readInfo();
+      Preconditions.checkNotNull(readInfo);
+      ImmutableList<FieldDescriptor> readableFields = readInfo.readableFields();
+      for (FieldDescriptor field : readableFields) {
+        Adapter adapter = descriptor.adapters().get(field);
+        CodeBlock adapterInstance = adapterInstance(adapter);
         builder.addStatement("$L.writeToParcel($N.$N, $N, $N)",
-            adapterInstance, FIELD_NAME, fieldName, dest, flags);
-      } else {
-        // Assume the accessor is defined because of prior validation
+            adapterInstance, FIELD_NAME, field.name(), dest, flags);
+      }
+
+      ImmutableSet<Map.Entry<FieldDescriptor, ExecutableElement>> fieldGetterEntries =
+          readInfo.getterMethodMap().entrySet();
+      for (Map.Entry<FieldDescriptor, ExecutableElement> fieldGetterEntry : fieldGetterEntries) {
+        Adapter adapter = descriptor.adapters().get(fieldGetterEntry.getKey());
+        CodeBlock adapterInstance = adapterInstance(adapter);
         builder.addStatement("$L.writeToParcel($N.$N(), $N, $N)",
-            adapterInstance, FIELD_NAME, field.accessorMethod().get().getSimpleName(), dest, flags);
+            adapterInstance, FIELD_NAME, fieldGetterEntry.getValue().getSimpleName(), dest, flags);
       }
     }
+
     return builder.build();
+  }
+
+  private CodeBlock adapterInstance(Adapter adapter) {
+    CodeBlock adapterInstance;
+    if (adapter.isSingleton()) {
+      adapterInstance = CodeBlock.of("$T.INSTANCE", adapter.typeName());
+    } else {
+      adapterInstance = CodeBlock.of("$N", getName(adapter.typeName()));
+    }
+    return adapterInstance;
   }
 
   /** Returns a list of all of the {@link FieldSpec}s that define the required TypeAdapters */
   private ImmutableList<FieldSpec> adapterDependencies(
-      ImmutableCollection<AdapterGraph> graphs, Set<AdapterGraph> scoped) {
+      ImmutableCollection<Adapter> adapters, Set<Adapter> scoped) {
     ImmutableList.Builder<FieldSpec> adapterFields = new ImmutableList.Builder<>();
-    for (AdapterGraph graph : graphs) {
+    for (Adapter adapter : adapters) {
       // Don't define the same adapter twice
-      if (scoped.contains(graph)) {
+      if (scoped.contains(adapter)) {
         continue;
       }
-      scoped.add(graph);
-      if (!graph.adapter().isSingleton()) {
+      scoped.add(adapter);
+      if (!adapter.isSingleton()) {
         // Add dependencies, then create and add the current adapter
-        if (graph.dependencies().size() > 0) {
-          adapterFields.addAll(adapterDependencies(graph.dependencies(), scoped));
+        if (adapter.dependencies().size() > 0) {
+          adapterFields.addAll(adapterDependencies(adapter.dependencies(), scoped));
         }
         // Construct the single instance of this type adapter
-        String adapterName = getName(graph.typeName());
-        CodeBlock parameters = getAdapterParameterList(graph.dependencies());
+        String adapterName = getName(adapter.typeName());
+        CodeBlock parameters = getAdapterParameterList(adapter.dependencies());
         FieldSpec.Builder adapterSpec =
-            FieldSpec.builder(graph.typeName(), adapterName, PRIVATE, STATIC, FINAL)
-                .initializer(CodeBlock.of("new $T($L)", graph.typeName(), parameters));
+            FieldSpec.builder(adapter.typeName(), adapterName, PRIVATE, STATIC, FINAL)
+                .initializer(CodeBlock.of("new $T($L)", adapter.typeName(), parameters));
         adapterFields.add(adapterSpec.build());
       }
     }
@@ -221,17 +242,11 @@ final class ParcelableImplWriter {
    * Returns a comma-separated {@link CodeBlock} for all of the adapter instances in
    * {@code dependencies}.
    */
-  private CodeBlock getAdapterParameterList(ImmutableList<AdapterGraph> dependencies) {
+  private CodeBlock getAdapterParameterList(ImmutableList<Adapter> dependencies) {
     return CodeBlocks.join(FluentIterable.from(dependencies)
-        .transform(new Function<AdapterGraph, CodeBlock>() {
-          @Override public CodeBlock apply(AdapterGraph graph) {
-            CodeBlock instance;
-            if (graph.adapter().isSingleton()) {
-              instance = CodeBlock.of("$T.INSTANCE", graph.typeName());
-            } else {
-              instance = CodeBlock.of("$N", getName(graph.typeName()));
-            }
-            return instance;
+        .transform(new Function<Adapter, CodeBlock>() {
+          @Override public CodeBlock apply(Adapter adapter) {
+            return adapterInstance(adapter);
           }
         })
         .toList(), ", ");
