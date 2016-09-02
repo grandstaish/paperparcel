@@ -20,10 +20,9 @@ package paperparcel;
 final class ErrorMessages {
   static final String SITE_URL = "https://github.com/grandstaish/paperparcel";
 
+  /* Shared */
   static final String NO_VISIBLE_CONSTRUCTOR =
       "No visible constructor found";
-  static final String TYPE_ADAPTER_NOT_FOUND =
-      "%s not found. Do your paperparcel and paperparcel-compiler versions differ?";
 
   /* @RegisterAdapter errors */
   static final String REGISTERADAPTER_ON_NON_TYPE_ADAPTER =

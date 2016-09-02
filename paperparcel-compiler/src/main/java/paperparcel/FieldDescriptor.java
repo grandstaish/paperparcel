@@ -20,8 +20,6 @@ import com.google.auto.common.MoreTypes;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Equivalence;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.PrimitiveType;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
@@ -52,18 +50,11 @@ abstract class FieldDescriptor {
     FieldDescriptor create(VariableElement element) {
       String name = element.getSimpleName().toString();
       TypeMirror type = element.asType();
-      TypeMirror normalizedType = normalize(type);
+      TypeMirror normalizedType = Utils.normalize(types, type);
       Equivalence.Wrapper<TypeMirror> wrappedType = MoreTypes.equivalence().wrap(type);
       Equivalence.Wrapper<TypeMirror> wrappedNormalizedType =
           MoreTypes.equivalence().wrap(normalizedType);
       return new AutoValue_FieldDescriptor(element, name, wrappedType, wrappedNormalizedType);
-    }
-
-    private TypeMirror normalize(TypeMirror type) {
-      TypeKind kind = type.getKind();
-      return kind.isPrimitive()
-          ? types.boxedClass((PrimitiveType) type).asType()
-          : type;
     }
   }
 }

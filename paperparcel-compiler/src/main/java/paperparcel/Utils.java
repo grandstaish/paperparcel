@@ -32,6 +32,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVisitor;
@@ -185,17 +186,12 @@ final class Utils {
     return types.isAssignable(type, parcelableType);
   }
 
-  /**
-   * Converts {@code type} into a {@link TypeMirror} that an {@link AdapterDescriptor} is
-   * intended to be able to handle. Results of this call can be used to look up an
-   * {@link AdapterDescriptor} from the {@link AdapterRegistry}.
-   */
-  static TypeMirror getParcelableType(Elements elements, Types types, TypeMirror type) {
-    TypeMirror parcelableType = elements.getTypeElement(PARCELABLE_CLASS_NAME).asType();
-    if (!types.isAssignable(type, parcelableType)) {
-      return types.erasure(type);
-    }
-    return parcelableType;
+  /** Boxes primitive types */
+  static TypeMirror normalize(Types types, TypeMirror type) {
+    TypeKind kind = type.getKind();
+    return kind.isPrimitive()
+        ? types.boxedClass((PrimitiveType) type).asType()
+        : type;
   }
 
   private Utils() {}

@@ -25,7 +25,6 @@ import javax.annotation.processing.Processor;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
-import javax.tools.Diagnostic;
 
 /**
  * The annotation processor responsible for generating the classes that drive the PaperParcel
@@ -43,32 +42,20 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
     Elements elements = processingEnv.getElementUtils();
     Filer filer = processingEnv.getFiler();
 
-    AdapterDescriptor.Factory adapterDescriptorFactory =
-        new AdapterDescriptor.Factory(elements, types);
-
-    AdapterRegistry adapterRegistry;
-    try {
-      adapterRegistry = new AdapterRegistry(elements, adapterDescriptorFactory);
-    } catch (TypeNotPresentException e) {
-      messager.printMessage(Diagnostic.Kind.ERROR,
-          String.format(ErrorMessages.TYPE_ADAPTER_NOT_FOUND, e.typeName()));
-      return ImmutableList.of();
-    }
+    AdapterRegistry adapterRegistry = new AdapterRegistry();
 
     FieldDescriptor.Factory fieldDescriptorFactory = new FieldDescriptor.Factory(types);
     WriteInfo.Factory writeInfoFactory = new WriteInfo.Factory(types, fieldDescriptorFactory);
     ReadInfo.Factory readInfoFactory = new ReadInfo.Factory(types, fieldDescriptorFactory);
-    AdapterGraph.Factory adapterGraphFactory =
-        new AdapterGraph.Factory(elements, types, adapterRegistry);
+    Adapter.Factory adapterFactory = new Adapter.Factory(elements, types, adapterRegistry);
     PaperParcelDescriptor.Factory paperParcelDescriptorFactory =
-        new PaperParcelDescriptor.Factory(types, adapterGraphFactory);
+        new PaperParcelDescriptor.Factory(types, adapterFactory);
 
-    AdapterValidator adapterValidator = new AdapterValidator();
-    PaperParcelValidator paperParcelValidator =
-        new PaperParcelValidator(
-            elements, types, writeInfoFactory, readInfoFactory, adapterRegistry);
     RegisterAdapterValidator registerAdapterValidator =
         new RegisterAdapterValidator(elements, types);
+    PaperParcelValidator paperParcelValidator =
+        new PaperParcelValidator(
+            elements, types, writeInfoFactory, readInfoFactory, adapterFactory);
 
     PaperParcelGenerator paperParcelGenerator = new PaperParcelGenerator(filer, elements);
 
@@ -76,8 +63,6 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
         new RegisterAdapterProcessingStep(
             messager,
             registerAdapterValidator,
-            adapterDescriptorFactory,
-            adapterValidator,
             adapterRegistry),
         new PaperParcelProcessingStep(
             messager,
