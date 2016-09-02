@@ -32,6 +32,7 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVisitor;
@@ -183,6 +184,14 @@ final class Utils {
   static boolean isParcelable(Elements elements, Types types, TypeMirror type) {
     TypeMirror parcelableType = elements.getTypeElement(PARCELABLE_CLASS_NAME).asType();
     return types.isAssignable(type, parcelableType);
+  }
+
+  /** Boxes primitive types */
+  static TypeMirror normalize(Types types, TypeMirror type) {
+    TypeKind kind = type.getKind();
+    return kind.isPrimitive()
+        ? types.boxedClass((PrimitiveType) type).asType()
+        : type;
   }
 
   private Utils() {}

@@ -26,8 +26,6 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.PrimitiveType;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor6;
@@ -180,7 +178,7 @@ final class PaperParcelValidator {
 
   private void ensureAdaptersExistForField(
       VariableElement field, ValidationReport.Builder<TypeElement> builder) {
-    TypeMirror normalizedType = normalize(field.asType());
+    TypeMirror normalizedType = Utils.normalize(types, field.asType());
     if (adapterFactory.create(normalizedType) == null) {
       builder.addError(
           String.format(ErrorMessages.MISSING_TYPE_ADAPTER,
@@ -188,12 +186,5 @@ final class PaperParcelValidator {
               ErrorMessages.SITE_URL),
           field);
     }
-  }
-
-  private TypeMirror normalize(TypeMirror type) {
-    TypeKind kind = type.getKind();
-    return kind.isPrimitive()
-        ? types.boxedClass((PrimitiveType) type).asType()
-        : type;
   }
 }

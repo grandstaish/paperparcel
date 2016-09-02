@@ -170,6 +170,9 @@ abstract class Adapter {
         public TypeMirror visitDeclared(DeclaredType paramType, TypeMirror argType) {
           if (argType instanceof DeclaredType) {
             DeclaredType cast = (DeclaredType) argType;
+            if (!types.isSameType(types.erasure(paramType), types.erasure(cast))) {
+              return null;
+            }
             List<? extends TypeMirror> paramArgs = paramType.getTypeArguments();
             List<? extends TypeMirror> castArgs = cast.getTypeArguments();
             if (paramArgs.size() != castArgs.size()) {
@@ -179,26 +182,6 @@ abstract class Adapter {
               TypeMirror paramArg = paramArgs.get(i);
               TypeMirror castArg = castArgs.get(i);
               TypeMirror result = paramArg.accept(this, castArg);
-              if (result != null) return result;
-            }
-          }
-          return null;
-        }
-
-        @Override
-        public TypeMirror visitWildcard(WildcardType paramType, TypeMirror argType) {
-          if (argType instanceof WildcardType) {
-            WildcardType cast = (WildcardType) argType;
-            TypeMirror paramSuper = paramType.getSuperBound();
-            TypeMirror argSuper = cast.getSuperBound();
-            if (paramSuper != null && argSuper != null) {
-              TypeMirror result = paramSuper.accept(this, argSuper);
-              if (result != null) return result;
-            }
-            TypeMirror paramExtends = paramType.getExtendsBound();
-            TypeMirror argExtends = cast.getExtendsBound();
-            if (paramExtends != null && argExtends != null) {
-              TypeMirror result = paramExtends.accept(this, argExtends);
               if (result != null) return result;
             }
           }
