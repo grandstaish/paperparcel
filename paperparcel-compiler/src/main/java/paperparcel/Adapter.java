@@ -143,7 +143,7 @@ abstract class Adapter {
     }
 
     @Nullable private TypeMirror findArgument(
-        final TypeParameterElement parameter, TypeMirror adaptedType, TypeMirror normalizedType) {
+        TypeParameterElement parameter, TypeMirror adaptedType, TypeMirror normalizedType) {
       final String target = parameter.getSimpleName().toString();
       return adaptedType.accept(new SimpleTypeVisitor6<TypeMirror, TypeMirror>() {
         @Override
