@@ -1,0 +1,19 @@
+apply plugin: 'com.jfrog.artifactory'
+
+artifactory {
+  contextUrl = 'http://oss.jfrog.org/artifactory'
+  publish {
+    repository {
+      repoKey = 'oss-snapshot-local'
+      username = BINTRAY_USER
+      password = BINTRAY_API_KEY
+    }
+    defaults {
+      publishConfigs('archives')
+      publishIvy = false
+    }
+  }
+  resolve {
+    repoKey = 'libs-release'
+  }
+}

@@ -25,4 +25,5 @@ dependencies {
   testCompile deps.robolectric
 }
 
-apply from: rootProject.file('gradle/gradle-bintray-push.gradle')
+apply from: rootProject.file('gradle/bintray.gradle')
+apply from: rootProject.file('gradle/snapshots.gradle')
