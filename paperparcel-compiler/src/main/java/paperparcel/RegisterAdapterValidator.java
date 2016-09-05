@@ -138,8 +138,12 @@ final class RegisterAdapterValidator {
 
       @Override
       public Void visitWildcard(WildcardType type, ImmutableSet.Builder<String> set) {
-        type.getSuperBound().accept(this, set);
-        type.getExtendsBound().accept(this, set);
+        if (type.getSuperBound() != null) {
+          type.getSuperBound().accept(this, set);
+        }
+        if (type.getExtendsBound() != null) {
+          type.getExtendsBound().accept(this, set);
+        }
         return null;
       }
     }, adaptedTypeArguments);
