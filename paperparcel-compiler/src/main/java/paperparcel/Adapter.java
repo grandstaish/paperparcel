@@ -187,6 +187,20 @@ abstract class Adapter {
           }
           return null;
         }
+
+        @Override
+        public TypeMirror visitWildcard(WildcardType paramType, TypeMirror argType) {
+          TypeMirror result = null;
+          if (argType instanceof WildcardType) {
+            WildcardType cast = (WildcardType) argType;
+            if (paramType.getSuperBound() != null && cast.getSuperBound() != null) {
+              result = paramType.getSuperBound().accept(this, cast.getSuperBound());
+            } else if (paramType.getExtendsBound() != null && cast.getExtendsBound() != null) {
+              result = paramType.getExtendsBound().accept(this, cast.getExtendsBound());
+            }
+          }
+          return result;
+        }
       }, normalizedType);
     }
 

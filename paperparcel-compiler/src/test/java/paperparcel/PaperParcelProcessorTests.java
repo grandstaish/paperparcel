@@ -1352,4 +1352,152 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
+  @Test public void wildcardAdapterTest() throws Exception {
+    JavaFileObject wildcardAdapter =
+        JavaFileObjects.forSourceString("test.WildcardAdapter", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import java.util.List;",
+            "import paperparcel.TypeAdapter;",
+            "import paperparcel.RegisterAdapter;",
+            "@RegisterAdapter",
+            "public class WildcardAdapter implements TypeAdapter<List<? extends Integer>> {",
+            "  @Override public List<? extends Integer> readFromParcel(Parcel source) { return null; }",
+            "  @Override public void writeToParcel(List<? extends Integer> value, Parcel dest, int flags) {}",
+            "}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import java.util.List;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public class Test implements Parcelable {",
+            "  public List<? extends Integer> field;",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import java.util.List;",
+            "import javax.annotation.Generated;",
+            GeneratedLines.GENERATED_ANNOTATION,
+            "final class PaperParcelTest {",
+            "  private static final WildcardAdapter WILDCARD_ADAPTER = new WildcardAdapter();",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      List<? extends Integer> field = WILDCARD_ADAPTER.readFromParcel(in);",
+            "      Test data = new Test();",
+            "      data.field = field;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "    WILDCARD_ADAPTER.writeToParcel(data.field, dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(wildcardAdapter, source))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void genericWildcardAdapterTest() throws Exception {
+    JavaFileObject wildcardAdapter =
+        JavaFileObjects.forSourceString("test.WildcardAdapter", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import java.util.List;",
+            "import paperparcel.TypeAdapter;",
+            "import paperparcel.RegisterAdapter;",
+            "@RegisterAdapter",
+            "public class WildcardAdapter<T> implements TypeAdapter<List<? extends T>> {",
+            "  @Override public List<? extends T> readFromParcel(Parcel source) { return null; }",
+            "  @Override public void writeToParcel(List<? extends T> value, Parcel dest, int flags) {}",
+            "}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import java.util.List;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public class Test implements Parcelable {",
+            "  public List<? extends Integer> field;",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import java.util.List;",
+            "import javax.annotation.Generated;",
+            GeneratedLines.GENERATED_ANNOTATION,
+            "final class PaperParcelTest {",
+            "  private static final WildcardAdapter<Integer> INTEGER_WILDCARD_ADAPTER = new WildcardAdapter<Integer>();",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      List<? extends Integer> field = INTEGER_WILDCARD_ADAPTER.readFromParcel(in);",
+            "      Test data = new Test();",
+            "      data.field = field;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "    INTEGER_WILDCARD_ADAPTER.writeToParcel(data.field, dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(wildcardAdapter, source))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
 }
