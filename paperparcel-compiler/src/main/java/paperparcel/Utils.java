@@ -17,6 +17,7 @@
 package paperparcel;
 
 import com.google.auto.common.MoreElements;
+import com.google.common.base.Objects;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
@@ -46,10 +47,11 @@ import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 import static javax.lang.model.util.ElementFilter.fieldsIn;
-import static paperparcel.Constants.PARCELABLE_CLASS_NAME;
 
 /** A grab bag of shared utility methods with no home. FeelsBadMan. */
 final class Utils {
+  private static final String TYPE_ADAPTER_CLASS_NAME = "paperparcel.TypeAdapter";
+  private static final String PARCELABLE_CLASS_NAME = "android.os.Parcelable";
 
   private static final TypeVisitor<List<? extends TypeMirror>, Void> TYPE_ARGUMENTS_VISITOR =
       new SimpleTypeVisitor7<List<? extends TypeMirror>, Void>(
@@ -122,22 +124,22 @@ final class Utils {
   }
 
   /**
-   * Tries to find the {@link TypeMirror} arguments found in {@code from}, but only within the
-   * type {@code of}.
-   *
-   * E.g.: if {@code from} is {@code ArrayList<Integer>} and {@code of} is {@link List}, then
-   * this method will return a list containing a single element of {@code Integer}
+   * Tries to find the {@link TypeMirror} argument found in a given TypeAdapter
    */
-  static List<? extends TypeMirror> getTypeArgumentsOfTypeFromType(
-      Types types, TypeMirror from, TypeMirror of) {
-    if (types.isSameType(types.erasure(from), types.erasure(of))) {
-      DeclaredType declaredType = (DeclaredType) from;
-      return declaredType.getTypeArguments();
+  static TypeMirror getAdaptedType(Types types, TypeMirror adapterType) {
+    if (TYPE_ADAPTER_CLASS_NAME.equals(doubleErasure(types, adapterType))) {
+      DeclaredType declaredType = (DeclaredType) adapterType;
+      List<? extends TypeMirror> arguments = declaredType.getTypeArguments();
+      if (arguments.size() == 1) {
+        return declaredType.getTypeArguments().get(0);
+      } else {
+        return null;
+      }
     }
-    List<? extends TypeMirror> superTypes = types.directSupertypes(from);
-    List<? extends TypeMirror> result = null;
+    List<? extends TypeMirror> superTypes = types.directSupertypes(adapterType);
+    TypeMirror result = null;
     for (TypeMirror superType : superTypes) {
-      result = getTypeArgumentsOfTypeFromType(types, superType, of);
+      result = getAdaptedType(types, superType);
       if (result != null) break;
     }
     return result;
@@ -154,9 +156,9 @@ final class Utils {
           && modifiers.contains(PUBLIC)
           && modifiers.contains(FINAL)) {
         if (e.getSimpleName().contentEquals("INSTANCE")) {
-          TypeMirror erasedClassType = types.erasure(element.asType());
-          TypeMirror erasedFieldType = types.erasure(e.asType());
-          return types.isAssignable(erasedFieldType, erasedClassType);
+          String erasedClassType = doubleErasure(types, element.asType());
+          String erasedFieldType = doubleErasure(types, e.asType());
+          return Objects.equal(erasedFieldType, erasedClassType);
         }
       }
     }
@@ -192,6 +194,16 @@ final class Utils {
     return kind.isPrimitive()
         ? types.boxedClass((PrimitiveType) type).asType()
         : type;
+  }
+
+  /** Uses both {@link Types#erasure} and string manipulation to strip any generic types. */
+  private static String doubleErasure(Types types, TypeMirror elementType) {
+    String name = types.erasure(elementType).toString();
+    int typeParamStart = name.indexOf('<');
+    if (typeParamStart != -1) {
+      name = name.substring(0, typeParamStart);
+    }
+    return name;
   }
 
   private Utils() {}
