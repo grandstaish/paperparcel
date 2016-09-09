@@ -3,7 +3,7 @@ subprojects { project ->
   version = VERSION_NAME
 }
 
-ext.kotlin_version = '1.0.4-eap-100'
+ext.kotlin_version = '1.0.4-eap-114'
 
 allprojects {
   repositories {
