@@ -17,7 +17,7 @@
 package paperparcel;
 
 import com.google.auto.common.MoreElements;
-import com.google.common.base.Objects;
+import com.google.auto.common.MoreTypes;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
@@ -31,11 +31,13 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
@@ -124,25 +126,44 @@ final class Utils {
   }
 
   /**
-   * Tries to find the {@link TypeMirror} argument found in a given TypeAdapter
+   * Returns the {@link TypeMirror} argument found in a given TypeAdapter type
    */
-  static TypeMirror getAdaptedType(Types types, TypeMirror adapterType) {
-    if (TYPE_ADAPTER_CLASS_NAME.equals(doubleErasure(types, adapterType))) {
-      DeclaredType declaredType = (DeclaredType) adapterType;
-      List<? extends TypeMirror> arguments = declaredType.getTypeArguments();
-      if (arguments.size() == 1) {
-        return declaredType.getTypeArguments().get(0);
-      } else {
-        return null;
+  static TypeMirror getAdaptedType(Elements elements, Types types, TypeMirror adapterType) {
+    TypeElement typeAdapterElement = elements.getTypeElement(TYPE_ADAPTER_CLASS_NAME);
+    DeclaredType declaredAdapter = MoreTypes.asDeclared(adapterType);
+    TypeParameterElement param = typeAdapterElement.getTypeParameters().get(0);
+    TypeMirror erased = types.erasure(param.getGenericElement().asType());
+    TypeMirror erasedSubType = types.erasure(adapterType);
+    if (types.isSameType(erased, erasedSubType)) {
+      List<? extends TypeMirror> arguments = MoreTypes.asDeclared(adapterType).getTypeArguments();
+      if (arguments.size() > 0) {
+        return arguments.get(0);
+      }
+    } else if (types.isSubtype(erasedSubType, erased)) {
+      return resolveTypeParameter(types, declaredAdapter, param);
+    }
+    return null;
+  }
+
+  private static TypeMirror resolveTypeParameter(
+      Types types, DeclaredType subType, TypeParameterElement param) {
+    TypeMirror erased = types.erasure(param.getGenericElement().asType());
+    TypeMirror erasedSubType = types.erasure(subType);
+    if (types.isSameType(erased, erasedSubType)) {
+      return param.asType();
+    } else if (types.isSubtype(erasedSubType, erased)) {
+      for (TypeMirror superType : types.directSupertypes(subType)) {
+        TypeMirror resolved = resolveTypeParameter(types, (DeclaredType) superType, param);
+        if (resolved != null) {
+          if (resolved.getKind() == TypeKind.TYPEVAR) {
+            return types.asMemberOf(subType, ((TypeVariable) resolved).asElement());
+          } else {
+            return resolved;
+          }
+        }
       }
     }
-    List<? extends TypeMirror> superTypes = types.directSupertypes(adapterType);
-    TypeMirror result = null;
-    for (TypeMirror superType : superTypes) {
-      result = getAdaptedType(types, superType);
-      if (result != null) break;
-    }
-    return result;
+    return null;
   }
 
   /**
@@ -156,9 +177,9 @@ final class Utils {
           && modifiers.contains(PUBLIC)
           && modifiers.contains(FINAL)) {
         if (e.getSimpleName().contentEquals("INSTANCE")) {
-          String erasedClassType = doubleErasure(types, element.asType());
-          String erasedFieldType = doubleErasure(types, e.asType());
-          return Objects.equal(erasedFieldType, erasedClassType);
+          TypeMirror erasedClassType = types.erasure(element.asType());
+          TypeMirror erasedFieldType = types.erasure(e.asType());
+          return types.isAssignable(erasedFieldType, erasedClassType);
         }
       }
     }
@@ -194,16 +215,6 @@ final class Utils {
     return kind.isPrimitive()
         ? types.boxedClass((PrimitiveType) type).asType()
         : type;
-  }
-
-  /** Uses both {@link Types#erasure} and string manipulation to strip any generic types. */
-  private static String doubleErasure(Types types, TypeMirror elementType) {
-    String name = types.erasure(elementType).toString();
-    int typeParamStart = name.indexOf('<');
-    if (typeParamStart != -1) {
-      name = name.substring(0, typeParamStart);
-    }
-    return name;
   }
 
   private Utils() {}

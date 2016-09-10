@@ -67,28 +67,30 @@ final class RegisterAdapterValidator {
     }
     Optional<ExecutableElement> mainConstructor = Utils.findLargestConstructor(element);
     if (mainConstructor.isPresent()) {
-      builder.addSubreport(validateConstructor(typeAdapterType, types, mainConstructor.get()));
+      builder.addSubreport(validateConstructor(typeAdapterType, mainConstructor.get()));
     } else if (!Utils.isSingleton(types, element)) {
       builder.addError(ErrorMessages.NO_VISIBLE_CONSTRUCTOR);
     }
-    TypeMirror adaptedType = Utils.getAdaptedType(types, element.asType());
-    if (adaptedType == null) {
-      builder.addError(ErrorMessages.REGISTERADAPTER_ON_RAW_TYPE_ADAPTER);
-    } else if (!hasValidTypeParameters(element, adaptedType)) {
-      builder.addError(ErrorMessages.INCOMPATIBLE_TYPE_PARAMETERS);
+    TypeMirror adaptedType = Utils.getAdaptedType(elements, types, element.asType());
+    if (adaptedType != null) {
+      if (isJavaLangObject(adaptedType)) {
+        builder.addError(ErrorMessages.REGISTERADAPTER_ON_RAW_TYPE_ADAPTER);
+      } else if (!hasValidTypeParameters(element, adaptedType)) {
+        builder.addError(ErrorMessages.INCOMPATIBLE_TYPE_PARAMETERS);
+      }
     }
     return builder.build();
   }
 
   private ValidationReport<ExecutableElement> validateConstructor(
-      TypeMirror adapterInterfaceType, Types types, ExecutableElement constructor) {
+      TypeMirror adapterInterfaceType, ExecutableElement constructor) {
     ValidationReport.Builder<ExecutableElement> constructorReport = ValidationReport.about(constructor);
     for (VariableElement parameter : constructor.getParameters()) {
       TypeMirror parameterType = parameter.asType();
       if (!types.isAssignable(parameterType, adapterInterfaceType)) {
         constructorReport.addError(ErrorMessages.INVALID_TYPE_ADAPTER_CONSTRUCTOR);
       }
-      TypeMirror adaptedType = Utils.getAdaptedType(types, parameterType);
+      TypeMirror adaptedType = Utils.getAdaptedType(elements, types, parameterType);
       if (adaptedType == null) {
         constructorReport.addError(ErrorMessages.RAW_TYPE_ADAPTER_IN_CONSTRUCTOR, parameter);
       }
