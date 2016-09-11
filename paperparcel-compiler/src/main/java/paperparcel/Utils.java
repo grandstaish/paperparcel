@@ -128,42 +128,14 @@ final class Utils {
   /**
    * Returns the {@link TypeMirror} argument found in a given TypeAdapter type
    */
-  static TypeMirror getAdaptedType(Elements elements, Types types, TypeMirror adapterType) {
+  static TypeMirror getAdaptedType(Elements elements, Types types, DeclaredType adapterType) {
     TypeElement typeAdapterElement = elements.getTypeElement(TYPE_ADAPTER_CLASS_NAME);
-    DeclaredType declaredAdapter = MoreTypes.asDeclared(adapterType);
     TypeParameterElement param = typeAdapterElement.getTypeParameters().get(0);
-    TypeMirror erased = types.erasure(param.getGenericElement().asType());
-    TypeMirror erasedSubType = types.erasure(adapterType);
-    if (types.isSameType(erased, erasedSubType)) {
-      List<? extends TypeMirror> arguments = MoreTypes.asDeclared(adapterType).getTypeArguments();
-      if (arguments.size() > 0) {
-        return arguments.get(0);
-      }
-    } else if (types.isSubtype(erasedSubType, erased)) {
-      return resolveTypeParameter(types, declaredAdapter, param);
+    try {
+      return types.asMemberOf(adapterType, param);
+    } catch (IllegalArgumentException e) {
+      return null;
     }
-    return null;
-  }
-
-  private static TypeMirror resolveTypeParameter(
-      Types types, DeclaredType subType, TypeParameterElement param) {
-    TypeMirror erased = types.erasure(param.getGenericElement().asType());
-    TypeMirror erasedSubType = types.erasure(subType);
-    if (types.isSameType(erased, erasedSubType)) {
-      return param.asType();
-    } else if (types.isSubtype(erasedSubType, erased)) {
-      for (TypeMirror superType : types.directSupertypes(subType)) {
-        TypeMirror resolved = resolveTypeParameter(types, (DeclaredType) superType, param);
-        if (resolved != null) {
-          if (resolved.getKind() == TypeKind.TYPEVAR) {
-            return types.asMemberOf(subType, ((TypeVariable) resolved).asElement());
-          } else {
-            return resolved;
-          }
-        }
-      }
-    }
-    return null;
   }
 
   /**

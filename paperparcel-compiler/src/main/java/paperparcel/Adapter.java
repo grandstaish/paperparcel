@@ -85,7 +85,8 @@ abstract class Adapter {
       for (String adapterName : adapterNames) {
         TypeElement adapterElement = elements.getTypeElement(adapterName);
         TypeMirror adapterType = adapterElement.asType();
-        TypeMirror adaptedType = Utils.getAdaptedType(elements, types, adapterType);
+        TypeMirror adaptedType =
+            Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(adapterType));
         TypeMirror[] typeArguments = findTypeArguments(adapterElement, adaptedType, normalizedType);
         if (typeArguments == null) continue;
         DeclaredType resolvedAdapterType = types.getDeclaredType(adapterElement, typeArguments);
@@ -110,7 +111,8 @@ abstract class Adapter {
         ExecutableType resolvedConstructorType =
             MoreTypes.asExecutable(types.asMemberOf(resolvedAdapterType, mainConstructor.get()));
         for (TypeMirror adapterDependencyType : resolvedConstructorType.getParameterTypes()) {
-          TypeMirror dependencyAdaptedType = Utils.getAdaptedType(elements, types, adapterDependencyType);
+          TypeMirror dependencyAdaptedType =
+              Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(adapterDependencyType));
           Adapter dependency = create(dependencyAdaptedType);
           if (dependency == null) return null;
           dependencies.add(dependency);

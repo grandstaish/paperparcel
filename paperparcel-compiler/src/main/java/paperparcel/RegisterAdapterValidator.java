@@ -16,6 +16,7 @@
 
 package paperparcel;
 
+import com.google.auto.common.MoreTypes;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
@@ -71,7 +72,8 @@ final class RegisterAdapterValidator {
     } else if (!Utils.isSingleton(types, element)) {
       builder.addError(ErrorMessages.NO_VISIBLE_CONSTRUCTOR);
     }
-    TypeMirror adaptedType = Utils.getAdaptedType(elements, types, element.asType());
+    TypeMirror adaptedType =
+        Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(element.asType()));
     if (adaptedType != null) {
       if (isJavaLangObject(adaptedType)) {
         builder.addError(ErrorMessages.REGISTERADAPTER_ON_RAW_TYPE_ADAPTER);
@@ -90,8 +92,9 @@ final class RegisterAdapterValidator {
       if (!types.isAssignable(parameterType, adapterInterfaceType)) {
         constructorReport.addError(ErrorMessages.INVALID_TYPE_ADAPTER_CONSTRUCTOR);
       }
-      TypeMirror adaptedType = Utils.getAdaptedType(elements, types, parameterType);
-      if (adaptedType == null) {
+      TypeMirror adaptedType =
+          Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(parameterType));
+      if (isJavaLangObject(adaptedType)) {
         constructorReport.addError(ErrorMessages.RAW_TYPE_ADAPTER_IN_CONSTRUCTOR, parameter);
       }
     }
