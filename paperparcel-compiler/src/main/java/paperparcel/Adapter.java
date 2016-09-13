@@ -88,7 +88,8 @@ abstract class Adapter {
         TypeMirror adaptedType =
             Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(adapterType));
         TypeMirror[] typeArguments = findTypeArguments(adapterElement, adaptedType, normalizedType);
-        if (typeArguments == null) continue;
+        if (typeArguments == null
+            || adapterElement.getTypeParameters().size() != typeArguments.length) continue;
         DeclaredType resolvedAdapterType = types.getDeclaredType(adapterElement, typeArguments);
         TypeMirror resolvedAdaptedType = Utils.getAdaptedType(elements, types, resolvedAdapterType);
         if (!types.isSameType(resolvedAdaptedType, normalizedType)) continue;
