@@ -6,7 +6,7 @@
 
 PaperParcel is an annotation processor that automatically generates type-safe [Parcelable](http://developer.android.com/intl/es/reference/android/os/Parcelable.html) boilerplate code for Kotlin and Java. PaperParcel supports Kotlin [Data Classes](https://kotlinlang.org/docs/reference/data-classes.html), Google's [AutoValue](https://github.com/google/auto/tree/master/value) via an [AutoValue Extension](http://jakewharton.com/presentation/2016-03-08-ny-android-meetup/), or just regular Java bean objects (for lack of a better word).
 
-Annotated data classes can contain any type that would normally be able to be parcelled. This includes all the basic Kotlin/Java types, Lists, Maps, Sets, Arrays, SparseArrays, [Kotlin object declarations](https://kotlinlang.org/docs/reference/object-declarations.html#object-declarations), and many more (the full list can be found [here](https://github.com/grandstaish/paperparcel/wiki/Supported-Types)). Support for any other type can be added using [TypeAdapters](https://github.com/grandstaish/paperparcel/blob/typeadapters/README.md#typeadapters).
+Annotated data classes can contain any type that would normally be able to be parcelled. This includes all the basic Kotlin/Java types, Lists, Maps, Sets, Arrays, SparseArrays, [Kotlin object declarations](https://kotlinlang.org/docs/reference/object-declarations.html#object-declarations), and many more (the full list can be found [here](https://github.com/grandstaish/paperparcel/wiki/Supported-Types)). Support for any other type can be added using [TypeAdapters](README.md#typeadapters).
 
 ## Usage 
 
@@ -85,7 +85,20 @@ data class User(
 
 Much like the AutoValue example, using kotlin's `data` annotation on the class gives us immutability, `toString`, `hashCode` and [even more](https://kotlinlang.org/docs/reference/data-classes.html)!
 
-To further reduce boilerplate, Kotlin supports default methods in interfaces, so I often create my own `Parcelable` interface with `describeContents()` already implemented. This is demonstrated in the kotlin sample app. 
+**Optional:** If you don't mind a minor amount of reflection, the `paperparcel-kotlin` module provides [PaperParcelable](paperparcel-kotlin/src/main/java/paperparcel/PaperParcelable.kt). `PaperParcelable` is an interface with default implementations written for `describeContents` and `writeToParcel(...)` so you don't have to write it yourself, e.g.:
+
+``` kotlin
+@PaperParcel
+data class User(
+    val id: Long,
+    val firstName: String,
+    val lastName: String
+) : PaperParcelable {
+  companion object {
+    @JvmField val CREATOR = PaperParcelUser.CREATOR
+  }
+}
+```
 
 ## TypeAdapters
 
