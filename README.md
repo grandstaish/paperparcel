@@ -85,7 +85,7 @@ data class User(
 
 Much like the AutoValue example, using kotlin's `data` annotation on the class gives us immutability, `toString`, `hashCode` and [even more](https://kotlinlang.org/docs/reference/data-classes.html)!
 
-**Optional:** If you don't mind a minor amount of reflection, the `paperparcel-kotlin` module provides [PaperParcelable](paperparcel-kotlin/src/main/java/paperparcel/PaperParcelable.kt). `PaperParcelable` is an interface with default implementations written for `describeContents` and `writeToParcel(...)` so you don't have to write it yourself, e.g.:
+**Optional:** If you don't mind a minor amount of reflection, the `paperparcel-kotlin` module provides [PaperParcelable](paperparcel-kotlin/src/main/java/paperparcel/PaperParcelable.kt). `PaperParcelable` is an interface with default implementations written for `describeContents` and `writeToParcel(...)` so you don't have to write them yourself, e.g.:
 
 ``` kotlin
 @PaperParcel
