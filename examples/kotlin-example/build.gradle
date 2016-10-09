@@ -23,6 +23,14 @@ android {
     sourceCompatibility rootProject.ext.sourceCompatibilityVersion
     targetCompatibility rootProject.ext.targetCompatibilityVersion
   }
+
+  buildTypes {
+    release {
+      signingConfig signingConfigs.debug
+      minifyEnabled true
+      proguardFiles getDefaultProguardFile('proguard-android.txt')
+    }
+  }
 }
 
 dependencies {
@@ -30,6 +38,7 @@ dependencies {
   compile deps.design
 
   compile project(':paperparcel')
+  compile project(':paperparcel-kotlin')
   kapt project(':paperparcel-compiler')
 
   compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"

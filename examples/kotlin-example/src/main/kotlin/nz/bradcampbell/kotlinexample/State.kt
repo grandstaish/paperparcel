@@ -1,7 +1,6 @@
 package nz.bradcampbell.kotlinexample
 
-import android.os.Parcel
-import android.os.Parcelable
+import paperparcel.PaperParcelable
 import paperparcel.Exclude
 import paperparcel.PaperParcel
 import java.util.Date
@@ -10,14 +9,10 @@ import java.util.Date
 data class State(
     val count: Int,
     val modificationDate: Date
-) : DefaultParcelable {
+) : PaperParcelable {
   @Exclude val somethingToExclude = 10000L
 
   companion object {
     @JvmField val CREATOR = PaperParcelState.CREATOR
-  }
-
-  override fun writeToParcel(dest: Parcel, flags: Int) {
-    PaperParcelState.writeToParcel(this, dest, flags)
   }
 }

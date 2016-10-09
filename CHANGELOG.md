@@ -18,7 +18,6 @@ Version 2.0.0 *(TBD)*
  * Removed the `TypedParcelable` interface as wrappers no longer exist
  * Removed `PaperParcels` class and all reflection calls
  * Removed Mapping file
- * Removed `paperparcel-kotlin`, `paperparcel-java7`, and `paperparcel-java8`
  * Removed support for `Serializable`, `Enum`, and non-primitive arrays out of the box. Support
    for these types can be manually added back with custom `TypeAdapter`s
  * Removed `AccessorName` API
