@@ -62,7 +62,11 @@ Simply implement Parcelable and you're done. Compared with the first example, wi
 
 ## Kotlin
 
-PaperParcel 2.0 requires the new version of kapt, which is available in kotlin 1.0.4+. Usage is exactly the same as java:
+PaperParcel 2 requires `kapt2` and `kotlin 1.0.5` or greater. To use `kapt2`, simply apply the `kotlin-kapt` gradle plugin to your app's `build.gradle` file:
+
+`apply plugin: 'kotlin-kapt'`
+
+Usage is exactly the same as java:
 
 ``` kotlin
 @PaperParcel
