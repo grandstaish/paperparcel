@@ -3,7 +3,7 @@ subprojects { project ->
   version = VERSION_NAME
 }
 
-ext.kotlin_version = '1.0.4-eap-118'
+ext.kotlin_version = '1.0.5-eap-66'
 
 allprojects {
   repositories {
@@ -20,7 +20,7 @@ allprojects {
 
     dependencies {
       classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
-      classpath 'com.android.tools.build:gradle:2.2.0-rc1'
+      classpath 'com.android.tools.build:gradle:2.2.1'
       classpath 'com.netflix.nebula:gradle-extra-configurations-plugin:3.0.3'
       classpath 'net.ltgt.gradle:gradle-apt-plugin:0.8'
       classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
