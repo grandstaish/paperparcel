@@ -39,8 +39,6 @@ import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
 import org.jetbrains.annotations.Nullable;
 
-import static paperparcel.Constants.TYPE_ADAPTER_CLASS_NAME;
-
 /**
  * Describes the TypeAdapter required for a particular field, and all of its
  * dependencies. Instances of {@link Adapter} are cached across processing rounds, so must
@@ -87,11 +85,13 @@ abstract class Adapter {
       for (String adapterName : adapterNames) {
         TypeElement adapterElement = elements.getTypeElement(adapterName);
         TypeMirror adapterType = adapterElement.asType();
-        TypeMirror adaptedType = getAdaptedType(adapterType);
+        TypeMirror adaptedType =
+            Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(adapterType));
         TypeMirror[] typeArguments = findTypeArguments(adapterElement, adaptedType, normalizedType);
-        if (typeArguments == null) continue;
+        if (typeArguments == null
+            || adapterElement.getTypeParameters().size() != typeArguments.length) continue;
         DeclaredType resolvedAdapterType = types.getDeclaredType(adapterElement, typeArguments);
-        TypeMirror resolvedAdaptedType = getAdaptedType(resolvedAdapterType);
+        TypeMirror resolvedAdaptedType = Utils.getAdaptedType(elements, types, resolvedAdapterType);
         if (!types.isSameType(resolvedAdaptedType, normalizedType)) continue;
         ImmutableList<Adapter> dependencies = findDependencies(adapterElement, resolvedAdapterType);
         if (dependencies == null) continue;
@@ -112,7 +112,8 @@ abstract class Adapter {
         ExecutableType resolvedConstructorType =
             MoreTypes.asExecutable(types.asMemberOf(resolvedAdapterType, mainConstructor.get()));
         for (TypeMirror adapterDependencyType : resolvedConstructorType.getParameterTypes()) {
-          TypeMirror dependencyAdaptedType = getAdaptedType(adapterDependencyType);
+          TypeMirror dependencyAdaptedType =
+              Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(adapterDependencyType));
           Adapter dependency = create(dependencyAdaptedType);
           if (dependency == null) return null;
           dependencies.add(dependency);
@@ -124,8 +125,8 @@ abstract class Adapter {
     @Nullable private TypeMirror[] findTypeArguments(
         TypeElement adapterElement, TypeMirror adaptedType, TypeMirror normalizedType) {
       if (adaptedType instanceof TypeVariable) {
-        TypeMirror extendsBounds = types.erasure(adaptedType);
-        if (types.isAssignable(normalizedType, extendsBounds)) {
+        TypeMirror erased = types.erasure(adaptedType);
+        if (types.isAssignable(normalizedType, erased)) {
           return new TypeMirror[] { normalizedType };
         }
         return null;
@@ -149,8 +150,8 @@ abstract class Adapter {
         @Override
         public TypeMirror visitTypeVariable(TypeVariable paramType, TypeMirror argType) {
           if (target.contentEquals(paramType.toString())) {
-            TypeMirror extendsBounds = types.erasure(paramType);
-            if (types.isAssignable(argType, extendsBounds)) {
+            TypeMirror erased = types.erasure(paramType);
+            if (types.isAssignable(argType, erased)) {
               return argType;
             }
           }
@@ -170,9 +171,6 @@ abstract class Adapter {
         public TypeMirror visitDeclared(DeclaredType paramType, TypeMirror argType) {
           if (argType instanceof DeclaredType) {
             DeclaredType cast = (DeclaredType) argType;
-            if (!types.isSameType(types.erasure(paramType), types.erasure(cast))) {
-              return null;
-            }
             List<? extends TypeMirror> paramArgs = paramType.getTypeArguments();
             List<? extends TypeMirror> castArgs = cast.getTypeArguments();
             if (paramArgs.size() != castArgs.size()) {
@@ -202,11 +200,6 @@ abstract class Adapter {
           return result;
         }
       }, normalizedType);
-    }
-
-    private TypeMirror getAdaptedType(TypeMirror adapterType) {
-      TypeMirror typeAdapterType = elements.getTypeElement(TYPE_ADAPTER_CLASS_NAME).asType();
-      return Utils.getTypeArgumentsOfTypeFromType(types, adapterType, typeAdapterType).get(0);
     }
   }
 }

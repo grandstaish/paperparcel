@@ -47,10 +47,10 @@ import javax.lang.model.util.Types;
 import static javax.lang.model.element.Modifier.*;
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PUBLIC;
-import static paperparcel.Constants.PARCELABLE_CLASS_NAME;
 
 @AutoService(AutoValueExtension.class)
 public class PaperParcelAutoValueExtension extends AutoValueExtension {
+  private static final String PARCELABLE_CLASS_NAME = "android.os.Parcelable";
   private static final TypeName PARCEL = ClassName.get("android.os", "Parcel");
 
   @Override public boolean applicable(Context context) {

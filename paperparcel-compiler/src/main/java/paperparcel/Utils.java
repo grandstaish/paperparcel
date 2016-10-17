@@ -30,6 +30,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.PrimitiveType;
@@ -46,10 +47,11 @@ import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 import static javax.lang.model.util.ElementFilter.fieldsIn;
-import static paperparcel.Constants.PARCELABLE_CLASS_NAME;
 
 /** A grab bag of shared utility methods with no home. FeelsBadMan. */
 final class Utils {
+  private static final String TYPE_ADAPTER_CLASS_NAME = "paperparcel.TypeAdapter";
+  private static final String PARCELABLE_CLASS_NAME = "android.os.Parcelable";
 
   private static final TypeVisitor<List<? extends TypeMirror>, Void> TYPE_ARGUMENTS_VISITOR =
       new SimpleTypeVisitor7<List<? extends TypeMirror>, Void>(
@@ -122,25 +124,16 @@ final class Utils {
   }
 
   /**
-   * Tries to find the {@link TypeMirror} arguments found in {@code from}, but only within the
-   * type {@code of}.
-   *
-   * E.g.: if {@code from} is {@code ArrayList<Integer>} and {@code of} is {@link List}, then
-   * this method will return a list containing a single element of {@code Integer}
+   * Returns the {@link TypeMirror} argument found in a given TypeAdapter type
    */
-  static List<? extends TypeMirror> getTypeArgumentsOfTypeFromType(
-      Types types, TypeMirror from, TypeMirror of) {
-    if (types.isSameType(types.erasure(from), types.erasure(of))) {
-      DeclaredType declaredType = (DeclaredType) from;
-      return declaredType.getTypeArguments();
+  static TypeMirror getAdaptedType(Elements elements, Types types, DeclaredType adapterType) {
+    TypeElement typeAdapterElement = elements.getTypeElement(TYPE_ADAPTER_CLASS_NAME);
+    TypeParameterElement param = typeAdapterElement.getTypeParameters().get(0);
+    try {
+      return types.asMemberOf(adapterType, param);
+    } catch (IllegalArgumentException e) {
+      return null;
     }
-    List<? extends TypeMirror> superTypes = types.directSupertypes(from);
-    List<? extends TypeMirror> result = null;
-    for (TypeMirror superType : superTypes) {
-      result = getTypeArgumentsOfTypeFromType(types, superType, of);
-      if (result != null) break;
-    }
-    return result;
   }
 
   /**
