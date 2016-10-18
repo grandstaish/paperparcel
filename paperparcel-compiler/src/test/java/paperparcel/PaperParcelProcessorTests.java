@@ -379,7 +379,7 @@ public class PaperParcelProcessorTests {
             "  };",
             "  private PaperParcelTest() {",
             "  }",
-            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
             "    BooleanAdapter.INSTANCE.writeToParcel(data.aa, dest, flags);",
             "    BooleanAdapter.INSTANCE.writeToParcel(data.ab, dest, flags);",
             "    ByteAdapter.INSTANCE.writeToParcel(data.ac, dest, flags);",
@@ -740,7 +740,7 @@ public class PaperParcelProcessorTests {
             "  };",
             "  private PaperParcelTest() {",
             "  }",
-            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
             "  }",
             "}"
         ));
@@ -919,7 +919,7 @@ public class PaperParcelProcessorTests {
             "  };",
             "  private PaperParcelTest() {",
             "  }",
-            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
             "    IntegerAdapter.INSTANCE.writeToParcel(data.count(), dest, flags);",
             "  }",
             "}"
@@ -991,7 +991,7 @@ public class PaperParcelProcessorTests {
             "  };",
             "  private PaperParcelTest() {",
             "  }",
-            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
             "    IntegerAdapter.INSTANCE.writeToParcel(data.count(), dest, flags);",
             "  }",
             "}"
@@ -1055,7 +1055,7 @@ public class PaperParcelProcessorTests {
             "  };",
             "  private PaperParcelTest() {",
             "  }",
-            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
             "    IntegerAdapter.INSTANCE.writeToParcel(data.count, dest, flags);",
             "  }",
             "}"
@@ -1119,7 +1119,7 @@ public class PaperParcelProcessorTests {
             "  };",
             "  private PaperParcelTest() {",
             "  }",
-            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
             "    IntegerAdapter.INSTANCE.writeToParcel(data.count(), dest, flags);",
             "  }",
             "}"
@@ -1192,7 +1192,7 @@ public class PaperParcelProcessorTests {
             "  };",
             "  private PaperParcelTest() {",
             "  }",
-            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
             "    IntegerAdapter.INSTANCE.writeToParcel(data.count2, dest, flags);",
             "    IntegerAdapter.INSTANCE.writeToParcel(data.count1(), dest, flags);",
             "    IntegerAdapter.INSTANCE.writeToParcel(data.count3(), dest, flags);",
@@ -1281,7 +1281,7 @@ public class PaperParcelProcessorTests {
             "  };",
             "  private PaperParcelTest() {",
             "  }",
-            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
             "    INTEGER_BOOLEAN_REALLY_SPECIFIC_TYPE_ADAPTER.writeToParcel(data.field1, dest, flags);",
             "    INTEGER_INTEGER_MAP_ADAPTER.writeToParcel(data.field2, dest, flags);",
             "  }",
@@ -1357,7 +1357,7 @@ public class PaperParcelProcessorTests {
             "  };",
             "  private PaperParcelTest() {",
             "  }",
-            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
             "    INTEGER_GENERIC_ARRAY_ADAPTER.writeToParcel(data.field, dest, flags);",
             "  }",
             "}"
@@ -1433,7 +1433,7 @@ public class PaperParcelProcessorTests {
             "  };",
             "  private PaperParcelTest() {",
             "  }",
-            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
             "    WILDCARD_ADAPTER.writeToParcel(data.field, dest, flags);",
             "  }",
             "}"
@@ -1509,7 +1509,7 @@ public class PaperParcelProcessorTests {
             "  };",
             "  private PaperParcelTest() {",
             "  }",
-            "  static void writeToParcel(Test data, Parcel dest, int flags) {",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
             "    INTEGER_WILDCARD_ADAPTER.writeToParcel(data.field, dest, flags);",
             "  }",
             "}"

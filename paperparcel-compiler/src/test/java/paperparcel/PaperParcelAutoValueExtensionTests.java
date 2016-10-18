@@ -72,7 +72,7 @@ public class PaperParcelAutoValueExtensionTests {
             "  };",
             "  private PaperParcelAutoValue_Test() {",
             "  }",
-            "  static void writeToParcel(AutoValue_Test data, Parcel dest, int flags) {",
+            "  static void writeToParcel(@NonNull AutoValue_Test data, @NonNull Parcel dest, int flags) {",
             "    IntegerAdapter.INSTANCE.writeToParcel(data.count(), dest, flags);",
             "  }",
             "}"
@@ -166,7 +166,7 @@ public class PaperParcelAutoValueExtensionTests {
             "  };",
             "  private PaperParcelAutoValue_Test() {",
             "  }",
-            "  static void writeToParcel(AutoValue_Test data, Parcel dest, int flags) {",
+            "  static void writeToParcel(@NonNull AutoValue_Test data, @NonNull Parcel dest, int flags) {",
             "    IntegerAdapter.INSTANCE.writeToParcel(data.count(), dest, flags);",
             "  }",
             "}"
