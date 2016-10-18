@@ -21,10 +21,7 @@ allprojects {
     dependencies {
       classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
       classpath 'com.android.tools.build:gradle:2.2.1'
-      classpath 'com.netflix.nebula:gradle-extra-configurations-plugin:3.0.3'
-      classpath 'net.ltgt.gradle:gradle-apt-plugin:0.8'
-      classpath 'com.neenbedankt.gradle.plugins:android-apt:1.8'
-      classpath "io.realm:realm-gradle-plugin:1.2.0"
+      classpath 'io.realm:realm-gradle-plugin:2.0.2'
       classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7'
       classpath 'com.github.dcendents:android-maven-gradle-plugin:1.4.1'
       classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:4.0.0'

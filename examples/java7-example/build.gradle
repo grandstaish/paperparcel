@@ -1,5 +1,4 @@
 apply plugin: 'com.android.application'
-apply plugin: 'android-apt'
 
 android {
   compileSdkVersion rootProject.ext.compileSdkVersion
@@ -25,7 +24,7 @@ dependencies {
   compile deps.design
 
   compile project(':paperparcel')
-  apt project(':paperparcel-compiler')
+  annotationProcessor project(':paperparcel-compiler')
 
   testCompile deps.junit
   testCompile deps.compiletesting

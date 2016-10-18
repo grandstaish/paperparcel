@@ -1,5 +1,4 @@
 apply plugin: 'java'
-apply plugin: 'nebula.provided-base'
 
 sourceCompatibility = rootProject.ext.sourceCompatibilityVersion
 targetCompatibility = rootProject.ext.targetCompatibilityVersion
