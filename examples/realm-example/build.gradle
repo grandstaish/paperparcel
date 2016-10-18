@@ -1,6 +1,5 @@
 apply plugin: 'com.android.application'
 apply plugin: 'realm-android'
-apply plugin: 'com.neenbedankt.android-apt'
 
 android {
   compileSdkVersion rootProject.ext.compileSdkVersion
@@ -8,7 +7,7 @@ android {
 
   defaultConfig {
     applicationId "nz.bradcampbell.realmexample"
-    minSdkVersion 11
+    minSdkVersion rootProject.ext.minSdkVersion
     targetSdkVersion rootProject.ext.targetSdkVersion
     versionCode 1
     versionName "1.0"
