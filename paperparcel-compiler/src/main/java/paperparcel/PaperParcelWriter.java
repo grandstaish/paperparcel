@@ -16,6 +16,8 @@
 
 package paperparcel;
 
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -109,6 +111,7 @@ final class PaperParcelWriter {
 
     return FieldSpec.builder(creatorOfClass, "CREATOR", STATIC, FINAL)
         .initializer("$L", initializer)
+        .addAnnotation(NonNull.class)
         .build();
   }
 
@@ -169,11 +172,17 @@ final class PaperParcelWriter {
   }
 
   private MethodSpec writeToParcel(TypeName className) {
-    ParameterSpec dest = ParameterSpec.builder(PARCEL, "dest").build();
-    ParameterSpec flags = ParameterSpec.builder(int.class, "flags").build();
+    ParameterSpec data = ParameterSpec.builder(className, FIELD_NAME)
+        .addAnnotation(NonNull.class)
+        .build();
+    ParameterSpec dest = ParameterSpec.builder(PARCEL, "dest")
+        .addAnnotation(NonNull.class)
+        .build();
+    ParameterSpec flags = ParameterSpec.builder(int.class, "flags")
+        .build();
     MethodSpec.Builder builder = MethodSpec.methodBuilder("writeToParcel")
         .addModifiers(STATIC)
-        .addParameter(className, FIELD_NAME)
+        .addParameter(data)
         .addParameter(dest)
         .addParameter(flags);
 

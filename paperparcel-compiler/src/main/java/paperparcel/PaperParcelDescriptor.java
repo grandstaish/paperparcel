@@ -16,11 +16,11 @@
 
 package paperparcel;
 
+import android.support.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Types;
-import org.jetbrains.annotations.Nullable;
 
 /** Represents a {@link PaperParcel} annotated object */
 @AutoValue

@@ -16,6 +16,7 @@
 
 package paperparcel;
 
+import android.support.annotation.Nullable;
 import com.google.auto.common.MoreElements;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
@@ -30,7 +31,6 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
-import org.jetbrains.annotations.Nullable;
 
 /** A validator for any {@link PaperParcel} annotated {@link TypeElement} */
 final class PaperParcelValidator {

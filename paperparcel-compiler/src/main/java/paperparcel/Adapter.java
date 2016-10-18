@@ -16,6 +16,7 @@
 
 package paperparcel;
 
+import android.support.annotation.Nullable;
 import com.google.auto.common.MoreTypes;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Optional;
@@ -37,7 +38,6 @@ import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Describes the TypeAdapter required for a particular field, and all of its
