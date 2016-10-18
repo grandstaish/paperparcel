@@ -16,6 +16,7 @@
 
 package paperparcel;
 
+import android.support.annotation.NonNull;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -109,6 +110,7 @@ final class PaperParcelWriter {
 
     return FieldSpec.builder(creatorOfClass, "CREATOR", STATIC, FINAL)
         .initializer("$L", initializer)
+        .addAnnotation(NonNull.class)
         .build();
   }
 

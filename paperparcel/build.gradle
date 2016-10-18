@@ -18,7 +18,6 @@ android {
 
 dependencies {
   compile project(':paperparcel-annotations')
-  compile deps.supportAnnotations
 
   testCompile deps.junit
   testCompile deps.truth
