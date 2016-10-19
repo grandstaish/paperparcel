@@ -40,6 +40,8 @@ import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -84,7 +86,7 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
     TypeSpec.Builder subclass = TypeSpec.classBuilder(className)
         .addModifiers(PUBLIC, FINAL)
         .superclass(TypeVariableName.get(classToExtend))
-        .addMethod(constructor(context.properties()))
+        .addMethod(constructor(context))
         .addAnnotation(PaperParcel.class)
         .addField(creator(className))
         .addMethod(writeToParcel(className));
@@ -118,23 +120,27 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
         .build();
   }
 
-  private MethodSpec constructor(Map<String, ExecutableElement> properties) {
-    ImmutableList<ParameterSpec> parameterSpecs = FluentIterable.from(properties.entrySet())
+  private MethodSpec constructor(Context context) {
+    final Types types = context.processingEnvironment().getTypeUtils();
+    final DeclaredType declaredValueType = MoreTypes.asDeclared(context.autoValueClass().asType());
+    ImmutableList<ParameterSpec> parameters = FluentIterable.from(context.properties().entrySet())
         .transform(new Function<Map.Entry<String, ExecutableElement>, ParameterSpec>() {
           @Override public ParameterSpec apply(Map.Entry<String, ExecutableElement> entry) {
-            TypeName typeName = TypeName.get(entry.getValue().getReturnType());
+            ExecutableType resolvedExecutableType =
+                MoreTypes.asExecutable(types.asMemberOf(declaredValueType, entry.getValue()));
+            TypeName typeName = TypeName.get(resolvedExecutableType.getReturnType());
             return ParameterSpec.builder(typeName, entry.getKey()).build();
           }
         })
         .toList();
-    CodeBlock parameterList = CodeBlocks.join(FluentIterable.from(parameterSpecs)
+    CodeBlock parameterList = CodeBlocks.join(FluentIterable.from(parameters)
         .transform(new Function<ParameterSpec, CodeBlock>() {
           @Override public CodeBlock apply(ParameterSpec parameterSpec) {
             return CodeBlock.of("$N", parameterSpec.name);
           }
         }), ", ");
     return MethodSpec.constructorBuilder()
-        .addParameters(parameterSpecs)
+        .addParameters(parameters)
         .addStatement("super($L)", parameterList)
         .build();
   }
