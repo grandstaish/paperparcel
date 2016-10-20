@@ -87,6 +87,52 @@ public class PaperParcelAutoValueExtensionTests {
         .generatesSources(autoValueSubclass, paperParcelOutput);
   }
 
+  @Test public void nullableAnnotationTest() throws Exception {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.support.annotation.Nullable;",
+            "import com.google.auto.value.AutoValue;",
+            "import android.os.Parcelable;",
+            "@AutoValue",
+            "public abstract class Test implements Parcelable {",
+            "  @Nullable public abstract Integer count();",
+            "}"
+        ));
+
+    JavaFileObject autoValueSubclass =
+        JavaFileObjects.forSourceString("test/AutoValue_Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.Nullable;",
+            "import java.lang.Integer;",
+            "import java.lang.Override;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public final class AutoValue_Test extends $AutoValue_Test {",
+            "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = PaperParcelAutoValue_Test.CREATOR;",
+            "  AutoValue_Test(@Nullable Integer count) {",
+            "    super(count);",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "    PaperParcelAutoValue_Test.writeToParcel(this, dest, flags);",
+            "  }",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new AutoValueProcessor(), new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(autoValueSubclass);
+  }
+
   @Test public void failIfParcelableAutoValueClassHasTypeParametersTest() throws Exception {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
