@@ -24,6 +24,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
@@ -38,6 +39,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.DeclaredType;
@@ -54,6 +56,7 @@ import static javax.lang.model.element.Modifier.PUBLIC;
 public class PaperParcelAutoValueExtension extends AutoValueExtension {
   private static final String PARCELABLE_CLASS_NAME = "android.os.Parcelable";
   private static final TypeName PARCEL = ClassName.get("android.os", "Parcel");
+  private static final String NULLABLE_ANNOTATION_NAME = "Nullable";
 
   @Override public boolean applicable(Context context) {
     ProcessingEnvironment env = context.processingEnvironment();
@@ -149,7 +152,13 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
             ExecutableType resolvedExecutableType =
                 MoreTypes.asExecutable(types.asMemberOf(declaredValueType, entry.getValue()));
             TypeName typeName = TypeName.get(resolvedExecutableType.getReturnType());
-            return ParameterSpec.builder(typeName, entry.getKey()).build();
+            ParameterSpec.Builder spec = ParameterSpec.builder(typeName, entry.getKey());
+            AnnotationMirror nullableAnnotation =
+                Utils.getAnnotationWithNameOrNull(entry.getValue(), NULLABLE_ANNOTATION_NAME);
+            if (nullableAnnotation != null) {
+              spec.addAnnotation(AnnotationSpec.get(nullableAnnotation));
+            }
+            return spec.build();
           }
         })
         .toList();
@@ -168,9 +177,10 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
   private static boolean needsContentDescriptor(Context context) {
     ProcessingEnvironment env = context.processingEnvironment();
     TypeElement autoValueTypeElement = context.autoValueClass();
+    Types types = env.getTypeUtils();
     Elements elements = env.getElementUtils();
     ImmutableSet<ExecutableElement> methods =
-        MoreElements.getLocalAndInheritedMethods(autoValueTypeElement, elements);
+        MoreElements.getLocalAndInheritedMethods(autoValueTypeElement, types, elements);
     for (ExecutableElement element : methods) {
       if (element.getSimpleName().contentEquals("describeContents")
           && MoreTypes.isTypeOf(int.class, element.getReturnType())

@@ -16,6 +16,7 @@
 
 package paperparcel;
 
+import android.support.annotation.Nullable;
 import com.google.auto.common.MoreElements;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
@@ -26,6 +27,7 @@ import com.google.common.primitives.Ints;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -110,8 +112,8 @@ final class Utils {
    * defined in {@link Object})
    */
   static ImmutableList<ExecutableElement> getLocalAndInheritedMethods(
-      Elements elements, TypeElement element) {
-    return FluentIterable.from(MoreElements.getLocalAndInheritedMethods(element, elements))
+      Elements elements, Types types, TypeElement element) {
+    return FluentIterable.from(MoreElements.getLocalAndInheritedMethods(element, types, elements))
         .filter(new Predicate<ExecutableElement>() {
           @Override public boolean apply(ExecutableElement method) {
             // Filter out any methods defined in java.lang.Object as they are just
@@ -185,6 +187,17 @@ final class Utils {
     return kind.isPrimitive()
         ? types.boxedClass((PrimitiveType) type).asType()
         : type;
+  }
+
+  /** Finds an annotation with the given name on the given element, or null if not found. */
+  @Nullable static AnnotationMirror getAnnotationWithNameOrNull(Element element, String simpleName) {
+    for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
+      String annotationName = mirror.getAnnotationType().asElement().getSimpleName().toString();
+      if (simpleName.equals(annotationName)) {
+        return mirror;
+      }
+    }
+    return null;
   }
 
   private Utils() {}

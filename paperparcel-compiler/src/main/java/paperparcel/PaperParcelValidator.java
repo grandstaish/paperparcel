@@ -84,7 +84,7 @@ final class PaperParcelValidator {
     if (!Utils.isSingleton(types, element)) {
       ImmutableList<VariableElement> fields = Utils.getLocalAndInheritedFields(types, element);
       ImmutableList<ExecutableElement> methods =
-          Utils.getLocalAndInheritedMethods(elements, element);
+          Utils.getLocalAndInheritedMethods(elements, types, element);
       ImmutableList<ExecutableElement> constructors = Utils.orderedConstructorsIn(element);
       try {
         writeInfo = writeInfoFactory.create(fields, methods, constructors);
