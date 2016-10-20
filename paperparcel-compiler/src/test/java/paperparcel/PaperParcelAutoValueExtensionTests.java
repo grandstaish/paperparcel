@@ -3,11 +3,13 @@ package paperparcel;
 import com.google.auto.value.processor.AutoValueProcessor;
 import com.google.common.base.Joiner;
 import com.google.testing.compile.JavaFileObjects;
+import java.util.Arrays;
 import javax.tools.JavaFileObject;
 import org.junit.Test;
 
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
+import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
 
 public class PaperParcelAutoValueExtensionTests {
 
@@ -233,6 +235,97 @@ public class PaperParcelAutoValueExtensionTests {
             "test.Test"))
         .in(source)
         .onLine(8);
+  }
+
+  @Test public void resolveTypeParameterPropertyTest() throws Exception {
+    JavaFileObject foo =
+        JavaFileObjects.forSourceString("test.Foo", Joiner.on('\n').join(
+            "package test;",
+            "public interface Foo {",
+            "}"
+        ));
+
+    JavaFileObject bar =
+        JavaFileObjects.forSourceString("test.Bar", Joiner.on('\n').join(
+            "package test;",
+            "public interface Bar<F extends Foo> {",
+            "  F foo();",
+            "}"
+        ));
+
+    JavaFileObject pFoo =
+        JavaFileObjects.forSourceString("test.PFoo", Joiner.on('\n').join(
+            "package test;",
+            "import com.google.auto.value.AutoValue;",
+            "import android.os.Parcelable;",
+            "@AutoValue",
+            "public abstract class PFoo implements Foo, Parcelable {",
+            "}"
+        ));
+
+    JavaFileObject pBar =
+        JavaFileObjects.forSourceString("test.PBar", Joiner.on('\n').join(
+            "package test;",
+            "import com.google.auto.value.AutoValue;",
+            "import android.os.Parcelable;",
+            "@AutoValue",
+            "public abstract class PBar implements Bar<PFoo>, Parcelable {",
+            "}"
+        ));
+
+    JavaFileObject autoValuePFoo =
+        JavaFileObjects.forSourceString("test/AutoValue_PFoo", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import java.lang.Override;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public final class AutoValue_PFoo extends $AutoValue_PFoo {",
+            "  public static final Parcelable.Creator<AutoValue_PFoo> CREATOR = PaperParcelAutoValue_PFoo.CREATOR;",
+            "  AutoValue_PFoo() {",
+            "    super();",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "    PaperParcelAutoValue_PFoo.writeToParcel(this, dest, flags);",
+            "  }",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject autoValuePBar =
+        JavaFileObjects.forSourceString("test/AutoValue_PBar", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import java.lang.Override;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public final class AutoValue_PBar extends $AutoValue_PBar {",
+            "  public static final Parcelable.Creator<AutoValue_PBar> CREATOR = PaperParcelAutoValue_PBar.CREATOR;",
+            "  AutoValue_PFoo(PFoo foo) {",
+            "    super(foo);",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "    PaperParcelAutoValue_PBar.writeToParcel(this, dest, flags);",
+            "  }",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(foo, bar, pFoo, pBar))
+        .processedWith(new AutoValueProcessor(), new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(autoValuePFoo, autoValuePBar);
   }
 
 }
