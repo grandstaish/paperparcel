@@ -35,11 +35,11 @@ I've annotated each important part with a comment and a number, let's look at ea
 
 **1)** Annotating a class with `@PaperParcel` will automatically generate the `CREATOR` and `writeToParcel(...)` implementations for that class at compile time. These implementations are generated into a java class (in the same package as your model) called `PaperParcel$CLASS_NAME$`
 
-**2)** This is the first usage of some of the generated code - the generated `CREATOR` instance. 
+**2)** This is the first usage of the generated — the generated `CREATOR` instance. 
 
 **3)** These are the fields that will be processed by PaperParcel.
 
-**4)** This is the second usage of some of the generated code - the generated `writeToParcel(...)` implementation.
+**4)** This is the second usage of the generated code — the generated `writeToParcel(...)` implementation.
 
 ## Even Easier; Use The AutoValue Extension
 
@@ -120,7 +120,7 @@ public final class UuidAdapter extends AbstractAdapter<UUID> { // 2
 
 I've annotated each important part with a comment and a number, let's look at each of these one by one:
 
-**1)** This is how you register your custom adapter with the compiler - just by annotating this class, generated code will now use this type adapter for any `UUID` field.
+**1)** This is how you register your custom adapter with the compiler — just by annotating this class, generated code will now use this type adapter for any `UUID` field.
 
 **2)** Rather than implementing `TypeAdapter` directly, it may be convienient to extend `AbstractAdapter` instead. This is a base implementation of `TypeAdapter` handles null checking for you. 
 
@@ -153,7 +153,7 @@ public class Test implements Parcelable {
 
 *Note: this section is only relevant if you are using PaperParcel without the assitance of AutoValue or Kotlin's data classes.*
 
-PaperParcel 2.0 uses no reflection at all. Because of that, all of the fields that PaperParcel is going to process need to follow a few loose conventions in order for PaperParcel to know how to read your fields, and how to fully re-instantiate your models at creation time. Any failure to follow these conventions will result in a compile-time error with a clear message informing you of what is wrong.
+PaperParcel 2.0 uses no reflection at all. Because of that, all of the fields that PaperParcel is going to process need to follow a few loose conventions in order for PaperParcel to know how to read your fields, and how to fully re-instantiate your models at creation time. Any failure to follow these conventions will result in a compile time error with a clear message informing you of what is wrong.
 
 #### Reading Fields
 
