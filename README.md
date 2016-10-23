@@ -98,9 +98,7 @@ data class User(
 
 ## TypeAdapters
 
-A `TypeAdapter` is an object that specifies how to read and write a certian type to a Parcel instance. This gives you the ability to use types in your models that PaperParcel doesn't support out-of-the-box. 
-
-Let's look at an example of creating a `TypeAdapter` to handle `java.util.UUID` objects:
+While PaperParcel supports a large number of types out-of-the-box, sometimes you will need to extend the type system to add support for other types. You can do this by registering your own custom `TypeAdapter`. Luckily defining a custom `TypeAdapter` is simple. Let's look at an example that adds support for `java.util.UUID`s:
 
 ``` java
 @RegisterAdapter // 1
