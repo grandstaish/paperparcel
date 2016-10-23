@@ -29,6 +29,15 @@ public class PaperParcelProcessorTests {
             "}"
         ));
 
+    JavaFileObject testEnum =
+        JavaFileObjects.forSourceString("test.TestEnum", Joiner.on('\n').join(
+            "package test;",
+            "public enum TestEnum {",
+            "  A,",
+            "  B,",
+            "}"
+        ));
+
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -128,6 +137,7 @@ public class PaperParcelProcessorTests {
             "  public ArrayDeque<Integer> cf;",
             "  public Deque<Integer> cg;",
             "  public Queue<Integer> ch;",
+            "  public TestEnum ci;",
             "  public int describeContents() {",
             "    return 0;",
             "  }",
@@ -192,6 +202,7 @@ public class PaperParcelProcessorTests {
             "import paperparcel.adapter.DequeAdapter;",
             "import paperparcel.adapter.DoubleAdapter;",
             "import paperparcel.adapter.DoubleArrayAdapter;",
+            "import paperparcel.adapter.EnumAdapter;",
             "import paperparcel.adapter.FloatAdapter;",
             "import paperparcel.adapter.FloatArrayAdapter;",
             "import paperparcel.adapter.HashMapAdapter;",
@@ -249,6 +260,7 @@ public class PaperParcelProcessorTests {
             "  private static final ArrayDequeAdapter<Integer> INTEGER_ARRAY_DEQUE_ADAPTER = new ArrayDequeAdapter<Integer>(IntegerAdapter.INSTANCE);",
             "  private static final DequeAdapter<Integer> INTEGER_DEQUE_ADAPTER = new DequeAdapter<Integer>(IntegerAdapter.INSTANCE);",
             "  private static final QueueAdapter<Integer> INTEGER_QUEUE_ADAPTER = new QueueAdapter<Integer>(IntegerAdapter.INSTANCE);",
+            "  private static final EnumAdapter<TestEnum> TEST_ENUM_ENUM_ADAPTER = new EnumAdapter<TestEnum>();",
             "  @NonNull",
             "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
             "    @Override public Test createFromParcel(Parcel in) {",
@@ -311,6 +323,7 @@ public class PaperParcelProcessorTests {
             "      ArrayDeque<Integer> cf = INTEGER_ARRAY_DEQUE_ADAPTER.readFromParcel(in);",
             "      Deque<Integer> cg = INTEGER_DEQUE_ADAPTER.readFromParcel(in);",
             "      Queue<Integer> ch = INTEGER_QUEUE_ADAPTER.readFromParcel(in);",
+            "      TestEnum ci = TEST_ENUM_ENUM_ADAPTER.readFromParcel(in);",
             "      Test data = new Test();",
             "      data.aa = aa;",
             "      data.ab = ab;",
@@ -371,6 +384,7 @@ public class PaperParcelProcessorTests {
             "      data.cf = cf;",
             "      data.cg = cg;",
             "      data.ch = ch;",
+            "      data.ci = ci;",
             "      return data;",
             "    }",
             "    @Override public Test[] newArray(int size) {",
@@ -439,11 +453,12 @@ public class PaperParcelProcessorTests {
             "    INTEGER_ARRAY_DEQUE_ADAPTER.writeToParcel(data.cf, dest, flags);",
             "    INTEGER_DEQUE_ADAPTER.writeToParcel(data.cg, dest, flags);",
             "    INTEGER_QUEUE_ADAPTER.writeToParcel(data.ch, dest, flags);",
+            "    TEST_ENUM_ENUM_ADAPTER.writeToParcel(data.ci, dest, flags);",
             "  }",
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, testParcelable))
+    assertAbout(javaSources()).that(Arrays.asList(source, testParcelable, testEnum))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()

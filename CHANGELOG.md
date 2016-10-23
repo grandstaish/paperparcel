@@ -18,7 +18,7 @@ Version 2.0.0 *(TBD)*
  * Removed the `TypedParcelable` interface as wrappers no longer exist
  * Removed `PaperParcels` class and all reflection calls
  * Removed Mapping file
- * Removed support for `Serializable`, `Enum`, and non-primitive arrays out of the box. Support
+ * Removed support for `Serializable` and non-primitive arrays out of the box. Support
    for these types can be manually added back with custom `TypeAdapter`s
  * Removed `AccessorName` API
  * Renamed `DefaultAdapter` to `RegisterAdapter` and removed all other types of adapter scoping

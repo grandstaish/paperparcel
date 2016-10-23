@@ -82,7 +82,8 @@ final class AdapterRegistry {
       "paperparcel.adapter.BigDecimalAdapter",
       "paperparcel.adapter.BigIntegerAdapter",
       "paperparcel.adapter.DateAdapter",
-      "paperparcel.adapter.CharacterAdapter");
+      "paperparcel.adapter.CharacterAdapter",
+      "paperparcel.adapter.EnumAdapter");
 
   private final List<String> adapterNames = Lists.newArrayList(BUILT_IN_ADAPTER_CLASS_NAMES);
   private final Map<TypeName, Adapter> adapters = Maps.newLinkedHashMap();
