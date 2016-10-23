@@ -67,9 +67,6 @@ final class PaperParcelValidator {
 
   PaperParcelValidation validate(TypeElement element) {
     ValidationReport.Builder<TypeElement> builder = ValidationReport.about(element);
-    if (Utils.getTypeArguments(element.asType()).size() > 0) {
-      builder.addError(ErrorMessages.PAPERPARCEL_ON_GENERIC_CLASS);
-    }
     if (element.getKind() == ElementKind.INTERFACE) {
       builder.addError(ErrorMessages.PAPERPARCEL_ON_INTERFACE);
     }

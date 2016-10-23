@@ -63,7 +63,7 @@ public class PaperParcelAutoValueExtensionTests {
             "  static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {",
             "    @Override",
             "    public AutoValue_Test createFromParcel(Parcel in) {",
-            "      int count = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      Integer count = IntegerAdapter.INSTANCE.readFromParcel(in);",
             "      AutoValue_Test data = new AutoValue_Test(count);",
             "      return data;",
             "    }",
@@ -133,24 +133,47 @@ public class PaperParcelAutoValueExtensionTests {
         .generatesSources(autoValueSubclass);
   }
 
-  @Test public void failIfParcelableAutoValueClassHasTypeParametersTest() throws Exception {
+  @Test public void genericAutoValueClassWithParcelableExtendsBoundsTest() throws Exception {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
             "import com.google.auto.value.AutoValue;",
             "import android.os.Parcelable;",
             "@AutoValue",
-            "public abstract class Test<T> implements Parcelable {",
-            "  public abstract int count();",
+            "public abstract class Test<T extends Parcelable> implements Parcelable {",
+            "  public abstract T count();",
+            "}"
+        ));
+
+    JavaFileObject autoValueSubclass =
+        JavaFileObjects.forSourceString("test/AutoValue_Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import java.lang.Override;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public final class AutoValue_Test<T extends Parcelable> extends $AutoValue_Test<T> {",
+            "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = PaperParcelAutoValue_Test.CREATOR;",
+            "  AutoValue_Test(T count) {",
+            "    super(count);",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "    PaperParcelAutoValue_Test.writeToParcel(this, dest, flags);",
+            "  }",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
             "}"
         ));
 
     assertAbout(javaSource()).that(source)
         .processedWith(new AutoValueProcessor(), new PaperParcelProcessor())
-        .failsToCompile()
-        .withErrorContaining(ErrorMessages.AUTOVALUE_ON_GENERIC_CLASS)
-        .in(source)
-        .onLine(5);
+        .compilesWithoutError()
+        .and()
+        .generatesSources(autoValueSubclass);
   }
 
   @Test public void omitDescribeContentsWhenAlreadyDefinedTest() throws Exception {
@@ -203,7 +226,7 @@ public class PaperParcelAutoValueExtensionTests {
             "  static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {",
             "    @Override",
             "    public AutoValue_Test createFromParcel(Parcel in) {",
-            "      int count = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      Integer count = IntegerAdapter.INSTANCE.readFromParcel(in);",
             "      AutoValue_Test data = new AutoValue_Test(count);",
             "      return data;",
             "    }",
@@ -372,6 +395,49 @@ public class PaperParcelAutoValueExtensionTests {
         .compilesWithoutError()
         .and()
         .generatesSources(autoValuePFoo, autoValuePBar);
+  }
+
+  @Test public void basicGenericAutoValueTest() throws Exception {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import com.google.auto.value.AutoValue;",
+            "import android.os.Parcelable;",
+            "@AutoValue",
+            "public abstract class Test<T extends Parcelable> implements Parcelable {",
+            "  public abstract T count();",
+            "}"
+        ));
+
+    JavaFileObject autoValueSubclass =
+        JavaFileObjects.forSourceString("test/AutoValue_Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import java.lang.Override;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public final class AutoValue_Test<T extends Parcelable> extends $AutoValue_Test<T> {",
+            "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = PaperParcelAutoValue_Test.CREATOR;",
+            "  AutoValue_Test(T count) {",
+            "    super(count);",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "    PaperParcelAutoValue_Test.writeToParcel(this, dest, flags);",
+            "  }",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new AutoValueProcessor(), new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(autoValueSubclass);
   }
 
 }

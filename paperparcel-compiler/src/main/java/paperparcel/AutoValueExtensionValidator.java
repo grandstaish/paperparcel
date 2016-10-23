@@ -43,9 +43,6 @@ final class AutoValueExtensionValidator {
 
   ValidationReport<TypeElement> validate(TypeElement subject) {
     ValidationReport.Builder<TypeElement> report = ValidationReport.about(subject);
-    if (Utils.getTypeArguments(subject.asType()).size() > 0) {
-      report.addError(ErrorMessages.AUTOVALUE_ON_GENERIC_CLASS);
-    }
     Optional<ExecutableElement> writeToParcel = findWriteToParcel(subject);
     if (writeToParcel.isPresent()) {
       report.addError(String.format(

@@ -17,7 +17,6 @@
 package paperparcel;
 
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Function;
 import com.google.common.base.Joiner;
@@ -88,6 +87,7 @@ final class PaperParcelWriter {
         .addModifiers(PUBLIC)
         .returns(className)
         .addParameter(in);
+
     if (descriptor.isSingleton()) {
       createFromParcel.addStatement("return $T.INSTANCE", className);
     } else {

@@ -68,10 +68,10 @@ abstract class PaperParcelDescriptor {
       ImmutableMap.Builder<FieldDescriptor, Adapter> fieldAdapterMap = ImmutableMap.builder();
       if (readInfo != null) {
         for (FieldDescriptor field : readInfo.readableFields()) {
-          fieldAdapterMap.put(field, adapterFactory.create(field.normalizedType().get()));
+          fieldAdapterMap.put(field, adapterFactory.create(field.type().get()));
         }
         for (FieldDescriptor field : readInfo.getterMethodMap().keySet()) {
-          fieldAdapterMap.put(field, adapterFactory.create(field.normalizedType().get()));
+          fieldAdapterMap.put(field, adapterFactory.create(field.type().get()));
         }
       }
       return fieldAdapterMap.build();
