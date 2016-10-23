@@ -132,22 +132,7 @@ For an example of how composing `TypeAdapter`s looks, the [realm-example](exampl
 
 ## Excluding Fields
 
-PaperParcel provides the ability to exclude fields from being processed. There are two ways to do this:
-
-**1)** Make the field static. 
-
-**2)** Use the `@Exclude` annotation on a field:
-
-``` java
-@PaperParcel 
-public class Test implements Parcelable { 
-  @Exclude 
-  public long fieldToIgnore;
-  public long fieldToInclude;
-
-  // Parcelable implementation omitted for clarity
-}
-```
+You can annotate any field with `@Exclude` to exclude it from being parcelled. 
 
 ## Model Conventions
 
