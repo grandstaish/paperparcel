@@ -124,9 +124,22 @@ I've annotated each important part with a comment and a number, let's look at ea
 
 **3)** This is a completely optional singleton instance. If PaperParcel notices your class is a singleton, it will use the singleton instance. This helps greatly in preventing unecessary allocations. For this reason, most of the built-in type adapters are singletons. Note for Kotlin users, this is equivalent to defining your Adapter as an `object`.
 
-Many similar projects also use some variant of `TypeAdapter`, however the PaperParcel implementation is slightly more flexible. PaperParcel allows `TypeAdapter`s to be [composable](https://en.wikipedia.org/wiki/Object_composition) and [generic](https://docs.oracle.com/javase/tutorial/java/generics/types.html). This allows you to easily create `TypeAdapter`s for container types that don't come out of the box, e.g. `RealmList` for [Realm](https://github.com/realm/realm-java), various non-java `Collection` types in [Kotlin](https://github.com/JetBrains/kotlin/), or even `ImmutableList` for [Guava](https://github.com/google/guava). 
+Many similar projects also use some variant of `TypeAdapter`, however the PaperParcel implementation is slightly more flexible. PaperParcel allows `TypeAdapter`s to be [composable](https://en.wikipedia.org/wiki/Object_composition) and [generic](https://docs.oracle.com/javase/tutorial/java/generics/types.html). To see why this is useful, let's look at how PaperParcel's [SparseArrayAdapter](paperparcel/src/main/java/paperparcel/adapter/SparseArrayAdapter.java) is defined:
 
-For an example of how composing `TypeAdapter`s looks, the [realm-example](examples/realm-example) project has the [RealmListTypeAdapter](examples/realm-example/src/main/java/nz/bradcampbell/realmexample/adapter/RealmListTypeAdapter.java). Additionally, all of PaperParcel's default types are supported via `TypeAdapter`s, so there are plenty of additional examples [in the source code](paperparcel/src/main/java/paperparcel/adapter).  
+```java
+public final class SparseArrayAdapter<T> extends AbstractAdapter<SparseArray<T>> {
+  private final TypeAdapter<T> itemAdapter;
+
+  public SparseArrayAdapter(TypeAdapter<T> itemAdapter) {
+    this.itemAdapter = itemAdapter;
+  }
+  ...
+}
+```
+
+As you can see, `SparseArrayAdapter` has a dependency on another `TypeAdapter` to handle the parcelling of its items, but the item type is not hard-coded (it is generic). PaperParcel will compose the minimum set of `TypeAdapter` instances for you in the generated code to be able to parcel all of the annotated object's fields. 
+
+You can take advantage of this power to easily add support for container types that don't come out of the box, e.g. `RealmList` for [Realm](https://github.com/realm/realm-java), various non-java `Collection` types in [Kotlin](https://github.com/JetBrains/kotlin/), or even `ImmutableList` for [Guava](https://github.com/google/guava). 
 
 ## Excluding Fields
 
