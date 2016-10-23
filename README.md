@@ -35,7 +35,7 @@ I've annotated each important part with a comment and a number, let's look at ea
 
 **1)** Annotating a class with `@PaperParcel` will automatically generate the `CREATOR` and `writeToParcel(...)` implementations for that class at compile time. These implementations are generated into a java class (in the same package as your model) called `PaperParcel$CLASS_NAME$`
 
-**2)** This is the first usage of the generated — the generated `CREATOR` instance. 
+**2)** This is the first usage of the generated code — the generated `CREATOR` instance. 
 
 **3)** These are the fields that will be processed by PaperParcel.
 
