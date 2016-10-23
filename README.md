@@ -137,7 +137,7 @@ public final class SparseArrayAdapter<T> extends AbstractAdapter<SparseArray<T>>
 }
 ```
 
-As you can see, `SparseArrayAdapter` has a dependency on another `TypeAdapter` to handle the parcelling of its items, but the item type is not hard-coded (it is generic). 
+As you can see, `SparseArrayAdapter` has a dependency on another `TypeAdapter` to handle the parcelling of its items, but the item type is not hard-coded (it is generic). This means we don't need to define a new adapter class each time we use a `SparseArray` with a different item type, instead this single adapter will handle all item types. 
 
 A `TypeAdapter` can list any number of `TypeAdapter` dependencies as constructor parameters and PaperParcel will resolve them at compile time. You can take advantage of this power to easily add support for container types that don't come out of the box, e.g. `RealmList` for [Realm](https://github.com/realm/realm-java), various non-java `Collection` and `Tuple` types in [Kotlin](https://github.com/JetBrains/kotlin/), or even `ImmutableMap` for [Guava](https://github.com/google/guava). 
 
