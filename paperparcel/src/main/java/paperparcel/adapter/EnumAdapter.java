@@ -28,12 +28,12 @@ public final class EnumAdapter<T extends Enum<T>> extends AbstractAdapter<T> {
   @NonNull @Override protected T read(@NonNull Parcel source) {
     try {
       String className = source.readString();
-      Class<T> enumClass = (Class<T>) NAMES_TO_CLASSES.get(className);
+      Class<?> enumClass = NAMES_TO_CLASSES.get(className);
       if (enumClass == null) {
-        enumClass = (Class<T>) Class.forName(className);
+        enumClass = Class.forName(className);
         NAMES_TO_CLASSES.put(className, enumClass);
       }
-      return Enum.valueOf(enumClass, source.readString());
+      return Enum.valueOf((Class<T>) enumClass, source.readString());
     } catch (ClassNotFoundException e) {
       throw new RuntimeException(e);
     }
