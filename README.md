@@ -120,7 +120,7 @@ public final class UuidAdapter extends AbstractAdapter<UUID> { // 2
 
 I've annotated each important part with a comment and a number, let's look at each of these one by one:
 
-**1)** This is how you register your custom adapter with the compiler — just by annotating this class, generated code will now use this type adapter for any `UUID` field.
+**1)** This is how you register your custom adapter with the compiler — just by annotating this class, generated code will now use `UuidAdapter` when reading and writing `UUID` fields.
 
 **2)** Rather than implementing `TypeAdapter` directly, it may be convienient to extend `AbstractAdapter` instead. This is a base implementation of `TypeAdapter` handles null checking for you. 
 
