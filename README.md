@@ -43,7 +43,7 @@ I've annotated each important part with a comment and a number, let's look at ea
 
 ## Even Easier; Use The AutoValue Extension
 
-If you are already using AutoValue, all you need to do is simply implement Parcelable on your AutoValue object and you're done:
+If you are already using AutoValue, all you need to do is simply add `implements Parcelable` to your AutoValue object and that's it:
 
 ``` java
 @AutoValue 
