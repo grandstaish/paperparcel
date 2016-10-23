@@ -252,29 +252,29 @@ public class PaperParcelProcessorTests {
             "  @NonNull",
             "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
             "    @Override public Test createFromParcel(Parcel in) {",
-            "      boolean aa = BooleanAdapter.INSTANCE.readFromParcel(in);",
+            "      Boolean aa = BooleanAdapter.INSTANCE.readFromParcel(in);",
             "      Boolean ab = BooleanAdapter.INSTANCE.readFromParcel(in);",
-            "      byte ac = ByteAdapter.INSTANCE.readFromParcel(in);",
+            "      Byte ac = ByteAdapter.INSTANCE.readFromParcel(in);",
             "      Byte ad = ByteAdapter.INSTANCE.readFromParcel(in);",
             "      Bundle ae = BundleAdapter.INSTANCE.readFromParcel(in);",
             "      CharSequence af = CharSequenceAdapter.INSTANCE.readFromParcel(in);",
             "      List<Integer> ag = INTEGER_LIST_ADAPTER.readFromParcel(in);",
-            "      char ah = CharacterAdapter.INSTANCE.readFromParcel(in);",
+            "      Character ah = CharacterAdapter.INSTANCE.readFromParcel(in);",
             "      Character ai = CharacterAdapter.INSTANCE.readFromParcel(in);",
-            "      double aj = DoubleAdapter.INSTANCE.readFromParcel(in);",
+            "      Double aj = DoubleAdapter.INSTANCE.readFromParcel(in);",
             "      Double ak = DoubleAdapter.INSTANCE.readFromParcel(in);",
-            "      float al = FloatAdapter.INSTANCE.readFromParcel(in);",
+            "      Float al = FloatAdapter.INSTANCE.readFromParcel(in);",
             "      Float am = FloatAdapter.INSTANCE.readFromParcel(in);",
-            "      int an = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      Integer an = IntegerAdapter.INSTANCE.readFromParcel(in);",
             "      Integer ao = IntegerAdapter.INSTANCE.readFromParcel(in);",
-            "      long ap = LongAdapter.INSTANCE.readFromParcel(in);",
+            "      Long ap = LongAdapter.INSTANCE.readFromParcel(in);",
             "      Long aq = LongAdapter.INSTANCE.readFromParcel(in);",
             "      Map<Integer, Integer> ar = INTEGER_INTEGER_MAP_ADAPTER.readFromParcel(in);",
             "      TestParcelable as = TEST_PARCELABLE_PARCELABLE_ADAPTER.readFromParcel(in);",
             "      PersistableBundle at = PersistableBundleAdapter.INSTANCE.readFromParcel(in);",
             "      ArrayList<Boolean> au = BOOLEAN_ARRAY_LIST_ADAPTER.readFromParcel(in);",
             "      Set<Integer> av = INTEGER_SET_ADAPTER.readFromParcel(in);",
-            "      short aw = ShortAdapter.INSTANCE.readFromParcel(in);",
+            "      Short aw = ShortAdapter.INSTANCE.readFromParcel(in);",
             "      Short ax = ShortAdapter.INSTANCE.readFromParcel(in);",
             "      SizeF ay = SizeFAdapter.INSTANCE.readFromParcel(in);",
             "      Size az = SizeAdapter.INSTANCE.readFromParcel(in);",
@@ -448,32 +448,6 @@ public class PaperParcelProcessorTests {
         .compilesWithoutError()
         .and()
         .generatesSources(expected);
-  }
-
-  @Test public void failIfPaperParcelClassIsGenericTest() throws Exception {
-    JavaFileObject source =
-        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
-            "package test;",
-            "import android.os.Parcel;",
-            "import android.os.Parcelable;",
-            "import paperparcel.PaperParcel;",
-            "@PaperParcel",
-            "public final class Test<T> implements Parcelable {",
-            "  public T child;",
-            "  public int describeContents() {",
-            "    return 0;",
-            "  }",
-            "  public void writeToParcel(Parcel dest, int flags) {",
-            "  }",
-            "}"
-        ));
-
-    assertAbout(javaSource()).that(source)
-        .processedWith(new PaperParcelProcessor())
-        .failsToCompile()
-        .withErrorContaining(ErrorMessages.PAPERPARCEL_ON_GENERIC_CLASS)
-        .in(source)
-        .onLine(6);
   }
 
   @Test public void failIfPaperParcelClassIsAbstractTest() throws Exception {
@@ -908,7 +882,7 @@ public class PaperParcelProcessorTests {
             "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
             "    @Override",
             "    public Test createFromParcel(Parcel in) {",
-            "      int count = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      Integer count = IntegerAdapter.INSTANCE.readFromParcel(in);",
             "      Test data = new Test(count);",
             "      return data;",
             "    }",
@@ -980,7 +954,7 @@ public class PaperParcelProcessorTests {
             "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
             "    @Override",
             "    public Test createFromParcel(Parcel in) {",
-            "      int count = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      Integer count = IntegerAdapter.INSTANCE.readFromParcel(in);",
             "      Test data = new Test(count);",
             "      return data;",
             "    }",
@@ -1043,7 +1017,7 @@ public class PaperParcelProcessorTests {
             "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
             "    @Override",
             "    public Test createFromParcel(Parcel in) {",
-            "      int count = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      Integer count = IntegerAdapter.INSTANCE.readFromParcel(in);",
             "      Test data = new Test();",
             "      data.count = count;",
             "      return data;",
@@ -1107,7 +1081,7 @@ public class PaperParcelProcessorTests {
             "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
             "    @Override",
             "    public Test createFromParcel(Parcel in) {",
-            "      int count = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      Integer count = IntegerAdapter.INSTANCE.readFromParcel(in);",
             "      Test data = new Test();",
             "      data.count(count);",
             "      return data;",
@@ -1177,9 +1151,9 @@ public class PaperParcelProcessorTests {
             "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
             "    @Override",
             "    public Test createFromParcel(Parcel in) {",
-            "      int count2 = IntegerAdapter.INSTANCE.readFromParcel(in);",
-            "      int count1 = IntegerAdapter.INSTANCE.readFromParcel(in);",
-            "      int count3 = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      Integer count2 = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      Integer count1 = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      Integer count3 = IntegerAdapter.INSTANCE.readFromParcel(in);",
             "      Test data = new Test(count3);",
             "      data.count2 = count2;",
             "      data.count1(count1);",
@@ -1516,6 +1490,128 @@ public class PaperParcelProcessorTests {
         ));
 
     assertAbout(javaSources()).that(Arrays.asList(wildcardAdapter, source))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void basicGenericPaperParcelTest() throws Exception {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public final class Test<T extends Parcelable> implements Parcelable {",
+            "  public T value;",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import javax.annotation.Generated;",
+            "import paperparcel.adapter.ParcelableAdapter;",
+            GeneratedLines.GENERATED_ANNOTATION,
+            "final class PaperParcelTest {",
+            "  private static final ParcelableAdapter<Parcelable> PARCELABLE_PARCELABLE_ADAPTER = new ParcelableAdapter<Parcelable>();",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      Parcelable value = PARCELABLE_PARCELABLE_ADAPTER.readFromParcel(in);",
+            "      Test data = new Test();",
+            "      data.value = value;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    PARCELABLE_PARCELABLE_ADAPTER.writeToParcel(data.value, dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+
+  @Test public void complexGenericPaperParcelTest() throws Exception {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "import java.util.HashMap;",
+            "@PaperParcel",
+            "public final class Test<K extends Parcelable, V extends String, T extends HashMap<K, V>> implements Parcelable {",
+            "  public T value;",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import java.util.HashMap;",
+            "import javax.annotation.Generated;",
+            "import paperparcel.adapter.HashMapAdapter;",
+            "import paperparcel.adapter.ParcelableAdapter;",
+            "import paperparcel.adapter.StringAdapter;",
+            GeneratedLines.GENERATED_ANNOTATION,
+            "final class PaperParcelTest {",
+            "  private static final ParcelableAdapter<Parcelable> PARCELABLE_PARCELABLE_ADAPTER = new ParcelableAdapter<Parcelable>();",
+            "  private static final HashMapAdapter<Parcelable, String> PARCELABLE_STRING_HASH_MAP_ADAPTER = new HashMapAdapter<Parcelable, String>(PARCELABLE_PARCELABLE_ADAPTER, StringAdapter.INSTANCE);",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      HashMap<Parcelable, String> value = PARCELABLE_STRING_HASH_MAP_ADAPTER.readFromParcel(in);",
+            "      Test data = new Test();",
+            "      data.value = value;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    PARCELABLE_STRING_HASH_MAP_ADAPTER.writeToParcel(data.value, dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()

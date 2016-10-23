@@ -35,6 +35,7 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.processing.Messager;
@@ -42,6 +43,7 @@ import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
@@ -49,8 +51,6 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 
 import static javax.lang.model.element.Modifier.*;
-import static javax.lang.model.element.Modifier.FINAL;
-import static javax.lang.model.element.Modifier.PUBLIC;
 
 @AutoService(AutoValueExtension.class)
 public class PaperParcelAutoValueExtension extends AutoValueExtension {
@@ -105,17 +105,33 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
 
   @Override public String generateClass(
       Context context, String simpleName, String classToExtend, boolean isFinal) {
+
     ClassName className = ClassName.get(context.packageName(), simpleName);
     TypeSpec.Builder subclass = TypeSpec.classBuilder(className)
         .addModifiers(PUBLIC, FINAL)
-        .superclass(TypeVariableName.get(classToExtend))
         .addMethod(constructor(context))
         .addAnnotation(PaperParcel.class)
         .addField(creator(className))
         .addMethod(writeToParcel(className));
+
+    ClassName superClass = ClassName.get(context.packageName(), classToExtend);
+    List<? extends TypeParameterElement> typeParams = context.autoValueClass().getTypeParameters();
+    if (typeParams.isEmpty()) {
+      subclass.superclass(superClass);
+    } else {
+      TypeName[] superTypeVariables = new TypeName[typeParams.size()];
+      for (int i = 0, size = typeParams.size(); i < size; i++) {
+        TypeParameterElement typeParam = typeParams.get(i);
+        subclass.addTypeVariable(TypeVariableName.get(typeParam));
+        superTypeVariables[i] = TypeVariableName.get(typeParam.getSimpleName().toString());
+      }
+      subclass.superclass(ParameterizedTypeName.get(superClass, superTypeVariables));
+    }
+
     if (needsContentDescriptor(context)) {
       subclass.addMethod(describeContents());
     }
+
     return JavaFile.builder(context.packageName(), subclass.build())
         .build()
         .toString();

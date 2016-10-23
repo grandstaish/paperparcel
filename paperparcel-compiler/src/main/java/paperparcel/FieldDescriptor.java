@@ -36,9 +36,6 @@ abstract class FieldDescriptor {
   /** The original type of the field */
   abstract Equivalence.Wrapper<TypeMirror> type();
 
-  /** The normalized type of the field. Primitive types will always be boxed. */
-  abstract Equivalence.Wrapper<TypeMirror> normalizedType();
-
   static final class Factory {
     private final Types types;
 
@@ -51,10 +48,8 @@ abstract class FieldDescriptor {
       String name = element.getSimpleName().toString();
       TypeMirror type = element.asType();
       TypeMirror normalizedType = Utils.normalize(types, type);
-      Equivalence.Wrapper<TypeMirror> wrappedType = MoreTypes.equivalence().wrap(type);
-      Equivalence.Wrapper<TypeMirror> wrappedNormalizedType =
-          MoreTypes.equivalence().wrap(normalizedType);
-      return new AutoValue_FieldDescriptor(element, name, wrappedType, wrappedNormalizedType);
+      Equivalence.Wrapper<TypeMirror> wrappedType = MoreTypes.equivalence().wrap(normalizedType);
+      return new AutoValue_FieldDescriptor(element, name, wrappedType);
     }
   }
 }

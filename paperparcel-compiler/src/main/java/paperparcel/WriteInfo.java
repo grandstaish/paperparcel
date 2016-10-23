@@ -251,7 +251,7 @@ abstract class WriteInfo {
         }
 
         @Override public TypeMirror visitTypeVariable(TypeVariable type, Types types) {
-          return type;
+          return type.getUpperBound().accept(this, types);
         }
       }, types);
     }
