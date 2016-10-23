@@ -168,6 +168,29 @@ Setter methods are discovered using similar conventions to the aforementioned ac
 
 ## Download
 
+**Java:**
+
+```groovy
+dependencies {
+  compile 'nz.bradcampbell:paperparcel:2.0.0-SNAPSHOT'
+  annotationProcessor 'nz.bradcampbell:paperparcel-compiler:2.0.0-SNAPSHOT'
+}
+```
+
+**Kotlin:**
+
+PaperParcel requires `kapt2` and `kotlin 1.0.5` or greater. To use `kapt2`, apply the `kotlin-kapt` gradle plugin to your app's `build.gradle` file.
+
+```groovy
+apply plugin: 'kotlin-kapt'
+
+dependencies {
+  compile 'nz.bradcampbell:paperparcel:2.0.0-SNAPSHOT'
+  compile 'nz.bradcampbell:paperparcel-kotlin:2.0.0-SNAPSHOT' // Optional
+  kapt 'nz.bradcampbell:paperparcel-compiler:2.0.0-SNAPSHOT'
+}
+```
+
 Development snapshots are available on [JFrog OSS Artifactory](https://oss.jfrog.org/oss-snapshot-local).
 
 ## Contributing
