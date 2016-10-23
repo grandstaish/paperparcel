@@ -149,7 +149,7 @@ You can annotate any field with `@Exclude` to exclude it from being parcelled.
 
 *Note: this section is only relevant if you are using PaperParcel without the assitance of AutoValue or Kotlin's data classes.*
 
-PaperParcel 2.0 uses no reflection at all. Because of that, all of the fields that PaperParcel is going to process need to follow a few loose conventions in order for PaperParcel to know how to read your fields and re-instantiate your models. Any failure to follow these conventions will result in a compile time error with a clear message informing you of what is wrong.
+PaperParcel uses no reflection to access fields. Because of that, all of the fields that PaperParcel is going to process need to follow a few loose conventions in order for PaperParcel to know how to read your fields and re-instantiate your models. Any failure to follow these conventions will result in a compile time error with a clear message informing you of what is wrong.
 
 #### Reading Fields
 
