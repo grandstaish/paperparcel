@@ -18,12 +18,21 @@ package paperparcel.adapter;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 public final class EnumAdapter<T extends Enum<T>> extends AbstractAdapter<T> {
+  private static final Map<String, Class<?>> NAMES_TO_CLASSES = new LinkedHashMap<>();
+
   @SuppressWarnings("unchecked")
   @NonNull @Override protected T read(@NonNull Parcel source) {
     try {
-      Class<T> enumClass = (Class<T>) Class.forName(source.readString());
+      String className = source.readString();
+      Class<T> enumClass = (Class<T>) NAMES_TO_CLASSES.get(className);
+      if (enumClass == null) {
+        enumClass = (Class<T>) Class.forName(className);
+        NAMES_TO_CLASSES.put(className, enumClass);
+      }
       return Enum.valueOf(enumClass, source.readString());
     } catch (ClassNotFoundException e) {
       throw new RuntimeException(e);
