@@ -138,13 +138,13 @@ You can annotate any field with `@Exclude` to exclude it from being parcelled.
 
 *Note: this section is only relevant if you are using PaperParcel without the assitance of AutoValue or Kotlin's data classes.*
 
-PaperParcel 2.0 uses no reflection at all. Because of that, all of the fields that PaperParcel is going to process need to follow a few loose conventions in order for PaperParcel to know how to read your fields, and how to fully re-instantiate your models at creation time. Any failure to follow these conventions will result in a compile time error with a clear message informing you of what is wrong.
+PaperParcel 2.0 uses no reflection at all. Because of that, all of the fields that PaperParcel is going to process need to follow a few loose conventions in order for PaperParcel to know how to read your fields and re-instantiate your models. Any failure to follow these conventions will result in a compile time error with a clear message informing you of what is wrong.
 
 #### Reading Fields
 
 The easiest way for PaperParcel to read a field is for it to be non-private. Because the generated code lies in the same package as the model itself, `default`, `protected`, or `public` fields can be read directly. 
 
-However private fields are common practice, and need to be supported. Therefore, if a field is private, PaperParcel will look for an accessor method (AKA a getter method) for that field. PaperParcel relies on the following conventions to find accessor methods:
+However private fields are common practice and need to be supported. Therefore, if a field is private, PaperParcel will look for an accessor method (AKA a getter method) for that field. PaperParcel relies on the following conventions to find accessor methods:
 
 **1)** The method needs to return an assignable type to the field's type
 
