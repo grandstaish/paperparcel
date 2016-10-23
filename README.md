@@ -6,7 +6,7 @@
 
 PaperParcel is an annotation processor that automatically generates the `CREATOR` and `writeToParcel(...)` implementations for you when writing [Parcelable](http://developer.android.com/intl/es/reference/android/os/Parcelable.html) objects. PaperParcel fully supports both Java and Kotlin (including [Kotlin Data Classes](https://kotlinlang.org/docs/reference/data-classes.html)). Additionally, PaperParcel supports Google's [AutoValue](https://github.com/google/auto/tree/master/value) via an [AutoValue Extension](http://jakewharton.com/presentation/2016-03-08-ny-android-meetup/).
 
-PaperParcel supports a wide range of common Android/Java value types out the box, including many types that the [Parcel](http://developer.android.com/intl/es/reference/android/os/Parcel.html) and [Bundle](https://developer.android.com/reference/android/os/Bundle.html) don't support natively (e.g. Set, BigInteger, Date, etc). The full list of supported types can be found [here](paperparcel/src/main/java/paperparcel/adapter). Support for any other type can be added using [TypeAdapters](README.md#typeadapters).
+PaperParcel supports a wide range of common Android/Java value types out the box, including many types that the [Parcel](http://developer.android.com/intl/es/reference/android/os/Parcel.html) and [Bundle](https://developer.android.com/reference/android/os/Bundle.html) don't support natively (e.g. `Set`, `SparseArray`, `ArrayMap`, etc). The full list of supported types can be found [here](paperparcel/src/main/java/paperparcel/adapter). Support for any other type can be added using [TypeAdapters](README.md#typeadapters).
 
 ## Usage 
 
