@@ -16,12 +16,12 @@
 
 package paperparcel;
 
+import com.google.auto.common.MoreTypes;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
-import java.util.List;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -38,10 +38,10 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
 
-import static paperparcel.Constants.TYPE_ADAPTER_CLASS_NAME;
-
 /** A validator for custom adapters annotated with {@link RegisterAdapter} */
 final class RegisterAdapterValidator {
+  private static final String TYPE_ADAPTER_CLASS_NAME = "paperparcel.TypeAdapter";
+
   private final Elements elements;
   private final Types types;
 
@@ -54,9 +54,10 @@ final class RegisterAdapterValidator {
 
   ValidationReport<TypeElement> validate(TypeElement element) {
     ValidationReport.Builder<TypeElement> builder = ValidationReport.about(element);
-    TypeMirror erasedTypeAdapterType =
-        types.erasure(elements.getTypeElement(TYPE_ADAPTER_CLASS_NAME).asType());
-    if (!types.isAssignable(element.asType(), erasedTypeAdapterType)) {
+    TypeMirror typeAdapterType = types.getDeclaredType(
+        elements.getTypeElement(TYPE_ADAPTER_CLASS_NAME),
+        types.getWildcardType(null, null));
+    if (!types.isAssignable(element.asType(), typeAdapterType)) {
       builder.addError(ErrorMessages.REGISTERADAPTER_ON_NON_TYPE_ADAPTER);
     }
     if (element.getKind() == ElementKind.INTERFACE) {
@@ -67,32 +68,33 @@ final class RegisterAdapterValidator {
     }
     Optional<ExecutableElement> mainConstructor = Utils.findLargestConstructor(element);
     if (mainConstructor.isPresent()) {
-      builder.addSubreport(validateConstructor(
-          erasedTypeAdapterType, types, mainConstructor.get()));
+      builder.addSubreport(validateConstructor(typeAdapterType, mainConstructor.get()));
     } else if (!Utils.isSingleton(types, element)) {
       builder.addError(ErrorMessages.NO_VISIBLE_CONSTRUCTOR);
     }
-    List<? extends TypeMirror> typeArguments = Utils.getTypeArgumentsOfTypeFromType(
-        types, element.asType(), erasedTypeAdapterType);
-    if (typeArguments == null || typeArguments.size() == 0) {
-      builder.addError(ErrorMessages.REGISTERADAPTER_ON_RAW_TYPE_ADAPTER);
-    } else if (!hasValidTypeParameters(element, typeArguments.get(0))) {
-      builder.addError(ErrorMessages.INCOMPATIBLE_TYPE_PARAMETERS);
+    TypeMirror adaptedType =
+        Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(element.asType()));
+    if (adaptedType != null) {
+      if (isJavaLangObject(adaptedType)) {
+        builder.addError(ErrorMessages.REGISTERADAPTER_ON_RAW_TYPE_ADAPTER);
+      } else if (!hasValidTypeParameters(element, adaptedType)) {
+        builder.addError(ErrorMessages.INCOMPATIBLE_TYPE_PARAMETERS);
+      }
     }
     return builder.build();
   }
 
   private ValidationReport<ExecutableElement> validateConstructor(
-      TypeMirror adapterInterfaceType, Types types, ExecutableElement constructor) {
+      TypeMirror adapterInterfaceType, ExecutableElement constructor) {
     ValidationReport.Builder<ExecutableElement> constructorReport = ValidationReport.about(constructor);
     for (VariableElement parameter : constructor.getParameters()) {
       TypeMirror parameterType = parameter.asType();
       if (!types.isAssignable(parameterType, adapterInterfaceType)) {
         constructorReport.addError(ErrorMessages.INVALID_TYPE_ADAPTER_CONSTRUCTOR);
       }
-      List<? extends TypeMirror> typeArguments = Utils.getTypeArgumentsOfTypeFromType(
-          types, parameterType, adapterInterfaceType);
-      if (typeArguments == null || typeArguments.size() == 0) {
+      TypeMirror adaptedType =
+          Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(parameterType));
+      if (isJavaLangObject(adaptedType)) {
         constructorReport.addError(ErrorMessages.RAW_TYPE_ADAPTER_IN_CONSTRUCTOR, parameter);
       }
     }
@@ -138,8 +140,12 @@ final class RegisterAdapterValidator {
 
       @Override
       public Void visitWildcard(WildcardType type, ImmutableSet.Builder<String> set) {
-        type.getSuperBound().accept(this, set);
-        type.getExtendsBound().accept(this, set);
+        if (type.getSuperBound() != null) {
+          type.getSuperBound().accept(this, set);
+        }
+        if (type.getExtendsBound() != null) {
+          type.getExtendsBound().accept(this, set);
+        }
         return null;
       }
     }, adaptedTypeArguments);

@@ -1,7 +1,13 @@
 apply plugin: 'java'
-apply plugin: 'net.ltgt.apt'
 apply plugin: 'idea'
-apply plugin: 'nebula.provided-base'
+
+def logger = new com.android.build.gradle.internal.LoggerWrapper(project.logger)
+def sdkHandler = new com.android.build.gradle.internal.SdkHandler(project, logger)
+for (File file : sdkHandler.sdkLoader.repositories) {
+  repositories.maven {
+    url = file.toURI()
+  }
+}
 
 sourceCompatibility = rootProject.ext.sourceCompatibilityVersion
 targetCompatibility = rootProject.ext.targetCompatibilityVersion
@@ -20,7 +26,6 @@ test {
 
 dependencies {
   compile project(':paperparcel-annotations')
-  compile deps.intellijAnnotations
   compile deps.autovalue
   compile deps.autoservice
   compile deps.autocommon
@@ -39,4 +44,5 @@ tasks.withType(Test) {
   }
 }
 
-apply from: rootProject.file('gradle/gradle-bintray-push.gradle')
+apply from: rootProject.file('gradle/bintray.gradle')
+apply from: rootProject.file('gradle/snapshots.gradle')

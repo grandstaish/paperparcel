@@ -16,11 +16,11 @@
 
 package paperparcel;
 
+import android.support.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableMap;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.util.Types;
-import org.jetbrains.annotations.Nullable;
 
 /** Represents a {@link PaperParcel} annotated object */
 @AutoValue
@@ -68,10 +68,10 @@ abstract class PaperParcelDescriptor {
       ImmutableMap.Builder<FieldDescriptor, Adapter> fieldAdapterMap = ImmutableMap.builder();
       if (readInfo != null) {
         for (FieldDescriptor field : readInfo.readableFields()) {
-          fieldAdapterMap.put(field, adapterFactory.create(field.normalizedType().get()));
+          fieldAdapterMap.put(field, adapterFactory.create(field.type().get()));
         }
         for (FieldDescriptor field : readInfo.getterMethodMap().keySet()) {
-          fieldAdapterMap.put(field, adapterFactory.create(field.normalizedType().get()));
+          fieldAdapterMap.put(field, adapterFactory.create(field.type().get()));
         }
       }
       return fieldAdapterMap.build();

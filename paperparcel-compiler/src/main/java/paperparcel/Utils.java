@@ -16,7 +16,9 @@
 
 package paperparcel;
 
+import android.support.annotation.Nullable;
 import com.google.auto.common.MoreElements;
+import com.google.auto.common.MoreTypes;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
@@ -26,18 +28,24 @@ import com.google.common.primitives.Ints;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.TypeVisitor;
+import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.SimpleTypeVisitor7;
 import javax.lang.model.util.Types;
 
@@ -46,10 +54,11 @@ import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 import static javax.lang.model.util.ElementFilter.fieldsIn;
-import static paperparcel.Constants.PARCELABLE_CLASS_NAME;
 
 /** A grab bag of shared utility methods with no home. FeelsBadMan. */
 final class Utils {
+  private static final String TYPE_ADAPTER_CLASS_NAME = "paperparcel.TypeAdapter";
+  private static final String PARCELABLE_CLASS_NAME = "android.os.Parcelable";
 
   private static final TypeVisitor<List<? extends TypeMirror>, Void> TYPE_ARGUMENTS_VISITOR =
       new SimpleTypeVisitor7<List<? extends TypeMirror>, Void>(
@@ -108,8 +117,8 @@ final class Utils {
    * defined in {@link Object})
    */
   static ImmutableList<ExecutableElement> getLocalAndInheritedMethods(
-      Elements elements, TypeElement element) {
-    return FluentIterable.from(MoreElements.getLocalAndInheritedMethods(element, elements))
+      Elements elements, Types types, TypeElement element) {
+    return FluentIterable.from(MoreElements.getLocalAndInheritedMethods(element, types, elements))
         .filter(new Predicate<ExecutableElement>() {
           @Override public boolean apply(ExecutableElement method) {
             // Filter out any methods defined in java.lang.Object as they are just
@@ -122,25 +131,16 @@ final class Utils {
   }
 
   /**
-   * Tries to find the {@link TypeMirror} arguments found in {@code from}, but only within the
-   * type {@code of}.
-   *
-   * E.g.: if {@code from} is {@code ArrayList<Integer>} and {@code of} is {@link List}, then
-   * this method will return a list containing a single element of {@code Integer}
+   * Returns the {@link TypeMirror} argument found in a given TypeAdapter type
    */
-  static List<? extends TypeMirror> getTypeArgumentsOfTypeFromType(
-      Types types, TypeMirror from, TypeMirror of) {
-    if (types.isSameType(types.erasure(from), types.erasure(of))) {
-      DeclaredType declaredType = (DeclaredType) from;
-      return declaredType.getTypeArguments();
+  static TypeMirror getAdaptedType(Elements elements, Types types, DeclaredType adapterType) {
+    TypeElement typeAdapterElement = elements.getTypeElement(TYPE_ADAPTER_CLASS_NAME);
+    TypeParameterElement param = typeAdapterElement.getTypeParameters().get(0);
+    try {
+      return types.asMemberOf(adapterType, param);
+    } catch (IllegalArgumentException e) {
+      return null;
     }
-    List<? extends TypeMirror> superTypes = types.directSupertypes(from);
-    List<? extends TypeMirror> result = null;
-    for (TypeMirror superType : superTypes) {
-      result = getTypeArgumentsOfTypeFromType(types, superType, of);
-      if (result != null) break;
-    }
-    return result;
   }
 
   /**
@@ -186,12 +186,55 @@ final class Utils {
     return types.isAssignable(type, parcelableType);
   }
 
-  /** Boxes primitive types */
+  /**
+   * Boxes primitive types and replaces any type variables with their upper bounds as they will
+   * not be able to be used from a static context.
+   */
   static TypeMirror normalize(Types types, TypeMirror type) {
     TypeKind kind = type.getKind();
-    return kind.isPrimitive()
-        ? types.boxedClass((PrimitiveType) type).asType()
-        : type;
+    if (kind.isPrimitive()) {
+      return types.boxedClass((PrimitiveType) type).asType();
+    } else {
+      return type.accept(new SimpleTypeVisitor6<TypeMirror, Types>() {
+        @Override public TypeMirror visitArray(ArrayType type, Types types) {
+          return types.getArrayType(type.getComponentType().accept(this, types));
+        }
+
+        @Override public TypeMirror visitDeclared(DeclaredType type, Types types) {
+          TypeElement element = MoreTypes.asTypeElement(type);
+          List<? extends TypeMirror> args = type.getTypeArguments();
+          TypeMirror[] strippedArgs = new TypeMirror[args.size()];
+          for (int i = 0; i < args.size(); i++) {
+            TypeMirror arg = args.get(i);
+            strippedArgs[i] = arg.accept(this, types);
+          }
+          return types.getDeclaredType(element, strippedArgs);
+        }
+
+        @Override public TypeMirror visitWildcard(WildcardType type, Types types) {
+          return types.getWildcardType(type.getExtendsBound().accept(this, types), null);
+        }
+
+        @Override public TypeMirror visitPrimitive(PrimitiveType type, Types types) {
+          return type;
+        }
+
+        @Override public TypeMirror visitTypeVariable(TypeVariable type, Types types) {
+          return type.getUpperBound().accept(this, types);
+        }
+      }, types);
+    }
+  }
+
+  /** Finds an annotation with the given name on the given element, or null if not found. */
+  @Nullable static AnnotationMirror getAnnotationWithNameOrNull(Element element, String simpleName) {
+    for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
+      String annotationName = mirror.getAnnotationType().asElement().getSimpleName().toString();
+      if (simpleName.equals(annotationName)) {
+        return mirror;
+      }
+    }
+    return null;
   }
 
   private Utils() {}

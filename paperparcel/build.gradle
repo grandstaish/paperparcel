@@ -18,11 +18,11 @@ android {
 
 dependencies {
   compile project(':paperparcel-annotations')
-  compile deps.supportAnnotations
 
   testCompile deps.junit
   testCompile deps.truth
   testCompile deps.robolectric
 }
 
-apply from: rootProject.file('gradle/gradle-bintray-push.gradle')
+apply from: rootProject.file('gradle/bintray.gradle')
+apply from: rootProject.file('gradle/snapshots.gradle')

@@ -16,6 +16,7 @@
 
 package paperparcel;
 
+import android.support.annotation.Nullable;
 import com.google.auto.common.MoreElements;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
@@ -30,7 +31,6 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
-import org.jetbrains.annotations.Nullable;
 
 /** A validator for any {@link PaperParcel} annotated {@link TypeElement} */
 final class PaperParcelValidator {
@@ -67,9 +67,6 @@ final class PaperParcelValidator {
 
   PaperParcelValidation validate(TypeElement element) {
     ValidationReport.Builder<TypeElement> builder = ValidationReport.about(element);
-    if (Utils.getTypeArguments(element.asType()).size() > 0) {
-      builder.addError(ErrorMessages.PAPERPARCEL_ON_GENERIC_CLASS);
-    }
     if (element.getKind() == ElementKind.INTERFACE) {
       builder.addError(ErrorMessages.PAPERPARCEL_ON_INTERFACE);
     }
@@ -84,7 +81,7 @@ final class PaperParcelValidator {
     if (!Utils.isSingleton(types, element)) {
       ImmutableList<VariableElement> fields = Utils.getLocalAndInheritedFields(types, element);
       ImmutableList<ExecutableElement> methods =
-          Utils.getLocalAndInheritedMethods(elements, element);
+          Utils.getLocalAndInheritedMethods(elements, types, element);
       ImmutableList<ExecutableElement> constructors = Utils.orderedConstructorsIn(element);
       try {
         writeInfo = writeInfoFactory.create(fields, methods, constructors);

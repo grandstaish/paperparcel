@@ -39,8 +39,6 @@ final class ErrorMessages {
       "TypeAdapter arguments can not be raw types";
 
   /* @PaperParcel errors */
-  static final String PAPERPARCEL_ON_GENERIC_CLASS =
-      "@PaperParcel cannot be applied to a class with type parameters";
   static final String PAPERPARCEL_ON_INTERFACE =
       "@PaperParcel cannot be applied to an interface";
   static final String PAPERPARCEL_ON_ABSTRACT_CLASS =
@@ -73,8 +71,6 @@ final class ErrorMessages {
   static final String MANUAL_IMPLEMENTATION_OF_WRITE_TO_PARCEL =
       "Manual implementation of android.os.Parcelable#writeToParcel(android.os.Parcel, int) "
           + "found in %s.";
-  static final String AUTOVALUE_ON_GENERIC_CLASS =
-      "@AutoValue classes that implement android.os.Parcelable cannot have type parameters.";
 
   private ErrorMessages() {}
 }

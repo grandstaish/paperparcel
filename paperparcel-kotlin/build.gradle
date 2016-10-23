@@ -1,16 +1,14 @@
-apply plugin: 'com.android.application'
-apply plugin: 'realm-android'
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
 
 android {
   compileSdkVersion rootProject.ext.compileSdkVersion
   buildToolsVersion rootProject.ext.buildToolsVersion
 
   defaultConfig {
-    applicationId "nz.bradcampbell.realmexample"
     minSdkVersion rootProject.ext.minSdkVersion
-    targetSdkVersion rootProject.ext.targetSdkVersion
-    versionCode 1
-    versionName "1.0"
+
+    consumerProguardFiles 'proguard-rules.txt'
   }
 
   compileOptions {
@@ -20,9 +18,8 @@ android {
 }
 
 dependencies {
-  compile deps.supportAnnotations
-  compile deps.appCompat
-
-  compile project(':paperparcel')
-  apt project(':paperparcel-compiler')
+  compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 }
+
+apply from: rootProject.file('gradle/bintray.gradle')
+apply from: rootProject.file('gradle/snapshots.gradle')

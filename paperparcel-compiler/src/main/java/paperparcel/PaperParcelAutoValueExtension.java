@@ -24,6 +24,7 @@ import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.squareup.javapoet.AnnotationSpec;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.FieldSpec;
@@ -34,24 +35,28 @@ import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
 import com.squareup.javapoet.TypeVariableName;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.ExecutableType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 
 import static javax.lang.model.element.Modifier.*;
-import static javax.lang.model.element.Modifier.FINAL;
-import static javax.lang.model.element.Modifier.PUBLIC;
-import static paperparcel.Constants.PARCELABLE_CLASS_NAME;
 
 @AutoService(AutoValueExtension.class)
 public class PaperParcelAutoValueExtension extends AutoValueExtension {
+  private static final String PARCELABLE_CLASS_NAME = "android.os.Parcelable";
   private static final TypeName PARCEL = ClassName.get("android.os", "Parcel");
+  private static final String NULLABLE_ANNOTATION_NAME = "Nullable";
 
   @Override public boolean applicable(Context context) {
     ProcessingEnvironment env = context.processingEnvironment();
@@ -71,7 +76,27 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
   }
 
   @Override public Set<String> consumeProperties(Context context) {
-    return ImmutableSet.of("describeContents", "writeToParcel");
+    ImmutableSet.Builder<String> properties = new ImmutableSet.Builder<>();
+    for (String property : context.properties().keySet()) {
+      switch (property) {
+        case "describeContents":
+          properties.add(property);
+          break;
+      }
+    }
+    return properties.build();
+  }
+
+  @Override public Set<ExecutableElement> consumeMethods(Context context) {
+    ImmutableSet.Builder<ExecutableElement> methods = new ImmutableSet.Builder<>();
+    for (ExecutableElement element : context.abstractMethods()) {
+      switch (element.getSimpleName().toString()) {
+        case "writeToParcel":
+          methods.add(element);
+          break;
+      }
+    }
+    return methods.build();
   }
 
   @Override public boolean mustBeFinal(Context context) {
@@ -80,17 +105,33 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
 
   @Override public String generateClass(
       Context context, String simpleName, String classToExtend, boolean isFinal) {
+
     ClassName className = ClassName.get(context.packageName(), simpleName);
     TypeSpec.Builder subclass = TypeSpec.classBuilder(className)
         .addModifiers(PUBLIC, FINAL)
-        .superclass(TypeVariableName.get(classToExtend))
-        .addMethod(constructor(context.properties()))
+        .addMethod(constructor(context))
         .addAnnotation(PaperParcel.class)
         .addField(creator(className))
         .addMethod(writeToParcel(className));
+
+    ClassName superClass = ClassName.get(context.packageName(), classToExtend);
+    List<? extends TypeParameterElement> typeParams = context.autoValueClass().getTypeParameters();
+    if (typeParams.isEmpty()) {
+      subclass.superclass(superClass);
+    } else {
+      TypeName[] superTypeVariables = new TypeName[typeParams.size()];
+      for (int i = 0, size = typeParams.size(); i < size; i++) {
+        TypeParameterElement typeParam = typeParams.get(i);
+        subclass.addTypeVariable(TypeVariableName.get(typeParam));
+        superTypeVariables[i] = TypeVariableName.get(typeParam.getSimpleName().toString());
+      }
+      subclass.superclass(ParameterizedTypeName.get(superClass, superTypeVariables));
+    }
+
     if (needsContentDescriptor(context)) {
       subclass.addMethod(describeContents());
     }
+
     return JavaFile.builder(context.packageName(), subclass.build())
         .build()
         .toString();
@@ -118,23 +159,33 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
         .build();
   }
 
-  private MethodSpec constructor(Map<String, ExecutableElement> properties) {
-    ImmutableList<ParameterSpec> parameterSpecs = FluentIterable.from(properties.entrySet())
+  private MethodSpec constructor(Context context) {
+    final Types types = context.processingEnvironment().getTypeUtils();
+    final DeclaredType declaredValueType = MoreTypes.asDeclared(context.autoValueClass().asType());
+    ImmutableList<ParameterSpec> parameters = FluentIterable.from(context.properties().entrySet())
         .transform(new Function<Map.Entry<String, ExecutableElement>, ParameterSpec>() {
           @Override public ParameterSpec apply(Map.Entry<String, ExecutableElement> entry) {
-            TypeName typeName = TypeName.get(entry.getValue().getReturnType());
-            return ParameterSpec.builder(typeName, entry.getKey()).build();
+            ExecutableType resolvedExecutableType =
+                MoreTypes.asExecutable(types.asMemberOf(declaredValueType, entry.getValue()));
+            TypeName typeName = TypeName.get(resolvedExecutableType.getReturnType());
+            ParameterSpec.Builder spec = ParameterSpec.builder(typeName, entry.getKey());
+            AnnotationMirror nullableAnnotation =
+                Utils.getAnnotationWithNameOrNull(entry.getValue(), NULLABLE_ANNOTATION_NAME);
+            if (nullableAnnotation != null) {
+              spec.addAnnotation(AnnotationSpec.get(nullableAnnotation));
+            }
+            return spec.build();
           }
         })
         .toList();
-    CodeBlock parameterList = CodeBlocks.join(FluentIterable.from(parameterSpecs)
+    CodeBlock parameterList = CodeBlocks.join(FluentIterable.from(parameters)
         .transform(new Function<ParameterSpec, CodeBlock>() {
           @Override public CodeBlock apply(ParameterSpec parameterSpec) {
             return CodeBlock.of("$N", parameterSpec.name);
           }
         }), ", ");
     return MethodSpec.constructorBuilder()
-        .addParameters(parameterSpecs)
+        .addParameters(parameters)
         .addStatement("super($L)", parameterList)
         .build();
   }
@@ -142,9 +193,10 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
   private static boolean needsContentDescriptor(Context context) {
     ProcessingEnvironment env = context.processingEnvironment();
     TypeElement autoValueTypeElement = context.autoValueClass();
+    Types types = env.getTypeUtils();
     Elements elements = env.getElementUtils();
     ImmutableSet<ExecutableElement> methods =
-        MoreElements.getLocalAndInheritedMethods(autoValueTypeElement, elements);
+        MoreElements.getLocalAndInheritedMethods(autoValueTypeElement, types, elements);
     for (ExecutableElement element : methods) {
       if (element.getSimpleName().contentEquals("describeContents")
           && MoreTypes.isTypeOf(int.class, element.getReturnType())

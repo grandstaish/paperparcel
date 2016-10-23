@@ -43,9 +43,6 @@ final class AutoValueExtensionValidator {
 
   ValidationReport<TypeElement> validate(TypeElement subject) {
     ValidationReport.Builder<TypeElement> report = ValidationReport.about(subject);
-    if (Utils.getTypeArguments(subject.asType()).size() > 0) {
-      report.addError(ErrorMessages.AUTOVALUE_ON_GENERIC_CLASS);
-    }
     Optional<ExecutableElement> writeToParcel = findWriteToParcel(subject);
     if (writeToParcel.isPresent()) {
       report.addError(String.format(
@@ -79,12 +76,13 @@ final class AutoValueExtensionValidator {
   }
 
   private Optional<VariableElement> findCreator(TypeElement subject) {
-    TypeMirror creatorType = types.erasure(
-        elements.getTypeElement("android.os.Parcelable.Creator").asType());
+    TypeMirror creatorType = types.getDeclaredType(
+        elements.getTypeElement("android.os.Parcelable.Creator"),
+        types.getWildcardType(null, null));
     List<? extends Element> members = elements.getAllMembers(subject);
     for (VariableElement field : ElementFilter.fieldsIn(members)) {
       if (field.getSimpleName().contentEquals("CREATOR")
-          && types.isAssignable(types.erasure(field.asType()), creatorType)
+          && types.isAssignable(field.asType(), creatorType)
           && field.getModifiers().contains(Modifier.STATIC)) {
         return Optional.of(field);
       }
