@@ -1625,6 +1625,70 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
+  @Test public void complexExcludeWithModifiersTest() throws Exception {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "import java.lang.reflect.Modifier;",
+            "@PaperParcel(excludeFieldsWithModifiers = { Modifier.STATIC | Modifier.FINAL, Modifier.TRANSIENT })",
+            "public final class Test implements Parcelable {",
+            "  static final long field1 = 0;",
+            "  static long field2;",
+            "  transient long field3;",
+            "  long field4;",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import javax.annotation.Generated;",
+            "import paperparcel.adapter.LongAdapter;",
+            GeneratedLines.GENERATED_ANNOTATION,
+            "final class PaperParcelTest {",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      Long field2 = LongAdapter.INSTANCE.readFromParcel(in);",
+            "      Long field4 = LongAdapter.INSTANCE.readFromParcel(in);",
+            "      Test data = new Test();",
+            "      data.field2 = field2;",
+            "      data.field4 = field4;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    LongAdapter.INSTANCE.writeToParcel(data.field2, dest, flags);",
+            "    LongAdapter.INSTANCE.writeToParcel(data.field4, dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
   @Test public void basicExcludeWithAnnotationTest() throws Exception {
     JavaFileObject excludeAnnotation =
         JavaFileObjects.forSourceString("test.Exclude", Joiner.on('\n').join(
