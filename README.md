@@ -164,9 +164,9 @@ public class Example implements Parcelable {
 
 **Exclude via annotation**
 
-Another API available to you is `excludeFieldsWithAnnotations`. This API lists all of the annotations that will be used to exclude fields. A common use case for this is when you just want to exclude a few fields. Let's see how this might look:
+Another API available to you is `excludeFieldsWithAnnotations`. This API lists all of the annotations that will be used to exclude fields. Let's see how this might look:
 
-First we'll define an annotation to annotate our fields with and call it `Exclude`:
+First we'll create an annotation and call it `Exclude`:
 
 ```java
 @Retention(SOURCE)
