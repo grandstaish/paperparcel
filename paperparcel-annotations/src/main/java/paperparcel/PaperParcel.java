@@ -63,7 +63,6 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
 @Retention(CLASS)
 @Target(TYPE)
 public @interface PaperParcel {
-
   /**
    * Configures PaperParcel to exclude any field in the annotated class that is annotated with any
    * of the given annotations.

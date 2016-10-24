@@ -156,10 +156,10 @@ final class Utils {
         MoreElements.getAnnotationMirror(element, PaperParcel.class);
     if (mirror.isPresent()) {
       List<Set<Modifier>> excludeModifiers = getExcludeModifiers(mirror.get());
-      List<AnnotationMirror> excludeWithAnnotations = getExcludeWithAnnotations(mirror.get());
-      List<AnnotationMirror> excludeWithoutAnnotations = getExcludeWithoutAnnotations(mirror.get());
+      List<String> excludeWithAnnotationNames = getExcludeWithAnnotations(mirror.get());
+      List<String> excludeWithoutAnnotationNames = getExcludeWithoutAnnotations(mirror.get());
       return getFieldsToParcelInner(
-          types, element, excludeModifiers, excludeWithAnnotations, excludeWithoutAnnotations);
+          types, element, excludeModifiers, excludeWithAnnotationNames, excludeWithoutAnnotationNames);
     } else {
       throw new IllegalArgumentException("element must be annotated with @PaperParcel");
     }
@@ -169,46 +169,52 @@ final class Utils {
       Types types,
       TypeElement element,
       List<Set<Modifier>> excludeModifiers,
-      List<AnnotationMirror> excludeWithAnnotations,
-      List<AnnotationMirror> excludeWithoutAnnotations) {
+      List<String> excludeWithAnnotationNames,
+      List<String> excludeWithoutAnnotationNames) {
     ImmutableList.Builder<VariableElement> fields = ImmutableList.builder();
-    for (VariableElement variableElement : fieldsIn(element.getEnclosedElements())) {
-      boolean exclude = false;
-      for (Set<Modifier> modifiers : excludeModifiers) {
-        if (variableElement.getModifiers().containsAll(modifiers)) {
-          exclude = true;
-          break;
-        }
-      }
-      if (!exclude) {
-        List<? extends AnnotationMirror> annotationMirrors = variableElement.getAnnotationMirrors();
-        for (AnnotationMirror excludeWithAnnotation : excludeWithAnnotations) {
-          if (annotationMirrors.contains(excludeWithAnnotation)) {
-            exclude = true;
-            break;
-          }
-        }
-      }
-      if (!exclude) {
-        List<? extends AnnotationMirror> annotationMirrors = variableElement.getAnnotationMirrors();
-        for (AnnotationMirror excludeWithoutAnnotation : excludeWithoutAnnotations) {
-          if (!annotationMirrors.contains(excludeWithoutAnnotation)) {
-            exclude = true;
-            break;
-          }
-        }
-      }
-      if (!exclude) {
-        fields.add(variableElement);
+    for (VariableElement variable : fieldsIn(element.getEnclosedElements())) {
+      if (!excludeViaModifiers(variable, excludeModifiers)
+          && (excludeWithAnnotationNames.isEmpty()
+              || !usesAnyAnnotationsFrom(variable, excludeWithAnnotationNames))
+          && (excludeWithoutAnnotationNames.isEmpty()
+              || usesAnyAnnotationsFrom(variable, excludeWithoutAnnotationNames))) {
+        fields.add(variable);
       }
     }
     TypeMirror superType = element.getSuperclass();
     if (superType.getKind() != TypeKind.NONE) {
       TypeElement superElement = MoreElements.asType(types.asElement(superType));
       fields.addAll(getFieldsToParcelInner(
-          types, superElement, excludeModifiers, excludeWithAnnotations, excludeWithoutAnnotations));
+          types,
+          superElement,
+          excludeModifiers,
+          excludeWithAnnotationNames,
+          excludeWithoutAnnotationNames));
     }
     return fields.build();
+  }
+
+  private static boolean excludeViaModifiers(
+      final VariableElement variableElement, List<Set<Modifier>> modifiers) {
+    return FluentIterable.from(modifiers)
+        .firstMatch(new Predicate<Set<Modifier>>() {
+          @Override public boolean apply(Set<Modifier> input) {
+            return variableElement.getModifiers().containsAll(input);
+          }
+        })
+        .isPresent();
+  }
+
+  private static boolean usesAnyAnnotationsFrom(Element element, List<String> annotationNames) {
+    for (String annotationName : annotationNames) {
+      for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
+        String elementAnnotationName = annotationMirror.getAnnotationType().toString();
+        if (elementAnnotationName.equals(annotationName)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   private static List<Set<Modifier>> getExcludeModifiers(AnnotationMirror mirror) {
@@ -259,36 +265,36 @@ final class Utils {
         }
       };
 
-  private static List<AnnotationMirror> getExcludeWithAnnotations(AnnotationMirror mirror) {
-    AnnotationValue excludeFieldsWithAnnotations =
+  private static List<String> getExcludeWithAnnotations(AnnotationMirror mirror) {
+    AnnotationValue excludeFieldsWithAnnotationNames =
         AnnotationMirrors.getAnnotationValue(mirror, "excludeFieldsWithAnnotations");
-    return excludeFieldsWithAnnotations.accept(ANNOTATION_ARRAY_VISITOR, null);
+    return excludeFieldsWithAnnotationNames.accept(TYPE_NAME_ARRAY_VISITOR, null);
   }
 
-  private static List<AnnotationMirror> getExcludeWithoutAnnotations(AnnotationMirror mirror) {
+  private static List<String> getExcludeWithoutAnnotations(AnnotationMirror mirror) {
     AnnotationValue excludeFieldsWithoutAnnotations =
         AnnotationMirrors.getAnnotationValue(mirror, "excludeFieldsWithoutAnnotations");
-    return excludeFieldsWithoutAnnotations.accept(ANNOTATION_ARRAY_VISITOR, null);
+    return excludeFieldsWithoutAnnotations.accept(TYPE_NAME_ARRAY_VISITOR, null);
   }
 
-  private static final AnnotationValueVisitor<List<AnnotationMirror>, Void> ANNOTATION_ARRAY_VISITOR =
-      new SimpleAnnotationValueVisitor6<List<AnnotationMirror>, Void>() {
-        @Override public List<AnnotationMirror> visitArray(List<? extends AnnotationValue> list, Void p) {
-          ImmutableList.Builder<AnnotationMirror> modifiers = ImmutableList.builder();
+  private static final AnnotationValueVisitor<List<String>, Void> TYPE_NAME_ARRAY_VISITOR =
+      new SimpleAnnotationValueVisitor6<List<String>, Void>() {
+        @Override public List<String> visitArray(List<? extends AnnotationValue> list, Void p) {
+          ImmutableList.Builder<String> modifiers = ImmutableList.builder();
           for (AnnotationValue annotationValue : list) {
-            modifiers.add(annotationValue.accept(TO_ANNOTATION, null));
+            modifiers.add(annotationValue.accept(TO_TYPE, null).toString());
           }
           return modifiers.build();
         }
       };
 
-  private static final AnnotationValueVisitor<AnnotationMirror, Void> TO_ANNOTATION =
-      new SimpleAnnotationValueVisitor6<AnnotationMirror, Void>() {
-        @Override public AnnotationMirror visitAnnotation(AnnotationMirror mirror, Void p) {
-          return mirror;
+  private static final AnnotationValueVisitor<TypeMirror, Void> TO_TYPE =
+      new SimpleAnnotationValueVisitor6<TypeMirror, Void>() {
+        @Override public TypeMirror visitType(TypeMirror type, Void p) {
+          return type;
         }
 
-        @Override protected AnnotationMirror defaultAction(Object o, Void aVoid) {
+        @Override protected TypeMirror defaultAction(Object o, Void aVoid) {
           throw new IllegalArgumentException();
         }
       };
@@ -340,7 +346,7 @@ final class Utils {
   }
 
   /** Finds an annotation with the given name on the given element, or null if not found. */
-  @Nullable static AnnotationMirror getAnnotationWithNameOrNull(Element element, String simpleName) {
+  @Nullable static AnnotationMirror getAnnotationWithSimpleName(Element element, String simpleName) {
     for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
       String annotationName = mirror.getAnnotationType().asElement().getSimpleName().toString();
       if (simpleName.equals(annotationName)) {
