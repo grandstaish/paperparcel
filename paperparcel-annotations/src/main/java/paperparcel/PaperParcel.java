@@ -16,7 +16,6 @@
 
 package paperparcel;
 
-import android.support.annotation.IntDef;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -25,7 +24,6 @@ import java.lang.reflect.Modifier;
 
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.CLASS;
-import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 /**
  * Annotates {@code Parcelable} classes to automatically generate the {@code Parcelable.Creator}
@@ -66,9 +64,24 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
 @Target(TYPE)
 public @interface PaperParcel {
 
+  /**
+   * Configures PaperParcel to exclude any field in the annotated class that is annotated with any
+   * of the given annotations.
+   */
   Class<? extends Annotation>[] excludeFieldsWithAnnotations() default {};
 
+  /**
+   * Configures PaperParcel to exclude any field in the annotated class that has specific modifiers
+   * or combinations of modifiers. The int values returned by this method must be {@link Modifier}
+   * constants.
+   *
+   * <p>By default, any {@code transient} or {@code static} field is excluded.
+   */
   int[] excludeFieldsWithModifiers() default { Modifier.TRANSIENT, Modifier.STATIC };
 
+  /**
+   * Configures PaperParcel to exclude any field in the annotated class that is not annotated with
+   * any of the given annotations.
+   */
   Class<? extends Annotation>[] excludeFieldsWithoutAnnotations() default {};
 }
