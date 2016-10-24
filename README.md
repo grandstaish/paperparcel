@@ -6,7 +6,7 @@
 
 PaperParcel is an annotation processor that automatically generates the `CREATOR` and `writeToParcel(...)` implementations for you when writing [Parcelable](http://developer.android.com/intl/es/reference/android/os/Parcelable.html) objects. PaperParcel fully supports both Java and Kotlin (including [Kotlin Data Classes](https://kotlinlang.org/docs/reference/data-classes.html)). Additionally, PaperParcel supports Google's [AutoValue](https://github.com/google/auto/tree/master/value) via an [AutoValue Extension](http://jakewharton.com/presentation/2016-03-08-ny-android-meetup/).
 
-PaperParcel supports a wide range of common Android/Java value types out the box, including many types that [Parcel](http://developer.android.com/intl/es/reference/android/os/Parcel.html) and [Bundle](https://developer.android.com/reference/android/os/Bundle.html) don't support natively (e.g. `Set`, `SparseArray`, `ArrayMap`, etc). The full list of supported types can be found [here](paperparcel/src/main/java/paperparcel/adapter). Support for any other type can be added using [TypeAdapters](README.md#typeadapters).
+PaperParcel supports a wide range of common Android/Java value and container types out the box, including many types that [Parcel](http://developer.android.com/intl/es/reference/android/os/Parcel.html) and [Bundle](https://developer.android.com/reference/android/os/Bundle.html) don't support natively (e.g. `Set`, `SparseArray`, `ArrayMap`, etc). The full list of supported types can be found [here](paperparcel/src/main/java/paperparcel/adapter). Support for any other type can be added using [TypeAdapters](README.md#typeadapters).
 
 ## Usage 
 
@@ -143,7 +143,61 @@ A `TypeAdapter` can list any number of `TypeAdapter` dependencies as constructor
 
 ## Excluding Fields
 
-You can annotate any field with `@Exclude` to exclude it from being parcelled. 
+PaperParcel provides you with multiple ways of excluding unwanted fields from it's processor. The APIs are mostly inspired from [gson](https://github.com/google/gson).
+
+**Exclude via modifiers**
+
+By default PaperParcel will ignore `static` and `transient` fields, however you can override this behaviour using the `excludeFieldsWithModifiers` API. 
+
+Here's an example; let's say you wanted to exclude all `transient` and `static final` fields (therefore keeping any non-final `static` field). You could achieve that like this:
+
+```java
+@PaperParcel(excludeFieldsWithModifiers = { Modifier.TRANSIENT, Modifier.STATIC | Modifier.FINAL })
+public class Example implements Parcelable {
+  static final long field1 = 0; // Will not be parcelled
+  static long field2; // Will be parcelled
+  transient long field3; // Will not be parcelled
+  long field4; // Will be parcelled
+  ...
+}
+```
+
+**Exclude via annotation**
+
+Another API available to you is `excludeFieldsWithAnnotations`. This API lists all of the annotations that will be used to exclude fields. A common use case for this is when you just want to exclude a few fields. Let's see how this might look:
+
+First we'll define an annotation to annotate our fields with and call it `Exclude`:
+
+```java
+@Retention(SOURCE)
+@Target(FIELD)
+public @interface Exclude {
+}
+```
+
+Now we can use this annotation in any of our model classes to exclude fields like so:
+
+```java
+@PaperParcel(excludeFieldsWithAnnotations = { Exclude.class })
+public class Example implements Parcelable {
+  long field1; // Will be parcelled
+  @Exclude long field2; // Will not be parcelled
+  ...
+}
+```
+
+**Opt-in field strategy**
+
+Finally, it can also be useful for PaperParcel to ignore all fields unless specified otherwise. An example for when this can be of use is when you are extending a class from another library and you want to ignore all of the fields in that base class. PaperParcel provides a `@Pack` annotation which should be used alongside `excludeFieldsWithoutPackAnnotation` for this purpose:
+
+```java
+@PaperParcel(excludeFieldsWithoutPackAnnotation = true)
+public class Example implements Parcelable {
+  @Pack long field1; // Will be parcelled
+  long field2; // Will not be parcelled
+  ...
+}
+```
 
 ## Model Conventions
 
