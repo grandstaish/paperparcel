@@ -74,13 +74,15 @@ public @interface PaperParcel {
    * or combinations of modifiers. The int values returned by this method must be {@link Modifier}
    * constants.
    *
-   * <p>By default, any {@code transient} or {@code static} field is excluded.
+   * <p>By default any {@code transient} or {@code static} field is excluded.
    */
   int[] excludeFieldsWithModifiers() default { Modifier.TRANSIENT, Modifier.STATIC };
 
   /**
    * Configures PaperParcel to exclude any field in the annotated class that is not annotated with
-   * any of the given annotations.
+   * {@link Pack}.
+   *
+   * <p>By default this is false.
    */
-  Class<? extends Annotation>[] excludeFieldsWithoutAnnotations() default {};
+  boolean excludeFieldsWithoutPackAnnotation() default false;
 }

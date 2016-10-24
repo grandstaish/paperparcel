@@ -157,9 +157,13 @@ final class Utils {
     if (mirror.isPresent()) {
       List<Set<Modifier>> excludeModifiers = getExcludeModifiers(mirror.get());
       List<String> excludeWithAnnotationNames = getExcludeWithAnnotations(mirror.get());
-      List<String> excludeWithoutAnnotationNames = getExcludeWithoutAnnotations(mirror.get());
+      boolean excludeWithoutPack = getExcludeFieldsWithoutPackAnnotation(mirror.get());
       return getFieldsToParcelInner(
-          types, element, excludeModifiers, excludeWithAnnotationNames, excludeWithoutAnnotationNames);
+          types,
+          element,
+          excludeModifiers,
+          excludeWithAnnotationNames,
+          excludeWithoutPack);
     } else {
       throw new IllegalArgumentException("element must be annotated with @PaperParcel");
     }
@@ -170,14 +174,12 @@ final class Utils {
       TypeElement element,
       List<Set<Modifier>> excludeModifiers,
       List<String> excludeWithAnnotationNames,
-      List<String> excludeWithoutAnnotationNames) {
+      boolean excludeWithoutPack) {
     ImmutableList.Builder<VariableElement> fields = ImmutableList.builder();
     for (VariableElement variable : fieldsIn(element.getEnclosedElements())) {
       if (!excludeViaModifiers(variable, excludeModifiers)
-          && (excludeWithAnnotationNames.isEmpty()
-              || !usesAnyAnnotationsFrom(variable, excludeWithAnnotationNames))
-          && (excludeWithoutAnnotationNames.isEmpty()
-              || usesAnyAnnotationsFrom(variable, excludeWithoutAnnotationNames))) {
+          && !usesAnyAnnotationsFrom(variable, excludeWithAnnotationNames)
+          && (!excludeWithoutPack || MoreElements.isAnnotationPresent(variable, Pack.class))) {
         fields.add(variable);
       }
     }
@@ -189,7 +191,7 @@ final class Utils {
           superElement,
           excludeModifiers,
           excludeWithAnnotationNames,
-          excludeWithoutAnnotationNames));
+          excludeWithoutPack));
     }
     return fields.build();
   }
@@ -271,10 +273,10 @@ final class Utils {
     return excludeFieldsWithAnnotationNames.accept(TYPE_NAME_ARRAY_VISITOR, null);
   }
 
-  private static List<String> getExcludeWithoutAnnotations(AnnotationMirror mirror) {
+  private static boolean getExcludeFieldsWithoutPackAnnotation(AnnotationMirror mirror) {
     AnnotationValue excludeFieldsWithoutAnnotations =
-        AnnotationMirrors.getAnnotationValue(mirror, "excludeFieldsWithoutAnnotations");
-    return excludeFieldsWithoutAnnotations.accept(TYPE_NAME_ARRAY_VISITOR, null);
+        AnnotationMirrors.getAnnotationValue(mirror, "excludeFieldsWithoutPackAnnotation");
+    return excludeFieldsWithoutAnnotations.accept(BOOLEAN_VISITOR, null);
   }
 
   private static final AnnotationValueVisitor<List<String>, Void> TYPE_NAME_ARRAY_VISITOR =
@@ -295,6 +297,17 @@ final class Utils {
         }
 
         @Override protected TypeMirror defaultAction(Object o, Void aVoid) {
+          throw new IllegalArgumentException();
+        }
+      };
+
+  private static final AnnotationValueVisitor<Boolean, Void> BOOLEAN_VISITOR =
+      new SimpleAnnotationValueVisitor6<Boolean, Void>() {
+        @Override public Boolean visitBoolean(boolean b, Void aVoid) {
+          return b;
+        }
+
+        @Override protected Boolean defaultAction(Object o, Void aVoid) {
           throw new IllegalArgumentException();
         }
       };

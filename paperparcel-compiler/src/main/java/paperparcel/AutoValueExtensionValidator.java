@@ -19,6 +19,7 @@ package paperparcel;
 import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableSet;
 import java.util.List;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -60,7 +61,9 @@ final class AutoValueExtensionValidator {
 
   private Optional<ExecutableElement> findWriteToParcel(TypeElement subject) {
     TypeMirror parcel = elements.getTypeElement("android.os.Parcel").asType();
-    for (ExecutableElement element : MoreElements.getLocalAndInheritedMethods(subject, elements)) {
+    ImmutableSet<ExecutableElement> methods =
+        MoreElements.getLocalAndInheritedMethods(subject, types, elements);
+    for (ExecutableElement element : methods) {
       if (element.getSimpleName().contentEquals("writeToParcel")
           && MoreTypes.isTypeOf(void.class, element.getReturnType())
           && !element.getModifiers().contains(Modifier.ABSTRACT)) {

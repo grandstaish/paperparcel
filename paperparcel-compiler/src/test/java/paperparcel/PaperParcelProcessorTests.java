@@ -1689,22 +1689,17 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void basicExcludeWithoutAnnotationTest() throws Exception {
-    JavaFileObject excludeAnnotation =
-        JavaFileObjects.forSourceString("test.Include", Joiner.on('\n').join(
-            "package test;",
-            "public @interface Include {}"
-        ));
-
+  @Test public void basicExcludeWithoutPackAnnotationTest() throws Exception {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
-            "@PaperParcel(excludeFieldsWithoutAnnotations = Include.class)",
+            "import paperparcel.Pack;",
+            "@PaperParcel(excludeFieldsWithoutPackAnnotation = true)",
             "public final class Test implements Parcelable {",
-            "  @Include public int value;",
+            "  @Pack public int value;",
             "  public int ignore;",
             "  public int describeContents() {",
             "    return 0;",
@@ -1746,29 +1741,24 @@ public class PaperParcelProcessorTests {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+    assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
         .generatesSources(expected);
   }
 
-  @Test public void inheritanceExcludeWithoutAnnotationTest() throws Exception {
-    JavaFileObject excludeAnnotation =
-        JavaFileObjects.forSourceString("test.Include", Joiner.on('\n').join(
-            "package test;",
-            "public @interface Include {}"
-        ));
-
+  @Test public void inheritanceExcludeWithoutPackAnnotationTest() throws Exception {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
-            "@PaperParcel(excludeFieldsWithoutAnnotations = Include.class)",
+            "import paperparcel.Pack;",
+            "@PaperParcel(excludeFieldsWithoutPackAnnotation = true)",
             "public final class Test extends BaseTest implements Parcelable {",
-            "  @Include public int value;",
+            "  @Pack public int value;",
             "  public int describeContents() {",
             "    return 0;",
             "  }",
@@ -1817,7 +1807,7 @@ public class PaperParcelProcessorTests {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, baseClass, excludeAnnotation))
+    assertAbout(javaSources()).that(Arrays.asList(source, baseClass))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
