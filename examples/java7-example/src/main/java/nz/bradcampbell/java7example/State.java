@@ -4,7 +4,6 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import java.util.Date;
 
-import paperparcel.Exclude;
 import paperparcel.PaperParcel;
 
 @PaperParcel
@@ -18,7 +17,7 @@ public final class State implements Parcelable {
   Date modificationDate;
 
   // Excluded from the parcelling/unparcelling process
-  @Exclude private long somethingToExclude = 1000L;
+  private transient long somethingToExclude = 1000L;
 
   public State(int count) {
     this.count = count;

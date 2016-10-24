@@ -16,12 +16,16 @@
 
 package paperparcel;
 
+import android.support.annotation.IntDef;
+import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.lang.reflect.Modifier;
 
 import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.CLASS;
+import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 /**
  * Annotates {@code Parcelable} classes to automatically generate the {@code Parcelable.Creator}
@@ -61,4 +65,10 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
 @Retention(CLASS)
 @Target(TYPE)
 public @interface PaperParcel {
+
+  Class<? extends Annotation>[] excludeFieldsWithAnnotations() default {};
+
+  int[] excludeFieldsWithModifiers() default { Modifier.TRANSIENT, Modifier.STATIC };
+
+  Class<? extends Annotation>[] excludeFieldsWithoutAnnotations() default {};
 }
