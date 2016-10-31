@@ -22,14 +22,14 @@ public class ParcelableProperty extends Property {
   protected CodeBlock readFromParcelInner(CodeBlock.Builder block, ParameterSpec in, @Nullable FieldSpec classLoader,
                                           Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
     TypeName rawTypeName = getRawTypeName(getTypeName());
-    return CodeBlock.of("$T.CREATOR.createFromParcel($N)", rawTypeName, in);
+    return CodeBlock.of("$N.readParcelable($T.class.getClassLoader())", in, rawTypeName);
   }
 
   @Override
   protected void writeToParcelInner(
       CodeBlock.Builder block, ParameterSpec dest, ParameterSpec flags, CodeBlock sourceLiteral,
       Map<ClassName, CodeBlock> typeAdaptersMap, Set<String> scopedVariableNames) {
-    block.addStatement("$L.writeToParcel($N, $N)", sourceLiteral, dest, flags);
+    block.addStatement("$N.writeParcelable($L, $N)", dest, sourceLiteral, flags);
   }
 
   private TypeName getRawTypeName(TypeName typeName) {
