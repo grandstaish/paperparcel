@@ -198,7 +198,7 @@ public class SerializableTests {
         "@Override public TestParcel createFromParcel(Parcel in) {",
         "Child outChild = null;",
         "if (in.readInt() == 0) {",
-        "outChild = Child.CREATOR.createFromParcel(in);",
+        "outChild = in.readParcelable(Child.class.getClassLoader());",
         "}",
         "Test data = new Test(outChild);",
         "return new TestParcel(data);",
@@ -220,7 +220,7 @@ public class SerializableTests {
         "dest.writeInt(1);",
         "} else {",
         "dest.writeInt(0);",
-        "child.writeToParcel(dest, flags);",
+        "dest.writeParcelable(child, flags);",
         "}",
         "}",
         "}"
