@@ -152,46 +152,38 @@ final class Utils {
 
   /** Returns all non-excluded fields on a {@link PaperParcel} annotated {@link TypeElement}. */
   static ImmutableList<VariableElement> getFieldsToParcel(Types types, TypeElement element) {
-    Optional<AnnotationMirror> mirror =
+    Optional<AnnotationMirror> paperParcelMirror =
         MoreElements.getAnnotationMirror(element, PaperParcel.class);
-    if (mirror.isPresent()) {
-      List<Set<Modifier>> excludeModifiers = getExcludeModifiers(mirror.get());
-      List<String> excludeWithAnnotationNames = getExcludeWithAnnotations(mirror.get());
-      boolean excludeWithoutPack = getExcludeFieldsWithoutPackAnnotation(mirror.get());
-      return getFieldsToParcelInner(
-          types,
-          element,
-          excludeModifiers,
-          excludeWithAnnotationNames,
-          excludeWithoutPack);
+    if (paperParcelMirror.isPresent()) {
+      Optional<AnnotationMirror> optionsMirror =
+          MoreElements.getAnnotationMirror(element, PaperParcel.Options.class);
+      Options options = Options.DEFAULT;
+      if (optionsMirror.isPresent()) {
+        List<Set<Modifier>> excludeModifiers = getExcludeModifiers(optionsMirror.get());
+        List<String> excludeWithAnnotationNames = getExcludeWithAnnotations(optionsMirror.get());
+        boolean excludeWithoutPack = getExcludeFieldsWithoutPackAnnotation(optionsMirror.get());
+        options = Options.create(excludeModifiers, excludeWithAnnotationNames, excludeWithoutPack);
+      }
+      return getFieldsToParcelInner(types, element, options);
     } else {
       throw new IllegalArgumentException("element must be annotated with @PaperParcel");
     }
   }
 
   private static ImmutableList<VariableElement> getFieldsToParcelInner(
-      Types types,
-      TypeElement element,
-      List<Set<Modifier>> excludeModifiers,
-      List<String> excludeWithAnnotationNames,
-      boolean excludeWithoutPack) {
+      Types types, TypeElement element, Options options) {
     ImmutableList.Builder<VariableElement> fields = ImmutableList.builder();
     for (VariableElement variable : fieldsIn(element.getEnclosedElements())) {
-      if (!excludeViaModifiers(variable, excludeModifiers)
-          && !usesAnyAnnotationsFrom(variable, excludeWithAnnotationNames)
-          && (!excludeWithoutPack || MoreElements.isAnnotationPresent(variable, Pack.class))) {
+      if (!excludeViaModifiers(variable, options.excludeModifiers())
+          && !usesAnyAnnotationsFrom(variable, options.excludeWithAnnotationNames())
+          && (!options.excludeWithoutPack() || MoreElements.isAnnotationPresent(variable, Pack.class))) {
         fields.add(variable);
       }
     }
     TypeMirror superType = element.getSuperclass();
     if (superType.getKind() != TypeKind.NONE) {
       TypeElement superElement = MoreElements.asType(types.asElement(superType));
-      fields.addAll(getFieldsToParcelInner(
-          types,
-          superElement,
-          excludeModifiers,
-          excludeWithAnnotationNames,
-          excludeWithoutPack));
+      fields.addAll(getFieldsToParcelInner(types, superElement, options));
     }
     return fields.build();
   }

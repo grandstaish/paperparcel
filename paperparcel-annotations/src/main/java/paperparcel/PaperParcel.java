@@ -18,7 +18,9 @@ package paperparcel;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Modifier;
 
@@ -64,25 +66,70 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
 @Target(TYPE)
 public @interface PaperParcel {
   /**
-   * Configures PaperParcel to exclude any field in the annotated class that is annotated with any
-   * of the given annotations.
-   */
-  Class<? extends Annotation>[] excludeFieldsWithAnnotations() default {};
-
-  /**
-   * Configures PaperParcel to exclude any field in the annotated class that has specific modifiers
-   * or combinations of modifiers. The int values returned by this method must be {@link Modifier}
-   * constants.
+   * Options for configuring how the {@code PaperParcelProcessor} should handle parsing the
+   * annotated class.
    *
-   * <p>By default any {@code transient} or {@code static} field is excluded.
-   */
-  int[] excludeFieldsWithModifiers() default { Modifier.TRANSIENT, Modifier.STATIC };
-
-  /**
-   * Configures PaperParcel to exclude any field in the annotated class that is not annotated with
-   * {@link Pack}.
+   * This annotation can be applied directly to an {@code PaperParcel}-annotated class like so:
+   * <pre><code>
+   * &#64PaperParcel.Options(...)
+   * &#64PaperParcel
+   * public final class User implements Parcelable {
+   *   String username;
+   *   String password;
+   *   // ...
+   * }
+   * </code></pre>
    *
-   * <p>By default this is false.
+   * <p>Defining {@code Options} in this manner can become tedious if you want to apply the same
+   * options to many (or all) of your model objects. For a more reusable strategy, you may wish to
+   * create a custom annotation which will define all of the rules you wish to apply; then use your
+   * custom annotation on your {@code PaperParcel} classes instead. Here's an example of a custom
+   * annotation that has {@code Options} applied to it:
+   * <pre><code>
+   * &#64PaperParcel.Options(...)
+   * &#64Retention(RetentionPolicy.CLASS)
+   * &#64Target(ElementType.TYPE)
+   * public &#64interface MyOptions {
+   * }
+   * </code></pre>
+   *
+   * <p>Now {@code MyOptions} could be applied to any {@code PaperParcel} class to apply the
+   * rules associated with it:
+   * <pre><code>
+   * &#64MyOptions
+   * &#64PaperParcel
+   * public final class User implements Parcelable {
+   *   String username;
+   *   String password;
+   *   // ...
+   * }
+   * </code></pre>
    */
-  boolean excludeFieldsWithoutPackAnnotation() default false;
+  @Documented
+  @Retention(RetentionPolicy.CLASS)
+  @Target({ ElementType.ANNOTATION_TYPE, ElementType.TYPE })
+  @interface Options {
+    /**
+     * Configures PaperParcel to exclude any field in the annotated class that is annotated with
+     * any of the given annotations.
+     */
+    Class<? extends Annotation>[] excludeFieldsWithAnnotations() default {};
+
+    /**
+     * Configures PaperParcel to exclude any field in the annotated class that has specific
+     * modifiers or combinations of modifiers. The int values returned by this method must be
+     * {@link Modifier} constants.
+     *
+     * <p>By default any {@code transient} or {@code static} field is excluded.
+     */
+    int[] excludeFieldsWithModifiers() default { Modifier.TRANSIENT, Modifier.STATIC };
+
+    /**
+     * Configures PaperParcel to exclude any field in the annotated class that is not annotated
+     * with {@link Pack}.
+     *
+     * <p>By default this is false.
+     */
+    boolean excludeFieldsWithoutPackAnnotation() default false;
+  }
 }
