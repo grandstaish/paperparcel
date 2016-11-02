@@ -200,7 +200,7 @@ public class Example implements Parcelable {
 }
 ```
 
-**Reusable rule sets**
+### Reusable rule sets
 
 Applying exclusion rules in this manner can become tedius if you if you want to apply the same rules to many (or all) of your model objects. For a more reusable strategy, you may wish to create a custom annotation which will define all of the rules you wish to apply; then use your custom annotation on your `@PaperParcel` classes instead. Here's an example of a custom annotation that has `@PaperParcel.Options` applied to it:
 
