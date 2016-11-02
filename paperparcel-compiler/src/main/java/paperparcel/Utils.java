@@ -24,6 +24,7 @@ import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Ordering;
 import com.google.common.primitives.Ints;
 import java.util.ArrayList;
@@ -155,8 +156,7 @@ final class Utils {
     Optional<AnnotationMirror> paperParcelMirror =
         MoreElements.getAnnotationMirror(element, PaperParcel.class);
     if (paperParcelMirror.isPresent()) {
-      Optional<AnnotationMirror> optionsMirror =
-          MoreElements.getAnnotationMirror(element, PaperParcel.Options.class);
+      Optional<AnnotationMirror> optionsMirror = findOptions(element);
       Options options = Options.DEFAULT;
       if (optionsMirror.isPresent()) {
         List<Set<Modifier>> excludeModifiers = getExcludeModifiers(optionsMirror.get());
@@ -168,6 +168,26 @@ final class Utils {
     } else {
       throw new IllegalArgumentException("element must be annotated with @PaperParcel");
     }
+  }
+
+  private static Optional<AnnotationMirror> findOptions(TypeElement element) {
+    Optional<AnnotationMirror> options = optionsOnElement(element);
+    if (options.isPresent()) return options;
+    // Find all annotations on this element that are annotated themselves with @PaperParcel.Options
+    // instead.
+    ImmutableSet<? extends AnnotationMirror> annotatedAnnotations =
+        AnnotationMirrors.getAnnotatedAnnotations(element, PaperParcel.Options.class);
+    if (annotatedAnnotations.size() > 1) {
+      throw new IllegalStateException("PaperParcel options applied twice.");
+    } else if (annotatedAnnotations.size() == 1) {
+      AnnotationMirror optionsMirror = annotatedAnnotations.iterator().next();
+      return optionsOnElement(optionsMirror.getAnnotationType().asElement());
+    }
+    return Optional.absent();
+  }
+
+  private static Optional<AnnotationMirror> optionsOnElement(Element element) {
+    return MoreElements.getAnnotationMirror(element, PaperParcel.Options.class);
   }
 
   private static ImmutableList<VariableElement> getFieldsToParcelInner(
