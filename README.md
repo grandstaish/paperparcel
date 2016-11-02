@@ -143,16 +143,15 @@ A `TypeAdapter` can list any number of `TypeAdapter` dependencies as constructor
 
 ## Excluding Fields
 
-PaperParcel provides you with multiple ways of excluding unwanted fields from it's processor. The APIs are mostly inspired from [gson](https://github.com/google/gson).
+By default, PaperParcel will exclude any `static` or `transient` field from being included in the generated `CREATOR` and `writeToParcel(...)` implementations. If you have more complicated requirements for excluding fields, then you can customise this behaviour using the `@PaperParcel.Options` API:
 
 **Exclude via modifiers**
 
-By default PaperParcel will ignore `static` and `transient` fields, however you can override this behaviour using the `excludeFieldsWithModifiers` API. 
-
-Here's an example; let's say you wanted to exclude all `transient` and `static final` fields (therefore keeping any non-final `static` field). You could achieve that like this:
+Let's say you wanted to exclude all `transient` and `static final` fields (therefore keeping any non-final `static` field). You could achieve that like this:
 
 ```java
-@PaperParcel(excludeFieldsWithModifiers = { Modifier.TRANSIENT, Modifier.STATIC | Modifier.FINAL })
+@PaperParcel
+@PaperParcel.Options(excludeFieldsWithModifiers = { Modifier.TRANSIENT, Modifier.STATIC | Modifier.FINAL })
 public class Example implements Parcelable {
   static final long field1 = 0; // Will not be parcelled
   static long field2; // Will be parcelled
@@ -169,8 +168,8 @@ Another API available to you is `excludeFieldsWithAnnotations`. This API lists a
 First we'll create an annotation and call it `Exclude`:
 
 ```java
-@Retention(SOURCE)
-@Target(FIELD)
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.FIELD)
 public @interface Exclude {
 }
 ```
@@ -178,7 +177,8 @@ public @interface Exclude {
 Now we can use this annotation in any of our model classes to exclude fields like so:
 
 ```java
-@PaperParcel(excludeFieldsWithAnnotations = { Exclude.class })
+@PaperParcel
+@PaperParcel.Options(excludeFieldsWithAnnotations = Exclude.class)
 public class Example implements Parcelable {
   long field1; // Will be parcelled
   @Exclude long field2; // Will not be parcelled
@@ -191,10 +191,33 @@ public class Example implements Parcelable {
 Finally, it can also be useful for PaperParcel to ignore all fields unless specified otherwise. An example for when this can be of use is when you are extending a class from another library and you want to ignore all of the fields in that base class. PaperParcel provides a `@Pack` annotation which should be used alongside `excludeFieldsWithoutPackAnnotation` for this purpose:
 
 ```java
-@PaperParcel(excludeFieldsWithoutPackAnnotation = true)
+@PaperParcel
+@PaperParcel.Options(excludeFieldsWithoutPackAnnotation = true)
 public class Example implements Parcelable {
   @Pack long field1; // Will be parcelled
   long field2; // Will not be parcelled
+  ...
+}
+```
+
+**Reusable rule sets**
+
+Applying exclusion rules in this manner can become tedius if you if you want to apply the same rules to many (or all) of your model objects. For a more reusable strategy, you may wish to create a custom annotation which will define all of the rules you wish to apply; then use your custom annotation on your `@PaperParcel` classes instead. Here's an example of a custom annotation that has `@PaperParcel.Options` applied to it:
+
+```java
+@PaperParcel.Options(...) // Define your rules here
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.TYPE)
+public @interface MyOptions {
+}
+```
+
+After defining `@MyOptions` (call it whatever you like), you can then apply it directly to any `@PaperParcel` class to apply the rules:
+
+```java
+@MyOptions
+@PaperParcel
+public class Example implements Parcelable {
   ...
 }
 ```
