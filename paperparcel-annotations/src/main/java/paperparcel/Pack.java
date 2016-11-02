@@ -32,10 +32,10 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
  *
  * <p>Here is an example of how {@literal @}Pack can be used:
  * <p><pre>
- * &#64PaperParcel.Options(excludeFieldsWithoutPackAnnotation = true)
- * &#64PaperParcel
+ * {@literal @}PaperParcel.Options(excludeFieldsWithoutPackAnnotation = true)
+ * {@literal @}PaperParcel
  * public final class User implements Parcelable {
- *   &#Pack String username;
+ *   {@literal @}Pack String username;
  *   String password;
  *   // ...
  * }

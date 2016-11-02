@@ -71,8 +71,8 @@ public @interface PaperParcel {
    *
    * This annotation can be applied directly to an {@code PaperParcel}-annotated class like so:
    * <pre><code>
-   * &#64PaperParcel.Options(...)
-   * &#64PaperParcel
+   * {@literal @}PaperParcel.Options(...)
+   * {@literal @}PaperParcel
    * public final class User implements Parcelable {
    *   String username;
    *   String password;
@@ -86,18 +86,18 @@ public @interface PaperParcel {
    * custom annotation on your {@code PaperParcel} classes instead. Here's an example of a custom
    * annotation that has {@code Options} applied to it:
    * <pre><code>
-   * &#64PaperParcel.Options(...)
-   * &#64Retention(RetentionPolicy.SOURCE)
-   * &#64Target(ElementType.TYPE)
-   * public &#64interface MyOptions {
+   * {@literal @}PaperParcel.Options(...)
+   * {@literal @}Retention(RetentionPolicy.SOURCE)
+   * {@literal @}Target(ElementType.TYPE)
+   * public {@literal @}interface MyOptions {
    * }
    * </code></pre>
    *
    * <p>Now {@code MyOptions} could be applied to any {@code PaperParcel} class to apply the
    * rules associated with it:
    * <pre><code>
-   * &#64MyOptions
-   * &#64PaperParcel
+   * {@literal @}MyOptions
+   * {@literal @}PaperParcel
    * public final class User implements Parcelable {
    *   String username;
    *   String password;
