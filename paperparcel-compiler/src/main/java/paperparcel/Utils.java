@@ -270,11 +270,11 @@ final class Utils {
 
   private static final AnnotationValueVisitor<Integer, Void> TO_INT =
       new SimpleAnnotationValueVisitor6<Integer, Void>() {
-        @Override public Integer visitInt(int i, Void aVoid) {
-          return i;
+        @Override public Integer visitInt(int value, Void p) {
+          return value;
         }
 
-        @Override protected Integer defaultAction(Object o, Void aVoid) {
+        @Override protected Integer defaultAction(Object ignore, Void p) {
           throw new IllegalArgumentException();
         }
       };
@@ -308,18 +308,18 @@ final class Utils {
           return type;
         }
 
-        @Override protected TypeMirror defaultAction(Object o, Void aVoid) {
+        @Override protected TypeMirror defaultAction(Object ignore, Void p) {
           throw new IllegalArgumentException();
         }
       };
 
   private static final AnnotationValueVisitor<Boolean, Void> BOOLEAN_VISITOR =
       new SimpleAnnotationValueVisitor6<Boolean, Void>() {
-        @Override public Boolean visitBoolean(boolean b, Void aVoid) {
-          return b;
+        @Override public Boolean visitBoolean(boolean value, Void p) {
+          return value;
         }
 
-        @Override protected Boolean defaultAction(Object o, Void aVoid) {
+        @Override protected Boolean defaultAction(Object ignore, Void p) {
           throw new IllegalArgumentException();
         }
       };
