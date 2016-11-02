@@ -40,10 +40,10 @@ abstract class Options {
 
   abstract boolean excludeWithoutPack();
 
-  public static Options create(
+  static Options create(
       List<Set<Modifier>> excludeModifiers,
-      List<String> excludeWithAnnotationNames,
+      List<String> excludeAnnotations,
       boolean excludeWithoutPack) {
-    return new AutoValue_Options(excludeModifiers, excludeWithAnnotationNames, excludeWithoutPack);
+    return new AutoValue_Options(excludeModifiers, excludeAnnotations, excludeWithoutPack);
   }
 }
