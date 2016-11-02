@@ -17,10 +17,11 @@
 package paperparcel;
 
 import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 /**
  * An annotation that indicates this member should be exposed for parcelling.
@@ -49,7 +50,7 @@ import java.lang.annotation.Target;
  * you want to explicitly specify all fields that should get considered for parcelling.
  */
 @Documented
-@Retention(RetentionPolicy.CLASS)
-@Target(ElementType.FIELD)
+@Retention(SOURCE)
+@Target(FIELD)
 public @interface Pack {
 }

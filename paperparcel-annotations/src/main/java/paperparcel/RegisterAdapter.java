@@ -21,7 +21,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.CLASS;
+import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 /**
  * Annotate {@code TypeAdapter} classes with this to register them in PaperParcel's type system.
@@ -30,7 +30,7 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
  * class, an interface, or an abstract class.
  */
 @Documented
-@Retention(CLASS)
+@Retention(SOURCE)
 @Target(TYPE)
 public @interface RegisterAdapter {
 }

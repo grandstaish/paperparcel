@@ -18,14 +18,14 @@ package paperparcel;
 
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
-import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 import java.lang.reflect.Modifier;
 
+import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.CLASS;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 /**
  * Annotates {@code Parcelable} classes to automatically generate the {@code Parcelable.Creator}
@@ -62,7 +62,7 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
  * an interface, or an abstract class.
  */
 @Documented
-@Retention(CLASS)
+@Retention(RUNTIME)
 @Target(TYPE)
 public @interface PaperParcel {
   /**
@@ -87,7 +87,7 @@ public @interface PaperParcel {
    * annotation that has {@code Options} applied to it:
    * <pre><code>
    * &#64PaperParcel.Options(...)
-   * &#64Retention(RetentionPolicy.CLASS)
+   * &#64Retention(RetentionPolicy.SOURCE)
    * &#64Target(ElementType.TYPE)
    * public &#64interface MyOptions {
    * }
@@ -106,8 +106,8 @@ public @interface PaperParcel {
    * </code></pre>
    */
   @Documented
-  @Retention(RetentionPolicy.CLASS)
-  @Target({ ElementType.ANNOTATION_TYPE, ElementType.TYPE })
+  @Retention(SOURCE)
+  @Target({ ANNOTATION_TYPE, TYPE })
   @interface Options {
     /**
      * Configures PaperParcel to exclude any field in the annotated class that is annotated with
