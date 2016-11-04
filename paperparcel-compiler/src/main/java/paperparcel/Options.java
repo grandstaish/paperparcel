@@ -32,18 +32,26 @@ abstract class Options {
   static final Options DEFAULT = create(
       ImmutableList.<Set<Modifier>>of(ImmutableSet.of(STATIC), ImmutableSet.of(TRANSIENT)),
       ImmutableList.<String>of(),
+      ImmutableList.<String>of(),
       false);
 
   abstract List<Set<Modifier>> excludeModifiers();
 
-  abstract List<String> excludeWithAnnotationNames();
+  abstract List<String> excludeAnnotationNames();
 
-  abstract boolean excludeWithoutPack();
+  abstract List<String> exposeAnnotationNames();
+
+  abstract boolean excludeNonExposedFields();
 
   static Options create(
       List<Set<Modifier>> excludeModifiers,
-      List<String> excludeAnnotations,
-      boolean excludeWithoutPack) {
-    return new AutoValue_Options(excludeModifiers, excludeAnnotations, excludeWithoutPack);
+      List<String> excludeAnnotationNames,
+      List<String> exposeAnnotationNames,
+      boolean excludeNonExposedFields) {
+    return new AutoValue_Options(
+        excludeModifiers,
+        excludeAnnotationNames,
+        exposeAnnotationNames,
+        excludeNonExposedFields);
   }
 }

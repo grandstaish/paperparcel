@@ -113,7 +113,27 @@ public @interface PaperParcel {
      * Configures PaperParcel to exclude any field in the annotated class that is annotated with
      * any of the given annotations.
      */
-    Class<? extends Annotation>[] excludeFieldsWithAnnotations() default {};
+    Class<? extends Annotation>[] excludeAnnotations() default {};
+
+    /**
+     * Configures PaperParcel to only include fields in the annotated class that are annotated with
+     * any of the given annotations.
+     *
+     * <p>This API only works when returning {@code true} from {@link #excludeNonExposedFields()}.
+     *
+     * @see #excludeNonExposedFields()
+     */
+    Class<? extends Annotation>[] exposeAnnotations() default {};
+
+    /**
+     * Configures PaperParcel to exclude all fields that are not annotated by one of the
+     * annotations returned by {@link #exposeAnnotations()}. This is useful in a style of
+     * programming where you want to explicitly specify all fields that should be considered for
+     * parcelling.
+     *
+     * @see #exposeAnnotations()
+     */
+    boolean excludeNonExposedFields() default false;
 
     /**
      * Configures PaperParcel to exclude any field in the annotated class that has specific
@@ -122,14 +142,6 @@ public @interface PaperParcel {
      *
      * <p>By default any {@code transient} or {@code static} field is excluded.
      */
-    int[] excludeFieldsWithModifiers() default { Modifier.TRANSIENT, Modifier.STATIC };
-
-    /**
-     * Configures PaperParcel to exclude any field in the annotated class that is not annotated
-     * with {@link Pack}.
-     *
-     * <p>By default this is false.
-     */
-    boolean excludeFieldsWithoutPackAnnotation() default false;
+    int[] excludeModifiers() default { Modifier.TRANSIENT, Modifier.STATIC };
   }
 }

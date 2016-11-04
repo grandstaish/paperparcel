@@ -160,9 +160,14 @@ final class Utils {
       Options options = Options.DEFAULT;
       if (optionsMirror.isPresent()) {
         List<Set<Modifier>> excludeModifiers = getExcludeModifiers(optionsMirror.get());
-        List<String> excludeWithAnnotationNames = getExcludeWithAnnotations(optionsMirror.get());
-        boolean excludeWithoutPack = getExcludeFieldsWithoutPackAnnotation(optionsMirror.get());
-        options = Options.create(excludeModifiers, excludeWithAnnotationNames, excludeWithoutPack);
+        List<String> excludeAnnotationNames = getExcludeAnnotations(optionsMirror.get());
+        List<String> exposeAnnotationNames = getExposeAnnotations(optionsMirror.get());
+        boolean excludeNonExposedFields = getExcludeNonExposedFields(optionsMirror.get());
+        options = Options.create(
+            excludeModifiers,
+            excludeAnnotationNames,
+            exposeAnnotationNames,
+            excludeNonExposedFields);
       }
       return getFieldsToParcelInner(types, element, options);
     } else {
@@ -195,8 +200,9 @@ final class Utils {
     ImmutableList.Builder<VariableElement> fields = ImmutableList.builder();
     for (VariableElement variable : fieldsIn(element.getEnclosedElements())) {
       if (!excludeViaModifiers(variable, options.excludeModifiers())
-          && !usesAnyAnnotationsFrom(variable, options.excludeWithAnnotationNames())
-          && (!options.excludeWithoutPack() || MoreElements.isAnnotationPresent(variable, Pack.class))) {
+          && !usesAnyAnnotationsFrom(variable, options.excludeAnnotationNames())
+          && (!options.excludeNonExposedFields()
+              || usesAnyAnnotationsFrom(variable, options.exposeAnnotationNames()))) {
         fields.add(variable);
       }
     }
@@ -233,7 +239,7 @@ final class Utils {
 
   private static List<Set<Modifier>> getExcludeModifiers(AnnotationMirror mirror) {
     AnnotationValue excludeFieldsWithModifiers =
-        AnnotationMirrors.getAnnotationValue(mirror, "excludeFieldsWithModifiers");
+        AnnotationMirrors.getAnnotationValue(mirror, "excludeModifiers");
     return convertModifiers(excludeFieldsWithModifiers.accept(INT_ARRAY_VISITOR, null));
   }
 
@@ -279,16 +285,22 @@ final class Utils {
         }
       };
 
-  private static List<String> getExcludeWithAnnotations(AnnotationMirror mirror) {
-    AnnotationValue excludeFieldsWithAnnotationNames =
-        AnnotationMirrors.getAnnotationValue(mirror, "excludeFieldsWithAnnotations");
-    return excludeFieldsWithAnnotationNames.accept(TYPE_NAME_ARRAY_VISITOR, null);
+  private static List<String> getExcludeAnnotations(AnnotationMirror mirror) {
+    AnnotationValue excludeAnnotationNames =
+        AnnotationMirrors.getAnnotationValue(mirror, "excludeAnnotations");
+    return excludeAnnotationNames.accept(TYPE_NAME_ARRAY_VISITOR, null);
   }
 
-  private static boolean getExcludeFieldsWithoutPackAnnotation(AnnotationMirror mirror) {
-    AnnotationValue excludeFieldsWithoutAnnotations =
-        AnnotationMirrors.getAnnotationValue(mirror, "excludeFieldsWithoutPackAnnotation");
-    return excludeFieldsWithoutAnnotations.accept(BOOLEAN_VISITOR, null);
+  private static List<String> getExposeAnnotations(AnnotationMirror mirror) {
+    AnnotationValue exposeAnnotationNames =
+        AnnotationMirrors.getAnnotationValue(mirror, "exposeAnnotations");
+    return exposeAnnotationNames.accept(TYPE_NAME_ARRAY_VISITOR, null);
+  }
+
+  private static boolean getExcludeNonExposedFields(AnnotationMirror mirror) {
+    AnnotationValue excludeNonExposedFields =
+        AnnotationMirrors.getAnnotationValue(mirror, "excludeNonExposedFields");
+    return excludeNonExposedFields.accept(BOOLEAN_VISITOR, null);
   }
 
   private static final AnnotationValueVisitor<List<String>, Void> TYPE_NAME_ARRAY_VISITOR =
