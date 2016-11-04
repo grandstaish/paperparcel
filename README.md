@@ -151,10 +151,12 @@ Let's say you wanted to exclude all `transient` and `static final` fields (there
 
 ```java
 @PaperParcel
-@PaperParcel.Options(excludeModifiers = { 
-  Modifier.TRANSIENT, 
-  Modifier.STATIC | Modifier.FINAL 
-})
+@PaperParcel.Options(
+  excludeModifiers = { 
+    Modifier.TRANSIENT, 
+    Modifier.STATIC | Modifier.FINAL 
+  }
+)
 public class Example implements Parcelable {
   static final int field1 = 0; // Will not be parcelled
   static int field2; // Will be parcelled
@@ -193,7 +195,7 @@ public class Example implements Parcelable {
 
 Lastly, PaperParcel can be configured to ignore all fields unless specified otherwise. This is useful in a style of programming where you want to explicitly specify all fields that should be considered for parcelling.
 
-Like the previous example, we can define our own annotation to expose:
+Like the previous example, we can define our own annotation:
 
 ```java
 @Retention(RetentionPolicy.SOURCE)
@@ -202,7 +204,7 @@ public @interface Expose {
 }
 ```
 
-Then our annotation can be used to opt-in specific fields like so:
+Then our `@Expose` annotation can be used to include individual fields like so:
 
 ```java
 @PaperParcel
@@ -217,7 +219,7 @@ public class Example implements Parcelable {
 }
 ```
 
-### Reusable rule sets
+### Reusable exclusion rules
 
 Applying exclusion rules in this manner can become tedius if you if you want to apply the same rules to many (or all) of your model objects. For a more reusable strategy, you may wish to create a custom annotation which will define all of the rules you wish to apply; then use your custom annotation on your `@PaperParcel` classes instead. Here's an example of a custom annotation that has `@PaperParcel.Options` applied to it:
 
