@@ -12,7 +12,7 @@ import static com.google.testing.compile.JavaSourcesSubjectFactory.javaSources;
 
 public class PaperParcelProcessorTests {
 
-  @Test public void allBuiltInAdaptersTest() throws Exception {
+  @Test public void allBuiltInAdaptersTest() {
     JavaFileObject testParcelable =
         JavaFileObjects.forSourceString("test.TestParcelable", Joiner.on('\n').join(
             "package test;",
@@ -465,7 +465,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void failIfPaperParcelClassIsAbstractTest() throws Exception {
+  @Test public void failIfPaperParcelClassIsAbstractTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -485,7 +485,7 @@ public class PaperParcelProcessorTests {
         .onLine(5);
   }
 
-  @Test public void failIfPaperParcelClassIsAnInterfaceTest() throws Exception {
+  @Test public void failIfPaperParcelClassIsAnInterfaceTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -504,7 +504,7 @@ public class PaperParcelProcessorTests {
         .onLine(5);
   }
 
-  @Test public void failIfRegisterAdapterClassIsNotATypeAdapter() throws Exception {
+  @Test public void failIfRegisterAdapterClassIsNotATypeAdapter() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -523,7 +523,7 @@ public class PaperParcelProcessorTests {
         .onLine(5);
   }
 
-  @Test public void failIfRegisterAdapterClassIsAnInterfaceTest() throws Exception {
+  @Test public void failIfRegisterAdapterClassIsAnInterfaceTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -542,7 +542,7 @@ public class PaperParcelProcessorTests {
         .onLine(5);
   }
 
-  @Test public void failIfRegisterAdapterClassIsAbstractTest() throws Exception {
+  @Test public void failIfRegisterAdapterClassIsAbstractTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -561,7 +561,7 @@ public class PaperParcelProcessorTests {
         .onLine(5);
   }
 
-  @Test public void failIfFieldIsInaccessibleTest() throws Exception {
+  @Test public void failIfFieldIsInaccessibleTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -591,7 +591,7 @@ public class PaperParcelProcessorTests {
         .onLine(7);
   }
 
-  @Test public void failIfFieldIsNotWritableTest() throws Exception {
+  @Test public void failIfFieldIsNotWritableTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -621,7 +621,7 @@ public class PaperParcelProcessorTests {
         .onLine(7);
   }
 
-  @Test public void failIfConstructorArgumentHasNonMatchingNameTest() throws Exception {
+  @Test public void failIfConstructorArgumentHasNonMatchingNameTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -654,7 +654,7 @@ public class PaperParcelProcessorTests {
         .onLine(8);
   }
 
-  @Test public void failIfConstructorArgumentHasMismatchedTypeTest() throws Exception {
+  @Test public void failIfConstructorArgumentHasMismatchedTypeTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -687,7 +687,7 @@ public class PaperParcelProcessorTests {
         .onLine(8);
   }
 
-  @Test public void singletonTest() throws Exception {
+  @Test public void singletonTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -741,7 +741,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expectedSource);
   }
 
-  @Test public void failIfTypeAdapterIsRaw() throws Exception {
+  @Test public void failIfTypeAdapterIsRaw() {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.RawTypeAdapter", Joiner.on('\n').join(
             "package test;",
@@ -766,7 +766,7 @@ public class PaperParcelProcessorTests {
         .onLine(6);
   }
 
-  @Test public void failIfConstructorHasRawTypeParameter() throws Exception {
+  @Test public void failIfConstructorHasRawTypeParameter() {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.ListTypeAdapter", Joiner.on('\n').join(
             "package test;",
@@ -794,7 +794,7 @@ public class PaperParcelProcessorTests {
         .onLine(8);
   }
 
-  @Test public void failIfThereAreNoVisibleConstructorsTest() throws Exception {
+  @Test public void failIfThereAreNoVisibleConstructorsTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -821,7 +821,7 @@ public class PaperParcelProcessorTests {
         .onLine(6);
   }
 
-  @Test public void failIfGenericFieldTypeIsRaw() throws Exception {
+  @Test public void failIfGenericFieldTypeIsRaw() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -854,7 +854,7 @@ public class PaperParcelProcessorTests {
         .onLine(8);
   }
 
-  @Test public void basicExcludeTest() throws Exception {
+  @Test public void basicExcludeTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -919,7 +919,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void usesSmallerConstructorWhenLargerConstructorCannotBeUsed() throws Exception {
+  @Test public void usesSmallerConstructorWhenLargerConstructorCannotBeUsed() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -989,7 +989,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void prioritisesDirectAccessOverSetterAndGetterMethods() throws Exception {
+  @Test public void prioritisesDirectAccessOverSetterAndGetterMethods() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -1052,7 +1052,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void usesSetterAndGetterMethodsForPrivateFields() throws Exception {
+  @Test public void usesSetterAndGetterMethodsForPrivateFields() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -1115,7 +1115,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void handlesMixedConstructorDirectAccessAndSetterFields() throws Exception {
+  @Test public void handlesMixedConstructorDirectAccessAndSetterFields() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -1189,7 +1189,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void complexTypeAdapterTest() throws Exception {
+  @Test public void complexTypeAdapterTest() {
     JavaFileObject reallySpecificAdapter =
         JavaFileObjects.forSourceString("test.ReallySpecificTypeAdapter", Joiner.on('\n').join(
             "package test;",
@@ -1277,7 +1277,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void genericArrayTypeAdapterTest() throws Exception {
+  @Test public void genericArrayTypeAdapterTest() {
     JavaFileObject genericArrayAdapter =
         JavaFileObjects.forSourceString("test.GenericArrayAdapter", Joiner.on('\n').join(
             "package test;",
@@ -1352,7 +1352,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void wildcardAdapterTest() throws Exception {
+  @Test public void wildcardAdapterTest() {
     JavaFileObject wildcardAdapter =
         JavaFileObjects.forSourceString("test.WildcardAdapter", Joiner.on('\n').join(
             "package test;",
@@ -1428,7 +1428,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void genericWildcardAdapterTest() throws Exception {
+  @Test public void genericWildcardAdapterTest() {
     JavaFileObject wildcardAdapter =
         JavaFileObjects.forSourceString("test.WildcardAdapter", Joiner.on('\n').join(
             "package test;",
@@ -1504,7 +1504,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void basicGenericPaperParcelTest() throws Exception {
+  @Test public void basicGenericPaperParcelTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -1562,7 +1562,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void complexGenericPaperParcelTest() throws Exception {
+  @Test public void complexGenericPaperParcelTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -1625,7 +1625,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void complexExcludeModifiersTest() throws Exception {
+  @Test public void complexExcludeModifiersTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
@@ -1690,7 +1690,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void basicExcludeAnnotationsTest() throws Exception {
+  @Test public void basicExcludeAnnotationsTest() {
     JavaFileObject excludeAnnotation =
         JavaFileObjects.forSourceString("test.Exclude", Joiner.on('\n').join(
             "package test;",
@@ -1755,7 +1755,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void basicExcludeNonExposedFieldsTest() throws Exception {
+  @Test public void basicExcludeNonExposedFieldsTest() {
     JavaFileObject exposeAnnotation =
         JavaFileObjects.forSourceString("test.Expose", Joiner.on('\n').join(
             "package test;",
@@ -1823,7 +1823,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void inheritanceExcludeNonExposedFieldsTest() throws Exception {
+  @Test public void inheritanceExcludeNonExposedFieldsTest() {
     JavaFileObject exposeAnnotation =
         JavaFileObjects.forSourceString("test.Expose", Joiner.on('\n').join(
             "package test;",
@@ -1898,7 +1898,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void inheritanceExcludeAnnotationsTest() throws Exception {
+  @Test public void inheritanceExcludeAnnotationsTest() {
     JavaFileObject excludeAnnotation =
         JavaFileObjects.forSourceString("test.Exclude", Joiner.on('\n').join(
             "package test;",
@@ -1970,7 +1970,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void sharedOptionsAnnotationTest() throws Exception {
+  @Test public void sharedOptionsAnnotationTest() {
     JavaFileObject sharedOptions =
         JavaFileObjects.forSourceString("test.SharedOptions", Joiner.on('\n').join(
             "package test;",
@@ -2036,7 +2036,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void exposeAnnotationsIgnoredWhenExcludeNonExposedFieldsIsFalseTest() throws Exception {
+  @Test public void exposeAnnotationsIgnoredWhenExcludeNonExposedFieldsIsFalse() {
     JavaFileObject exposeAnnotation =
         JavaFileObjects.forSourceString("test.Expose", Joiner.on('\n').join(
             "package test;",
@@ -2107,4 +2107,31 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
+  @Test public void failWhenExcludeNonExposedFieldsIsTrueWithNoExposeAnnotations() {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel.Options(excludeNonExposedFields = true)",
+            "@PaperParcel",
+            "public final class Test implements Parcelable {",
+            "  public int value;",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(ErrorMessages.OPTIONS_NO_EXPOSE_ANNOTATIONS)
+        .in(source)
+        .onLine(5);
+  }
+  
 }

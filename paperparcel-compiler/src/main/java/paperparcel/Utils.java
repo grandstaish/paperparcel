@@ -156,26 +156,31 @@ final class Utils {
     Optional<AnnotationMirror> paperParcelMirror =
         MoreElements.getAnnotationMirror(element, PaperParcel.class);
     if (paperParcelMirror.isPresent()) {
-      Optional<AnnotationMirror> optionsMirror = findOptions(element);
-      Options options = Options.DEFAULT;
-      if (optionsMirror.isPresent()) {
-        List<Set<Modifier>> excludeModifiers = getExcludeModifiers(optionsMirror.get());
-        List<String> excludeAnnotationNames = getExcludeAnnotations(optionsMirror.get());
-        List<String> exposeAnnotationNames = getExposeAnnotations(optionsMirror.get());
-        boolean excludeNonExposedFields = getExcludeNonExposedFields(optionsMirror.get());
-        options = Options.create(
-            excludeModifiers,
-            excludeAnnotationNames,
-            exposeAnnotationNames,
-            excludeNonExposedFields);
-      }
+      Options options = getOptions(element);
       return getFieldsToParcelInner(types, element, options);
     } else {
       throw new IllegalArgumentException("element must be annotated with @PaperParcel");
     }
   }
 
-  private static Optional<AnnotationMirror> findOptions(TypeElement element) {
+  static Options getOptions(TypeElement element) {
+    Optional<AnnotationMirror> optionsMirror = findOptionsMirror(element);
+    Options options = Options.DEFAULT;
+    if (optionsMirror.isPresent()) {
+      List<Set<Modifier>> excludeModifiers = getExcludeModifiers(optionsMirror.get());
+      List<String> excludeAnnotationNames = getExcludeAnnotations(optionsMirror.get());
+      List<String> exposeAnnotationNames = getExposeAnnotations(optionsMirror.get());
+      boolean excludeNonExposedFields = getExcludeNonExposedFields(optionsMirror.get());
+      options = Options.create(
+          excludeModifiers,
+          excludeAnnotationNames,
+          exposeAnnotationNames,
+          excludeNonExposedFields);
+    }
+    return options;
+  }
+
+  static Optional<AnnotationMirror> findOptionsMirror(TypeElement element) {
     Optional<AnnotationMirror> options = optionsOnElement(element);
     if (options.isPresent()) return options;
     // Find all annotations on this element that are annotated themselves with @PaperParcel.Options
