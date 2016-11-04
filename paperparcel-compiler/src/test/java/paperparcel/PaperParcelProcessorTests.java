@@ -1690,7 +1690,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void basicExcludeAnnotationTest() throws Exception {
+  @Test public void basicExcludeAnnotationsTest() throws Exception {
     JavaFileObject excludeAnnotation =
         JavaFileObjects.forSourceString("test.Exclude", Joiner.on('\n').join(
             "package test;",
@@ -1823,7 +1823,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void inheritanceExcludeWithoutPackAnnotationTest() throws Exception {
+  @Test public void inheritanceExcludeNonExposedFieldsTest() throws Exception {
     JavaFileObject exposeAnnotation =
         JavaFileObjects.forSourceString("test.Expose", Joiner.on('\n').join(
             "package test;",
@@ -1898,7 +1898,7 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void inheritanceExcludeWithAnnotationTest() throws Exception {
+  @Test public void inheritanceExcludeAnnotationsTest() throws Exception {
     JavaFileObject excludeAnnotation =
         JavaFileObjects.forSourceString("test.Exclude", Joiner.on('\n').join(
             "package test;",
@@ -2030,6 +2030,77 @@ public class PaperParcelProcessorTests {
         ));
 
     assertAbout(javaSources()).that(Arrays.asList(source, sharedOptions))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void exposeAnnotationsIgnoredWhenExcludeNonExposedFieldsIsFalseTest() throws Exception {
+    JavaFileObject exposeAnnotation =
+        JavaFileObjects.forSourceString("test.Expose", Joiner.on('\n').join(
+            "package test;",
+            "public @interface Expose {}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel.Options(",
+            "  excludeNonExposedFields = false,",
+            "  exposeAnnotations = Expose.class",
+            ")",
+            "@PaperParcel",
+            "public final class Test implements Parcelable {",
+            "  @Expose public int value;",
+            "  public int ignore;",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import javax.annotation.Generated;",
+            "import paperparcel.adapter.IntegerAdapter;",
+            GeneratedLines.GENERATED_ANNOTATION,
+            "final class PaperParcelTest {",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      Integer value = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      Integer ignore = IntegerAdapter.INSTANCE.readFromParcel(in);",
+            "      Test data = new Test();",
+            "      data.value = value;",
+            "      data.ignore = ignore;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    IntegerAdapter.INSTANCE.writeToParcel(data.value, dest, flags);",
+            "    IntegerAdapter.INSTANCE.writeToParcel(data.ignore, dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(source, exposeAnnotation))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
