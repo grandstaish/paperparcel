@@ -143,27 +143,30 @@ A `TypeAdapter` can list any number of `TypeAdapter` dependencies as constructor
 
 ## Excluding Fields
 
-By default, PaperParcel will exclude any `static` or `transient` field from being included in the generated `CREATOR` and `writeToParcel(...)` implementations. If you have more complicated requirements for excluding fields, then you can customise this behaviour using the `@PaperParcel.Options` API:
+By default, PaperParcel will exclude any `static` or `transient` fields from being included in the generated `CREATOR` and `writeToParcel(...)` implementations. If you have more complicated requirements for excluding fields, then you can customise this behaviour using the `@PaperParcel.Options` API:
 
-**Exclude via modifiers**
+#### Exclude via modifiers
 
 Let's say you wanted to exclude all `transient` and `static final` fields (therefore keeping any non-final `static` field). You could achieve that like this:
 
 ```java
 @PaperParcel
-@PaperParcel.Options(excludeFieldsWithModifiers = { Modifier.TRANSIENT, Modifier.STATIC | Modifier.FINAL })
+@PaperParcel.Options(excludeModifiers = { 
+  Modifier.TRANSIENT, 
+  Modifier.STATIC | Modifier.FINAL 
+})
 public class Example implements Parcelable {
-  static final long field1 = 0; // Will not be parcelled
-  static long field2; // Will be parcelled
-  transient long field3; // Will not be parcelled
-  long field4; // Will be parcelled
+  static final int field1 = 0; // Will not be parcelled
+  static int field2; // Will be parcelled
+  transient int field3; // Will not be parcelled
+  int field4; // Will be parcelled
   ...
 }
 ```
 
-**Exclude via annotation**
+#### Exclude via annotation
 
-Another API available to you is `excludeFieldsWithAnnotations`. This API lists all of the annotations that will be used to exclude fields. Let's see how this might look:
+Another API available to you is `excludeAnnotations`. This API lists all of the annotations that will be used to exclude fields. Let's see how this might look:
 
 First we'll create an annotation and call it `Exclude`:
 
@@ -178,24 +181,38 @@ Now we can use this annotation in any of our model classes to exclude fields lik
 
 ```java
 @PaperParcel
-@PaperParcel.Options(excludeFieldsWithAnnotations = Exclude.class)
+@PaperParcel.Options(excludeAnnotations = Exclude.class)
 public class Example implements Parcelable {
-  long field1; // Will be parcelled
-  @Exclude long field2; // Will not be parcelled
+  int field1; // Will be parcelled
+  @Exclude int field2; // Will not be parcelled
   ...
 }
 ```
 
-**Opt-in field strategy**
+#### Opt-in field strategy
 
-Finally, it can also be useful for PaperParcel to ignore all fields unless specified otherwise. An example for when this can be of use is when you are extending a class from another library and you want to ignore all of the fields in that base class. PaperParcel provides a `@Pack` annotation which should be used alongside `excludeFieldsWithoutPackAnnotation` for this purpose:
+Lastly, PaperParcel can be configured to ignore all fields unless specified otherwise. This is useful in a style of programming where you want to explicitly specify all fields that should be considered for parcelling.
+
+Like the previous example, we can define our own annotation to expose:
+
+```java
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.FIELD)
+public @interface Expose {
+}
+```
+
+Then our annotation can be used to opt-in specific fields like so:
 
 ```java
 @PaperParcel
-@PaperParcel.Options(excludeFieldsWithoutPackAnnotation = true)
+@PaperParcel.Options(
+  excludeNonExposedFields = true,
+  exposeAnnotations = Expose.class
+)
 public class Example implements Parcelable {
-  @Pack long field1; // Will be parcelled
-  long field2; // Will not be parcelled
+  @Expose int field1; // Will be parcelled
+  int field2; // Will not be parcelled
   ...
 }
 ```
