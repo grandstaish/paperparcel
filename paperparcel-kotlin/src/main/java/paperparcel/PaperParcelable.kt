@@ -17,13 +17,25 @@ interface PaperParcelable : Parcelable {
 
   override fun writeToParcel(dest: Parcel, flags: Int) {
     if (!Cache.writeMethods.containsKey(javaClass)) {
-      val generatedClass = Class.forName(implementationName(javaClass))
-      val args = arrayOf(javaClass, Parcel::class.java, Int::class.javaPrimitiveType)
+      val annotatedClass = findAnnotatedClass(javaClass)
+      val generatedClass = Class.forName(implementationName(annotatedClass))
+      val args = arrayOf(annotatedClass, Parcel::class.java, Int::class.javaPrimitiveType)
       val writeMethod = generatedClass.getDeclaredMethod("writeToParcel", *args)
       writeMethod.isAccessible = true
       Cache.writeMethods.put(javaClass, writeMethod)
     }
     Cache.writeMethods[javaClass]!!.invoke(null, this, dest, flags)
+  }
+
+  private fun findAnnotatedClass(type: Class<*>): Class<*> {
+    if (type.isAnnotationPresent(PaperParcel::class.java)) {
+      return type
+    }
+    if (type == Any::class.java) {
+      throw IllegalArgumentException(
+          "Cannot find @${PaperParcel::class.java.simpleName} on ${javaClass.name}.")
+    }
+    return findAnnotatedClass(type.superclass)
   }
 
   private fun implementationName(type: Class<*>): String {
