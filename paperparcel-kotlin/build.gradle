@@ -19,6 +19,8 @@ android {
 
 dependencies {
   compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+
+  provided project(":paperparcel")
 }
 
 apply from: rootProject.file('gradle/bintray.gradle')
