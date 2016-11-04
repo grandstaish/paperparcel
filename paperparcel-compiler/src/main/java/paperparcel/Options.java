@@ -16,11 +16,13 @@
 
 package paperparcel;
 
+import android.support.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import java.util.List;
 import java.util.Set;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
 
 import static javax.lang.model.element.Modifier.STATIC;
@@ -30,10 +32,13 @@ import static javax.lang.model.element.Modifier.TRANSIENT;
 @AutoValue
 abstract class Options {
   static final Options DEFAULT = create(
+      null,
       ImmutableList.<Set<Modifier>>of(ImmutableSet.of(STATIC), ImmutableSet.of(TRANSIENT)),
       ImmutableList.<String>of(),
       ImmutableList.<String>of(),
       false);
+
+  @Nullable abstract AnnotationMirror mirror();
 
   abstract List<Set<Modifier>> excludeModifiers();
 
@@ -44,11 +49,13 @@ abstract class Options {
   abstract boolean excludeNonExposedFields();
 
   static Options create(
+      AnnotationMirror mirror,
       List<Set<Modifier>> excludeModifiers,
       List<String> excludeAnnotationNames,
       List<String> exposeAnnotationNames,
       boolean excludeNonExposedFields) {
     return new AutoValue_Options(
+        mirror,
         excludeModifiers,
         excludeAnnotationNames,
         exposeAnnotationNames,

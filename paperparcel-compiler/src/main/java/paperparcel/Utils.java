@@ -172,6 +172,7 @@ final class Utils {
       List<String> exposeAnnotationNames = getExposeAnnotations(optionsMirror.get());
       boolean excludeNonExposedFields = getExcludeNonExposedFields(optionsMirror.get());
       options = Options.create(
+          optionsMirror.get(),
           excludeModifiers,
           excludeAnnotationNames,
           exposeAnnotationNames,
@@ -180,7 +181,7 @@ final class Utils {
     return options;
   }
 
-  static Optional<AnnotationMirror> findOptionsMirror(TypeElement element) {
+  private static Optional<AnnotationMirror> findOptionsMirror(TypeElement element) {
     Optional<AnnotationMirror> options = optionsOnElement(element);
     if (options.isPresent()) return options;
     // Find all annotations on this element that are annotated themselves with @PaperParcel.Options

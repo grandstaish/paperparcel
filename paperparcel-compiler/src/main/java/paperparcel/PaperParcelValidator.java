@@ -80,8 +80,7 @@ final class PaperParcelValidator {
     Options options = Utils.getOptions(element);
     if (options.excludeNonExposedFields()
         && options.exposeAnnotationNames().isEmpty()) {
-      AnnotationMirror optionsMirror = Utils.findOptionsMirror(element).get();
-      builder.addError(ErrorMessages.OPTIONS_NO_EXPOSE_ANNOTATIONS, element, optionsMirror);
+      builder.addError(ErrorMessages.OPTIONS_NO_EXPOSE_ANNOTATIONS, element, options.mirror());
     }
     WriteInfo writeInfo = null;
     ReadInfo readInfo = null;
