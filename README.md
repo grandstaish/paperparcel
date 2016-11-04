@@ -6,7 +6,7 @@
 
 PaperParcel is an annotation processor that automatically generates the `CREATOR` and `writeToParcel(...)` implementations for you when writing [Parcelable](http://developer.android.com/intl/es/reference/android/os/Parcelable.html) objects. PaperParcel fully supports both Java and Kotlin (including [Kotlin Data Classes](https://kotlinlang.org/docs/reference/data-classes.html)). Additionally, PaperParcel supports Google's [AutoValue](https://github.com/google/auto/tree/master/value) via an [AutoValue Extension](http://jakewharton.com/presentation/2016-03-08-ny-android-meetup/).
 
-PaperParcel supports a wide range of common Android/Java value types out the box, including many types that [Parcel](http://developer.android.com/intl/es/reference/android/os/Parcel.html) and [Bundle](https://developer.android.com/reference/android/os/Bundle.html) don't support natively (e.g. `Set`, `SparseArray`, `ArrayMap`, etc). The full list of supported types can be found [here](paperparcel/src/main/java/paperparcel/adapter). Support for any other type can be added using [TypeAdapters](README.md#typeadapters).
+PaperParcel supports a wide range of common Android/Java value and container types out the box, including many types that [Parcel](http://developer.android.com/intl/es/reference/android/os/Parcel.html) and [Bundle](https://developer.android.com/reference/android/os/Bundle.html) don't support natively (e.g. `Set`, `SparseArray`, `ArrayMap`, etc). The full list of supported types can be found [here](paperparcel/src/main/java/paperparcel/adapter). Support for any other type can be added using [TypeAdapters](README.md#typeadapters).
 
 ## Usage 
 
@@ -143,7 +143,103 @@ A `TypeAdapter` can list any number of `TypeAdapter` dependencies as constructor
 
 ## Excluding Fields
 
-You can annotate any field with `@Exclude` to exclude it from being parcelled. 
+By default, PaperParcel will exclude any `static` or `transient` fields from being included in the generated `CREATOR` and `writeToParcel(...)` implementations. If you have more complicated requirements for excluding fields, then you can customise this behaviour using the `@PaperParcel.Options` API:
+
+#### Exclude via modifiers
+
+Let's say you wanted to exclude all `transient` and `static final` fields (therefore keeping any non-final `static` field). You could achieve that like this:
+
+```java
+@PaperParcel
+@PaperParcel.Options(
+  excludeModifiers = { 
+    Modifier.TRANSIENT, 
+    Modifier.STATIC | Modifier.FINAL 
+  }
+)
+public class Example implements Parcelable {
+  static final int field1 = 0; // Will not be parcelled
+  static int field2; // Will be parcelled
+  transient int field3; // Will not be parcelled
+  int field4; // Will be parcelled
+  ...
+}
+```
+
+#### Exclude via annotation
+
+Another API available to you is `excludeAnnotations`. This API lists all of the annotations that will be used to exclude fields. Let's see how this might look:
+
+First we'll create an annotation and call it `Exclude`:
+
+```java
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.FIELD)
+public @interface Exclude {
+}
+```
+
+Now we can use this annotation in any of our model classes to exclude fields like so:
+
+```java
+@PaperParcel
+@PaperParcel.Options(excludeAnnotations = Exclude.class)
+public class Example implements Parcelable {
+  int field1; // Will be parcelled
+  @Exclude int field2; // Will not be parcelled
+  ...
+}
+```
+
+#### Opt-in field strategy
+
+Lastly, PaperParcel can be configured to ignore all fields unless specified otherwise. This is useful in a style of programming where you want to explicitly specify all fields that should be considered for parcelling.
+
+Like the previous example, we can define our own annotation:
+
+```java
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.FIELD)
+public @interface Expose {
+}
+```
+
+Then our `@Expose` annotation can be used to include individual fields like so:
+
+```java
+@PaperParcel
+@PaperParcel.Options(
+  excludeNonExposedFields = true,
+  exposeAnnotations = Expose.class
+)
+public class Example implements Parcelable {
+  @Expose int field1; // Will be parcelled
+  int field2; // Will not be parcelled
+  ...
+}
+```
+
+### Reusable exclusion rules
+
+Applying exclusion rules in this manner can become tedius if you if you want to apply the same rules to many (or all) of your model objects. For a more reusable strategy, you may wish to create a custom annotation which will define all of the rules you wish to apply; then use your custom annotation on your `@PaperParcel` classes instead. Here's an example of a custom annotation that has `@PaperParcel.Options` applied to it:
+
+```java
+@PaperParcel.Options(...) // Define your rules here
+@Retention(RetentionPolicy.SOURCE)
+@Target(ElementType.TYPE)
+public @interface MyOptions {
+}
+```
+
+After defining `@MyOptions` (call it whatever you like), you can then apply it directly to any `@PaperParcel` class to apply the rules:
+
+```java
+@MyOptions
+@PaperParcel
+public class Example implements Parcelable {
+  ...
+}
+```
 
 ## Model Conventions
 

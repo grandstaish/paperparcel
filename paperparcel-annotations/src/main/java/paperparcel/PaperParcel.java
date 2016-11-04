@@ -16,12 +16,16 @@
 
 package paperparcel;
 
+import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.lang.reflect.Modifier;
 
+import static java.lang.annotation.ElementType.ANNOTATION_TYPE;
 import static java.lang.annotation.ElementType.TYPE;
-import static java.lang.annotation.RetentionPolicy.CLASS;
+import static java.lang.annotation.RetentionPolicy.RUNTIME;
+import static java.lang.annotation.RetentionPolicy.SOURCE;
 
 /**
  * Annotates {@code Parcelable} classes to automatically generate the {@code Parcelable.Creator}
@@ -58,7 +62,86 @@ import static java.lang.annotation.RetentionPolicy.CLASS;
  * an interface, or an abstract class.
  */
 @Documented
-@Retention(CLASS)
+@Retention(RUNTIME)
 @Target(TYPE)
 public @interface PaperParcel {
+  /**
+   * Options for configuring how the {@code PaperParcelProcessor} should handle parsing the
+   * annotated class.
+   *
+   * This annotation can be applied directly to an {@code PaperParcel}-annotated class like so:
+   * <pre><code>
+   * {@literal @}PaperParcel.Options(...)
+   * {@literal @}PaperParcel
+   * public final class User implements Parcelable {
+   *   String username;
+   *   String password;
+   *   // ...
+   * }
+   * </code></pre>
+   *
+   * <p>Defining {@code Options} in this manner can become tedious if you want to apply the same
+   * options to many (or all) of your model objects. For a more reusable strategy, you may wish to
+   * create a custom annotation which will define all of the rules you wish to apply; then use your
+   * custom annotation on your {@code PaperParcel} classes instead. Here's an example of a custom
+   * annotation that has {@code Options} applied to it:
+   * <pre><code>
+   * {@literal @}PaperParcel.Options(...)
+   * {@literal @}Retention(RetentionPolicy.SOURCE)
+   * {@literal @}Target(ElementType.TYPE)
+   * public {@literal @}interface MyOptions {
+   * }
+   * </code></pre>
+   *
+   * <p>Now {@code MyOptions} could be applied to any {@code PaperParcel} class to apply the
+   * rules associated with it:
+   * <pre><code>
+   * {@literal @}MyOptions
+   * {@literal @}PaperParcel
+   * public final class User implements Parcelable {
+   *   String username;
+   *   String password;
+   *   // ...
+   * }
+   * </code></pre>
+   */
+  @Documented
+  @Retention(SOURCE)
+  @Target({ ANNOTATION_TYPE, TYPE })
+  @interface Options {
+    /**
+     * Configures PaperParcel to exclude any field in the annotated class that is annotated with
+     * any of the given annotations.
+     */
+    Class<? extends Annotation>[] excludeAnnotations() default {};
+
+    /**
+     * Configures PaperParcel to only include fields in the annotated class that are annotated with
+     * any of the given annotations.
+     *
+     * <p>This API only works when returning {@code true} from {@link #excludeNonExposedFields()}.
+     *
+     * @see #excludeNonExposedFields()
+     */
+    Class<? extends Annotation>[] exposeAnnotations() default {};
+
+    /**
+     * Configures PaperParcel to exclude all fields that are not annotated by one of the
+     * annotations returned by {@link #exposeAnnotations()}. This is useful in a style of
+     * programming where you want to explicitly specify all fields that should be considered for
+     * parcelling.
+     *
+     * @see #exposeAnnotations()
+     */
+    boolean excludeNonExposedFields() default false;
+
+    /**
+     * Configures PaperParcel to exclude any field in the annotated class that has specific
+     * modifiers or combinations of modifiers. The int values returned by this method must be
+     * {@link Modifier} constants.
+     *
+     * <p>By default any {@code transient} or {@code static} field is excluded.
+     */
+    int[] excludeModifiers() default { Modifier.TRANSIENT, Modifier.STATIC };
+  }
 }

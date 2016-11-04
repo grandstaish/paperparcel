@@ -21,6 +21,7 @@ import com.google.auto.common.MoreElements;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -76,10 +77,15 @@ final class PaperParcelValidator {
     if (!Utils.isParcelable(elements, types, element.asType())) {
       builder.addError(ErrorMessages.PAPERPARCEL_ON_NON_PARCELABLE);
     }
+    Options options = Utils.getOptions(element);
+    if (options.excludeNonExposedFields()
+        && options.exposeAnnotationNames().isEmpty()) {
+      builder.addError(ErrorMessages.OPTIONS_NO_EXPOSE_ANNOTATIONS, element, options.mirror());
+    }
     WriteInfo writeInfo = null;
     ReadInfo readInfo = null;
     if (!Utils.isSingleton(types, element)) {
-      ImmutableList<VariableElement> fields = Utils.getLocalAndInheritedFields(types, element);
+      ImmutableList<VariableElement> fields = Utils.getFieldsToParcel(types, element);
       ImmutableList<ExecutableElement> methods =
           Utils.getLocalAndInheritedMethods(elements, types, element);
       ImmutableList<ExecutableElement> constructors = Utils.orderedConstructorsIn(element);

@@ -24,14 +24,14 @@ Version 2.0.0 *(TBD)*
  * Renamed `DefaultAdapter` to `RegisterAdapter` and removed all other types of adapter scoping
    (field and class scopes) as they served no purpose
  * Force annotated classes to implement `Parcelable` as wrappers have been removed
- * Add `@Exclude` annotation to exclude individual fields
  * Add better java support. Non-private fields can be read/written directly when re-creating
    instances of the model class. Any combination of direct access, getters, setters, and
    constructor arguments will be used to read/write model objects to a `Parcel`
  * Removed old kotlin hack that worked around a bug in kapt. As a result, v2.0 will only
-   work with kapt2 (which is available in Kotlin 1.0.4+)
+   work with kapt2 (which is available in Kotlin 1.0.5+)
+ * Add a more powerful abstraction for excluding fields
  * Use android support annotations instead of jetbrains annotations
- * Package paperparcel as an AAR, including proguard rules (currently there are none)
+ * Package paperparcel as an AAR (including proguard rules)
  * Adapter instances are defined as constants to reduce the amount of allocations when parcelling.
    All default adapters are singleton instances where they can be. 
  * Method count of output greatly reduced (as well as output being cleaner and easier to understand)

@@ -49,6 +49,10 @@ final class ErrorMessages {
       "No field match found for the constructor parameter \"%1$s\" in %2$s. Constructor "
           + "arguments are matched with fields via their name and type";
 
+  /* @PaperParcel.Options errors */
+  static final String OPTIONS_NO_EXPOSE_ANNOTATIONS =
+      "No expose annotations returned from exposeAnnotations().";
+
   /* Adapter errors */
   static final String INCOMPATIBLE_TYPE_PARAMETERS =
       "TypeAdapter defined with incompatible type parameters.";

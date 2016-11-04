@@ -170,7 +170,7 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
             TypeName typeName = TypeName.get(resolvedExecutableType.getReturnType());
             ParameterSpec.Builder spec = ParameterSpec.builder(typeName, entry.getKey());
             AnnotationMirror nullableAnnotation =
-                Utils.getAnnotationWithNameOrNull(entry.getValue(), NULLABLE_ANNOTATION_NAME);
+                Utils.getAnnotationWithSimpleName(entry.getValue(), NULLABLE_ANNOTATION_NAME);
             if (nullableAnnotation != null) {
               spec.addAnnotation(AnnotationSpec.get(nullableAnnotation));
             }
