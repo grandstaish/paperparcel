@@ -29,7 +29,7 @@ public final class ShortAdapter extends AbstractAdapter<Short> {
   }
 
   @Override protected void write(@NonNull Short value, @NonNull Parcel dest, int flags) {
-    dest.writeInt(value);
+    dest.writeInt(value.intValue());
   }
 
   private ShortAdapter() {}
