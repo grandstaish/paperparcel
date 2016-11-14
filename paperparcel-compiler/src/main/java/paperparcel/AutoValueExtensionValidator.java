@@ -62,7 +62,7 @@ final class AutoValueExtensionValidator {
   private Optional<ExecutableElement> findWriteToParcel(TypeElement subject) {
     TypeMirror parcel = elements.getTypeElement("android.os.Parcel").asType();
     ImmutableSet<ExecutableElement> methods =
-        MoreElements.getLocalAndInheritedMethods(subject, types, elements);
+        MoreElements.getLocalAndInheritedMethods(subject, elements);
     for (ExecutableElement element : methods) {
       if (element.getSimpleName().contentEquals("writeToParcel")
           && MoreTypes.isTypeOf(void.class, element.getReturnType())
