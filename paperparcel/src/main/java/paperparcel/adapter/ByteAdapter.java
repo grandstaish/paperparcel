@@ -25,11 +25,11 @@ public final class ByteAdapter extends AbstractAdapter<Byte> {
   public static final ByteAdapter INSTANCE = new ByteAdapter();
 
   @NonNull @Override protected Byte read(@NonNull Parcel source) {
-    return (byte) source.readInt();
+    return source.readByte();
   }
 
   @Override protected void write(@NonNull Byte value, @NonNull Parcel dest, int flags) {
-    dest.writeInt(value);
+    dest.writeByte(value);
   }
 
   private ByteAdapter() {}
