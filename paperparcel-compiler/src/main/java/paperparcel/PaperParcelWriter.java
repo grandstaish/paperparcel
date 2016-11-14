@@ -254,7 +254,7 @@ final class PaperParcelWriter {
       } else if (TypeName.CHAR.equals(fieldTypeName)) {
         builder.addStatement("$N.writeInt($L)", dest, accessorBlock);
       } else if (TypeName.BYTE.equals(fieldTypeName)) {
-        builder.addStatement("$N.writeInt($L)", dest, accessorBlock);
+        builder.addStatement("$N.writeByte($L)", dest, accessorBlock);
       } else if (TypeName.SHORT.equals(fieldTypeName)) {
         builder.addStatement("$N.writeInt($L)", dest, accessorBlock);
       } else {
