@@ -104,9 +104,10 @@ final class Utils {
    * Returns a list of all non-private local and inherited methods (excluding methods
    * defined in {@link Object})
    */
-  @SuppressWarnings("UnusedParameters") // Will be used when using auto-common 0.8 (after kapt is fixed)
   static ImmutableList<ExecutableElement> getLocalAndInheritedMethods(
       Elements elements, Types types, TypeElement element) {
+    // TODO(brad): use the new overload for getLocalAndInheritedMethods once JetBrains has
+    // fixed https://youtrack.jetbrains.com/issue/KT-14613
     return FluentIterable.from(MoreElements.getLocalAndInheritedMethods(element, elements))
         .filter(new Predicate<ExecutableElement>() {
           @Override public boolean apply(ExecutableElement method) {

@@ -16,7 +16,6 @@
 
 package paperparcel;
 
-import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
 import com.google.auto.service.AutoService;
 import com.google.auto.value.extension.AutoValueExtension;
@@ -194,8 +193,9 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
     ProcessingEnvironment env = context.processingEnvironment();
     TypeElement autoValueTypeElement = context.autoValueClass();
     Elements elements = env.getElementUtils();
-    ImmutableSet<ExecutableElement> methods =
-        MoreElements.getLocalAndInheritedMethods(autoValueTypeElement, elements);
+    Types types = env.getTypeUtils();
+    ImmutableList<ExecutableElement> methods =
+        Utils.getLocalAndInheritedMethods(elements, types, autoValueTypeElement);
     for (ExecutableElement element : methods) {
       if (element.getSimpleName().contentEquals("describeContents")
           && MoreTypes.isTypeOf(int.class, element.getReturnType())
