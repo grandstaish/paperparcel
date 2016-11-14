@@ -106,7 +106,9 @@ final class Utils {
    */
   static ImmutableList<ExecutableElement> getLocalAndInheritedMethods(
       Elements elements, Types types, TypeElement element) {
-    return FluentIterable.from(MoreElements.getLocalAndInheritedMethods(element, types, elements))
+    // TODO(brad): use the new overload for getLocalAndInheritedMethods once JetBrains has
+    // fixed https://youtrack.jetbrains.com/issue/KT-14613
+    return FluentIterable.from(MoreElements.getLocalAndInheritedMethods(element, elements))
         .filter(new Predicate<ExecutableElement>() {
           @Override public boolean apply(ExecutableElement method) {
             // Filter out any methods defined in java.lang.Object as they are just
