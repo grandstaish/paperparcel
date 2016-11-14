@@ -74,7 +74,14 @@ abstract class Adapter {
       this.adapterRegistry = adapterRegistry;
     }
 
+    /**
+     * Factory for creating Adapter instances for {@code fieldType}. {@code fieldType} must not
+     * be a primitive type. If {@code fieldType} is an unknown type, this method returns null.
+     */
     @Nullable Adapter create(TypeMirror fieldType) {
+      if (fieldType.getKind().isPrimitive()) {
+        throw new IllegalArgumentException("Primitive types do not need a TypeAdapter.");
+      }
       TypeName fieldTypeName = TypeName.get(fieldType);
       final Optional<Adapter> cached = adapterRegistry.getAdapterFor(fieldTypeName);
       if (cached.isPresent()) {
