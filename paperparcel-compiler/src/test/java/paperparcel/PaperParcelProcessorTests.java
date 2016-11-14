@@ -396,7 +396,7 @@ public class PaperParcelProcessorTests {
             "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
             "    dest.writeInt(data.aa ? 1 : 0);",
             "    BooleanAdapter.INSTANCE.writeToParcel(data.ab, dest, flags);",
-            "    dest.writeInt(data.ac);",
+            "    dest.writeByte(data.ac);",
             "    ByteAdapter.INSTANCE.writeToParcel(data.ad, dest, flags);",
             "    BundleAdapter.INSTANCE.writeToParcel(data.ae, dest, flags);",
             "    CharSequenceAdapter.INSTANCE.writeToParcel(data.af, dest, flags);",
