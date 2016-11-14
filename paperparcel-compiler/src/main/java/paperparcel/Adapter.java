@@ -75,7 +75,7 @@ abstract class Adapter {
     }
 
     /**
-     * Factory for creating Adapter instances for {@code fieldType}. {@code fieldType} must not
+     * Factory for creating an Adapter instance for {@code fieldType}. {@code fieldType} must not
      * be a primitive type. If {@code fieldType} is an unknown type, this method returns null.
      */
     @Nullable Adapter create(TypeMirror fieldType) {
