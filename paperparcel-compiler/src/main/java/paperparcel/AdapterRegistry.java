@@ -96,11 +96,11 @@ final class AdapterRegistry {
     return ImmutableList.copyOf(adapterNames);
   }
 
-  void registerAdapterFor(TypeName normalizedType, Adapter adapter) {
-    adapters.put(normalizedType, adapter);
+  void registerAdapterFor(TypeName fieldType, Adapter adapter) {
+    adapters.put(fieldType, adapter);
   }
 
-  Optional<Adapter> getAdapterFor(TypeName normalizedType) {
-    return Optional.fromNullable(adapters.get(normalizedType));
+  Optional<Adapter> getAdapterFor(TypeName fieldType) {
+    return Optional.fromNullable(adapters.get(fieldType));
   }
 }

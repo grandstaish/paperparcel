@@ -40,6 +40,7 @@ import com.squareup.javapoet.WildcardTypeName;
 import java.util.Map;
 import java.util.Set;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Name;
 
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
@@ -134,11 +135,33 @@ final class PaperParcelWriter {
 
   @SuppressWarnings("ConstantConditions")
   private void readField(CodeBlock.Builder block, FieldDescriptor field, ParameterSpec in) {
-    Adapter adapter = descriptor.adapters().get(field);
     TypeName fieldTypeName = TypeName.get(field.type().get());
-    CodeBlock adapterInstance = adapterInstance(adapter);
-    block.addStatement("$T $N = $L.readFromParcel($N)",
-        fieldTypeName, field.name(), adapterInstance, in);
+    if (fieldTypeName.isPrimitive()) {
+      if (TypeName.BOOLEAN.equals(fieldTypeName)) {
+        block.addStatement("$T $N = $N.readInt() == 1", fieldTypeName, field.name(), in);
+      } else if (TypeName.INT.equals(fieldTypeName)) {
+        block.addStatement("$T $N = $N.readInt()", fieldTypeName, field.name(), in);
+      } else if (TypeName.LONG.equals(fieldTypeName)) {
+        block.addStatement("$T $N = $N.readLong()", fieldTypeName, field.name(), in);
+      } else if (TypeName.DOUBLE.equals(fieldTypeName)) {
+        block.addStatement("$T $N = $N.readDouble()", fieldTypeName, field.name(), in);
+      } else if (TypeName.FLOAT.equals(fieldTypeName)) {
+        block.addStatement("$T $N = $N.readFloat()", fieldTypeName, field.name(), in);
+      } else if (TypeName.CHAR.equals(fieldTypeName)) {
+        block.addStatement("$T $N = (char) $N.readInt()", fieldTypeName, field.name(), in);
+      } else if (TypeName.BYTE.equals(fieldTypeName)) {
+        block.addStatement("$T $N = $N.readByte()", fieldTypeName, field.name(), in);
+      } else if (TypeName.SHORT.equals(fieldTypeName)) {
+        block.addStatement("$T $N = (short) $N.readInt()", fieldTypeName, field.name(), in);
+      } else {
+        throw new IllegalArgumentException("Unknown primitive type: " + fieldTypeName);
+      }
+    } else {
+      Adapter adapter = descriptor.adapters().get(field);
+      CodeBlock adapterInstance = adapterInstance(adapter);
+      block.addStatement("$T $N = $L.readFromParcel($N)", fieldTypeName, field.name(),
+          adapterInstance, in);
+    }
   }
 
   private CodeBlock createModel(ClassName className) {
@@ -189,25 +212,60 @@ final class PaperParcelWriter {
     if (!descriptor.isSingleton()) {
       ReadInfo readInfo = descriptor.readInfo();
       Preconditions.checkNotNull(readInfo);
+
       ImmutableList<FieldDescriptor> readableFields = readInfo.readableFields();
       for (FieldDescriptor field : readableFields) {
-        Adapter adapter = descriptor.adapters().get(field);
-        CodeBlock adapterInstance = adapterInstance(adapter);
-        builder.addStatement("$L.writeToParcel($N.$N, $N, $N)",
-            adapterInstance, FIELD_NAME, field.name(), dest, flags);
+        CodeBlock accessorBlock = CodeBlock.of("$N.$N", FIELD_NAME, field.name());
+        writeField(builder, field, accessorBlock, dest, flags);
       }
 
       ImmutableSet<Map.Entry<FieldDescriptor, ExecutableElement>> fieldGetterEntries =
           readInfo.getterMethodMap().entrySet();
       for (Map.Entry<FieldDescriptor, ExecutableElement> fieldGetterEntry : fieldGetterEntries) {
-        Adapter adapter = descriptor.adapters().get(fieldGetterEntry.getKey());
-        CodeBlock adapterInstance = adapterInstance(adapter);
-        builder.addStatement("$L.writeToParcel($N.$N(), $N, $N)",
-            adapterInstance, FIELD_NAME, fieldGetterEntry.getValue().getSimpleName(), dest, flags);
+        FieldDescriptor field = fieldGetterEntry.getKey();
+        Name accessorMethodName = fieldGetterEntry.getValue().getSimpleName();
+        CodeBlock accessorBlock = CodeBlock.of("$N.$N()", FIELD_NAME, accessorMethodName);
+        writeField(builder, field, accessorBlock, dest, flags);
       }
     }
 
     return builder.build();
+  }
+
+  @SuppressWarnings("ConstantConditions")
+  private void writeField(
+      MethodSpec.Builder builder,
+      FieldDescriptor field,
+      CodeBlock accessorBlock,
+      ParameterSpec dest,
+      ParameterSpec flags) {
+    TypeName fieldTypeName = TypeName.get(field.type().get());
+    if (fieldTypeName.isPrimitive()) {
+      if (TypeName.BOOLEAN.equals(fieldTypeName)) {
+        builder.addStatement("$N.writeInt($L ? 1 : 0)", dest, accessorBlock);
+      } else if (TypeName.INT.equals(fieldTypeName)) {
+        builder.addStatement("$N.writeInt($L)", dest, accessorBlock);
+      } else if (TypeName.LONG.equals(fieldTypeName)) {
+        builder.addStatement("$N.writeLong($L)", dest, accessorBlock);
+      } else if (TypeName.DOUBLE.equals(fieldTypeName)) {
+        builder.addStatement("$N.writeDouble($L)", dest, accessorBlock);
+      } else if (TypeName.FLOAT.equals(fieldTypeName)) {
+        builder.addStatement("$N.writeFloat($L)", dest, accessorBlock);
+      } else if (TypeName.CHAR.equals(fieldTypeName)) {
+        builder.addStatement("$N.writeInt($L)", dest, accessorBlock);
+      } else if (TypeName.BYTE.equals(fieldTypeName)) {
+        builder.addStatement("$N.writeInt($L)", dest, accessorBlock);
+      } else if (TypeName.SHORT.equals(fieldTypeName)) {
+        builder.addStatement("$N.writeInt($L)", dest, accessorBlock);
+      } else {
+        throw new IllegalArgumentException("Unknown primitive type: " + fieldTypeName);
+      }
+    } else {
+      Adapter adapter = descriptor.adapters().get(field);
+      CodeBlock adapterInstance = adapterInstance(adapter);
+      builder.addStatement("$L.writeToParcel($L, $N, $N)", adapterInstance, accessorBlock, dest,
+          flags);
+    }
   }
 
   private CodeBlock adapterInstance(Adapter adapter) {

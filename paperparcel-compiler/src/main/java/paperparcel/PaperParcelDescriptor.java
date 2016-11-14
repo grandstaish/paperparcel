@@ -18,8 +18,10 @@ package paperparcel;
 
 import android.support.annotation.Nullable;
 import com.google.auto.value.AutoValue;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
 /** Represents a {@link PaperParcel} annotated object */
@@ -68,13 +70,22 @@ abstract class PaperParcelDescriptor {
       ImmutableMap.Builder<FieldDescriptor, Adapter> fieldAdapterMap = ImmutableMap.builder();
       if (readInfo != null) {
         for (FieldDescriptor field : readInfo.readableFields()) {
-          fieldAdapterMap.put(field, adapterFactory.create(field.type().get()));
+          addAdapterForField(fieldAdapterMap, field);
         }
         for (FieldDescriptor field : readInfo.getterMethodMap().keySet()) {
-          fieldAdapterMap.put(field, adapterFactory.create(field.type().get()));
+          addAdapterForField(fieldAdapterMap, field);
         }
       }
       return fieldAdapterMap.build();
+    }
+
+    private void addAdapterForField(
+        ImmutableMap.Builder<FieldDescriptor, Adapter> fieldAdapterMap, FieldDescriptor field) {
+      TypeMirror fieldType = field.type().get();
+      Preconditions.checkNotNull(fieldType);
+      if (!fieldType.getKind().isPrimitive()) {
+        fieldAdapterMap.put(field, adapterFactory.create(fieldType));
+      }
     }
   }
 }

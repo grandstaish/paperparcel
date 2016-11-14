@@ -47,8 +47,8 @@ abstract class FieldDescriptor {
     FieldDescriptor create(VariableElement element) {
       String name = element.getSimpleName().toString();
       TypeMirror type = element.asType();
-      TypeMirror normalizedType = Utils.normalize(types, type);
-      Equivalence.Wrapper<TypeMirror> wrappedType = MoreTypes.equivalence().wrap(normalizedType);
+      TypeMirror fieldType = Utils.eraseTypeVariables(types, type);
+      Equivalence.Wrapper<TypeMirror> wrappedType = MoreTypes.equivalence().wrap(fieldType);
       return new AutoValue_FieldDescriptor(element, name, wrappedType);
     }
   }

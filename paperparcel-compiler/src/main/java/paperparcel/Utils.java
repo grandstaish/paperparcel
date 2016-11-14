@@ -350,44 +350,36 @@ final class Utils {
     return types.isAssignable(type, parcelableType);
   }
 
-  /**
-   * Boxes primitive types and replaces any type variables with their upper bounds as they will
-   * not be able to be used from a static context.
-   */
-  static TypeMirror normalize(Types types, TypeMirror type) {
-    TypeKind kind = type.getKind();
-    if (kind.isPrimitive()) {
-      return types.boxedClass((PrimitiveType) type).asType();
-    } else {
-      return type.accept(new SimpleTypeVisitor6<TypeMirror, Types>() {
-        @Override public TypeMirror visitArray(ArrayType type, Types types) {
-          return types.getArrayType(type.getComponentType().accept(this, types));
-        }
+  /** Replaces any type variables with their upper bounds. */
+  static TypeMirror eraseTypeVariables(Types types, TypeMirror type) {
+    return type.accept(new SimpleTypeVisitor6<TypeMirror, Types>() {
+      @Override public TypeMirror visitArray(ArrayType type, Types types) {
+        return types.getArrayType(type.getComponentType().accept(this, types));
+      }
 
-        @Override public TypeMirror visitDeclared(DeclaredType type, Types types) {
-          TypeElement element = MoreTypes.asTypeElement(type);
-          List<? extends TypeMirror> args = type.getTypeArguments();
-          TypeMirror[] strippedArgs = new TypeMirror[args.size()];
-          for (int i = 0; i < args.size(); i++) {
-            TypeMirror arg = args.get(i);
-            strippedArgs[i] = arg.accept(this, types);
-          }
-          return types.getDeclaredType(element, strippedArgs);
+      @Override public TypeMirror visitDeclared(DeclaredType type, Types types) {
+        TypeElement element = MoreTypes.asTypeElement(type);
+        List<? extends TypeMirror> args = type.getTypeArguments();
+        TypeMirror[] strippedArgs = new TypeMirror[args.size()];
+        for (int i = 0; i < args.size(); i++) {
+          TypeMirror arg = args.get(i);
+          strippedArgs[i] = arg.accept(this, types);
         }
+        return types.getDeclaredType(element, strippedArgs);
+      }
 
-        @Override public TypeMirror visitWildcard(WildcardType type, Types types) {
-          return types.getWildcardType(type.getExtendsBound().accept(this, types), null);
-        }
+      @Override public TypeMirror visitWildcard(WildcardType type, Types types) {
+        return types.getWildcardType(type.getExtendsBound().accept(this, types), null);
+      }
 
-        @Override public TypeMirror visitPrimitive(PrimitiveType type, Types types) {
-          return type;
-        }
+      @Override public TypeMirror visitPrimitive(PrimitiveType type, Types types) {
+        return type;
+      }
 
-        @Override public TypeMirror visitTypeVariable(TypeVariable type, Types types) {
-          return type.getUpperBound().accept(this, types);
-        }
-      }, types);
-    }
+      @Override public TypeMirror visitTypeVariable(TypeVariable type, Types types) {
+        return type.getUpperBound().accept(this, types);
+      }
+    }, types);
   }
 
   /** Finds an annotation with the given name on the given element, or null if not found. */
