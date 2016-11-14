@@ -8,14 +8,12 @@ ext.kotlin_version = '1.0.5'
 allprojects {
   repositories {
     jcenter()
-    maven { url "https://dl.bintray.com/kotlin/kotlin-eap" }
   }
 
   buildscript {
     repositories {
       jcenter()
       maven { url "https://plugins.gradle.org/m2/" }
-      maven { url "https://dl.bintray.com/kotlin/kotlin-eap" }
     }
 
     dependencies {
