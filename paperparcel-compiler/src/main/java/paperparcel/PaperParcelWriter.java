@@ -17,16 +17,13 @@
 package paperparcel;
 
 import android.support.annotation.NonNull;
-import com.google.common.base.CaseFormat;
 import com.google.common.base.Function;
-import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.squareup.javapoet.ArrayTypeName;
 import com.squareup.javapoet.ClassName;
@@ -37,7 +34,6 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
-import com.squareup.javapoet.WildcardTypeName;
 import java.util.Map;
 import java.util.Set;
 import javax.lang.model.element.ExecutableElement;
@@ -55,8 +51,7 @@ import static javax.lang.model.element.Modifier.STATIC;
 final class PaperParcelWriter {
   private static final ClassName PARCEL = ClassName.get("android.os", "Parcel");
 
-  private final Map<TypeName, String> typeToNames = Maps.newLinkedHashMap();
-  private final UniqueNameSet adapterNames = new UniqueNameSet("_");
+  private final AdapterNameGenerator adapterNames = new AdapterNameGenerator();
 
   private final ClassName name;
   private final PaperParcelDescriptor descriptor;
@@ -82,7 +77,7 @@ final class PaperParcelWriter {
     UniqueNameSet readNames = new UniqueNameSet();
 
     // Adds the adapter names to the scope
-    for (String name : typeToNames.values()) {
+    for (String name : adapterNames.cachedNames()) {
       readNames.getUniqueName(name);
     }
 
@@ -313,7 +308,7 @@ final class PaperParcelWriter {
     if (adapter.isSingleton()) {
       adapterInstance = CodeBlock.of("$T.INSTANCE", adapter.typeName());
     } else {
-      adapterInstance = CodeBlock.of("$N", getConstantName(adapter.typeName()));
+      adapterInstance = CodeBlock.of("$N", adapterNames.getName(adapter.typeName()));
     }
     return adapterInstance;
   }
@@ -339,7 +334,7 @@ final class PaperParcelWriter {
           adapterFields.addAll(adapterDependenciesInternal(adapter.dependencies(), scoped));
         }
         // Construct the single instance of this type adapter
-        String adapterName = getConstantName(adapter.typeName());
+        String adapterName = adapterNames.getName(adapter.typeName());
         CodeBlock parameters = getAdapterParameterList(adapter.dependencies());
         FieldSpec.Builder adapterSpec =
             FieldSpec.builder(adapter.typeName(), adapterName, PRIVATE, STATIC, FINAL)
@@ -364,58 +359,5 @@ final class PaperParcelWriter {
         .toList(), ", ");
   }
 
-  /**
-   * Creates a name based on the given {@link TypeName}. Names are constants, so will use
-   * {@link CaseFormat#UPPER_UNDERSCORE} formatting.
-   */
-  private String getConstantName(TypeName typeName) {
-    String name = typeToNames.get(typeName);
-    if (name != null) {
-      return name;
-    }
-    name = getConstantNameInternal(typeName);
-    name = CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, name);
-    name = adapterNames.getUniqueName(name);
-    typeToNames.put(typeName, name);
-    return name;
-  }
 
-  private String getConstantNameInternal(TypeName typeName) {
-    String adapterName = null;
-    if (typeName instanceof WildcardTypeName) {
-      WildcardTypeName wildcardTypeName = (WildcardTypeName) typeName;
-      String upperBoundsPart = "";
-      String lowerBoundsPart = "";
-      for (TypeName upperBound : wildcardTypeName.upperBounds) {
-        upperBoundsPart += getConstantNameInternal(upperBound);
-      }
-      for (TypeName lowerBound : wildcardTypeName.lowerBounds) {
-        lowerBoundsPart += getConstantNameInternal(lowerBound);
-      }
-      adapterName = upperBoundsPart + lowerBoundsPart;
-    }
-    if (typeName instanceof ArrayTypeName) {
-      ArrayTypeName arrayTypeName = (ArrayTypeName) typeName;
-      adapterName = getConstantNameInternal(arrayTypeName.componentType) + "Array";
-    }
-    if (typeName instanceof ParameterizedTypeName) {
-      ParameterizedTypeName parameterizedTypeName = (ParameterizedTypeName) typeName;
-      String paramPart = "";
-      for (TypeName param : parameterizedTypeName.typeArguments) {
-        paramPart += getConstantNameInternal(param);
-      }
-      adapterName = paramPart + parameterizedTypeName.rawType.simpleName();
-    }
-    if (typeName instanceof ClassName) {
-      ClassName className = (ClassName) typeName;
-      adapterName = Joiner.on("_").join(className.simpleNames());
-    }
-    if (typeName.isPrimitive()) {
-      adapterName = typeName.toString();
-    }
-    if (adapterName == null) {
-      throw new AssertionError();
-    }
-    return adapterName;
-  }
 }
