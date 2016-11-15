@@ -76,11 +76,6 @@ final class PaperParcelWriter {
   private FieldSpec creator(ClassName className) {
     UniqueNameSet readNames = new UniqueNameSet();
 
-    // Adds the adapter names to the scope
-    for (String name : adapterNames.cachedNames()) {
-      readNames.getUniqueName(name);
-    }
-
     ClassName creator = ClassName.get("android.os", "Parcelable", "Creator");
     TypeName creatorOfClass = ParameterizedTypeName.get(creator, className);
 
@@ -308,7 +303,7 @@ final class PaperParcelWriter {
     if (adapter.isSingleton()) {
       adapterInstance = CodeBlock.of("$T.INSTANCE", adapter.typeName());
     } else {
-      adapterInstance = CodeBlock.of("$N", adapterNames.getName(adapter.typeName()));
+      adapterInstance = CodeBlock.of("$T.$N", name, adapterNames.getName(adapter.typeName()));
     }
     return adapterInstance;
   }
