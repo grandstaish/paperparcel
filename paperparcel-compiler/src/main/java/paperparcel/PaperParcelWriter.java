@@ -358,6 +358,4 @@ final class PaperParcelWriter {
         })
         .toList(), ", ");
   }
-
-
 }
