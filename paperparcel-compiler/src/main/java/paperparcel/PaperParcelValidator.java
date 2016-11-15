@@ -21,7 +21,6 @@ import com.google.auto.common.MoreElements;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -181,11 +180,11 @@ final class PaperParcelValidator {
 
   private void ensureAdaptersExistForField(
       VariableElement field, ValidationReport.Builder<TypeElement> builder) {
-    TypeMirror normalizedType = Utils.normalize(types, field.asType());
-    if (adapterFactory.create(normalizedType) == null) {
+    TypeMirror fieldType = Utils.eraseTypeVariables(types, field.asType());
+    if (!fieldType.getKind().isPrimitive() && adapterFactory.create(fieldType) == null) {
       builder.addError(
           String.format(ErrorMessages.MISSING_TYPE_ADAPTER,
-              normalizedType.toString(),
+              fieldType.toString(),
               ErrorMessages.SITE_URL),
           field);
     }

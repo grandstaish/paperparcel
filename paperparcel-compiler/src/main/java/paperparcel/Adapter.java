@@ -74,9 +74,16 @@ abstract class Adapter {
       this.adapterRegistry = adapterRegistry;
     }
 
-    @Nullable Adapter create(TypeMirror normalizedType) {
-      TypeName normalizedTypeName = TypeName.get(normalizedType);
-      final Optional<Adapter> cached = adapterRegistry.getAdapterFor(normalizedTypeName);
+    /**
+     * Factory for creating an Adapter instance for {@code fieldType}. {@code fieldType} must not
+     * be a primitive type. If {@code fieldType} is an unknown type, this method returns null.
+     */
+    @Nullable Adapter create(TypeMirror fieldType) {
+      if (fieldType.getKind().isPrimitive()) {
+        throw new IllegalArgumentException("Primitive types do not need a TypeAdapter.");
+      }
+      TypeName fieldTypeName = TypeName.get(fieldType);
+      final Optional<Adapter> cached = adapterRegistry.getAdapterFor(fieldTypeName);
       if (cached.isPresent()) {
         return cached.get();
       }
@@ -87,18 +94,18 @@ abstract class Adapter {
         TypeMirror adapterType = adapterElement.asType();
         TypeMirror adaptedType =
             Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(adapterType));
-        TypeMirror[] typeArguments = findTypeArguments(adapterElement, adaptedType, normalizedType);
+        TypeMirror[] typeArguments = findTypeArguments(adapterElement, adaptedType, fieldType);
         if (typeArguments == null
             || adapterElement.getTypeParameters().size() != typeArguments.length) continue;
         DeclaredType resolvedAdapterType = types.getDeclaredType(adapterElement, typeArguments);
         TypeMirror resolvedAdaptedType = Utils.getAdaptedType(elements, types, resolvedAdapterType);
-        if (!types.isSameType(resolvedAdaptedType, normalizedType)) continue;
+        if (!types.isSameType(resolvedAdaptedType, fieldType)) continue;
         ImmutableList<Adapter> dependencies = findDependencies(adapterElement, resolvedAdapterType);
         if (dependencies == null) continue;
         TypeName typeName = TypeName.get(resolvedAdapterType);
         boolean isSingleton = Utils.isSingleton(types, adapterElement);
         Adapter adapter = new AutoValue_Adapter(dependencies, isSingleton, typeName);
-        adapterRegistry.registerAdapterFor(normalizedTypeName, adapter);
+        adapterRegistry.registerAdapterFor(fieldTypeName, adapter);
         return adapter;
       }
       return null;
@@ -123,11 +130,11 @@ abstract class Adapter {
     }
 
     @Nullable private TypeMirror[] findTypeArguments(
-        TypeElement adapterElement, TypeMirror adaptedType, TypeMirror normalizedType) {
+        TypeElement adapterElement, TypeMirror adaptedType, TypeMirror fieldType) {
       if (adaptedType instanceof TypeVariable) {
         TypeMirror erased = types.erasure(adaptedType);
-        if (types.isAssignable(normalizedType, erased)) {
-          return new TypeMirror[] { normalizedType };
+        if (types.isAssignable(fieldType, erased)) {
+          return new TypeMirror[] { fieldType };
         }
         return null;
       } else {
@@ -135,7 +142,7 @@ abstract class Adapter {
         TypeMirror[] typeArguments = new TypeMirror[parameters.size()];
         for (int i = 0; i < parameters.size(); i++) {
           TypeParameterElement adapterParameter = parameters.get(i);
-          TypeMirror arg = findArgument(adapterParameter, adaptedType, normalizedType);
+          TypeMirror arg = findArgument(adapterParameter, adaptedType, fieldType);
           if (arg == null) return null;
           typeArguments[i] = arg;
         }
@@ -144,7 +151,7 @@ abstract class Adapter {
     }
 
     @Nullable private TypeMirror findArgument(
-        TypeParameterElement parameter, TypeMirror adaptedType, TypeMirror normalizedType) {
+        TypeParameterElement parameter, TypeMirror adaptedType, TypeMirror fieldType) {
       final String target = parameter.getSimpleName().toString();
       return adaptedType.accept(new SimpleTypeVisitor6<TypeMirror, TypeMirror>() {
         @Override
@@ -199,7 +206,7 @@ abstract class Adapter {
           }
           return result;
         }
-      }, normalizedType);
+      }, fieldType);
     }
   }
 }
