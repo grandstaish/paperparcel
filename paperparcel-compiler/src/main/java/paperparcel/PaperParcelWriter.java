@@ -104,11 +104,8 @@ final class PaperParcelWriter {
       for (FieldSpec field : fieldMap.values()) {
         createFromParcel.addStatement("$T $N = $L", field.type, field.name, field.initializer);
       }
-
-      // Construct the model
+      // Re-construct the model and return
       FieldSpec model = initModel(className, readNames, fieldMap);
-
-      // Populate the non-constructor data and return
       createFromParcel.addStatement("$T $N = $L", model.type, model.name, model.initializer)
           .addCode(setFields(model, fieldMap))
           .addStatement("return $N", model.name);
