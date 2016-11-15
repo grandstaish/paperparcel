@@ -57,14 +57,14 @@ final class PaperParcelWriter {
 
   private final ClassName name;
   private final PaperParcelDescriptor descriptor;
-  private final Map<TypeName, String> nameCache;
+  private final Map<TypeName, String> classScopedNameCache;
 
   PaperParcelWriter(
       ClassName name,
       PaperParcelDescriptor descriptor) {
     this.name = name;
     this.descriptor = descriptor;
-    this.nameCache = Maps.newLinkedHashMap();
+    this.classScopedNameCache = Maps.newLinkedHashMap();
   }
 
   final TypeSpec.Builder write() {
@@ -273,7 +273,7 @@ final class PaperParcelWriter {
     if (adapter.isSingleton()) {
       adapterInstance = CodeBlock.of("$T.INSTANCE", adapter.typeName());
     } else {
-      adapterInstance = CodeBlock.of("$N", getName(adapter.typeName()));
+      adapterInstance = CodeBlock.of("$N", getConstantName(adapter.typeName()));
     }
     return adapterInstance;
   }
@@ -294,7 +294,7 @@ final class PaperParcelWriter {
           adapterFields.addAll(adapterDependencies(adapter.dependencies(), scoped));
         }
         // Construct the single instance of this type adapter
-        String adapterName = getName(adapter.typeName());
+        String adapterName = getConstantName(adapter.typeName());
         CodeBlock parameters = getAdapterParameterList(adapter.dependencies());
         FieldSpec.Builder adapterSpec =
             FieldSpec.builder(adapter.typeName(), adapterName, PRIVATE, STATIC, FINAL)
@@ -323,40 +323,51 @@ final class PaperParcelWriter {
    * Creates a name based on the given {@link TypeName}. Names are constants, so will use
    * {@link CaseFormat#UPPER_UNDERSCORE} formatting.
    */
-  private String getName(TypeName typeName) {
-    String name = nameCache.get(typeName);
+  private String getConstantName(TypeName typeName) {
+    String name = classScopedNameCache.get(typeName);
     if (name != null) {
       return name;
     }
-    name = getNameInternal(typeName);
+    name = getConstantNameInternal(typeName);
     name = CaseFormat.UPPER_CAMEL.to(CaseFormat.UPPER_UNDERSCORE, name);
-    nameCache.put(typeName, name);
+    name = resolveConstantNameClash(name);
+    classScopedNameCache.put(typeName, name);
     return name;
   }
 
-  private String getNameInternal(TypeName typeName) {
+  private String resolveConstantNameClash(String name) {
+    if (classScopedNameCache.containsValue(name)) {
+      String original = name;
+      for (int i = 1; classScopedNameCache.containsValue(name); i++) {
+        name = original + "_" + i;
+      }
+    }
+    return name;
+  }
+
+  private String getConstantNameInternal(TypeName typeName) {
     String adapterName = null;
     if (typeName instanceof WildcardTypeName) {
       WildcardTypeName wildcardTypeName = (WildcardTypeName) typeName;
       String upperBoundsPart = "";
       String lowerBoundsPart = "";
       for (TypeName upperBound : wildcardTypeName.upperBounds) {
-        upperBoundsPart += getNameInternal(upperBound);
+        upperBoundsPart += getConstantNameInternal(upperBound);
       }
       for (TypeName lowerBound : wildcardTypeName.lowerBounds) {
-        lowerBoundsPart += getNameInternal(lowerBound);
+        lowerBoundsPart += getConstantNameInternal(lowerBound);
       }
       adapterName = upperBoundsPart + lowerBoundsPart;
     }
     if (typeName instanceof ArrayTypeName) {
       ArrayTypeName arrayTypeName = (ArrayTypeName) typeName;
-      adapterName = getNameInternal(arrayTypeName.componentType) + "Array";
+      adapterName = getConstantNameInternal(arrayTypeName.componentType) + "Array";
     }
     if (typeName instanceof ParameterizedTypeName) {
       ParameterizedTypeName parameterizedTypeName = (ParameterizedTypeName) typeName;
       String paramPart = "";
       for (TypeName param : parameterizedTypeName.typeArguments) {
-        paramPart += getNameInternal(param);
+        paramPart += getConstantNameInternal(param);
       }
       adapterName = paramPart + parameterizedTypeName.rawType.simpleName();
     }
