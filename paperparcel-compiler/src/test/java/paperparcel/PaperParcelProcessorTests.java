@@ -2307,5 +2307,103 @@ public class PaperParcelProcessorTests {
         .and()
         .generatesSources(expected);
   }
+
+  @Test public void readFromParcelFieldsNameClashTest() {
+    JavaFileObject myClass =
+        JavaFileObjects.forSourceString("test.MyClass", Joiner.on('\n').join(
+            "package test;",
+            "public class MyClass {",
+            "}"
+        ));
+
+    JavaFileObject myClassAdapter =
+        JavaFileObjects.forSourceString("test.MyClassAdapter", Joiner.on('\n').join(
+            "package test;",
+            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.TypeAdapter;",
+            "import android.os.Parcel;",
+            "@RegisterAdapter",
+            "public class MyClassAdapter implements TypeAdapter<test.MyClass> {",
+            "  public test.MyClass readFromParcel(Parcel in) {",
+            "    return null;",
+            "  }",
+            "  public void writeToParcel(test.MyClass value, Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public class Test implements Parcelable {",
+            "  int in;",
+            "  int data;",
+            "  int dest;",
+            "  int flags;",
+            "  MyClass MY_CLASS_ADAPTER;",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import javax.annotation.Generated;",
+            GeneratedLines.GENERATED_ANNOTATION,
+            "final class PaperParcelTest {",
+            "  private static final MyClassAdapter MY_CLASS_ADAPTER = new MyClassAdapter();",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      int in1 = in.readInt();",
+            "      int data = in.readInt();",
+            "      int dest = in.readInt();",
+            "      int flags = in.readInt();",
+            "      MyClass MY_CLASS_ADAPTER1 = MY_CLASS_ADAPTER.readFromParcel(in);",
+            "      Test data1 = new Test();",
+            "      data1.in = in1;",
+            "      data1.data = data;",
+            "      data1.dest = dest;",
+            "      data1.flags = flags;",
+            "      data1.MY_CLASS_ADAPTER = MY_CLASS_ADAPTER1;",
+            "      return data1;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    dest.writeInt(data.in);",
+            "    dest.writeInt(data.data);",
+            "    dest.writeInt(data.dest);",
+            "    dest.writeInt(data.flags);",
+            "    MY_CLASS_ADAPTER.writeToParcel(data.MY_CLASS_ADAPTER, dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(myClass, myClassAdapter, source))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
   
 }
