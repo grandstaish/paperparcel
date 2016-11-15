@@ -2121,5 +2121,126 @@ public class PaperParcelProcessorTests {
         .in(source)
         .onLine(5);
   }
-  
+
+  @Test public void adapterNameClashTest() {
+    JavaFileObject myClass =
+        JavaFileObjects.forSourceString("test.MyClass", Joiner.on('\n').join(
+            "package test;",
+            "public class MyClass {",
+            "}"
+        ));
+
+    JavaFileObject yetAnotherMyClass =
+        JavaFileObjects.forSourceString("test.clash.MyClass", Joiner.on('\n').join(
+            "package test.clash;",
+            "public class MyClass {",
+            "}"
+        ));
+
+    JavaFileObject myClassAdapter =
+        JavaFileObjects.forSourceString("test.MyClassAdapter", Joiner.on('\n').join(
+            "package test;",
+            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.TypeAdapter;",
+            "import android.os.Parcel;",
+            "@RegisterAdapter",
+            "public class MyClassAdapter implements TypeAdapter<test.MyClass> {",
+            "  public test.MyClass readFromParcel(Parcel in) {",
+            "    return null;",
+            "  }",
+            "  public void writeToParcel(test.MyClass value, Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject yetAnotherMyClassAdapter =
+        JavaFileObjects.forSourceString("test.clash.MyClassAdapter", Joiner.on('\n').join(
+            "package test.clash;",
+            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.TypeAdapter;",
+            "import android.os.Parcel;",
+            "@RegisterAdapter",
+            "public class MyClassAdapter implements TypeAdapter<test.clash.MyClass> {",
+            "  public test.clash.MyClass readFromParcel(Parcel in) {",
+            "    return null;",
+            "  }",
+            "  public void writeToParcel(test.clash.MyClass value, Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public class Test implements Parcelable {",
+            "  private test.MyClass value1;",
+            "  private test.clash.MyClass value2;",
+            "  public Test(test.MyClass value1, test.clash.MyClass value2) {",
+            "    this.value1 = value1;",
+            "    this.value2 = value2;",
+            "  }",
+            "  public test.MyClass value1() {",
+            "    return value1;",
+            "  }",
+            "  public test.clash.MyClass value2() {",
+            "    return value2;",
+            "  }",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import java.util.List;",
+            "import javax.annotation.Generated;",
+            "import paperparcel.adapter.IntArrayAdapter;",
+            "import paperparcel.adapter.ListAdapter;",
+            GeneratedLines.GENERATED_ANNOTATION,
+            "final class PaperParcelTest {",
+            "  private static final MyClassAdapter MY_CLASS_ADAPTER = new MyClassAdapter();",
+            "  private static final test.clash.MyClassAdapter MY_CLASS_ADAPTER_1 = new test.clash.MyClassAdapter();",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      MyClass value1 = MY_CLASS_ADAPTER.readFromParcel(in);",
+            "      test.clash.MyClass value2 = MY_CLASS_ADAPTER_1.readFromParcel(in);",
+            "      Test data = new Test(value);",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    MY_CLASS_ADAPTER.writeToParcel(data.value1(), dest, flags);",
+            "    MY_CLASS_ADAPTER_1.writeToParcel(data.value2(), dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(source, myClass, yetAnotherMyClass, myClassAdapter, yetAnotherMyClassAdapter))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
 }
