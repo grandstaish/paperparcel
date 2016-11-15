@@ -364,6 +364,9 @@ final class PaperParcelWriter {
       ClassName className = (ClassName) typeName;
       adapterName = Joiner.on("_").join(className.simpleNames());
     }
+    if (typeName.isPrimitive()) {
+      adapterName = typeName.toString();
+    }
     if (adapterName == null) {
       throw new AssertionError();
     }
