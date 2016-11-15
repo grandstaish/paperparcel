@@ -2122,6 +2122,74 @@ public class PaperParcelProcessorTests {
         .onLine(5);
   }
 
+  @Test public void primitiveArrayAsTypeParameterTest() {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "import java.util.List;",
+            "@PaperParcel",
+            "public class Test implements Parcelable {",
+            "  private List<int[]> value;",
+            "  public Test(List<int[]> value) {",
+            "    this.value = value;",
+            "  }",
+            "  public List<int[]> value() {",
+            "    return value;",
+            "  }",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import java.util.List;",
+            "import javax.annotation.Generated;",
+            "import paperparcel.adapter.IntArrayAdapter;",
+            "import paperparcel.adapter.ListAdapter;",
+            GeneratedLines.GENERATED_ANNOTATION,
+            "final class PaperParcelTest {",
+            "  private static final ListAdapter<int[]> INT_ARRAY_LIST_ADAPTER = new ListAdapter<int[]>(IntArrayAdapter.INSTANCE);",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      List<int[]> value = INT_ARRAY_LIST_ADAPTER.readFromParcel(in);",
+            "      Test data = new Test(value);",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    INT_ARRAY_LIST_ADAPTER.writeToParcel(data.value(), dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
   @Test public void adapterNameClashTest() {
     JavaFileObject myClass =
         JavaFileObjects.forSourceString("test.MyClass", Joiner.on('\n').join(
@@ -2242,5 +2310,5 @@ public class PaperParcelProcessorTests {
         .and()
         .generatesSources(expected);
   }
-
+  
 }
