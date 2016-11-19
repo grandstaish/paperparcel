@@ -58,6 +58,9 @@ abstract class WriteInfo {
    */
   abstract ImmutableMap<FieldDescriptor, ExecutableElement> setterMethodMap();
 
+  /** All fields that should be written via reflection, or an empty list if none */
+  abstract ImmutableList<FieldDescriptor> reflectFields();
+
   @AutoValue
   static abstract class NonWritableFieldsException extends Exception {
 
@@ -105,7 +108,8 @@ abstract class WriteInfo {
     WriteInfo create(
         ImmutableList<VariableElement> fields,
         ImmutableList<ExecutableElement> methods,
-        ImmutableList<ExecutableElement> constructors)
+        ImmutableList<ExecutableElement> constructors,
+        ImmutableList<String> reflectAnnotations)
         throws NonWritableFieldsException {
 
       ImmutableMap<String, VariableElement> fieldNamesToField = fieldNamesToField(fields);
@@ -156,6 +160,7 @@ abstract class WriteInfo {
         ImmutableList.Builder<FieldDescriptor> writableFieldsBuilder = ImmutableList.builder();
         ImmutableMap.Builder<FieldDescriptor, ExecutableElement> setterMethodMapBuilder =
             ImmutableMap.builder();
+        ImmutableList.Builder<FieldDescriptor> reflectFieldsBuilder = ImmutableList.builder();
         for (VariableElement field : nonConstructorFields) {
           if (isWritableDirectly(field)) {
             writableFieldsBuilder.add(fieldDescriptorFactory.create(field));
@@ -163,6 +168,8 @@ abstract class WriteInfo {
             Optional<ExecutableElement> setterMethod = getSetterMethod(field, methods);
             if (setterMethod.isPresent()) {
               setterMethodMapBuilder.put(fieldDescriptorFactory.create(field), setterMethod.get());
+            } else if (Utils.usesAnyAnnotationsFrom(field, reflectAnnotations)) {
+              reflectFieldsBuilder.add(fieldDescriptorFactory.create(field));
             } else {
               nonWritableFieldsBuilder.add(field);
             }
@@ -178,7 +185,8 @@ abstract class WriteInfo {
           return new AutoValue_WriteInfo(
               constructorFieldDescriptorsBuilder.build(),
               writableFieldsBuilder.build(),
-              setterMethodMapBuilder.build());
+              setterMethodMapBuilder.build(),
+              reflectFieldsBuilder.build());
         }
       }
 

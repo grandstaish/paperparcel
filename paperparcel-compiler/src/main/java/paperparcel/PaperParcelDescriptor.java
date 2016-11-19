@@ -75,6 +75,9 @@ abstract class PaperParcelDescriptor {
         for (FieldDescriptor field : readInfo.getterMethodMap().keySet()) {
           addAdapterForField(fieldAdapterMap, field);
         }
+        for (FieldDescriptor field : readInfo.reflectFields()) {
+          addAdapterForField(fieldAdapterMap, field);
+        }
       }
       return fieldAdapterMap.build();
     }

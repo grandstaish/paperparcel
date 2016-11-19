@@ -44,6 +44,9 @@ abstract class ReadInfo {
    */
   abstract ImmutableMap<FieldDescriptor, ExecutableElement> getterMethodMap();
 
+  /** All fields that should be read via reflection, or an empty list if none */
+  abstract ImmutableList<FieldDescriptor> reflectFields();
+
   @AutoValue
   static abstract class NonReadableFieldsException extends Exception {
 
@@ -68,12 +71,14 @@ abstract class ReadInfo {
 
     ReadInfo create(
         ImmutableList<VariableElement> fields,
-        ImmutableList<ExecutableElement> methods
+        ImmutableList<ExecutableElement> methods,
+        ImmutableList<String> reflectAnnotations
     ) throws NonReadableFieldsException {
 
       ImmutableList.Builder<FieldDescriptor> readableFieldsBuilder = ImmutableList.builder();
       ImmutableMap.Builder<FieldDescriptor, ExecutableElement> getterMethodMapBuilder =
           ImmutableMap.builder();
+      ImmutableList.Builder<FieldDescriptor> reflectFieldsBuilder = ImmutableList.builder();
       ImmutableList.Builder<VariableElement> nonReadableFieldsBuilder = ImmutableList.builder();
 
       for (VariableElement field : fields) {
@@ -83,6 +88,8 @@ abstract class ReadInfo {
           Optional<ExecutableElement> accessorMethod = getAccessorMethod(field, methods);
           if (accessorMethod.isPresent()) {
             getterMethodMapBuilder.put(fieldDescriptorFactory.create(field), accessorMethod.get());
+          } else if (Utils.usesAnyAnnotationsFrom(field, reflectAnnotations)) {
+            reflectFieldsBuilder.add(fieldDescriptorFactory.create(field));
           } else {
             nonReadableFieldsBuilder.add(field);
           }
@@ -96,7 +103,8 @@ abstract class ReadInfo {
 
       return new AutoValue_ReadInfo(
           readableFieldsBuilder.build(),
-          getterMethodMapBuilder.build());
+          getterMethodMapBuilder.build(),
+          reflectFieldsBuilder.build());
     }
 
     /**

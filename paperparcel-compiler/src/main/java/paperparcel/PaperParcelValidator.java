@@ -84,17 +84,18 @@ final class PaperParcelValidator {
     WriteInfo writeInfo = null;
     ReadInfo readInfo = null;
     if (!Utils.isSingleton(types, element)) {
-      ImmutableList<VariableElement> fields = Utils.getFieldsToParcel(types, element);
+      ImmutableList<VariableElement> fields = Utils.getFieldsToParcel(types, element, options);
       ImmutableList<ExecutableElement> methods =
           Utils.getLocalAndInheritedMethods(elements, types, element);
       ImmutableList<ExecutableElement> constructors = Utils.orderedConstructorsIn(element);
       try {
-        writeInfo = writeInfoFactory.create(fields, methods, constructors);
+        writeInfo = writeInfoFactory.create(
+            fields, methods, constructors, options.reflectAnnotations());
       } catch (WriteInfo.NonWritableFieldsException e) {
         addErrorsForNonWritableFields(e, builder);
       }
       try {
-        readInfo = readInfoFactory.create(fields, methods);
+        readInfo = readInfoFactory.create(fields, methods, options.reflectAnnotations());
       } catch (ReadInfo.NonReadableFieldsException e) {
         addErrorsForNonReadableFields(e, builder);
       }
