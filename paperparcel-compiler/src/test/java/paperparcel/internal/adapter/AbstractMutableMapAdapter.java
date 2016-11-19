@@ -7,7 +7,7 @@ import paperparcel.TypeAdapter;
 
 abstract class AbstractMutableMapAdapter<M extends Map<K, V>, K, V>
     extends AbstractAdapter<M> {
-  public AbstractMutableMapAdapter(TypeAdapter<K> keyAdapter, TypeAdapter<V> valueAdapter) {
+  AbstractMutableMapAdapter(TypeAdapter<K> keyAdapter, TypeAdapter<V> valueAdapter) {
     throw new RuntimeException("Stub!");
   }
 

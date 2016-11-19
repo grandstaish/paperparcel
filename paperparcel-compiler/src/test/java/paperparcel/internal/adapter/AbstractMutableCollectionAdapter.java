@@ -7,7 +7,7 @@ import paperparcel.TypeAdapter;
 
 abstract class AbstractMutableCollectionAdapter<C extends Collection<T>, T>
     extends AbstractAdapter<C> {
-  public AbstractMutableCollectionAdapter(TypeAdapter<T> itemAdapter) {
+  AbstractMutableCollectionAdapter(TypeAdapter<T> itemAdapter) {
     throw new RuntimeException("Stub!");
   }
 
