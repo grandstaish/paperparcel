@@ -150,6 +150,9 @@ public @interface PaperParcel {
      * call constructors or read/write from/to fields.
      *
      * <p>Because reflection is slow on Android, this option should be used sparingly.
+     *
+     * <p>Note: if your code will be obfuscated, be sure to keep the annotated elements so that
+     * they can be discovered by name.
      */
     Class<? extends Annotation>[] reflectAnnotations() default {};
   }
