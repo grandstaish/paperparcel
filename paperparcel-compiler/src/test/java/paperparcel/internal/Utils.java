@@ -12,6 +12,10 @@ public final class Utils {
     throw new RuntimeException("Stub!");
   }
 
+  public static <T> T init(Class<T> type, Class[] argClasses, Object[] args) {
+    throw new RuntimeException("Stub!");
+  }
+
   private Utils() {
     throw new RuntimeException("Stub!");
   }

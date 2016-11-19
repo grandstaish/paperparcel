@@ -145,14 +145,11 @@ public @interface PaperParcel {
     int[] excludeModifiers() default { Modifier.TRANSIENT, Modifier.STATIC };
 
     /**
-     * Configures PaperParcel to be able to access/set any field that is annotated with any of the
-     * given annotations via reflection. By default, PaperParcel will never use reflection to
-     * access fields.
+     * Configures PaperParcel to be able to access java elements that are annotated with any of
+     * the given annotations via reflection. By default, PaperParcel will never use reflection to
+     * call constructors or read/write from/to fields.
      *
      * <p>Because reflection is slow on Android, this option should be used sparingly.
-     *
-     * <p>PaperParcel will still prefer to access/set field values without reflection whenever
-     * it is possible.
      */
     Class<? extends Annotation>[] reflectAnnotations() default {};
   }

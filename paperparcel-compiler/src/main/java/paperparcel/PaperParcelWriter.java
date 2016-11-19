@@ -135,7 +135,6 @@ final class PaperParcelWriter {
     ImmutableList<FieldDescriptor> combined = ImmutableList.<FieldDescriptor>builder()
         .addAll(readInfo.readableFields())
         .addAll(readInfo.getterMethodMap().keySet())
-        .addAll(readInfo.reflectFields())
         .build();
 
     for (FieldDescriptor field : combined) {
@@ -197,8 +196,23 @@ final class PaperParcelWriter {
           }
         }), ", ");
 
+    CodeBlock initializer;
+    if (writeInfo.isConstructorVisible()) {
+      initializer = CodeBlock.of("new $T($L)", className, constructorParameterList);
+    } else {
+      // Constructor is private, init via reflection
+      CodeBlock constructorArgClassList = CodeBlocks.join(FluentIterable.from(constructorFields)
+          .transform(new Function<FieldDescriptor, CodeBlock>() {
+            @Override public CodeBlock apply(FieldDescriptor field) {
+              return CodeBlock.of("$T.class", rawTypeFrom(field.type().get()));
+            }
+          }), ", ");
+      initializer = CodeBlock.of("$T.init($T.class, new Class[] { $L }, new Object[] { $L })",
+          UTILS, className, constructorArgClassList, constructorParameterList);
+    }
+
     return FieldSpec.builder(className, readNames.getUniqueName("data"))
-        .initializer("new $T($L)", className, constructorParameterList)
+        .initializer(initializer)
         .build();
   }
 
@@ -210,7 +224,14 @@ final class PaperParcelWriter {
 
     // Write directly
     for (FieldDescriptor field : writeInfo.writableFields()) {
-      block.addStatement("$N.$N = $N", model.name, field.name(), fieldMap.get(field));
+      if (field.isPrivate()) {
+        // Field is private, write via reflection
+        TypeName enclosingClass = rawTypeFrom(field.element().getEnclosingElement().asType());
+        block.addStatement("$T.writeField($N, $T.class, $N, $S)",
+            UTILS, fieldMap.get(field), enclosingClass, model.name, field.name());
+      } else {
+        block.addStatement("$N.$N = $N", model.name, field.name(), fieldMap.get(field));
+      }
     }
 
     // Write via setters
@@ -220,14 +241,6 @@ final class PaperParcelWriter {
       Name setterName = fieldSetterEntry.getValue().getSimpleName();
       FieldDescriptor field = fieldSetterEntry.getKey();
       block.addStatement("$N.$N($N)", model.name, setterName, fieldMap.get(field));
-    }
-
-    // Write via reflection
-    ImmutableList<FieldDescriptor> reflectFields = writeInfo.reflectFields();
-    for (FieldDescriptor field : reflectFields) {
-      TypeName enclosingClass = rawTypeFrom(field.element().getEnclosingElement().asType());
-      block.addStatement("$T.writeField($N, $T.class, $N, $S)",
-          UTILS, fieldMap.get(field), enclosingClass, model.name, field.name());
     }
 
     return block.build();
@@ -257,8 +270,17 @@ final class PaperParcelWriter {
 
       ImmutableList<FieldDescriptor> readableFields = readInfo.readableFields();
       for (FieldDescriptor field : readableFields) {
-        CodeBlock accessorBlock = CodeBlock.of("$N.$N", data, field.name());
-        writeField(builder, field, accessorBlock, dest, flags);
+        if (field.isPrivate()) {
+          // Field is private, read via reflection.
+          TypeName type = rawTypeFrom(field.type().get());
+          TypeName enclosingClass = rawTypeFrom(field.element().getEnclosingElement().asType());
+          CodeBlock accessorBlock = CodeBlock.of("$T.readField($T.class, $T.class, $N, $S)",
+              UTILS, type, enclosingClass, data, field.name());
+          writeField(builder, field, accessorBlock, dest, flags);
+        } else {
+          CodeBlock accessorBlock = CodeBlock.of("$N.$N", data, field.name());
+          writeField(builder, field, accessorBlock, dest, flags);
+        }
       }
 
       ImmutableSet<Map.Entry<FieldDescriptor, ExecutableElement>> fieldGetterEntries =
@@ -267,15 +289,6 @@ final class PaperParcelWriter {
         FieldDescriptor field = fieldGetterEntry.getKey();
         Name accessorMethodName = fieldGetterEntry.getValue().getSimpleName();
         CodeBlock accessorBlock = CodeBlock.of("$N.$N()", data, accessorMethodName);
-        writeField(builder, field, accessorBlock, dest, flags);
-      }
-
-      ImmutableList<FieldDescriptor> reflectFields = readInfo.reflectFields();
-      for (FieldDescriptor field : reflectFields) {
-        TypeName type = rawTypeFrom(field.type().get());
-        TypeName enclosingClass = rawTypeFrom(field.element().getEnclosingElement().asType());
-        CodeBlock accessorBlock = CodeBlock.of("$T.readField($T.class, $T.class, $N, $S)",
-            UTILS, type, enclosingClass, data, field.name());
         writeField(builder, field, accessorBlock, dest, flags);
       }
     }

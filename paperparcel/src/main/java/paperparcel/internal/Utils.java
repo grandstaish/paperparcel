@@ -16,7 +16,9 @@
 
 package paperparcel.internal;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 
 public final class Utils {
 
@@ -46,6 +48,24 @@ public final class Utils {
     } catch (NoSuchFieldException e) {
       throw new RuntimeException(e);
     } catch (IllegalAccessException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  /** Constructs an instance of {@code type} via reflection. */
+  @SuppressWarnings({ "unchecked", "unused", "TryWithIdenticalCatches" })
+  public static <T> T init(Class<T> type, Class[] argClasses, Object[] args) {
+    try {
+      Constructor<T> constructor = type.getConstructor(argClasses);
+      constructor.setAccessible(true);
+      return constructor.newInstance(args);
+    } catch (NoSuchMethodException e) {
+      throw new RuntimeException(e);
+    } catch (IllegalAccessException e) {
+      throw new RuntimeException(e);
+    } catch (InstantiationException e) {
+      throw new RuntimeException(e);
+    } catch (InvocationTargetException e) {
       throw new RuntimeException(e);
     }
   }

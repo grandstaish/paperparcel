@@ -17,6 +17,7 @@
 package paperparcel;
 
 import com.google.auto.common.MoreTypes;
+import com.google.auto.common.Visibility;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
@@ -49,6 +50,9 @@ abstract class WriteInfo {
   /** All fields that should be passed to the constructor, in order */
   abstract ImmutableList<FieldDescriptor> constructorFields();
 
+  /** Returns true if the constructor is non-private */
+  abstract boolean isConstructorVisible();
+
   /** The fields that should be written directly, or an empty list if none */
   abstract ImmutableList<FieldDescriptor> writableFields();
 
@@ -57,9 +61,6 @@ abstract class WriteInfo {
    * Returns an empty map if there are no fields to be set via setter methods.
    */
   abstract ImmutableMap<FieldDescriptor, ExecutableElement> setterMethodMap();
-
-  /** All fields that should be written via reflection, or an empty list if none */
-  abstract ImmutableList<FieldDescriptor> reflectFields();
 
   @AutoValue
   static abstract class NonWritableFieldsException extends Exception {
@@ -119,8 +120,6 @@ abstract class WriteInfo {
           unassignableConstructorParameterMapBuilder = ImmutableMap.builder();
 
       for (ExecutableElement constructor : constructors) {
-        // Filter out private constructors
-        if (constructor.getModifiers().contains(Modifier.PRIVATE)) continue;
         // Create a mutable copy of fieldNamesToField so we can remove elements from it as we iterate
         // to keep track of which elements we have seen
         Map<String, VariableElement> nonConstructorFieldsMap = new LinkedHashMap<>(fieldNamesToField);
@@ -160,7 +159,6 @@ abstract class WriteInfo {
         ImmutableList.Builder<FieldDescriptor> writableFieldsBuilder = ImmutableList.builder();
         ImmutableMap.Builder<FieldDescriptor, ExecutableElement> setterMethodMapBuilder =
             ImmutableMap.builder();
-        ImmutableList.Builder<FieldDescriptor> reflectFieldsBuilder = ImmutableList.builder();
         for (VariableElement field : nonConstructorFields) {
           if (isWritableDirectly(field)) {
             writableFieldsBuilder.add(fieldDescriptorFactory.create(field));
@@ -169,7 +167,7 @@ abstract class WriteInfo {
             if (setterMethod.isPresent()) {
               setterMethodMapBuilder.put(fieldDescriptorFactory.create(field), setterMethod.get());
             } else if (Utils.usesAnyAnnotationsFrom(field, reflectAnnotations)) {
-              reflectFieldsBuilder.add(fieldDescriptorFactory.create(field));
+              writableFieldsBuilder.add(fieldDescriptorFactory.create(field));
             } else {
               nonWritableFieldsBuilder.add(field);
             }
@@ -184,9 +182,9 @@ abstract class WriteInfo {
           // All fields are writable using this constructor
           return new AutoValue_WriteInfo(
               constructorFieldDescriptorsBuilder.build(),
+              Visibility.ofElement(constructor) != Visibility.PRIVATE,
               writableFieldsBuilder.build(),
-              setterMethodMapBuilder.build(),
-              reflectFieldsBuilder.build());
+              setterMethodMapBuilder.build());
         }
       }
 

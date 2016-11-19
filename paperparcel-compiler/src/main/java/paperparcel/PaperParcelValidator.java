@@ -87,7 +87,11 @@ final class PaperParcelValidator {
       ImmutableList<VariableElement> fields = Utils.getFieldsToParcel(types, element, options);
       ImmutableList<ExecutableElement> methods =
           Utils.getLocalAndInheritedMethods(elements, types, element);
-      ImmutableList<ExecutableElement> constructors = Utils.orderedConstructorsIn(element);
+      ImmutableList<ExecutableElement> constructors =
+          Utils.orderedConstructorsIn(element, options.reflectAnnotations());
+      if (constructors.size() == 0) {
+        builder.addError(ErrorMessages.NO_VISIBLE_CONSTRUCTOR);
+      }
       try {
         writeInfo = writeInfoFactory.create(
             fields, methods, constructors, options.reflectAnnotations());
@@ -112,10 +116,7 @@ final class PaperParcelValidator {
     ImmutableSet<ExecutableElement> validConstructors = e.allNonWritableFieldsMap().keySet();
     ImmutableSet<ExecutableElement> invalidConstructors =
         e.unassignableConstructorParameterMap().keySet();
-    if (validConstructors.size() == 0 && invalidConstructors.size() == 0) {
-      // If there were no constructors found, they must have all been private
-      builder.addError(ErrorMessages.NO_VISIBLE_CONSTRUCTOR);
-    } else if (validConstructors.size() > 0) {
+    if (validConstructors.size() > 0) {
       // Log errors for each non-writable field in each valid constructor
       for (ExecutableElement validConstructor : validConstructors) {
         ImmutableList<VariableElement> nonWritableFields =

@@ -20,6 +20,7 @@ import android.support.annotation.Nullable;
 import com.google.auto.common.AnnotationMirrors;
 import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
+import com.google.auto.common.Visibility;
 import com.google.common.base.Optional;
 import com.google.common.base.Predicate;
 import com.google.common.collect.FluentIterable;
@@ -27,6 +28,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Ordering;
 import com.google.common.primitives.Ints;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
@@ -53,7 +56,6 @@ import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
 
 import static javax.lang.model.element.Modifier.FINAL;
-import static javax.lang.model.element.Modifier.PRIVATE;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 import static javax.lang.model.util.ElementFilter.fieldsIn;
@@ -72,15 +74,18 @@ final class Utils {
         }
       };
 
+  private static final Predicate<ExecutableElement> NOT_PRIVATE =
+      new Predicate<ExecutableElement>() {
+        @Override public boolean apply(ExecutableElement executableElement) {
+          return Visibility.ofElement(executableElement) != Visibility.PRIVATE;
+        }
+      };
+
   /** Returns the constructor in a given class with the largest number of arguments */
   static Optional<ExecutableElement> findLargestConstructor(TypeElement typeElement) {
     List<ExecutableElement> constructors =
         FluentIterable.from(ElementFilter.constructorsIn(typeElement.getEnclosedElements()))
-            .filter(new Predicate<ExecutableElement>() {
-              @Override public boolean apply(ExecutableElement executableElement) {
-                return !executableElement.getModifiers().contains(PRIVATE);
-              }
-            })
+            .filter(NOT_PRIVATE)
             .toList();
 
     if (constructors.size() == 0) {
@@ -90,13 +95,35 @@ final class Utils {
     return Optional.of(PARAMETER_COUNT_ORDER.max(constructors));
   }
 
-  /**
-   * Returns all of the constructors in a {@link TypeElement} ordered from highest parameter count
-   * to lowest
-   */
-  static ImmutableList<ExecutableElement> orderedConstructorsIn(TypeElement element) {
-    return PARAMETER_COUNT_ORDER.reverse().immutableSortedCopy(
-        ElementFilter.constructorsIn(element.getEnclosedElements()));
+  /** Returns all of the constructors in a {@link TypeElement} that PaperParcel can use. */
+  static ImmutableList<ExecutableElement> orderedConstructorsIn(
+      TypeElement element, List<String> reflectAnnotations) {
+    List<ExecutableElement> allConstructors =
+        ElementFilter.constructorsIn(element.getEnclosedElements());
+
+    List<ExecutableElement> visibleConstructors = new ArrayList<>(allConstructors.size());
+    for (ExecutableElement constructor : allConstructors) {
+      if (Visibility.ofElement(constructor) != Visibility.PRIVATE) {
+        visibleConstructors.add(constructor);
+      }
+    }
+    Collections.sort(visibleConstructors, PARAMETER_COUNT_ORDER);
+
+    List<ExecutableElement> reflectConstructors = new ArrayList<>();
+    if (reflectAnnotations.size() > 0) {
+      for (ExecutableElement constructor : allConstructors) {
+        if (Visibility.ofElement(constructor) == Visibility.PRIVATE
+          && usesAnyAnnotationsFrom(constructor, reflectAnnotations)) {
+          reflectConstructors.add(constructor);
+        }
+      }
+      Collections.sort(reflectConstructors, PARAMETER_COUNT_ORDER);
+    }
+
+    return ImmutableList.<ExecutableElement>builder()
+        .addAll(visibleConstructors)
+        .addAll(reflectConstructors)
+        .build();
   }
 
   /**

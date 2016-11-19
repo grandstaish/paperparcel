@@ -2822,4 +2822,77 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
+  @Test public void constructorReflectionTest() {
+    JavaFileObject excludeAnnotation =
+        JavaFileObjects.forSourceString("test.Reflect", Joiner.on('\n').join(
+            "package test;",
+            "public @interface Reflect {}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "import java.util.List;",
+            "@PaperParcel.Options(reflectAnnotations = Reflect.class)",
+            "@PaperParcel",
+            "public final class Test implements Parcelable {",
+            "  private List<Integer> value;",
+            "  @Reflect private Test(List<Integer> value) {",
+            "  }",
+            "  public List<Integer> value() {",
+            "    return this.value;",
+            "  }",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import java.util.List;",
+            "import javax.annotation.Generated;",
+            "import paperparcel.internal.Utils;",
+            "import paperparcel.internal.adapter.IntegerAdapter;",
+            "import paperparcel.internal.adapter.ListAdapter;",
+            GeneratedLines.GENERATED_ANNOTATION,
+            "final class PaperParcelTest {",
+            "  static final ListAdapter<Integer> INTEGER_LIST_ADAPTER = new ListAdapter<Integer>(IntegerAdapter.INSTANCE);",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      List<Integer> value = PaperParcelTest.INTEGER_LIST_ADAPTER.readFromParcel(in);",
+            "      Test data = Utils.init(Test.class, new Class[] { List.class }, new Object[] { value });",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    PaperParcelTest.INTEGER_LIST_ADAPTER.writeToParcel(data.value(), dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
 }
