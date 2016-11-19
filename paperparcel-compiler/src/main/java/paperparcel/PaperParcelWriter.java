@@ -332,7 +332,7 @@ final class PaperParcelWriter {
         String adapterName = adapterNames.getName(adapter.typeName());
         CodeBlock parameters = getAdapterParameterList(adapter.dependencies());
         FieldSpec.Builder adapterSpec =
-            FieldSpec.builder(adapter.typeName(), adapterName, PRIVATE, STATIC, FINAL)
+            FieldSpec.builder(adapter.typeName(), adapterName, STATIC, FINAL)
                 .initializer(CodeBlock.of("new $T($L)", adapter.typeName(), parameters));
         adapterFields.add(adapterSpec.build());
       }
