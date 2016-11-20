@@ -18,17 +18,17 @@ package paperparcel.internal;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class LongAdapter extends AbstractAdapter<Long> {
+public final class LongAdapter implements TypeAdapter<Long> {
   public static final LongAdapter INSTANCE = new LongAdapter();
 
-  @NonNull @Override protected Long read(@NonNull Parcel source) {
+  @NonNull @Override public Long readFromParcel(@NonNull Parcel source) {
     return source.readLong();
   }
 
-  @Override protected void write(@NonNull Long value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@NonNull Long value, @NonNull Parcel dest, int flags) {
     dest.writeLong(value);
   }
 

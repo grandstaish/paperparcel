@@ -1,16 +1,16 @@
 package paperparcel.internal;
 
 import android.os.Parcel;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
-public final class CharArrayAdapter extends AbstractAdapter<char[]> {
+public final class CharArrayAdapter implements TypeAdapter<char[]> {
   public static final CharArrayAdapter INSTANCE = new CharArrayAdapter();
 
-  @Override protected char[] read(Parcel source) {
+  @Override public char[] readFromParcel(Parcel source) {
     throw new RuntimeException("Stub!");
   }
 
-  @Override protected void write(char[] value, Parcel dest, int flags) {
+  @Override public void writeToParcel(char[] value, Parcel dest, int flags) {
     throw new RuntimeException("Stub!");
   }
 

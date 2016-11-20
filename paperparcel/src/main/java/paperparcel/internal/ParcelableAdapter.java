@@ -19,15 +19,16 @@ package paperparcel.internal;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.support.annotation.NonNull;
-import paperparcel.AbstractAdapter;
+import android.support.annotation.Nullable;
+import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class ParcelableAdapter<T extends Parcelable> extends AbstractAdapter<T> {
-  @NonNull @Override protected T read(@NonNull Parcel source) {
+public final class ParcelableAdapter<T extends Parcelable> implements TypeAdapter<T> {
+  @Nullable @Override public T readFromParcel(@NonNull Parcel source) {
     return source.readParcelable(ParcelableAdapter.class.getClassLoader());
   }
 
-  @Override protected void write(@NonNull T value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@Nullable T value, @NonNull Parcel dest, int flags) {
     dest.writeParcelable(value, flags);
   }
 }

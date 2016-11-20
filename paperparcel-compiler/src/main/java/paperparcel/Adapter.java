@@ -60,6 +60,12 @@ abstract class Adapter {
   /** TypeName for this Adapter. May be a {@link ClassName} or {@link ParameterizedTypeName} */
   abstract TypeName typeName();
 
+  /** TypeName for the type that this adapter is handling. */
+  abstract TypeName adaptedTypeName();
+
+  /** Returns true if this type adapter handles null values. */
+  abstract boolean nullSafe();
+
   static final class Factory {
     private final Elements elements;
     private final Types types;
@@ -87,10 +93,10 @@ abstract class Adapter {
       if (cached.isPresent()) {
         return cached.get();
       }
-      ImmutableList<String> adapterNames = adapterRegistry.getAdapterNames();
+      ImmutableList<AdapterRegistry.Entry> adapterEntries = adapterRegistry.getAdapterEntries();
       // Brute-force search of all adapters to see if any of them can produce this type.
-      for (String adapterName : adapterNames) {
-        TypeElement adapterElement = elements.getTypeElement(adapterName);
+      for (AdapterRegistry.Entry adapterEntry : adapterEntries) {
+        TypeElement adapterElement = elements.getTypeElement(adapterEntry.qualifiedName());
         TypeMirror adapterType = adapterElement.asType();
         TypeMirror adaptedType =
             Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(adapterType));
@@ -99,12 +105,15 @@ abstract class Adapter {
             || adapterElement.getTypeParameters().size() != typeArguments.length) continue;
         DeclaredType resolvedAdapterType = types.getDeclaredType(adapterElement, typeArguments);
         TypeMirror resolvedAdaptedType = Utils.getAdaptedType(elements, types, resolvedAdapterType);
-        if (!types.isSameType(resolvedAdaptedType, fieldType)) continue;
+        if (resolvedAdaptedType == null
+            || !types.isSameType(resolvedAdaptedType, fieldType)) continue;
         ImmutableList<Adapter> dependencies = findDependencies(adapterElement, resolvedAdapterType);
         if (dependencies == null) continue;
         TypeName typeName = TypeName.get(resolvedAdapterType);
         boolean isSingleton = Utils.isSingleton(types, adapterElement);
-        Adapter adapter = new AutoValue_Adapter(dependencies, isSingleton, typeName);
+        TypeName adaptedTypeName = TypeName.get(resolvedAdaptedType);
+        Adapter adapter = new AutoValue_Adapter(
+            dependencies, isSingleton, typeName, adaptedTypeName, adapterEntry.nullSafe());
         adapterRegistry.registerAdapterFor(fieldTypeName, adapter);
         return adapter;
       }

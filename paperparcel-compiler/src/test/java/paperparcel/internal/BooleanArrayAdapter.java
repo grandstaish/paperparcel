@@ -1,16 +1,16 @@
 package paperparcel.internal;
 
 import android.os.Parcel;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
-public final class BooleanArrayAdapter extends AbstractAdapter<boolean[]> {
+public final class BooleanArrayAdapter implements TypeAdapter<boolean[]> {
   public static final BooleanArrayAdapter INSTANCE = new BooleanArrayAdapter();
 
-  @Override protected boolean[] read(Parcel source) {
+  @Override public boolean[] readFromParcel(Parcel source) {
     throw new RuntimeException("Stub!");
   }
 
-  @Override protected void write(boolean[] value, Parcel dest, int flags) {
+  @Override public void writeToParcel(boolean[] value, Parcel dest, int flags) {
     throw new RuntimeException("Stub!");
   }
 

@@ -18,17 +18,17 @@ package paperparcel.internal;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class BooleanAdapter extends AbstractAdapter<Boolean> {
+public final class BooleanAdapter implements TypeAdapter<Boolean> {
   public static final BooleanAdapter INSTANCE = new BooleanAdapter();
 
-  @NonNull @Override protected Boolean read(@NonNull Parcel source) {
+  @NonNull @Override public Boolean readFromParcel(@NonNull Parcel source) {
     return source.readInt() == 1;
   }
 
-  @Override protected void write(@NonNull Boolean value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@NonNull Boolean value, @NonNull Parcel dest, int flags) {
     dest.writeInt(value ? 1 : 0);
   }
 

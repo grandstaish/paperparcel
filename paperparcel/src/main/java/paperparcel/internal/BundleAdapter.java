@@ -3,17 +3,18 @@ package paperparcel.internal;
 import android.os.Bundle;
 import android.os.Parcel;
 import android.support.annotation.NonNull;
-import paperparcel.AbstractAdapter;
+import android.support.annotation.Nullable;
+import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class BundleAdapter extends AbstractAdapter<Bundle> {
+public final class BundleAdapter implements TypeAdapter<Bundle> {
   public static final BundleAdapter INSTANCE = new BundleAdapter();
 
-  @NonNull @Override protected Bundle read(@NonNull Parcel source) {
+  @Nullable @Override public Bundle readFromParcel(@NonNull Parcel source) {
     return source.readBundle(getClass().getClassLoader());
   }
 
-  @Override protected void write(@NonNull Bundle value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@Nullable Bundle value, @NonNull Parcel dest, int flags) {
     dest.writeBundle(value);
   }
 

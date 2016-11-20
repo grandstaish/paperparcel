@@ -5,18 +5,19 @@ import android.os.Build;
 import android.os.Parcel;
 import android.os.PersistableBundle;
 import android.support.annotation.NonNull;
-import paperparcel.AbstractAdapter;
+import android.support.annotation.Nullable;
+import paperparcel.TypeAdapter;
 
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class PersistableBundleAdapter extends AbstractAdapter<PersistableBundle> {
+public final class PersistableBundleAdapter implements TypeAdapter<PersistableBundle> {
   public static final PersistableBundleAdapter INSTANCE = new PersistableBundleAdapter();
 
-  @NonNull @Override protected PersistableBundle read(@NonNull Parcel source) {
+  @Nullable @Override public PersistableBundle readFromParcel(@NonNull Parcel source) {
     return source.readPersistableBundle(getClass().getClassLoader());
   }
 
-  @Override protected void write(@NonNull PersistableBundle value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@Nullable PersistableBundle value, @NonNull Parcel dest, int flags) {
     dest.writePersistableBundle(value);
   }
 

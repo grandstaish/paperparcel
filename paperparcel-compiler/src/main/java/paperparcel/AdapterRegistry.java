@@ -16,6 +16,7 @@
 
 package paperparcel;
 
+import com.google.auto.value.AutoValue;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -30,53 +31,63 @@ import java.util.Map;
  * expensive to create.
  */
 final class AdapterRegistry {
-  private static final ImmutableList<String> BUILT_IN_ADAPTER_CLASS_NAMES = ImmutableList.of(
-      "paperparcel.internal.StringAdapter",
-      "paperparcel.internal.IntegerAdapter",
-      "paperparcel.internal.MapAdapter",
-      "paperparcel.internal.BundleAdapter",
-      "paperparcel.internal.PersistableBundleAdapter",
-      "paperparcel.internal.ParcelableAdapter",
-      "paperparcel.internal.ShortAdapter",
-      "paperparcel.internal.LongAdapter",
-      "paperparcel.internal.FloatAdapter",
-      "paperparcel.internal.DoubleAdapter",
-      "paperparcel.internal.BooleanAdapter",
-      "paperparcel.internal.CharSequenceAdapter",
-      "paperparcel.internal.ListAdapter",
-      "paperparcel.internal.SparseArrayAdapter",
-      "paperparcel.internal.BooleanArrayAdapter",
-      "paperparcel.internal.ByteArrayAdapter",
-      "paperparcel.internal.StringArrayAdapter",
-      "paperparcel.internal.IBinderAdapter",
-      "paperparcel.internal.IntArrayAdapter",
-      "paperparcel.internal.LongArrayAdapter",
-      "paperparcel.internal.ByteAdapter",
-      "paperparcel.internal.SizeAdapter",
-      "paperparcel.internal.SizeFAdapter",
-      "paperparcel.internal.DoubleArrayAdapter",
-      "paperparcel.internal.LongSparseArrayAdapter",
-      "paperparcel.internal.SparseBooleanArrayAdapter",
-      "paperparcel.internal.SparseIntArrayAdapter",
-      "paperparcel.internal.SparseLongArrayAdapter",
-      "paperparcel.internal.CollectionAdapter",
-      "paperparcel.internal.ArrayMapAdapter",
-      "paperparcel.internal.ArraySetAdapter",
-      "paperparcel.internal.SetAdapter",
-      "paperparcel.internal.CharArrayAdapter",
-      "paperparcel.internal.FloatArrayAdapter",
-      "paperparcel.internal.ShortArrayAdapter",
-      "paperparcel.internal.CharacterAdapter",
-      "paperparcel.internal.EnumAdapter");
+  @AutoValue
+  static abstract class Entry {
+    abstract String qualifiedName();
+    abstract boolean nullSafe();
 
-  private final List<String> adapterNames = Lists.newArrayList(BUILT_IN_ADAPTER_CLASS_NAMES);
-  private final Map<TypeName, Adapter> adapters = Maps.newLinkedHashMap();
-
-  void registerAdapter(String qualifiedName) {
-    adapterNames.add(0, qualifiedName);
+    static Entry create(String qualifiedName, boolean nullSafe) {
+      return new AutoValue_AdapterRegistry_Entry(qualifiedName, nullSafe);
+    }
   }
 
-  ImmutableList<String> getAdapterNames() {
+  private static final ImmutableList<Entry> BUILT_IN_ADAPTER_CLASS_NAMES = ImmutableList.of(
+      Entry.create("paperparcel.internal.StringAdapter", true),
+      Entry.create("paperparcel.internal.IntegerAdapter", false),
+      Entry.create("paperparcel.internal.MapAdapter", false),
+      Entry.create("paperparcel.internal.BundleAdapter", true),
+      Entry.create("paperparcel.internal.PersistableBundleAdapter", true),
+      Entry.create("paperparcel.internal.ParcelableAdapter", true),
+      Entry.create("paperparcel.internal.ShortAdapter", false),
+      Entry.create("paperparcel.internal.LongAdapter", false),
+      Entry.create("paperparcel.internal.FloatAdapter", false),
+      Entry.create("paperparcel.internal.DoubleAdapter", false),
+      Entry.create("paperparcel.internal.BooleanAdapter", false),
+      Entry.create("paperparcel.internal.CharSequenceAdapter", true),
+      Entry.create("paperparcel.internal.ListAdapter", false),
+      Entry.create("paperparcel.internal.SparseArrayAdapter", false),
+      Entry.create("paperparcel.internal.BooleanArrayAdapter", true),
+      Entry.create("paperparcel.internal.ByteArrayAdapter", true),
+      Entry.create("paperparcel.internal.StringArrayAdapter", true),
+      Entry.create("paperparcel.internal.IBinderAdapter", true),
+      Entry.create("paperparcel.internal.IntArrayAdapter", true),
+      Entry.create("paperparcel.internal.LongArrayAdapter", true),
+      Entry.create("paperparcel.internal.ByteAdapter", false),
+      Entry.create("paperparcel.internal.SizeAdapter", false),
+      Entry.create("paperparcel.internal.SizeFAdapter", false),
+      Entry.create("paperparcel.internal.DoubleArrayAdapter", true),
+      Entry.create("paperparcel.internal.LongSparseArrayAdapter", false),
+      Entry.create("paperparcel.internal.SparseBooleanArrayAdapter", true),
+      Entry.create("paperparcel.internal.SparseIntArrayAdapter", false),
+      Entry.create("paperparcel.internal.SparseLongArrayAdapter", false),
+      Entry.create("paperparcel.internal.CollectionAdapter", false),
+      Entry.create("paperparcel.internal.ArrayMapAdapter", false),
+      Entry.create("paperparcel.internal.ArraySetAdapter", false),
+      Entry.create("paperparcel.internal.SetAdapter", false),
+      Entry.create("paperparcel.internal.CharArrayAdapter", true),
+      Entry.create("paperparcel.internal.FloatArrayAdapter", true),
+      Entry.create("paperparcel.internal.ShortArrayAdapter", false),
+      Entry.create("paperparcel.internal.CharacterAdapter", false),
+      Entry.create("paperparcel.internal.EnumAdapter", false));
+
+  private final List<Entry> adapterNames = Lists.newArrayList(BUILT_IN_ADAPTER_CLASS_NAMES);
+  private final Map<TypeName, Adapter> adapters = Maps.newLinkedHashMap();
+
+  void registerAdapter(String qualifiedName, boolean nullSafe) {
+    adapterNames.add(0, Entry.create(qualifiedName, nullSafe));
+  }
+
+  ImmutableList<Entry> getAdapterEntries() {
     return ImmutableList.copyOf(adapterNames);
   }
 

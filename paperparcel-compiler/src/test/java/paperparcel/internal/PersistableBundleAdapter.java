@@ -2,16 +2,16 @@ package paperparcel.internal;
 
 import android.os.Parcel;
 import android.os.PersistableBundle;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
-public final class PersistableBundleAdapter extends AbstractAdapter<PersistableBundle> {
+public final class PersistableBundleAdapter implements TypeAdapter<PersistableBundle> {
   public static final PersistableBundleAdapter INSTANCE = new PersistableBundleAdapter();
 
-  @Override protected PersistableBundle read(Parcel source) {
+  @Override public PersistableBundle readFromParcel(Parcel source) {
     throw new RuntimeException("Stub!");
   }
 
-  @Override protected void write(PersistableBundle value, Parcel dest, int flags) {
+  @Override public void writeToParcel(PersistableBundle value, Parcel dest, int flags) {
     throw new RuntimeException("Stub!");
   }
 

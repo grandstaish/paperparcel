@@ -18,17 +18,18 @@ package paperparcel.internal;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
-import paperparcel.AbstractAdapter;
+import android.support.annotation.Nullable;
+import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class IntArrayAdapter extends AbstractAdapter<int[]> {
+public final class IntArrayAdapter implements TypeAdapter<int[]> {
   public static final IntArrayAdapter INSTANCE = new IntArrayAdapter();
 
-  @NonNull @Override protected int[] read(@NonNull Parcel source) {
+  @Nullable @Override public int[] readFromParcel(@NonNull Parcel source) {
     return source.createIntArray();
   }
 
-  @Override protected void write(@NonNull int[] value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@Nullable int[] value, @NonNull Parcel dest, int flags) {
     dest.writeIntArray(value);
   }
 

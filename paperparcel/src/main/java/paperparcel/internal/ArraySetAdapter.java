@@ -20,7 +20,6 @@ import android.annotation.TargetApi;
 import android.os.Build;
 import android.os.Parcel;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.util.ArraySet;
 import paperparcel.TypeAdapter;
 
@@ -33,29 +32,21 @@ public final class ArraySetAdapter<T> implements TypeAdapter<ArraySet<T>> {
     this.itemAdapter = itemAdapter;
   }
 
-  @Nullable @Override public ArraySet<T> readFromParcel(@NonNull Parcel source) {
-    ArraySet<T> value = null;
-    if (source.readInt() == 1) {
-      int size = source.readInt();
-      value = new ArraySet<>(size);
-      for (int i = 0; i < size; i++) {
-        value.add(itemAdapter.readFromParcel(source));
-      }
+  @NonNull @Override public ArraySet<T> readFromParcel(@NonNull Parcel source) {
+    int size = source.readInt();
+    ArraySet<T> value = new ArraySet<>(size);
+    for (int i = 0; i < size; i++) {
+      value.add(itemAdapter.readFromParcel(source));
     }
     return value;
   }
 
   @Override
-  public void writeToParcel(@Nullable ArraySet<T> value, @NonNull Parcel dest, int flags) {
-    if (value == null) {
-      dest.writeInt(0);
-    } else {
-      dest.writeInt(1);
-      dest.writeInt(value.size());
-      for (int i = 0; i < value.size(); i++) {
-        T item = value.valueAt(i);
-        itemAdapter.writeToParcel(item, dest, flags);
-      }
+  public void writeToParcel(@NonNull ArraySet<T> value, @NonNull Parcel dest, int flags) {
+    dest.writeInt(value.size());
+    for (int i = 0; i < value.size(); i++) {
+      T item = value.valueAt(i);
+      itemAdapter.writeToParcel(item, dest, flags);
     }
   }
 }

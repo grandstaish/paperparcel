@@ -18,7 +18,6 @@ package paperparcel.internal;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import paperparcel.TypeAdapter;
@@ -31,29 +30,21 @@ public final class ListAdapter<T> implements TypeAdapter<List<T>> {
     this.itemAdapter = itemAdapter;
   }
 
-  @Nullable @Override public List<T> readFromParcel(@NonNull Parcel source) {
-    List<T> value = null;
-    if (source.readInt() == 1) {
-      int size = source.readInt();
-      value = new ArrayList<>(size);
-      for (int i = 0; i < size; i++) {
-        value.add(itemAdapter.readFromParcel(source));
-      }
+  @NonNull @Override public List<T> readFromParcel(@NonNull Parcel source) {
+    int size = source.readInt();
+    List<T> value = new ArrayList<>(size);
+    for (int i = 0; i < size; i++) {
+      value.add(itemAdapter.readFromParcel(source));
     }
     return value;
   }
 
   @Override
-  public void writeToParcel(@Nullable List<T> value, @NonNull Parcel dest, int flags) {
-    if (value == null) {
-      dest.writeInt(0);
-    } else {
-      dest.writeInt(1);
-      dest.writeInt(value.size());
-      for (int i = 0; i < value.size(); i++) {
-        T item = value.get(i);
-        itemAdapter.writeToParcel(item, dest, flags);
-      }
+  public void writeToParcel(@NonNull List<T> value, @NonNull Parcel dest, int flags) {
+    dest.writeInt(value.size());
+    for (int i = 0; i < value.size(); i++) {
+      T item = value.get(i);
+      itemAdapter.writeToParcel(item, dest, flags);
     }
   }
 }

@@ -19,17 +19,18 @@ package paperparcel.internal;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.support.annotation.NonNull;
-import paperparcel.AbstractAdapter;
+import android.support.annotation.Nullable;
+import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class IBinderAdapter extends AbstractAdapter<IBinder> {
+public final class IBinderAdapter implements TypeAdapter<IBinder> {
   public static final IBinderAdapter INSTANCE = new IBinderAdapter();
 
-  @NonNull @Override public IBinder read(@NonNull Parcel source) {
+  @Nullable @Override public IBinder readFromParcel(@NonNull Parcel source) {
     return source.readStrongBinder();
   }
 
-  @Override protected void write(@NonNull IBinder value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@Nullable IBinder value, @NonNull Parcel dest, int flags) {
     dest.writeStrongBinder(value);
   }
 

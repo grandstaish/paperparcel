@@ -1,16 +1,16 @@
 package paperparcel.internal;
 
 import android.os.Parcel;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
-public final class ShortArrayAdapter extends AbstractAdapter<short[]> {
+public final class ShortArrayAdapter implements TypeAdapter<short[]> {
   public static final ShortArrayAdapter INSTANCE = new ShortArrayAdapter();
 
-  @Override protected short[] read(Parcel source) {
+  @Override public short[] readFromParcel(Parcel source) {
     throw new RuntimeException("Stub!");
   }
 
-  @Override protected void write(short[] value, Parcel dest, int flags) {
+  @Override public void writeToParcel(short[] value, Parcel dest, int flags) {
     throw new RuntimeException("Stub!");
   }
 

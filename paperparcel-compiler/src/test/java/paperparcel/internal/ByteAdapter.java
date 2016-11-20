@@ -1,16 +1,16 @@
 package paperparcel.internal;
 
 import android.os.Parcel;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
-public final class ByteAdapter extends AbstractAdapter<Byte> {
+public final class ByteAdapter implements TypeAdapter<Byte> {
   public static final ByteAdapter INSTANCE = new ByteAdapter();
 
-  @Override protected Byte read(Parcel source) {
+  @Override public Byte readFromParcel(Parcel source) {
     throw new RuntimeException("Stub!");
   }
 
-  @Override protected void write(Byte value, Parcel dest, int flags) {
+  @Override public void writeToParcel(Byte value, Parcel dest, int flags) {
     throw new RuntimeException("Stub!");
   }
 
