@@ -37,8 +37,8 @@ abstract class FieldDescriptor {
   /** The original type of the field */
   abstract Equivalence.Wrapper<TypeMirror> type();
 
-  /** True if this field is private */
-  abstract boolean isPrivate();
+  /** True if this field is not private */
+  abstract boolean isVisible();
 
   static final class Factory {
     private final Types types;
@@ -53,8 +53,8 @@ abstract class FieldDescriptor {
       TypeMirror type = element.asType();
       TypeMirror fieldType = Utils.eraseTypeVariables(types, type);
       Equivalence.Wrapper<TypeMirror> wrappedType = MoreTypes.equivalence().wrap(fieldType);
-      boolean isPrivate = Visibility.ofElement(element) == Visibility.PRIVATE;
-      return new AutoValue_FieldDescriptor(element, name, wrappedType, isPrivate);
+      boolean isVisible = Visibility.ofElement(element) != Visibility.PRIVATE;
+      return new AutoValue_FieldDescriptor(element, name, wrappedType, isVisible);
     }
   }
 }
