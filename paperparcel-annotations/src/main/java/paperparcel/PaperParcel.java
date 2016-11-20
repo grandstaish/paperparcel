@@ -145,14 +145,15 @@ public @interface PaperParcel {
     int[] excludeModifiers() default { Modifier.TRANSIENT, Modifier.STATIC };
 
     /**
-     * Configures PaperParcel to be able to access java elements that are annotated with any of
-     * the given annotations via reflection. By default, PaperParcel will never use reflection to
-     * call constructors or read/write from/to fields.
+     * Configures PaperParcel to be able to access private constructors and fields that are
+     * annotated with any of the given annotations (using reflection).
      *
-     * <p>Because reflection is slow on Android, this option should be used sparingly.
+     * <p>Because reflection is slow on Android, this option should be used sparingly. Because
+     * of the performance implications, PaperParcel will always favor <i>not</i> using
+     * reflection when it is possible.
      *
-     * <p>Note: if your code will be obfuscated, be sure to keep the annotated elements so that
-     * they can be discovered by name.
+     * <p>Note: if your code will be obfuscated, be sure to retain the names of the annotated
+     * fields and constructors so that the generated reflection calls will continue to work.
      */
     Class<? extends Annotation>[] reflectAnnotations() default {};
   }
