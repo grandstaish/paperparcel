@@ -18,7 +18,6 @@ package paperparcel.internal;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import java.util.LinkedHashSet;
 import java.util.Set;
 import paperparcel.TypeAdapter;
@@ -31,28 +30,20 @@ public final class SetAdapter<T> implements TypeAdapter<Set<T>> {
     this.itemAdapter = itemAdapter;
   }
 
-  @Nullable @Override public Set<T> readFromParcel(@NonNull Parcel source) {
-    Set<T> value = null;
-    if (source.readInt() == 1) {
-      int size = source.readInt();
-      value = new LinkedHashSet<>(size);
-      for (int i = 0; i < size; i++) {
-        value.add(itemAdapter.readFromParcel(source));
-      }
+  @NonNull @Override public Set<T> readFromParcel(@NonNull Parcel source) {
+    int size = source.readInt();
+    Set<T> value = new LinkedHashSet<>(size);
+    for (int i = 0; i < size; i++) {
+      value.add(itemAdapter.readFromParcel(source));
     }
     return value;
   }
 
   @Override
-  public void writeToParcel(@Nullable Set<T> value, @NonNull Parcel dest, int flags) {
-    if (value == null) {
-      dest.writeInt(0);
-    } else {
-      dest.writeInt(1);
-      dest.writeInt(value.size());
-      for (T item : value) {
-        itemAdapter.writeToParcel(item, dest, flags);
-      }
+  public void writeToParcel(@NonNull Set<T> value, @NonNull Parcel dest, int flags) {
+    dest.writeInt(value.size());
+    for (T item : value) {
+      itemAdapter.writeToParcel(item, dest, flags);
     }
   }
 }

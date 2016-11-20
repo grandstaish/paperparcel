@@ -18,7 +18,6 @@ package paperparcel.internal;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import paperparcel.TypeAdapter;
@@ -33,29 +32,21 @@ public final class MapAdapter<K, V> implements TypeAdapter<Map<K, V>> {
     this.valueAdapter = valueAdapter;
   }
 
-  @Nullable @Override public Map<K, V> readFromParcel(@NonNull Parcel source) {
-    Map<K, V> map = null;
-    if (source.readInt() == 1) {
-      int size = source.readInt();
-      map = new LinkedHashMap<>(size);
-      for (int i = 0; i < size; i++) {
-        map.put(keyAdapter.readFromParcel(source), valueAdapter.readFromParcel(source));
-      }
+  @NonNull @Override public Map<K, V> readFromParcel(@NonNull Parcel source) {
+    int size = source.readInt();
+    Map<K, V> map = new LinkedHashMap<>(size);
+    for (int i = 0; i < size; i++) {
+      map.put(keyAdapter.readFromParcel(source), valueAdapter.readFromParcel(source));
     }
     return map;
   }
 
   @Override
-  public void writeToParcel(@Nullable Map<K, V> value, @NonNull Parcel dest, int flags) {
-    if (value == null) {
-      dest.writeInt(0);
-    } else {
-      dest.writeInt(1);
-      dest.writeInt(value.size());
-      for (Map.Entry<K, V> entry : value.entrySet()) {
-        keyAdapter.writeToParcel(entry.getKey(), dest, flags);
-        valueAdapter.writeToParcel(entry.getValue(), dest, flags);
-      }
+  public void writeToParcel(@NonNull Map<K, V> value, @NonNull Parcel dest, int flags) {
+    dest.writeInt(value.size());
+    for (Map.Entry<K, V> entry : value.entrySet()) {
+      keyAdapter.writeToParcel(entry.getKey(), dest, flags);
+      valueAdapter.writeToParcel(entry.getValue(), dest, flags);
     }
   }
 }

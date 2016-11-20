@@ -18,13 +18,13 @@ package paperparcel.internal;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class ShortArrayAdapter extends AbstractAdapter<short[]> {
+public final class ShortArrayAdapter implements TypeAdapter<short[]> {
   public static final ShortArrayAdapter INSTANCE = new ShortArrayAdapter();
 
-  @NonNull @Override protected short[] read(@NonNull Parcel source) {
+  @NonNull @Override public short[] readFromParcel(@NonNull Parcel source) {
     int size = source.readInt();
     short[] value = new short[size];
     for (int i = 0; i < size; i++) {
@@ -33,7 +33,7 @@ public final class ShortArrayAdapter extends AbstractAdapter<short[]> {
     return value;
   }
 
-  @Override protected void write(@NonNull short[] value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@NonNull short[] value, @NonNull Parcel dest, int flags) {
     dest.writeInt(value.length);
     for (short s : value) {
       dest.writeInt((int) s);

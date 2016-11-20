@@ -16,16 +16,22 @@
 
 package paperparcel.internal;
 
+import android.os.Parcel;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import paperparcel.TypeAdapter;
 
+@SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
 public final class Utils {
 
   /** Reads a fields value via reflection. */
-  @SuppressWarnings({ "unchecked", "UnusedParameters", "unused", "TryWithIdenticalCatches" })
+  @SuppressWarnings({ "unchecked", "UnusedParameters", "TryWithIdenticalCatches" })
   public static <T> T readField(
-      Class<T> type, Class<?> enclosingClass, Object target, String field) {
+      @NonNull Class<T> type, @NonNull Class<?> enclosingClass,
+      @NonNull Object target, @NonNull String field) {
     try {
       Field f = enclosingClass.getDeclaredField(field);
       f.setAccessible(true);
@@ -38,9 +44,10 @@ public final class Utils {
   }
 
   /** Writes a value to a field via reflection. */
-  @SuppressWarnings({ "unchecked", "unused", "TryWithIdenticalCatches" })
+  @SuppressWarnings({ "unchecked", "TryWithIdenticalCatches" })
   public static void writeField(
-      Object value, Class<?> enclosingClass, Object target, String field) {
+      @NonNull Object value, @NonNull Class<?> enclosingClass,
+      @NonNull Object target, @NonNull String field) {
     try {
       Field f = enclosingClass.getDeclaredField(field);
       f.setAccessible(true);
@@ -53,8 +60,9 @@ public final class Utils {
   }
 
   /** Constructs an instance of {@code type} via reflection. */
-  @SuppressWarnings({ "unchecked", "unused", "TryWithIdenticalCatches" })
-  public static <T> T init(Class<T> type, Class[] argClasses, Object[] args) {
+  @SuppressWarnings({ "unchecked", "TryWithIdenticalCatches" })
+  public static <T> T init(
+      @NonNull Class<T> type, @NonNull Class[] argClasses, @NonNull Object[] args) {
     try {
       Constructor<T> constructor = type.getConstructor(argClasses);
       constructor.setAccessible(true);
@@ -67,6 +75,49 @@ public final class Utils {
       throw new RuntimeException(e);
     } catch (InvocationTargetException e) {
       throw new RuntimeException(e);
+    }
+  }
+
+  /**
+   * Returns a type adapter equal to this type adapter, but with support for reading and writing
+   * nulls.
+   */
+  public static <T> TypeAdapter<T> nullSafeClone(@NonNull final TypeAdapter<T> delegate) {
+    return new TypeAdapter<T>() {
+      @Nullable @Override public T readFromParcel(@NonNull Parcel source) {
+        return readNullable(source, delegate);
+      }
+
+      @Override public void writeToParcel(@Nullable T value, @NonNull Parcel dest, int flags) {
+        writeNullable(value, dest, flags, delegate);
+      }
+    };
+  }
+
+  /**
+   * Returns a type adapter equal to this type adapter, but with support for reading and writing
+   * nulls.
+   */
+  @Nullable public static <T> T readNullable(
+      @NonNull Parcel source, @NonNull TypeAdapter<T> adapter) {
+    T value = null;
+    if (source.readInt() == 1) {
+      value = adapter.readFromParcel(source);
+    }
+    return value;
+  }
+
+  /**
+   * Returns a type adapter equal to this type adapter, but with support for reading and writing
+   * nulls.
+   */
+  public static <T> void writeNullable(
+      @Nullable T value, @NonNull Parcel dest, int flags, @NonNull TypeAdapter<T> adapter) {
+    if (value == null) {
+      dest.writeInt(0);
+    } else {
+      dest.writeInt(1);
+      adapter.writeToParcel(value, dest, flags);
     }
   }
 

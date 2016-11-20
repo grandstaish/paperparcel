@@ -2,16 +2,16 @@ package paperparcel.internal;
 
 import android.os.Parcel;
 import android.util.SparseBooleanArray;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
-public final class SparseBooleanArrayAdapter extends AbstractAdapter<SparseBooleanArray> {
+public final class SparseBooleanArrayAdapter implements TypeAdapter<SparseBooleanArray> {
   public static final SparseBooleanArrayAdapter INSTANCE = new SparseBooleanArrayAdapter();
 
-  @Override protected SparseBooleanArray read(Parcel source) {
+  @Override public SparseBooleanArray readFromParcel(Parcel source) {
     throw new RuntimeException("Stub!");
   }
 
-  @Override protected void write(SparseBooleanArray value, Parcel dest, int flags) {
+  @Override public void writeToParcel(SparseBooleanArray value, Parcel dest, int flags) {
     throw new RuntimeException("Stub!");
   }
 

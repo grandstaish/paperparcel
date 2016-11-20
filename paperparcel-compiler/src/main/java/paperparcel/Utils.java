@@ -420,10 +420,10 @@ final class Utils {
   }
 
   /** Finds an annotation with the given name on the given element, or null if not found. */
-  @Nullable static AnnotationMirror getAnnotationWithSimpleName(Element element, String simpleName) {
+  @Nullable static AnnotationMirror getAnnotationWithSimpleName(Element element, String name) {
     for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
       String annotationName = mirror.getAnnotationType().asElement().getSimpleName().toString();
-      if (simpleName.equals(annotationName)) {
+      if (name.equals(annotationName)) {
         return mirror;
       }
     }

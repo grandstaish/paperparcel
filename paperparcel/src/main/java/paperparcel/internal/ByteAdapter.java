@@ -18,17 +18,17 @@ package paperparcel.internal;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class ByteAdapter extends AbstractAdapter<Byte> {
+public final class ByteAdapter implements TypeAdapter<Byte> {
   public static final ByteAdapter INSTANCE = new ByteAdapter();
 
-  @NonNull @Override protected Byte read(@NonNull Parcel source) {
+  @NonNull @Override public Byte readFromParcel(@NonNull Parcel source) {
     return source.readByte();
   }
 
-  @Override protected void write(@NonNull Byte value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@NonNull Byte value, @NonNull Parcel dest, int flags) {
     dest.writeByte(value);
   }
 

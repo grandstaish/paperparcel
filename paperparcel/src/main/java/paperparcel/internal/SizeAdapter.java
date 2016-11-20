@@ -21,18 +21,18 @@ import android.os.Build;
 import android.os.Parcel;
 import android.support.annotation.NonNull;
 import android.util.Size;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
 @TargetApi(Build.VERSION_CODES.LOLLIPOP)
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class SizeAdapter extends AbstractAdapter<Size> {
+public final class SizeAdapter implements TypeAdapter<Size> {
   public static final SizeAdapter INSTANCE = new SizeAdapter();
 
-  @NonNull @Override public Size read(@NonNull Parcel source) {
+  @NonNull @Override public Size readFromParcel(@NonNull Parcel source) {
     return source.readSize();
   }
 
-  @Override protected void write(@NonNull Size value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@NonNull Size value, @NonNull Parcel dest, int flags) {
     dest.writeSize(value);
   }
 

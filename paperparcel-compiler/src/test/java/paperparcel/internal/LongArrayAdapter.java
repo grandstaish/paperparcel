@@ -1,16 +1,16 @@
 package paperparcel.internal;
 
 import android.os.Parcel;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
-public final class LongArrayAdapter extends AbstractAdapter<long[]> {
+public final class LongArrayAdapter implements TypeAdapter<long[]> {
   public static final LongArrayAdapter INSTANCE = new LongArrayAdapter();
 
-  @Override protected long[] read(Parcel source) {
+  @Override public long[] readFromParcel(Parcel source) {
     throw new RuntimeException("Stub!");
   }
 
-  @Override protected void write(long[] value, Parcel dest, int flags) {
+  @Override public void writeToParcel(long[] value, Parcel dest, int flags) {
     throw new RuntimeException("Stub!");
   }
 

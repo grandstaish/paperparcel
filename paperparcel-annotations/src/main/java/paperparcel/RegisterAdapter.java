@@ -33,4 +33,12 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
 @Retention(SOURCE)
 @Target(TYPE)
 public @interface RegisterAdapter {
+  /**
+   * Return true if this type adapter can handle null values. If this returns {@code false},
+   * then PaperParcel will handle the null-checking for you. Returning {@code true} from
+   * this method can help by preventing unnecessary double-up in null checking.
+   *
+   * <p>By default, this method returns false.
+   */
+  boolean nullSafe() default false;
 }

@@ -19,18 +19,17 @@ package paperparcel.internal;
 import android.os.Parcel;
 import android.support.annotation.NonNull;
 import android.util.SparseArray;
-import paperparcel.AbstractAdapter;
 import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class SparseArrayAdapter<T> extends AbstractAdapter<SparseArray<T>> {
+public final class SparseArrayAdapter<T> implements TypeAdapter<SparseArray<T>> {
   private final TypeAdapter<T> itemAdapter;
 
   public SparseArrayAdapter(TypeAdapter<T> itemAdapter) {
     this.itemAdapter = itemAdapter;
   }
 
-  @NonNull @Override protected SparseArray<T> read(@NonNull Parcel source) {
+  @NonNull @Override public SparseArray<T> readFromParcel(@NonNull Parcel source) {
     int size = source.readInt();
     SparseArray<T> sparseArray = new SparseArray<>(size);
     for (int i = 0; i < size; i++) {
@@ -39,7 +38,7 @@ public final class SparseArrayAdapter<T> extends AbstractAdapter<SparseArray<T>>
     return sparseArray;
   }
 
-  @Override protected void write(@NonNull SparseArray<T> value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@NonNull SparseArray<T> value, @NonNull Parcel dest, int flags) {
     dest.writeInt(value.size());
     for (int i = 0; i < value.size(); i++) {
       int key = value.keyAt(i);

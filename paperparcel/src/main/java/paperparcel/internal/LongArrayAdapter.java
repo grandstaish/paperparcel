@@ -18,17 +18,18 @@ package paperparcel.internal;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
-import paperparcel.AbstractAdapter;
+import android.support.annotation.Nullable;
+import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class LongArrayAdapter extends AbstractAdapter<long[]> {
+public final class LongArrayAdapter implements TypeAdapter<long[]> {
   public static final LongArrayAdapter INSTANCE = new LongArrayAdapter();
 
-  @NonNull @Override protected long[] read(@NonNull Parcel source) {
+  @Nullable @Override public long[] readFromParcel(@NonNull Parcel source) {
     return source.createLongArray();
   }
 
-  @Override protected void write(@NonNull long[] value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@Nullable long[] value, @NonNull Parcel dest, int flags) {
     dest.writeLongArray(value);
   }
 

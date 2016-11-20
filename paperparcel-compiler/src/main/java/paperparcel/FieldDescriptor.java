@@ -40,7 +40,13 @@ abstract class FieldDescriptor {
   /** True if this field is not private */
   abstract boolean isVisible();
 
+  /** True if the field is not annotated with {@code @NonNull} or {@code @NotNull}. */
+  abstract boolean isNullable();
+
   static final class Factory {
+    private static final String NON_NULL_ANNOTATION_NAME = "NonNull";
+    private static final String NOT_NULL_ANNOTATION_NAME = "NotNull";
+
     private final Types types;
 
     Factory(
@@ -54,7 +60,10 @@ abstract class FieldDescriptor {
       TypeMirror fieldType = Utils.eraseTypeVariables(types, type);
       Equivalence.Wrapper<TypeMirror> wrappedType = MoreTypes.equivalence().wrap(fieldType);
       boolean isVisible = Visibility.ofElement(element) != Visibility.PRIVATE;
-      return new AutoValue_FieldDescriptor(element, name, wrappedType, isVisible);
+      boolean isNullable =
+          Utils.getAnnotationWithSimpleName(element, NON_NULL_ANNOTATION_NAME) == null
+          && Utils.getAnnotationWithSimpleName(element, NOT_NULL_ANNOTATION_NAME) == null;
+      return new AutoValue_FieldDescriptor(element, name, wrappedType, isVisible, isNullable);
     }
   }
 }

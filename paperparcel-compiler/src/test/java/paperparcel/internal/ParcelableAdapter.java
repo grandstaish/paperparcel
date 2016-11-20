@@ -2,14 +2,14 @@ package paperparcel.internal;
 
 import android.os.Parcel;
 import android.os.Parcelable;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
-public final class ParcelableAdapter<T extends Parcelable> extends AbstractAdapter<T> {
-  @Override protected T read(Parcel source) {
+public final class ParcelableAdapter<T extends Parcelable> implements TypeAdapter<T> {
+  @Override public T readFromParcel(Parcel source) {
     throw new RuntimeException("Stub!");
   }
 
-  @Override protected void write(T value, Parcel dest, int flags) {
+  @Override public void writeToParcel(T value, Parcel dest, int flags) {
     throw new RuntimeException("Stub!");
   }
 }

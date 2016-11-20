@@ -2,16 +2,16 @@ package paperparcel.internal;
 
 import android.os.Parcel;
 import android.util.SizeF;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
-public final class SizeFAdapter extends AbstractAdapter<SizeF> {
+public final class SizeFAdapter implements TypeAdapter<SizeF> {
   public static final SizeFAdapter INSTANCE = new SizeFAdapter();
 
-  @Override public SizeF read(Parcel source) {
+  @Override public SizeF readFromParcel(Parcel source) {
     throw new RuntimeException("Stub!");
   }
 
-  @Override protected void write(SizeF value, Parcel dest, int flags) {
+  @Override public void writeToParcel(SizeF value, Parcel dest, int flags) {
     throw new RuntimeException("Stub!");
   }
 

@@ -55,7 +55,9 @@ final class RegisterAdapterProcessingStep implements BasicAnnotationProcessor.Pr
       ValidationReport<TypeElement> report = registerAdapterValidator.validate(adapterElement);
       report.printMessagesTo(messager);
       if (report.isClean()) {
-        adapterRegistry.registerAdapter(adapterElement.getQualifiedName().toString());
+        RegisterAdapter registerAdapter = element.getAnnotation(RegisterAdapter.class);
+        adapterRegistry.registerAdapter(
+            adapterElement.getQualifiedName().toString(), registerAdapter.nullSafe());
       }
     }
     return ImmutableSet.of();

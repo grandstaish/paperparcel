@@ -52,6 +52,7 @@ import static javax.lang.model.element.Modifier.STATIC;
 final class PaperParcelWriter {
   private static final ClassName PARCEL = ClassName.get("android.os", "Parcel");
   private static final ClassName UTILS = ClassName.get("paperparcel.internal", "Utils");
+  private static final ClassName TYPE_ADAPTER = ClassName.get("paperparcel", "TypeAdapter");
 
   private final AdapterNameGenerator adapterNames = new AdapterNameGenerator();
 
@@ -174,7 +175,11 @@ final class PaperParcelWriter {
     } else {
       Adapter adapter = descriptor.adapters().get(field);
       CodeBlock adapterInstance = adapterInstance(adapter);
-      builder.initializer("$L.readFromParcel($N)", adapterInstance, in);
+      if (field.isNullable() && !adapter.nullSafe()) {
+        builder.initializer("$T.readNullable($N, $L)", UTILS, in, adapterInstance);
+      } else {
+        builder.initializer("$L.readFromParcel($N)", adapterInstance, in);
+      }
     }
 
     return builder.build();
@@ -327,8 +332,13 @@ final class PaperParcelWriter {
     } else {
       Adapter adapter = descriptor.adapters().get(field);
       CodeBlock adapterInstance = adapterInstance(adapter);
-      builder.addStatement("$L.writeToParcel($L, $N, $N)", adapterInstance, accessorBlock, dest,
-          flags);
+      if (field.isNullable() && !adapter.nullSafe()) {
+        builder.addStatement("$T.writeNullable($L, $N, $N, $L)",
+            UTILS, accessorBlock, dest, flags, adapterInstance);
+      } else {
+        builder.addStatement("$L.writeToParcel($L, $N, $N)",
+            adapterInstance, accessorBlock, dest, flags);
+      }
     }
   }
 
@@ -365,8 +375,10 @@ final class PaperParcelWriter {
         // Construct the single instance of this type adapter
         String adapterName = adapterNames.getName(adapter.typeName());
         CodeBlock parameters = getAdapterParameterList(adapter.dependencies());
+        ParameterizedTypeName adapterInterfaceType =
+            ParameterizedTypeName.get(TYPE_ADAPTER, adapter.adaptedTypeName());
         FieldSpec.Builder adapterSpec =
-            FieldSpec.builder(adapter.typeName(), adapterName, STATIC, FINAL)
+            FieldSpec.builder(adapterInterfaceType, adapterName, STATIC, FINAL)
                 .initializer(CodeBlock.of("new $T($L)", adapter.typeName(), parameters));
         adapterFields.add(adapterSpec.build());
       }
@@ -382,7 +394,11 @@ final class PaperParcelWriter {
     return CodeBlocks.join(FluentIterable.from(dependencies)
         .transform(new Function<Adapter, CodeBlock>() {
           @Override public CodeBlock apply(Adapter adapter) {
-            return adapterInstance(adapter);
+            if (adapter.nullSafe()) {
+              return adapterInstance(adapter);
+            } else {
+              return CodeBlock.of("$T.nullSafeClone($L)", UTILS, adapterInstance(adapter));
+            }
           }
         })
         .toList(), ", ");

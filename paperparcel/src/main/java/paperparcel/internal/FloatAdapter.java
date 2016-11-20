@@ -18,17 +18,17 @@ package paperparcel.internal;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class FloatAdapter extends AbstractAdapter<Float> {
+public final class FloatAdapter implements TypeAdapter<Float> {
   public static final FloatAdapter INSTANCE = new FloatAdapter();
 
-  @NonNull @Override protected Float read(@NonNull Parcel source) {
+  @NonNull @Override public Float readFromParcel(@NonNull Parcel source) {
     return source.readFloat();
   }
 
-  @Override protected void write(@NonNull Float value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@NonNull Float value, @NonNull Parcel dest, int flags) {
     dest.writeFloat(value);
   }
 

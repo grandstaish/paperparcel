@@ -19,6 +19,7 @@ package paperparcel;
 import com.google.auto.common.BasicAnnotationProcessor;
 import com.google.auto.service.AutoService;
 import com.google.common.collect.ImmutableList;
+import com.google.googlejavaformat.java.filer.FormattingFiler;
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.Processor;
@@ -40,7 +41,7 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
     Messager messager = processingEnv.getMessager();
     Types types = processingEnv.getTypeUtils();
     Elements elements = processingEnv.getElementUtils();
-    Filer filer = processingEnv.getFiler();
+    Filer filer = new FormattingFiler(processingEnv.getFiler());
 
     AdapterRegistry adapterRegistry = new AdapterRegistry();
 

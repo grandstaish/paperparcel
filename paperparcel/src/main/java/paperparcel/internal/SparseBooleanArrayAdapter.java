@@ -18,19 +18,19 @@ package paperparcel.internal;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.util.SparseBooleanArray;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class SparseBooleanArrayAdapter extends AbstractAdapter<SparseBooleanArray> {
+public final class SparseBooleanArrayAdapter implements TypeAdapter<SparseBooleanArray> {
   public static final SparseBooleanArrayAdapter INSTANCE = new SparseBooleanArrayAdapter();
 
-  @NonNull @Override protected SparseBooleanArray read(@NonNull Parcel source) {
+  @Nullable @Override public SparseBooleanArray readFromParcel(@NonNull Parcel source) {
     return source.readSparseBooleanArray();
   }
 
-  @Override
-  protected void write(@NonNull SparseBooleanArray value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@Nullable SparseBooleanArray value, @NonNull Parcel dest, int flags) {
     dest.writeSparseBooleanArray(value);
   }
 

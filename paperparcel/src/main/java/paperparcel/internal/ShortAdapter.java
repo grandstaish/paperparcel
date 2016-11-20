@@ -18,17 +18,17 @@ package paperparcel.internal;
 
 import android.os.Parcel;
 import android.support.annotation.NonNull;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class ShortAdapter extends AbstractAdapter<Short> {
+public final class ShortAdapter implements TypeAdapter<Short> {
   public static final ShortAdapter INSTANCE = new ShortAdapter();
 
-  @NonNull @Override public Short read(@NonNull Parcel source) {
+  @NonNull @Override public Short readFromParcel(@NonNull Parcel source) {
     return (short) source.readInt();
   }
 
-  @Override protected void write(@NonNull Short value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@NonNull Short value, @NonNull Parcel dest, int flags) {
     dest.writeInt(value.intValue());
   }
 

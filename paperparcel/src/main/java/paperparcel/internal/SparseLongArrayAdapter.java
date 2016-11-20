@@ -21,14 +21,14 @@ import android.os.Build;
 import android.os.Parcel;
 import android.support.annotation.NonNull;
 import android.util.SparseLongArray;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class SparseLongArrayAdapter extends AbstractAdapter<SparseLongArray> {
+public final class SparseLongArrayAdapter implements TypeAdapter<SparseLongArray> {
   public static final SparseLongArrayAdapter INSTANCE = new SparseLongArrayAdapter();
 
-  @NonNull @Override protected SparseLongArray read(@NonNull Parcel source) {
+  @NonNull @Override public SparseLongArray readFromParcel(@NonNull Parcel source) {
     int size = source.readInt();
     SparseLongArray result = new SparseLongArray(size);
     for (int i = 0; i < size; i++) {
@@ -37,7 +37,7 @@ public final class SparseLongArrayAdapter extends AbstractAdapter<SparseLongArra
     return result;
   }
 
-  @Override protected void write(@NonNull SparseLongArray value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@NonNull SparseLongArray value, @NonNull Parcel dest, int flags) {
     dest.writeInt(value.size());
     for (int i = 0; i < value.size(); i++) {
       dest.writeInt(value.keyAt(i));

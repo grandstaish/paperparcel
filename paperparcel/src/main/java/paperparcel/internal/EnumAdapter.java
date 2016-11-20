@@ -20,14 +20,14 @@ import android.os.Parcel;
 import android.support.annotation.NonNull;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class EnumAdapter<T extends Enum<T>> extends AbstractAdapter<T> {
+public final class EnumAdapter<T extends Enum<T>> implements TypeAdapter<T> {
   private static final Map<String, Class<?>> NAMES_TO_CLASSES = new LinkedHashMap<>();
 
-  @SuppressWarnings("unchecked")
-  @NonNull @Override protected T read(@NonNull Parcel source) {
+  @NonNull @SuppressWarnings("unchecked")
+  @Override public T readFromParcel(@NonNull Parcel source) {
     try {
       String className = source.readString();
       Class<?> enumClass = NAMES_TO_CLASSES.get(className);
@@ -41,7 +41,7 @@ public final class EnumAdapter<T extends Enum<T>> extends AbstractAdapter<T> {
     }
   }
 
-  @Override protected void write(@NonNull T value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@NonNull T value, @NonNull Parcel dest, int flags) {
     dest.writeString(value.getClass().getName());
     dest.writeString(value.name());
   }

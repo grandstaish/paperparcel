@@ -30,6 +30,7 @@ dependencies {
   compile deps.autoservice
   compile deps.autocommon
   compile deps.javapoet
+  compile deps.javaFormat
 
   testCompile files('libs/android.jar')
   testCompile deps.junit

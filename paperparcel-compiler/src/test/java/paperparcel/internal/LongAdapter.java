@@ -1,16 +1,16 @@
 package paperparcel.internal;
 
 import android.os.Parcel;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
-public final class LongAdapter extends AbstractAdapter<Long> {
+public final class LongAdapter implements TypeAdapter<Long> {
   public static final LongAdapter INSTANCE = new LongAdapter();
 
-  @Override protected Long read(Parcel source) {
+  @Override public Long readFromParcel(Parcel source) {
     throw new RuntimeException("Stub!");
   }
 
-  @Override protected void write(Long value, Parcel dest, int flags) {
+  @Override public void writeToParcel(Long value, Parcel dest, int flags) {
     throw new RuntimeException("Stub!");
   }
 

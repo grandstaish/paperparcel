@@ -21,19 +21,18 @@ import android.os.Build;
 import android.os.Parcel;
 import android.support.annotation.NonNull;
 import android.util.LongSparseArray;
-import paperparcel.AbstractAdapter;
 import paperparcel.TypeAdapter;
 
 @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class LongSparseArrayAdapter<T> extends AbstractAdapter<LongSparseArray<T>> {
+public final class LongSparseArrayAdapter<T> implements TypeAdapter<LongSparseArray<T>> {
   private final TypeAdapter<T> itemAdapter;
 
   public LongSparseArrayAdapter(TypeAdapter<T> itemAdapter) {
     this.itemAdapter = itemAdapter;
   }
 
-  @NonNull @Override protected LongSparseArray<T> read(@NonNull Parcel source) {
+  @NonNull @Override public LongSparseArray<T> readFromParcel(@NonNull Parcel source) {
     int size = source.readInt();
     LongSparseArray<T> sparseArray = new LongSparseArray<>(size);
     for (int i = 0; i < size; i++) {
@@ -42,7 +41,7 @@ public final class LongSparseArrayAdapter<T> extends AbstractAdapter<LongSparseA
     return sparseArray;
   }
 
-  @Override protected void write(@NonNull LongSparseArray<T> value, @NonNull Parcel dest, int flags) {
+  @Override public void writeToParcel(@NonNull LongSparseArray<T> value, @NonNull Parcel dest, int flags) {
     dest.writeInt(value.size());
     for (int i = 0; i < value.size(); i++) {
       long key = value.keyAt(i);

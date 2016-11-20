@@ -1,16 +1,16 @@
 package paperparcel.internal;
 
 import android.os.Parcel;
-import paperparcel.AbstractAdapter;
+import paperparcel.TypeAdapter;
 
-public final class IntegerAdapter extends AbstractAdapter<Integer> {
+public final class IntegerAdapter implements TypeAdapter<Integer> {
   public static final IntegerAdapter INSTANCE = new IntegerAdapter();
 
-  @Override protected Integer read(Parcel source) {
+  @Override public Integer readFromParcel(Parcel source) {
     throw new RuntimeException("Stub!");
   }
 
-  @Override protected void write(Integer value, Parcel dest, int flags) {
+  @Override public void writeToParcel(Integer value, Parcel dest, int flags) {
     throw new RuntimeException("Stub!");
   }
 
