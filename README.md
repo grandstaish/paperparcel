@@ -245,7 +245,7 @@ public class Example implements Parcelable {
 
 *Note: this section is only relevant if you are using PaperParcel without the assitance of AutoValue or Kotlin's data classes.*
 
-PaperParcel uses no reflection to access fields. Because of that, all of the fields that PaperParcel is going to process need to follow a few loose conventions in order for PaperParcel to know how to read your fields and re-instantiate your models. Any failure to follow these conventions will result in a compile time error with a clear message informing you of what is wrong.
+By default, PaperParcel uses no reflection to access fields<sup id="a1">[1](#footnote-reflect-annotations)</sup>. Because of that, all of the fields that PaperParcel is going to process need to follow a few loose conventions in order for PaperParcel to know how to read your fields and re-instantiate your models. Any failure to follow these conventions will result in a compile time error with a clear message informing you of what is wrong.
 
 #### Reading Fields
 
@@ -274,6 +274,10 @@ Setter methods are discovered using similar conventions to the aforementioned ac
 **2)** The argument type needs to be assignable to the field's type
 
 **3)** The method needs to have one of the following names: `$FIELD_NAME$`, or `set$FIELD_NAME$`. For example, if the field is named `firstName`, then the set of valid setter method names would contain `firstName` and `setFirstName`.
+
+##
+
+<sub><b><a name="footnote-reflect-annotations">1</a></b>: You can configure PaperParcel to access private fields via refelection using the `PaperParcel.Options#reflectAnnotations()` API. [↩](#a1)</sub>
 
 ## Download
 
