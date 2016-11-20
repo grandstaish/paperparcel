@@ -36,29 +36,34 @@ abstract class Options {
       ImmutableList.<Set<Modifier>>of(ImmutableSet.of(STATIC), ImmutableSet.of(TRANSIENT)),
       ImmutableList.<String>of(),
       ImmutableList.<String>of(),
-      false);
+      false,
+      ImmutableList.<String>of());
 
   @Nullable abstract AnnotationMirror mirror();
 
-  abstract List<Set<Modifier>> excludeModifiers();
+  abstract ImmutableList<Set<Modifier>> excludeModifiers();
 
-  abstract List<String> excludeAnnotationNames();
+  abstract ImmutableList<String> excludeAnnotationNames();
 
-  abstract List<String> exposeAnnotationNames();
+  abstract ImmutableList<String> exposeAnnotationNames();
 
   abstract boolean excludeNonExposedFields();
 
+  abstract ImmutableList<String> reflectAnnotations();
+
   static Options create(
       AnnotationMirror mirror,
-      List<Set<Modifier>> excludeModifiers,
-      List<String> excludeAnnotationNames,
-      List<String> exposeAnnotationNames,
-      boolean excludeNonExposedFields) {
+      ImmutableList<Set<Modifier>> excludeModifiers,
+      ImmutableList<String> excludeAnnotationNames,
+      ImmutableList<String> exposeAnnotationNames,
+      boolean excludeNonExposedFields,
+      ImmutableList<String> reflectAnnotations) {
     return new AutoValue_Options(
         mirror,
         excludeModifiers,
         excludeAnnotationNames,
         exposeAnnotationNames,
-        excludeNonExposedFields);
+        excludeNonExposedFields,
+        reflectAnnotations);
   }
 }

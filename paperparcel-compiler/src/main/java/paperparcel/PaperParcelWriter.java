@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Set;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
+import javax.lang.model.type.TypeMirror;
 
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
@@ -50,6 +51,7 @@ import static javax.lang.model.element.Modifier.STATIC;
  */
 final class PaperParcelWriter {
   private static final ClassName PARCEL = ClassName.get("android.os", "Parcel");
+  private static final ClassName UTILS = ClassName.get("paperparcel.internal", "Utils");
 
   private final AdapterNameGenerator adapterNames = new AdapterNameGenerator();
 
@@ -128,7 +130,8 @@ final class PaperParcelWriter {
     ImmutableMap.Builder<FieldDescriptor, FieldSpec> result = ImmutableMap.builder();
 
     // Read the fields in the exact same order that they were written to the Parcel. Currently
-    // directly readable fields first, then all fields that are read via getters.
+    // directly readable fields first, then all fields that are read via getters, and finally
+    // all fields that require reflection.
     ImmutableList<FieldDescriptor> combined = ImmutableList.<FieldDescriptor>builder()
         .addAll(readInfo.readableFields())
         .addAll(readInfo.getterMethodMap().keySet())
@@ -193,8 +196,23 @@ final class PaperParcelWriter {
           }
         }), ", ");
 
+    CodeBlock initializer;
+    if (writeInfo.isConstructorVisible()) {
+      initializer = CodeBlock.of("new $T($L)", className, constructorParameterList);
+    } else {
+      // Constructor is private, init via reflection
+      CodeBlock constructorArgClassList = CodeBlocks.join(FluentIterable.from(constructorFields)
+          .transform(new Function<FieldDescriptor, CodeBlock>() {
+            @Override public CodeBlock apply(FieldDescriptor field) {
+              return CodeBlock.of("$T.class", rawTypeFrom(field.type().get()));
+            }
+          }), ", ");
+      initializer = CodeBlock.of("$T.init($T.class, new Class[] { $L }, new Object[] { $L })",
+          UTILS, className, constructorArgClassList, constructorParameterList);
+    }
+
     return FieldSpec.builder(className, readNames.getUniqueName("data"))
-        .initializer("new $T($L)", className, constructorParameterList)
+        .initializer(initializer)
         .build();
   }
 
@@ -206,7 +224,14 @@ final class PaperParcelWriter {
 
     // Write directly
     for (FieldDescriptor field : writeInfo.writableFields()) {
-      block.addStatement("$N.$N = $N", model.name, field.name(), fieldMap.get(field));
+      if (field.isVisible()) {
+        block.addStatement("$N.$N = $N", model.name, field.name(), fieldMap.get(field));
+      } else {
+        // Field isn't visible, write via reflection
+        TypeName enclosingClass = rawTypeFrom(field.element().getEnclosingElement().asType());
+        block.addStatement("$T.writeField($N, $T.class, $N, $S)",
+            UTILS, fieldMap.get(field), enclosingClass, model.name, field.name());
+      }
     }
 
     // Write via setters
@@ -245,8 +270,17 @@ final class PaperParcelWriter {
 
       ImmutableList<FieldDescriptor> readableFields = readInfo.readableFields();
       for (FieldDescriptor field : readableFields) {
-        CodeBlock accessorBlock = CodeBlock.of("$N.$N", data, field.name());
-        writeField(builder, field, accessorBlock, dest, flags);
+        if (field.isVisible()) {
+          CodeBlock accessorBlock = CodeBlock.of("$N.$N", data, field.name());
+          writeField(builder, field, accessorBlock, dest, flags);
+        } else {
+          // Field isn't visible, read via reflection.
+          TypeName type = rawTypeFrom(field.type().get());
+          TypeName enclosingClass = rawTypeFrom(field.element().getEnclosingElement().asType());
+          CodeBlock accessorBlock = CodeBlock.of("$T.readField($T.class, $T.class, $N, $S)",
+              UTILS, type, enclosingClass, data, field.name());
+          writeField(builder, field, accessorBlock, dest, flags);
+        }
       }
 
       ImmutableSet<Map.Entry<FieldDescriptor, ExecutableElement>> fieldGetterEntries =
@@ -352,5 +386,13 @@ final class PaperParcelWriter {
           }
         })
         .toList(), ", ");
+  }
+
+  private TypeName rawTypeFrom(TypeMirror typeMirror) {
+    TypeName typeName = TypeName.get(typeMirror);
+    if (typeName instanceof ParameterizedTypeName) {
+      return ((ParameterizedTypeName) typeName).rawType;
+    }
+    return typeName;
   }
 }

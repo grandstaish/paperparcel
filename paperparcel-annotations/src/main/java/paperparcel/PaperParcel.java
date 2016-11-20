@@ -143,5 +143,18 @@ public @interface PaperParcel {
      * <p>By default any {@code transient} or {@code static} field is excluded.
      */
     int[] excludeModifiers() default { Modifier.TRANSIENT, Modifier.STATIC };
+
+    /**
+     * Configures PaperParcel to be able to access private constructors and fields that are
+     * annotated with any of the given annotations (using reflection).
+     *
+     * <p>Because reflection is slow on Android, this option should be used sparingly. Because
+     * of the performance implications, PaperParcel will always favor <i>not</i> using
+     * reflection when it is possible.
+     *
+     * <p>Note: if your code will be obfuscated, be sure to retain the names of the annotated
+     * fields and constructors so that the generated reflection calls will continue to work.
+     */
+    Class<? extends Annotation>[] reflectAnnotations() default {};
   }
 }

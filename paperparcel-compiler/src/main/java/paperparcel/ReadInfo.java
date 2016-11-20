@@ -68,7 +68,8 @@ abstract class ReadInfo {
 
     ReadInfo create(
         ImmutableList<VariableElement> fields,
-        ImmutableList<ExecutableElement> methods
+        ImmutableList<ExecutableElement> methods,
+        ImmutableList<String> reflectAnnotations
     ) throws NonReadableFieldsException {
 
       ImmutableList.Builder<FieldDescriptor> readableFieldsBuilder = ImmutableList.builder();
@@ -83,6 +84,8 @@ abstract class ReadInfo {
           Optional<ExecutableElement> accessorMethod = getAccessorMethod(field, methods);
           if (accessorMethod.isPresent()) {
             getterMethodMapBuilder.put(fieldDescriptorFactory.create(field), accessorMethod.get());
+          } else if (Utils.usesAnyAnnotationsFrom(field, reflectAnnotations)) {
+            readableFieldsBuilder.add(fieldDescriptorFactory.create(field));
           } else {
             nonReadableFieldsBuilder.add(field);
           }
