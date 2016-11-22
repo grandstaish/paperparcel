@@ -1,6 +1,7 @@
 package paperparcel.internal;
 
 import android.util.SparseBooleanArray;
+import paperparcel.TypeAdapter;
 import paperparcel.utils.TestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -13,7 +14,7 @@ import static com.google.common.truth.Truth.assertThat;
 @Config(manifest = Config.NONE)
 public class SparseBooleanArrayAdapterTests {
   @Test public void sparseBooleanArraysAreCorrectlyParcelled() {
-    SparseBooleanArrayAdapter adapter = SparseBooleanArrayAdapter.INSTANCE;
+    TypeAdapter<SparseBooleanArray> adapter = StaticAdapters.SPARSE_BOOLEAN_ARRAY_ADAPTER;
     SparseBooleanArray expected = new SparseBooleanArray();
     expected.put(42, false);
     expected.put(420, true);

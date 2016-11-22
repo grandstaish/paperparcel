@@ -15,8 +15,7 @@ class RealmListTypeAdapter<T extends RealmModel> implements TypeAdapter<RealmLis
     this.itemAdapter = itemAdapter;
   }
 
-  @NonNull @SuppressWarnings("ConstantConditions") // Realm items can't be null
-  @Override public RealmList<T> readFromParcel(@NonNull Parcel source) {
+  @NonNull @Override public RealmList<T> readFromParcel(@NonNull Parcel source) {
     int size = source.readInt();
     RealmList<T> list = new RealmList<>();
     for (int i = 0; i < size; i++) {

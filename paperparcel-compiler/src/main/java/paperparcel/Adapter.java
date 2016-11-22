@@ -29,6 +29,7 @@ import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.ExecutableType;
@@ -52,10 +53,10 @@ abstract class Adapter {
   abstract ImmutableList<Adapter> dependencies();
 
   /**
-   * Returns true if this class is a singleton. Singletons are defined as per
-   * {@link Utils#isSingleton(Types, TypeElement)}
+   * An optional that may contain the name of a singleton instance field of this adapter. The
+   * field will be enclosed in {@link #typeName()}.
    */
-  abstract boolean isSingleton();
+  abstract Optional<String> singletonInstance();
 
   /** TypeName for this Adapter. May be a {@link ClassName} or {@link ParameterizedTypeName} */
   abstract TypeName typeName();
@@ -93,28 +94,61 @@ abstract class Adapter {
       if (cached.isPresent()) {
         return cached.get();
       }
-      ImmutableList<AdapterRegistry.Entry> adapterEntries = adapterRegistry.getAdapterEntries();
+      List<AdapterRegistry.Entry> adapterEntries = adapterRegistry.getEntries();
+
+      ImmutableList<Adapter> dependencies;
+      TypeName typeName;
+      Optional<String> singletonInstance;
+      TypeName adaptedTypeName;
+
       // Brute-force search of all adapters to see if any of them can produce this type.
       for (AdapterRegistry.Entry adapterEntry : adapterEntries) {
-        TypeElement adapterElement = elements.getTypeElement(adapterEntry.qualifiedName());
-        TypeMirror adapterType = adapterElement.asType();
-        TypeMirror adaptedType =
-            Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(adapterType));
-        TypeMirror[] typeArguments = findTypeArguments(adapterElement, adaptedType, fieldType);
-        if (typeArguments == null
-            || adapterElement.getTypeParameters().size() != typeArguments.length) continue;
-        DeclaredType resolvedAdapterType = types.getDeclaredType(adapterElement, typeArguments);
-        TypeMirror resolvedAdaptedType = Utils.getAdaptedType(elements, types, resolvedAdapterType);
-        if (resolvedAdaptedType == null
-            || !types.isSameType(resolvedAdaptedType, fieldType)) continue;
-        ImmutableList<Adapter> dependencies = findDependencies(adapterElement, resolvedAdapterType);
-        if (dependencies == null) continue;
-        TypeName typeName = TypeName.get(resolvedAdapterType);
-        boolean isSingleton = Utils.isSingleton(types, adapterElement);
-        TypeName adaptedTypeName = TypeName.get(resolvedAdaptedType);
+        if (adapterEntry instanceof AdapterRegistry.FieldEntry) {
+          final AdapterRegistry.FieldEntry fieldEntry = (AdapterRegistry.FieldEntry) adapterEntry;
+          TypeElement enclosingClass = elements.getTypeElement(fieldEntry.enclosingClass());
+          Optional<VariableElement> adapterFieldOptional =
+              getField(enclosingClass, fieldEntry.fieldName());
+          if (!adapterFieldOptional.isPresent()) continue;
+          VariableElement adapterField = adapterFieldOptional.get();
+          TypeMirror adapterType = adapterField.asType();
+          TypeMirror adaptedType =
+              Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(adapterType));
+          if (adaptedType == null || !types.isSameType(adaptedType, fieldType)) continue;
+          dependencies = ImmutableList.of();
+          typeName = ClassName.get(enclosingClass);
+          singletonInstance = Optional.of(fieldEntry.fieldName());
+          adaptedTypeName = TypeName.get(adaptedType);
+        } else if (adapterEntry instanceof AdapterRegistry.ClassEntry) {
+          AdapterRegistry.ClassEntry classEntry = (AdapterRegistry.ClassEntry) adapterEntry;
+          TypeElement adapterElement = elements.getTypeElement(classEntry.qualifiedName());
+          TypeMirror adapterType = adapterElement.asType();
+          TypeMirror adaptedType =
+              Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(adapterType));
+          TypeMirror[] typeArguments = findTypeArguments(adapterElement, adaptedType, fieldType);
+          if (typeArguments == null
+              || adapterElement.getTypeParameters().size() != typeArguments.length) continue;
+          DeclaredType resolvedAdapterType = types.getDeclaredType(adapterElement, typeArguments);
+          TypeMirror resolvedAdaptedType = Utils.getAdaptedType(elements, types, resolvedAdapterType);
+          if (resolvedAdaptedType == null
+              || !types.isSameType(resolvedAdaptedType, fieldType)) continue;
+          dependencies = findDependencies(adapterElement, resolvedAdapterType);
+          if (dependencies == null) continue;
+          typeName = TypeName.get(resolvedAdapterType);
+          // TODO(brad): This probably shouldn't be hardcoded to INSTANCE. Users should be able to
+          // TODO(brad): name the instance whatever they want. Revisit this.
+          singletonInstance = Utils.isSingleton(types, adapterElement)
+              ? Optional.of("INSTANCE")
+              : Optional.<String>absent();
+          adaptedTypeName = TypeName.get(resolvedAdaptedType);
+        } else {
+          throw new AssertionError("Unknown AdapterRegistry.Entry: " + adapterEntry);
+        }
+
+        // Create and cache the adapter
         Adapter adapter = new AutoValue_Adapter(
-            dependencies, isSingleton, typeName, adaptedTypeName, adapterEntry.nullSafe());
+            dependencies, singletonInstance, typeName, adaptedTypeName, adapterEntry.nullSafe());
         adapterRegistry.registerAdapterFor(fieldTypeName, adapter);
+
         return adapter;
       }
       return null;
@@ -216,6 +250,17 @@ abstract class Adapter {
           return result;
         }
       }, fieldType);
+    }
+
+    private Optional<VariableElement> getField(TypeElement element, final String fieldName) {
+      List<? extends Element> enclosedElements = element.getEnclosedElements();
+      for (Element enclosedElement : enclosedElements) {
+        if (enclosedElement instanceof VariableElement
+            && enclosedElement.getSimpleName().contentEquals(fieldName)) {
+          return Optional.of((VariableElement) enclosedElement);
+        }
+      }
+      return Optional.absent();
     }
   }
 }
