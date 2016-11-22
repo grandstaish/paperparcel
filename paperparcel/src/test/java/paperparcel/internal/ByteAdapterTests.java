@@ -1,5 +1,6 @@
 package paperparcel.internal;
 
+import paperparcel.TypeAdapter;
 import paperparcel.utils.TestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,7 +13,7 @@ import static com.google.common.truth.Truth.assertThat;
 @Config(manifest = Config.NONE)
 public class ByteAdapterTests {
   @Test public void bytesAreCorrectlyParcelled() {
-    ByteAdapter adapter = ByteAdapter.INSTANCE;
+    TypeAdapter<Byte> adapter = StaticAdapters.BYTE_ADAPTER;
     Byte expected = (byte) 42;
     Byte result = TestUtils.writeThenRead(adapter, expected);
     assertThat(result).isEqualTo(expected);

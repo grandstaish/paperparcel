@@ -1,5 +1,6 @@
 package paperparcel.internal;
 
+import paperparcel.TypeAdapter;
 import paperparcel.utils.TestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,7 +13,7 @@ import static com.google.common.truth.Truth.assertThat;
 @Config(manifest = Config.NONE)
 public class IntegerAdapterTests {
   @Test public void integersAreCorrectlyParcelled() {
-    IntegerAdapter adapter = IntegerAdapter.INSTANCE;
+    TypeAdapter<Integer> adapter = StaticAdapters.INTEGER_ADAPTER;
     Integer expected = 42;
     Integer result = TestUtils.writeThenRead(adapter, expected);
     assertThat(result).isEqualTo(expected);

@@ -56,7 +56,7 @@ final class RegisterAdapterProcessingStep implements BasicAnnotationProcessor.Pr
       report.printMessagesTo(messager);
       if (report.isClean()) {
         RegisterAdapter registerAdapter = element.getAnnotation(RegisterAdapter.class);
-        adapterRegistry.registerAdapter(
+        adapterRegistry.addClassEntry(
             adapterElement.getQualifiedName().toString(), registerAdapter.nullSafe());
       }
     }

@@ -31,64 +31,77 @@ import java.util.Map;
  * expensive to create.
  */
 final class AdapterRegistry {
-  @AutoValue
   static abstract class Entry {
-    abstract String qualifiedName();
     abstract boolean nullSafe();
+  }
 
-    static Entry create(String qualifiedName, boolean nullSafe) {
-      return new AutoValue_AdapterRegistry_Entry(qualifiedName, nullSafe);
+  @AutoValue
+  static abstract class ClassEntry extends Entry {
+    abstract String qualifiedName();
+
+    static ClassEntry create(String qualifiedName, boolean nullSafe) {
+      return new AutoValue_AdapterRegistry_ClassEntry(nullSafe, qualifiedName);
     }
   }
 
-  private static final ImmutableList<Entry> BUILT_IN_ADAPTER_CLASS_NAMES = ImmutableList.of(
-      Entry.create("paperparcel.internal.StringAdapter", true),
-      Entry.create("paperparcel.internal.IntegerAdapter", false),
-      Entry.create("paperparcel.internal.MapAdapter", false),
-      Entry.create("paperparcel.internal.BundleAdapter", true),
-      Entry.create("paperparcel.internal.PersistableBundleAdapter", true),
-      Entry.create("paperparcel.internal.ParcelableAdapter", true),
-      Entry.create("paperparcel.internal.ShortAdapter", false),
-      Entry.create("paperparcel.internal.LongAdapter", false),
-      Entry.create("paperparcel.internal.FloatAdapter", false),
-      Entry.create("paperparcel.internal.DoubleAdapter", false),
-      Entry.create("paperparcel.internal.BooleanAdapter", false),
-      Entry.create("paperparcel.internal.CharSequenceAdapter", true),
-      Entry.create("paperparcel.internal.ListAdapter", false),
-      Entry.create("paperparcel.internal.SparseArrayAdapter", false),
-      Entry.create("paperparcel.internal.BooleanArrayAdapter", true),
-      Entry.create("paperparcel.internal.ByteArrayAdapter", true),
-      Entry.create("paperparcel.internal.StringArrayAdapter", true),
-      Entry.create("paperparcel.internal.IBinderAdapter", true),
-      Entry.create("paperparcel.internal.IntArrayAdapter", true),
-      Entry.create("paperparcel.internal.LongArrayAdapter", true),
-      Entry.create("paperparcel.internal.ByteAdapter", false),
-      Entry.create("paperparcel.internal.SizeAdapter", false),
-      Entry.create("paperparcel.internal.SizeFAdapter", false),
-      Entry.create("paperparcel.internal.DoubleArrayAdapter", true),
-      Entry.create("paperparcel.internal.LongSparseArrayAdapter", false),
-      Entry.create("paperparcel.internal.SparseBooleanArrayAdapter", true),
-      Entry.create("paperparcel.internal.SparseIntArrayAdapter", false),
-      Entry.create("paperparcel.internal.SparseLongArrayAdapter", false),
-      Entry.create("paperparcel.internal.CollectionAdapter", false),
-      Entry.create("paperparcel.internal.ArrayMapAdapter", false),
-      Entry.create("paperparcel.internal.ArraySetAdapter", false),
-      Entry.create("paperparcel.internal.SetAdapter", false),
-      Entry.create("paperparcel.internal.CharArrayAdapter", true),
-      Entry.create("paperparcel.internal.FloatArrayAdapter", true),
-      Entry.create("paperparcel.internal.ShortArrayAdapter", false),
-      Entry.create("paperparcel.internal.CharacterAdapter", false),
-      Entry.create("paperparcel.internal.EnumAdapter", false));
+  @AutoValue
+  static abstract class FieldEntry extends Entry {
+    abstract String enclosingClass();
+    abstract String fieldName();
 
-  private final List<Entry> adapterNames = Lists.newArrayList(BUILT_IN_ADAPTER_CLASS_NAMES);
-  private final Map<TypeName, Adapter> adapters = Maps.newLinkedHashMap();
-
-  void registerAdapter(String qualifiedName, boolean nullSafe) {
-    adapterNames.add(0, Entry.create(qualifiedName, nullSafe));
+    static FieldEntry create(String enclosingClass, String fieldName, boolean nullSafe) {
+      return new AutoValue_AdapterRegistry_FieldEntry(nullSafe, enclosingClass, fieldName);
+    }
   }
 
-  ImmutableList<Entry> getAdapterEntries() {
-    return ImmutableList.copyOf(adapterNames);
+  private static final ImmutableList<Entry> BUILT_IN_ADAPTER_ENTRIES = ImmutableList.of(
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "STRING_ADAPTER", true),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "INTEGER_ADAPTER", false),
+      ClassEntry.create("paperparcel.internal.MapAdapter", false),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "BUNDLE_ADAPTER", true),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "PERSISTABLE_BUNDLE_ADAPTER", true),
+      ClassEntry.create("paperparcel.internal.ParcelableAdapter", true),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "SHORT_ADAPTER", false),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "LONG_ADAPTER", false),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "FLOAT_ADAPTER", false),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "DOUBLE_ADAPTER", false),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "BOOLEAN_ADAPTER", false),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "CHAR_SEQUENCE_ADAPTER", true),
+      ClassEntry.create("paperparcel.internal.ListAdapter", false),
+      ClassEntry.create("paperparcel.internal.SparseArrayAdapter", false),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "BOOLEAN_ARRAY_ADAPTER", true),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "BYTE_ARRAY_ADAPTER", true),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "STRING_ARRAY_ADAPTER", true),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "IBINDER_ADAPTER", true),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "INT_ARRAY_ADAPTER", true),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "LONG_ARRAY_ADAPTER", true),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "BYTE_ADAPTER", false),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "SIZE_ADAPTER", false),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "SIZE_F_ADAPTER", false),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "DOUBLE_ARRAY_ADAPTER", true),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "SPARSE_BOOLEAN_ARRAY_ADAPTER", true),
+      ClassEntry.create("paperparcel.internal.CollectionAdapter", false),
+      ClassEntry.create("paperparcel.internal.SetAdapter", false),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "CHAR_ARRAY_ADAPTER", true),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "FLOAT_ARRAY_ADAPTER", true),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "SHORT_ARRAY_ADAPTER", false),
+      FieldEntry.create("paperparcel.internal.StaticAdapters", "CHARACTER_ADAPTER", false),
+      ClassEntry.create("paperparcel.internal.EnumAdapter", false));
+
+  private final List<Entry> entries = Lists.newArrayList(BUILT_IN_ADAPTER_ENTRIES);
+  private final Map<TypeName, Adapter> adapters = Maps.newLinkedHashMap();
+
+  void addClassEntry(String qualifiedName, boolean nullSafe) {
+    entries.add(0, ClassEntry.create(qualifiedName, nullSafe));
+  }
+
+  // TODO(brad): add support for users to add field adapters?
+  //void addFieldEntry(String enclosingClass, String fieldName, boolean nullSafe) {
+  //  entries.add(0, FieldEntry.create(enclosingClass, fieldName, nullSafe));
+  //}
+
+  List<Entry> getEntries() {
+    return entries;
   }
 
   void registerAdapterFor(TypeName fieldType, Adapter adapter) {

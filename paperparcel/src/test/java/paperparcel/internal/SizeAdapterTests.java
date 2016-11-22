@@ -3,6 +3,7 @@ package paperparcel.internal;
 import android.annotation.TargetApi;
 import android.os.Build;
 import android.util.Size;
+import paperparcel.TypeAdapter;
 import paperparcel.utils.TestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,7 +17,7 @@ import static com.google.common.truth.Truth.assertThat;
 public class SizeAdapterTests {
   @TargetApi(Build.VERSION_CODES.LOLLIPOP)
   @Test public void sizeIsCorrectlyParcelled() {
-    SizeAdapter adapter = SizeAdapter.INSTANCE;
+    TypeAdapter<Size> adapter = StaticAdapters.SIZE_ADAPTER;
     Size expected = new Size(10, 10);
     Size result = TestUtils.writeThenRead(adapter, expected);
     assertThat(result).isEqualTo(expected);

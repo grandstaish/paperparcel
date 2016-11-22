@@ -1,5 +1,6 @@
 package paperparcel.internal;
 
+import paperparcel.TypeAdapter;
 import paperparcel.utils.TestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -12,7 +13,7 @@ import static com.google.common.truth.Truth.assertThat;
 @Config(manifest = Config.NONE)
 public class ByteArrayAdapterTests {
   @Test public void byteArraysAreCorrectlyParcelled() {
-    ByteArrayAdapter adapter = ByteArrayAdapter.INSTANCE;
+    TypeAdapter<byte[]> adapter = StaticAdapters.BYTE_ARRAY_ADAPTER;
     byte[] expected = new byte[] { 42 };
     byte[] result = TestUtils.writeThenRead(adapter, expected);
     assertThat(result).isEqualTo(expected);

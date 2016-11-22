@@ -15,7 +15,7 @@ import static com.google.common.truth.Truth.assertThat;
 @Config(manifest = Config.NONE)
 public class CollectionAdapterTests {
   @Test public void listsAreCorrectlyParcelled() {
-    CollectionAdapter<Integer> adapter = new CollectionAdapter<>(IntegerAdapter.INSTANCE);
+    CollectionAdapter<Integer> adapter = new CollectionAdapter<>(StaticAdapters.INTEGER_ADAPTER);
     Collection<Integer> expected = Arrays.asList(42, 0);
     Collection<Integer> result = TestUtils.writeThenRead(adapter, expected);
     assertItemsAreEqual(expected, result);

@@ -18,6 +18,7 @@ package paperparcel;
 
 import android.support.annotation.NonNull;
 import com.google.common.base.Function;
+import com.google.common.base.Optional;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableCollection;
@@ -344,8 +345,9 @@ final class PaperParcelWriter {
 
   private CodeBlock adapterInstance(Adapter adapter) {
     CodeBlock adapterInstance;
-    if (adapter.isSingleton()) {
-      adapterInstance = CodeBlock.of("$T.INSTANCE", adapter.typeName());
+    Optional<String> singletonInstance = adapter.singletonInstance();
+    if (singletonInstance.isPresent()) {
+      adapterInstance = CodeBlock.of("$T.$N", adapter.typeName(), singletonInstance.get());
     } else {
       adapterInstance = CodeBlock.of("$T.$N", name, adapterNames.getName(adapter.typeName()));
     }
@@ -367,7 +369,7 @@ final class PaperParcelWriter {
         continue;
       }
       scoped.add(adapter);
-      if (!adapter.isSingleton()) {
+      if (!adapter.singletonInstance().isPresent()) {
         // Add dependencies, then create and add the current adapter
         if (adapter.dependencies().size() > 0) {
           adapterFields.addAll(adapterDependenciesInternal(adapter.dependencies(), scoped));

@@ -2,6 +2,7 @@ package paperparcel.internal;
 
 import android.annotation.SuppressLint;
 import android.util.SparseArray;
+import paperparcel.TypeAdapter;
 import paperparcel.utils.TestUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -14,7 +15,7 @@ import static com.google.common.truth.Truth.assertThat;
 @Config(manifest = Config.NONE)
 public class SparseArrayAdapterTests {
   @Test public void sparseArraysAreCorrectlyParcelled() {
-    SparseArrayAdapter<Integer> adapter = new SparseArrayAdapter<>(IntegerAdapter.INSTANCE);
+    TypeAdapter<SparseArray<Integer>> adapter = new SparseArrayAdapter<>(StaticAdapters.INTEGER_ADAPTER);
     @SuppressLint("UseSparseArrays")
     SparseArray<Integer> expected = new SparseArray<>();
     expected.put(42, 42);

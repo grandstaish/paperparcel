@@ -1,5 +1,6 @@
 package paperparcel.internal;
 
+import paperparcel.TypeAdapter;
 import paperparcel.utils.TestParcelable;
 import paperparcel.utils.TestUtils;
 import org.junit.Test;
@@ -13,7 +14,7 @@ import static com.google.common.truth.Truth.assertThat;
 @Config(manifest = Config.NONE)
 public class ParcelableAdapterTests {
   @Test public void parcelablesAreCorrectlyParcelled() {
-    ParcelableAdapter<TestParcelable> adapter = new ParcelableAdapter<>();
+    TypeAdapter<TestParcelable> adapter = new ParcelableAdapter<>();
     TestParcelable expected = new TestParcelable(42);
     TestParcelable result = TestUtils.writeThenRead(adapter, expected);
     assertThat(result).isEqualTo(expected);
