@@ -6,7 +6,7 @@
 
 PaperParcel is an annotation processor that automatically generates the `CREATOR` and `writeToParcel(...)` implementations for you when writing [Parcelable](http://developer.android.com/intl/es/reference/android/os/Parcelable.html) objects. PaperParcel fully supports both Java and Kotlin (including [Kotlin Data Classes](https://kotlinlang.org/docs/reference/data-classes.html)). Additionally, PaperParcel supports Google's [AutoValue](https://github.com/google/auto/tree/master/value) via an [AutoValue Extension](http://jakewharton.com/presentation/2016-03-08-ny-android-meetup/).
 
-PaperParcel supports a wide range of common Android/Java value and container types out the box, including many types that [Parcel](http://developer.android.com/intl/es/reference/android/os/Parcel.html) and [Bundle](https://developer.android.com/reference/android/os/Bundle.html) don't support natively (e.g. `Set`, `SparseArray`, `ArrayMap`, etc). The full list of supported types can be found [here](paperparcel/src/main/java/paperparcel/adapter). Support for any other type can be added using [TypeAdapters](README.md#typeadapters).
+Out of the box, PaperParcel supports all of the types that are supported by the [Parcel](https://developer.android.com/reference/android/os/Parcel.html) class, including a few minor additions (e.g. `java.util.Set`). Support for any other types can be added using custom [TypeAdapters](README.md#typeadapters).
 
 ## Usage 
 
@@ -98,20 +98,19 @@ data class User(
 
 ## TypeAdapters
 
-While PaperParcel supports a large number of types out-of-the-box, sometimes you will need to extend the type system to add support for other types. You can do this by registering your own custom `TypeAdapter`. Luckily defining a custom `TypeAdapter` is simple. Let's look at an example that adds support for `java.util.UUID`s:
+PaperParcel keeps it built-in `TypeAdapter`s list minimal to ensure the library is as small as possible. If you want to extend the type system, you can do this by registering your own custom `TypeAdapter`. Defining a custom `TypeAdapter` is simple, let's look at an example that adds support for the `java.util.Date` class:
 
 ``` java
 @RegisterAdapter // 1
-public final class UuidAdapter extends AbstractAdapter<UUID> { // 2
-  public static final UuidAdapter INSTANCE = new UuidAdapter(); // 3
+public final class DateAdapter implements TypeAdapter<Date> { 
+  public static final DateAdapter INSTANCE = new DateAdapter(); // 2
 
-  @NonNull @Override protected Integer read(@NonNull Parcel source) {
-    return new UUID(source.readLong(), source.readLong()); 
+  @NonNull @Override public Date readFromParcel(@NonNull Parcel source) {
+    return new Date(source.readLong()); 
   }
   
-  @Override protected void write(@NonNull Integer value, @NonNull Parcel dest, int flags) {
-    dest.writeLong(value.getMostSignificantBits()); 
-    dest.writeLong(value.getLeastSignificantBits());  
+  @Override public void writeToParcel(@NonNull Date value, @NonNull Parcel dest, int flags) {
+    dest.writeLong(value.getTime()); 
   }
 }
 ```
@@ -120,14 +119,12 @@ I've annotated each important part with a comment and a number, let's look at ea
 
 **1)** This is how you register your custom adapter with the compiler — just by annotating this class, generated code will now use `UuidAdapter` when reading and writing `UUID` fields.
 
-**2)** Rather than implementing `TypeAdapter` directly, it may be convienient to extend `AbstractAdapter` instead. This is a base implementation of `TypeAdapter` handles null checking for you. 
+**2)** This is a completely optional singleton instance. If PaperParcel notices your class is a singleton, it will use the singleton instance. This helps greatly in preventing unecessary allocations. For this reason, most of the built-in type adapters are singletons. Note for Kotlin users, this is equivalent to defining your Adapter as an `object`.
 
-**3)** This is a completely optional singleton instance. If PaperParcel notices your class is a singleton, it will use the singleton instance. This helps greatly in preventing unecessary allocations. For this reason, most of the built-in type adapters are singletons. Note for Kotlin users, this is equivalent to defining your Adapter as an `object`.
-
-Many similar projects also use some variant of `TypeAdapter`, however the PaperParcel implementation is slightly more flexible. PaperParcel allows `TypeAdapter`s to be [composable](https://en.wikipedia.org/wiki/Object_composition) and [generic](https://docs.oracle.com/javase/tutorial/java/generics/types.html). To see why this is useful, let's look at how PaperParcel's [SparseArrayAdapter](paperparcel/src/main/java/paperparcel/adapter/SparseArrayAdapter.java) is defined:
+Many similar projects also use some variant of `TypeAdapter`, however the PaperParcel implementation is slightly more flexible. PaperParcel allows `TypeAdapter`s to be [composable](https://en.wikipedia.org/wiki/Object_composition) and [generic](https://docs.oracle.com/javase/tutorial/java/generics/types.html). To see why this is useful, let's look at how PaperParcel's [SparseArrayAdapter](paperparcel/src/main/java/paperparcel/internal/SparseArrayAdapter.java) is defined:
 
 ```java
-public final class SparseArrayAdapter<T> extends AbstractAdapter<SparseArray<T>> {
+public final class SparseArrayAdapter<T> implements TypeAdapter<SparseArray<T>> {
   private final TypeAdapter<T> itemAdapter;
 
   public SparseArrayAdapter(TypeAdapter<T> itemAdapter) {
