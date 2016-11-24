@@ -35,7 +35,7 @@ final class ErrorMessages {
       "TypeAdapter constructors can only have 'paperparcel.TypeAdapter' or 'java.lang.Class' "
           + "parameters.";
   static final String REGISTERADAPTER_ON_RAW_TYPE_ADAPTER =
-      "TypeAdapters cannot be a raw type.";
+      "TypeAdapter type argument must be specified.";
   static final String RAW_TYPE_ADAPTER_IN_CONSTRUCTOR =
       "TypeAdapter type argument must be specified.";
   static final String RAW_CLASS_TYPE_IN_CONSTRUCTOR =
@@ -70,7 +70,7 @@ final class ErrorMessages {
       "Unknown type %1$s. Define a TypeAdapter to handle custom types. For more info, "
           + "see %2$s.";
   static final String RAW_FIELD =
-      "Missing type information on %1$s.%2$s.";
+      "Field type argument must be specified (%1$s.%2$s).";
 
   /* AutoValue errors */
   static final String MANUAL_IMPLEMENTATION_OF_CREATOR =
