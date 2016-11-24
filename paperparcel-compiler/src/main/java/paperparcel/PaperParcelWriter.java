@@ -360,7 +360,7 @@ final class PaperParcelWriter {
   }
 
   /** Returns a list of all of the {@link FieldSpec}s that define the required TypeAdapters */
-  @SuppressWarnings("ConstantConditions") //
+  @SuppressWarnings("OptionalGetWithoutIsPresent") // Previous validation ensures this is fine.
   private ImmutableList<FieldSpec> adapterDependenciesInternal(
       ImmutableCollection<Adapter> adapters, Set<Adapter> scoped) {
     ImmutableList.Builder<FieldSpec> adapterFields = new ImmutableList.Builder<>();
@@ -371,7 +371,7 @@ final class PaperParcelWriter {
       }
       scoped.add(adapter);
       if (!adapter.singletonInstance().isPresent()) {
-        Adapter.ConstructorInfo constructorInfo = adapter.constructorInfo();
+        Adapter.ConstructorInfo constructorInfo = adapter.constructorInfo().get();
 
         // Add dependencies, then create and add the current adapter
         if (constructorInfo.adapterDependencies().size() > 0) {

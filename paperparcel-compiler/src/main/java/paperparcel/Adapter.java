@@ -53,7 +53,7 @@ abstract class Adapter {
    * The ordered parameter names of the primary constructor, or null if this adapter has a
    * singleton instance (defined by {@link #singletonInstance()}.
    */
-  @Nullable abstract ConstructorInfo constructorInfo();
+  abstract Optional<ConstructorInfo> constructorInfo();
 
   /**
    * An optional that may contain the name of a singleton instance field of this adapter. The
@@ -130,7 +130,7 @@ abstract class Adapter {
 
       List<AdapterRegistry.Entry> adapterEntries = adapterRegistry.getEntries();
 
-      ConstructorInfo constructorInfo;
+      Optional<ConstructorInfo> constructorInfo;
       TypeName typeName;
       Optional<String> singletonInstance;
       TypeName adaptedTypeName;
@@ -150,7 +150,7 @@ abstract class Adapter {
           TypeMirror adaptedType =
               Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(adapterType));
           if (adaptedType == null || !types.isSameType(adaptedType, fieldType)) continue;
-          constructorInfo = null;
+          constructorInfo = Optional.absent();
           typeName = ClassName.get(enclosingClass);
           singletonInstance = Optional.of(fieldEntry.fieldName());
           adaptedTypeName = TypeName.get(adaptedType);
@@ -175,9 +175,9 @@ abstract class Adapter {
               ? Optional.of("INSTANCE")
               : Optional.<String>absent();
           constructorInfo = singletonInstance.isPresent()
-              ? null
+              ? Optional.<ConstructorInfo>absent()
               : getConstructorInfo(adapterElement, resolvedAdapterType);
-          if (!singletonInstance.isPresent() && constructorInfo == null) continue;
+          if (!singletonInstance.isPresent() && !constructorInfo.isPresent()) continue;
           typeName = TypeName.get(resolvedAdapterType);
           adaptedTypeName = TypeName.get(resolvedAdaptedType);
 
@@ -195,8 +195,8 @@ abstract class Adapter {
       return null;
     }
 
-    @SuppressWarnings({ "OptionalGetWithoutIsPresent", "ConstantConditions" }) // Already validated
-    @Nullable private ConstructorInfo getConstructorInfo(
+    @SuppressWarnings("ConstantConditions") // Already validated
+    private Optional<ConstructorInfo> getConstructorInfo(
         TypeElement adapterElement, DeclaredType resolvedAdapterType) {
 
       ImmutableList.Builder<String> parameterNames = ImmutableList.builder();
@@ -204,7 +204,7 @@ abstract class Adapter {
       ImmutableMap.Builder<String, TypeName> classDependencies = new ImmutableMap.Builder<>();
 
       Optional<ExecutableElement> mainConstructor = Utils.findLargestConstructor(adapterElement);
-      if (!mainConstructor.isPresent()) return null;
+      if (!mainConstructor.isPresent()) return Optional.absent();
 
       ExecutableType resolvedConstructorType =
           MoreTypes.asExecutable(types.asMemberOf(resolvedAdapterType, mainConstructor.get()));
@@ -222,7 +222,7 @@ abstract class Adapter {
           TypeMirror dependencyAdaptedType =
               Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(resolvedDependencyType));
           Adapter adapterDependency = create(dependencyAdaptedType);
-          if (adapterDependency == null) return null;
+          if (adapterDependency == null) return Optional.absent();
           adapterDependencies.put(parameterName, adapterDependency);
 
         } else {
@@ -235,10 +235,10 @@ abstract class Adapter {
         }
       }
 
-      return ConstructorInfo.create(
+      return Optional.of(ConstructorInfo.create(
           parameterNames.build(),
           adapterDependencies.build(),
-          classDependencies.build());
+          classDependencies.build()));
     }
 
     @Nullable private TypeMirror[] findTypeArguments(
