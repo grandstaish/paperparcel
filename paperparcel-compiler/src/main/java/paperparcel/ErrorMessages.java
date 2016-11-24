@@ -32,11 +32,14 @@ final class ErrorMessages {
   static final String REGISTERADAPTER_ON_ABSTRACT_CLASS =
       "@RegisterAdapter cannot be applied to an abstract class";
   static final String INVALID_TYPE_ADAPTER_CONSTRUCTOR =
-      "TypeAdapters can only have other TypeAdapters as constructor arguments";
+      "TypeAdapter constructors can only have 'paperparcel.TypeAdapter' or 'java.lang.Class' "
+          + "parameters";
   static final String REGISTERADAPTER_ON_RAW_TYPE_ADAPTER =
       "TypeAdapters cannot be a raw type";
   static final String RAW_TYPE_ADAPTER_IN_CONSTRUCTOR =
       "TypeAdapter arguments can not be raw types";
+  static final String RAW_CLASS_TYPE_IN_CONSTRUCTOR =
+      "Class arguments can not be raw types";
 
   /* @PaperParcel errors */
   static final String PAPERPARCEL_ON_INTERFACE =

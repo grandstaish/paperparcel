@@ -40,8 +40,6 @@ import javax.lang.model.util.Types;
 
 /** A validator for custom adapters annotated with {@link RegisterAdapter} */
 final class RegisterAdapterValidator {
-  private static final String TYPE_ADAPTER_CLASS_NAME = "paperparcel.TypeAdapter";
-
   private final Elements elements;
   private final Types types;
 
@@ -54,10 +52,7 @@ final class RegisterAdapterValidator {
 
   ValidationReport<TypeElement> validate(TypeElement element) {
     ValidationReport.Builder<TypeElement> builder = ValidationReport.about(element);
-    TypeMirror typeAdapterType = types.getDeclaredType(
-        elements.getTypeElement(TYPE_ADAPTER_CLASS_NAME),
-        types.getWildcardType(null, null));
-    if (!types.isAssignable(element.asType(), typeAdapterType)) {
+    if (!Utils.isAdapterType(element, elements, types)) {
       builder.addError(ErrorMessages.REGISTERADAPTER_ON_NON_TYPE_ADAPTER);
     }
     if (element.getKind() == ElementKind.INTERFACE) {
@@ -68,7 +63,7 @@ final class RegisterAdapterValidator {
     }
     Optional<ExecutableElement> mainConstructor = Utils.findLargestConstructor(element);
     if (mainConstructor.isPresent()) {
-      builder.addSubreport(validateConstructor(typeAdapterType, mainConstructor.get()));
+      builder.addSubreport(validateConstructor(mainConstructor.get()));
     } else if (!Utils.isSingleton(types, element)) {
       builder.addError(ErrorMessages.NO_VISIBLE_CONSTRUCTOR);
     }
@@ -84,18 +79,27 @@ final class RegisterAdapterValidator {
     return builder.build();
   }
 
-  private ValidationReport<ExecutableElement> validateConstructor(
-      TypeMirror adapterInterfaceType, ExecutableElement constructor) {
-    ValidationReport.Builder<ExecutableElement> constructorReport = ValidationReport.about(constructor);
+  private ValidationReport<ExecutableElement> validateConstructor(ExecutableElement constructor) {
+    ValidationReport.Builder<ExecutableElement> constructorReport =
+        ValidationReport.about(constructor);
     for (VariableElement parameter : constructor.getParameters()) {
-      TypeMirror parameterType = parameter.asType();
-      if (!types.isAssignable(parameterType, adapterInterfaceType)) {
+      boolean isAdapter = Utils.isAdapterType(parameter, elements, types);
+      boolean isClass = Utils.isClassType(parameter, elements, types);
+      if (!isClass && !isAdapter) {
         constructorReport.addError(ErrorMessages.INVALID_TYPE_ADAPTER_CONSTRUCTOR);
       }
-      TypeMirror adaptedType =
-          Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(parameterType));
-      if (isJavaLangObject(adaptedType)) {
-        constructorReport.addError(ErrorMessages.RAW_TYPE_ADAPTER_IN_CONSTRUCTOR, parameter);
+      TypeMirror parameterType = parameter.asType();
+      if (isAdapter) {
+        TypeMirror adaptedType = Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(parameterType));
+        if (isJavaLangObject(adaptedType)) {
+          constructorReport.addError(ErrorMessages.RAW_TYPE_ADAPTER_IN_CONSTRUCTOR, parameter);
+        }
+      }
+      if (isClass) {
+        TypeMirror classType = Utils.getClassType(elements, types, MoreTypes.asDeclared(parameterType));
+        if (isJavaLangObject(classType)) {
+          constructorReport.addError(ErrorMessages.RAW_CLASS_TYPE_IN_CONSTRUCTOR, parameter);
+        }
       }
     }
     return constructorReport.build();

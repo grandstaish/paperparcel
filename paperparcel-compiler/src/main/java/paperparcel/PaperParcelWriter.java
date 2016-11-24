@@ -360,6 +360,7 @@ final class PaperParcelWriter {
   }
 
   /** Returns a list of all of the {@link FieldSpec}s that define the required TypeAdapters */
+  @SuppressWarnings("ConstantConditions") //
   private ImmutableList<FieldSpec> adapterDependenciesInternal(
       ImmutableCollection<Adapter> adapters, Set<Adapter> scoped) {
     ImmutableList.Builder<FieldSpec> adapterFields = new ImmutableList.Builder<>();
@@ -370,15 +371,20 @@ final class PaperParcelWriter {
       }
       scoped.add(adapter);
       if (!adapter.singletonInstance().isPresent()) {
+        Adapter.ConstructorInfo constructorInfo = adapter.constructorInfo();
+
         // Add dependencies, then create and add the current adapter
-        if (adapter.dependencies().size() > 0) {
-          adapterFields.addAll(adapterDependenciesInternal(adapter.dependencies(), scoped));
+        if (constructorInfo.adapterDependencies().size() > 0) {
+          adapterFields.addAll(
+              adapterDependenciesInternal(constructorInfo.adapterDependencies().values(), scoped));
         }
+
         // Construct the single instance of this type adapter
         String adapterName = adapterNames.getName(adapter.typeName());
-        CodeBlock parameters = getAdapterParameterList(adapter.dependencies());
+        CodeBlock parameters = getAdapterParameterList(constructorInfo);
         ParameterizedTypeName adapterInterfaceType =
             ParameterizedTypeName.get(TYPE_ADAPTER, adapter.adaptedTypeName());
+
         FieldSpec.Builder adapterSpec =
             FieldSpec.builder(adapterInterfaceType, adapterName, STATIC, FINAL)
                 .initializer(CodeBlock.of("new $T($L)", adapter.typeName(), parameters));
@@ -389,17 +395,23 @@ final class PaperParcelWriter {
   }
 
   /**
-   * Returns a comma-separated {@link CodeBlock} for all of the adapter instances in
-   * {@code dependencies}.
+   * Returns a comma-separated {@link CodeBlock} for all of the constructor parameter
+   * {@code dependencies} of an adapter.
    */
-  private CodeBlock getAdapterParameterList(ImmutableList<Adapter> dependencies) {
-    return CodeBlocks.join(FluentIterable.from(dependencies)
-        .transform(new Function<Adapter, CodeBlock>() {
-          @Override public CodeBlock apply(Adapter adapter) {
-            if (adapter.nullSafe()) {
-              return adapterInstance(adapter);
+  private CodeBlock getAdapterParameterList(final Adapter.ConstructorInfo constructorInfo) {
+    return CodeBlocks.join(FluentIterable.from(constructorInfo.constructorParameterNames())
+        .transform(new Function<String, CodeBlock>() {
+          @Override public CodeBlock apply(String parameterName) {
+            Adapter adapter = constructorInfo.adapterDependencies().get(parameterName);
+            if (adapter != null) {
+              if (adapter.nullSafe()) {
+                return adapterInstance(adapter);
+              } else {
+                return CodeBlock.of("$T.nullSafeClone($L)", UTILS, adapterInstance(adapter));
+              }
             } else {
-              return CodeBlock.of("$T.nullSafeClone($L)", UTILS, adapterInstance(adapter));
+              return CodeBlock.of("$T.class",
+                  rawTypeFrom(constructorInfo.classDependencies().get(parameterName)));
             }
           }
         })
@@ -408,6 +420,10 @@ final class PaperParcelWriter {
 
   private TypeName rawTypeFrom(TypeMirror typeMirror) {
     TypeName typeName = TypeName.get(typeMirror);
+    return rawTypeFrom(typeName);
+  }
+
+  private TypeName rawTypeFrom(TypeName typeName) {
     if (typeName instanceof ParameterizedTypeName) {
       return ((ParameterizedTypeName) typeName).rawType;
     }

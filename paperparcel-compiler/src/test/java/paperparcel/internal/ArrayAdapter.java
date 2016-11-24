@@ -21,19 +21,16 @@ import android.support.annotation.NonNull;
 import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
-public final class EnumAdapter<T extends Enum<T>> implements TypeAdapter<T> {
-  private final Class<T> enumClass;
-
-  public EnumAdapter(Class<T> enumClass) {
-    this.enumClass = enumClass;
+public final class ArrayAdapter<T> implements TypeAdapter<T[]> {
+  public ArrayAdapter(Class<T> componentType, TypeAdapter<T> componentAdapter) {
+    throw new RuntimeException("Stub!");
   }
 
-  @NonNull
-  @Override public T readFromParcel(@NonNull Parcel source) {
-    return Enum.valueOf(enumClass, source.readString());
+  @Override public T[] readFromParcel(@NonNull Parcel source) {
+    throw new RuntimeException("Stub!");
   }
 
-  @Override public void writeToParcel(@NonNull T value, @NonNull Parcel dest, int flags) {
-    dest.writeString(value.name());
+  @Override public void writeToParcel(@NonNull T[] value, @NonNull Parcel dest, int flags) {
+    throw new RuntimeException("Stub!");
   }
 }

@@ -11,9 +11,9 @@ import static com.google.common.truth.Truth.assertThat;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(manifest = Config.NONE)
-public class StringArrayAdapterTests {
-  @Test public void stringArraysAreCorrectlyParcelled() {
-    TypeAdapter<String[]> adapter = StaticAdapters.STRING_ARRAY_ADAPTER;
+public class ArrayAdapterTests {
+  @Test public void arraysAreCorrectlyParcelled() {
+    TypeAdapter<String[]> adapter = new ArrayAdapter<>(String.class, StaticAdapters.STRING_ADAPTER);
     String[] expected = new String[] { "hello world" };
     String[] result = TestUtils.writeThenRead(adapter, expected);
     assertThat(result).isEqualTo(expected);

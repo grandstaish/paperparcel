@@ -257,16 +257,6 @@ public final class StaticAdapters {
     }
   };
 
-  public static final TypeAdapter<String[]> STRING_ARRAY_ADAPTER = new TypeAdapter<String[]>() {
-    @Override public String[] readFromParcel(Parcel source) {
-      throw new RuntimeException("Stub!");
-    }
-
-    @Override public void writeToParcel(String[] value, Parcel dest, int flags) {
-      throw new RuntimeException("Stub!");
-    }
-  };
-
   private StaticAdapters() {
     throw new RuntimeException("Stub!");
   }
