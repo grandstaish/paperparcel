@@ -410,8 +410,15 @@ final class PaperParcelWriter {
                 return CodeBlock.of("$T.nullSafeClone($L)", UTILS, adapterInstance(adapter));
               }
             } else {
-              return CodeBlock.of("$T.class",
-                  rawTypeFrom(constructorInfo.classDependencies().get(parameterName)));
+              TypeName classDependencyTypeName =
+                  constructorInfo.classDependencies().get(parameterName);
+              if (classDependencyTypeName instanceof ParameterizedTypeName) {
+                ParameterizedTypeName cast = (ParameterizedTypeName) classDependencyTypeName;
+                // TODO(brad): I should probably use something like gsons TypeToken instead of class.
+                return CodeBlock.of("($1T<$2T>)($1T<?>) $3T.class", Class.class, cast, cast.rawType);
+              } else {
+                return CodeBlock.of("$T.class", classDependencyTypeName);
+              }
             }
           }
         })
@@ -420,10 +427,6 @@ final class PaperParcelWriter {
 
   private TypeName rawTypeFrom(TypeMirror typeMirror) {
     TypeName typeName = TypeName.get(typeMirror);
-    return rawTypeFrom(typeName);
-  }
-
-  private TypeName rawTypeFrom(TypeName typeName) {
     if (typeName instanceof ParameterizedTypeName) {
       return ((ParameterizedTypeName) typeName).rawType;
     }
