@@ -107,7 +107,7 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
 
     ClassName className = ClassName.get(context.packageName(), simpleName);
     TypeSpec.Builder subclass = TypeSpec.classBuilder(className)
-        .addModifiers(PUBLIC, FINAL)
+        .addModifiers(FINAL)
         .addMethod(constructor(context))
         .addAnnotation(PaperParcel.class)
         .addField(creator(className))
