@@ -22,35 +22,35 @@ final class ErrorMessages {
 
   /* Shared */
   static final String NO_VISIBLE_CONSTRUCTOR =
-      "No visible constructor found";
+      "No visible constructor found.";
 
   /* @RegisterAdapter errors */
   static final String REGISTERADAPTER_ON_NON_TYPE_ADAPTER =
-      "@RegisterAdapter must be applied to a class that implements TypeAdapter<T>";
+      "@RegisterAdapter must be applied to a class that implements TypeAdapter<T>.";
   static final String REGISTERADAPTER_ON_INTERFACE =
-      "@RegisterAdapter cannot be applied to an interface";
+      "@RegisterAdapter cannot be applied to an interface.";
   static final String REGISTERADAPTER_ON_ABSTRACT_CLASS =
-      "@RegisterAdapter cannot be applied to an abstract class";
+      "@RegisterAdapter cannot be applied to an abstract class.";
   static final String INVALID_TYPE_ADAPTER_CONSTRUCTOR =
       "TypeAdapter constructors can only have 'paperparcel.TypeAdapter' or 'java.lang.Class' "
-          + "parameters";
+          + "parameters.";
   static final String REGISTERADAPTER_ON_RAW_TYPE_ADAPTER =
-      "TypeAdapters cannot be a raw type";
+      "TypeAdapters cannot be a raw type.";
   static final String RAW_TYPE_ADAPTER_IN_CONSTRUCTOR =
-      "TypeAdapter arguments can not be raw types";
+      "TypeAdapter type argument must be specified.";
   static final String RAW_CLASS_TYPE_IN_CONSTRUCTOR =
-      "Class arguments can not be raw types";
+      "Class type argument must be specified.";
 
   /* @PaperParcel errors */
   static final String PAPERPARCEL_ON_INTERFACE =
-      "@PaperParcel cannot be applied to an interface";
+      "@PaperParcel cannot be applied to an interface.";
   static final String PAPERPARCEL_ON_ABSTRACT_CLASS =
-      "@PaperParcel cannot be applied to an abstract class";
+      "@PaperParcel cannot be applied to an abstract class.";
   static final String PAPERPARCEL_ON_NON_PARCELABLE =
       "@PaperParcel can only be applied to classes that implement android.os.Parcelable.";
   static final String UNMATCHED_CONSTRUCTOR_PARAMETER =
       "No field match found for the constructor parameter \"%1$s\" in %2$s. Constructor "
-          + "arguments are matched with fields via their name and type";
+          + "arguments are matched with fields via their name and type.";
 
   /* @PaperParcel.Options errors */
   static final String OPTIONS_NO_EXPOSE_ANNOTATIONS =
@@ -68,9 +68,9 @@ final class ErrorMessages {
           + "%3$s. See %4$s for more info.";
   static final String MISSING_TYPE_ADAPTER =
       "Unknown type %1$s. Define a TypeAdapter to handle custom types. For more info, "
-          + "see %2$s";
+          + "see %2$s.";
   static final String RAW_FIELD =
-      "Missing type information on %1$s.%2$s";
+      "Missing type information on %1$s.%2$s.";
 
   /* AutoValue errors */
   static final String MANUAL_IMPLEMENTATION_OF_CREATOR =
