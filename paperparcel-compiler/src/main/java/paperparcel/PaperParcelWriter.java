@@ -414,7 +414,6 @@ final class PaperParcelWriter {
                   constructorInfo.classDependencies().get(parameterName);
               if (classDependencyTypeName instanceof ParameterizedTypeName) {
                 ParameterizedTypeName cast = (ParameterizedTypeName) classDependencyTypeName;
-                // TODO(brad): I should probably use something like gsons TypeToken instead of class.
                 return CodeBlock.of("($1T<$2T>)($1T<?>) $3T.class", Class.class, cast, cast.rawType);
               } else {
                 return CodeBlock.of("$T.class", classDependencyTypeName);
