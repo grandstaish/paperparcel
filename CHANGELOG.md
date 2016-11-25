@@ -4,7 +4,6 @@ Change Log
 Version 2.0.0 *(TBD)*
 ----------------------------
 
- * TL;DR: everything changed
  * Change package name from `nz.bradcampbell.paperparcel` to just `paperparcel`
  * `TypeAdapter`s can now list other `TypeAdapter`s or `Class`es as constructor parameters to allow
    for adding proper support for non-standard container and types (and more). 
