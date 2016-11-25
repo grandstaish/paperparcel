@@ -19,9 +19,14 @@ package paperparcel;
 import android.support.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.UnknownTypeException;
+import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 
 /** Represents a {@link PaperParcel} annotated object */
@@ -50,19 +55,47 @@ abstract class PaperParcelDescriptor {
   abstract boolean isSingleton();
 
   static final class Factory {
+    private final Elements elements;
     private final Types types;
     private final Adapter.Factory adapterFactory;
+    private final WriteInfo.Factory writeInfoFactory;
+    private final ReadInfo.Factory readInfoFactory;
 
     Factory(
+        Elements elements,
         Types types,
-        Adapter.Factory adapterFactory) {
+        Adapter.Factory adapterFactory,
+        WriteInfo.Factory writeInfoFactory,
+        ReadInfo.Factory readInfoFactory) {
+      this.elements = elements;
       this.types = types;
       this.adapterFactory = adapterFactory;
+      this.writeInfoFactory = writeInfoFactory;
+      this.readInfoFactory = readInfoFactory;
     }
 
-    PaperParcelDescriptor create(TypeElement element, WriteInfo writeInfo, ReadInfo readInfo) {
+    PaperParcelDescriptor create(TypeElement element)
+        throws WriteInfo.NonWritableFieldsException, ReadInfo.NonReadableFieldsException {
+
+      Options options = Utils.getOptions(element);
+
+      ImmutableList<VariableElement> fields = Utils.getFieldsToParcel(types, element, options);
+      ImmutableList<ExecutableElement> methods =
+          Utils.getLocalAndInheritedMethods(elements, types, element);
+      ImmutableList<ExecutableElement> constructors =
+          Utils.orderedConstructorsIn(element, options.reflectAnnotations());
+
+      WriteInfo writeInfo = null;
+      ReadInfo readInfo = null;
+      if (!Utils.isSingleton(types, element)) {
+        writeInfo = writeInfoFactory.create(
+            fields, methods, constructors, options.reflectAnnotations());
+        readInfo = readInfoFactory.create(fields, methods, options.reflectAnnotations());
+      }
+
       ImmutableMap<FieldDescriptor, Adapter> adapters = getAdapterMap(readInfo);
       boolean singleton = Utils.isSingleton(types, element);
+
       return new AutoValue_PaperParcelDescriptor(element, writeInfo, readInfo, adapters, singleton);
     }
 
@@ -84,7 +117,12 @@ abstract class PaperParcelDescriptor {
       TypeMirror fieldType = field.type().get();
       Preconditions.checkNotNull(fieldType);
       if (!fieldType.getKind().isPrimitive()) {
-        fieldAdapterMap.put(field, adapterFactory.create(fieldType));
+        Adapter adapter = adapterFactory.create(fieldType);
+        if (adapter != null) {
+          fieldAdapterMap.put(field, adapter);
+        } else {
+          throw new UnknownTypeException(fieldType, field.element());
+        }
       }
     }
   }

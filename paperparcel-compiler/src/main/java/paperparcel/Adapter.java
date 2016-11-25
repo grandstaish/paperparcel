@@ -139,7 +139,6 @@ abstract class Adapter {
       for (AdapterRegistry.Entry adapterEntry : adapterEntries) {
 
         if (adapterEntry instanceof AdapterRegistry.FieldEntry) {
-
           final AdapterRegistry.FieldEntry fieldEntry = (AdapterRegistry.FieldEntry) adapterEntry;
           TypeElement enclosingClass = elements.getTypeElement(fieldEntry.enclosingClass());
           Optional<VariableElement> adapterFieldOptional =
@@ -156,7 +155,6 @@ abstract class Adapter {
           adaptedTypeName = TypeName.get(adaptedType);
 
         } else if (adapterEntry instanceof AdapterRegistry.ClassEntry) {
-
           AdapterRegistry.ClassEntry classEntry = (AdapterRegistry.ClassEntry) adapterEntry;
           TypeElement adapterElement = elements.getTypeElement(classEntry.qualifiedName());
           TypeMirror adapterType = adapterElement.asType();

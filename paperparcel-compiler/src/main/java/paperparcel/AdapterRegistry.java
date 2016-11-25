@@ -95,11 +95,6 @@ final class AdapterRegistry {
     entries.add(0, ClassEntry.create(qualifiedName, nullSafe));
   }
 
-  // TODO(brad): add support for users to add field adapters?
-  //void addFieldEntry(String enclosingClass, String fieldName, boolean nullSafe) {
-  //  entries.add(0, FieldEntry.create(enclosingClass, fieldName, nullSafe));
-  //}
-
   List<Entry> getEntries() {
     return entries;
   }
