@@ -216,7 +216,6 @@ abstract class Adapter {
         parameterNames.add(parameterName);
 
         if (Utils.isAdapterType(dependencyElement, elements, types)) {
-
           TypeMirror dependencyAdaptedType =
               Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(resolvedDependencyType));
           Adapter adapterDependency = create(dependencyAdaptedType);
@@ -224,7 +223,6 @@ abstract class Adapter {
           adapterDependencies.put(parameterName, adapterDependency);
 
         } else {
-
           TypeMirror dependencyClassType =
               Utils.getClassType(elements, types, MoreTypes.asDeclared(resolvedDependencyType));
           TypeName dependencyClassTypeName = TypeName.get(dependencyClassType);
@@ -241,23 +239,15 @@ abstract class Adapter {
 
     @Nullable private TypeMirror[] findTypeArguments(
         TypeElement adapterElement, TypeMirror adaptedType, TypeMirror fieldType) {
-      if (adaptedType instanceof TypeVariable) {
-        TypeMirror erased = types.erasure(adaptedType);
-        if (types.isAssignable(fieldType, erased)) {
-          return new TypeMirror[] { fieldType };
-        }
-        return null;
-      } else {
-        List<? extends TypeParameterElement> parameters = adapterElement.getTypeParameters();
-        TypeMirror[] typeArguments = new TypeMirror[parameters.size()];
-        for (int i = 0; i < parameters.size(); i++) {
-          TypeParameterElement adapterParameter = parameters.get(i);
-          TypeMirror arg = findArgument(adapterParameter, adaptedType, fieldType);
-          if (arg == null) return null;
-          typeArguments[i] = arg;
-        }
-        return typeArguments;
+      List<? extends TypeParameterElement> parameters = adapterElement.getTypeParameters();
+      TypeMirror[] typeArguments = new TypeMirror[parameters.size()];
+      for (int i = 0; i < parameters.size(); i++) {
+        TypeParameterElement adapterParameter = parameters.get(i);
+        TypeMirror arg = findArgument(adapterParameter, adaptedType, fieldType);
+        if (arg == null) return null;
+        typeArguments[i] = arg;
       }
+      return typeArguments;
     }
 
     @Nullable private TypeMirror findArgument(
