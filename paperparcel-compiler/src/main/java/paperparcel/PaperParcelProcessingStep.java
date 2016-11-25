@@ -18,14 +18,18 @@ package paperparcel;
 
 import com.google.auto.common.BasicAnnotationProcessor;
 import com.google.auto.common.MoreElements;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.SetMultimap;
 import java.lang.annotation.Annotation;
 import java.util.Set;
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
-import paperparcel.PaperParcelValidator.PaperParcelValidation;
+import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.UnknownTypeException;
+import javax.tools.Diagnostic;
 
 /**
  * A {@link BasicAnnotationProcessor.ProcessingStep} that is responsible for dealing with all
@@ -56,12 +60,23 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
       SetMultimap<Class<? extends Annotation>, Element> elementsByAnnotation) {
     for (Element element : elementsByAnnotation.get(PaperParcel.class)) {
       TypeElement paperParcelElement = MoreElements.asType(element);
-      PaperParcelValidation validationReport =
+      ValidationReport<TypeElement> validationReport =
           paperParcelValidator.validate(paperParcelElement);
-      validationReport.report().printMessagesTo(messager);
-      if (validationReport.report().isClean()) {
-        generatePaperParcel(paperParcelDescriptorFactory.create(
-            paperParcelElement, validationReport.writeInfo(), validationReport.readInfo()));
+      validationReport.printMessagesTo(messager);
+      if (validationReport.isClean()) {
+        try {
+          generatePaperParcel(paperParcelDescriptorFactory.create(paperParcelElement));
+        } catch (WriteInfo.NonWritableFieldsException e) {
+          printMessages(e, paperParcelElement);
+        } catch (ReadInfo.NonReadableFieldsException e) {
+          printMessages(e, paperParcelElement);
+        } catch (UnknownTypeException e) {
+          messager.printMessage(Diagnostic.Kind.ERROR,
+              String.format(ErrorMessages.MISSING_TYPE_ADAPTER,
+                  e.getUnknownType().toString(),
+                  ErrorMessages.SITE_URL),
+              (Element) e.getArgument());
+        }
       }
     }
     return ImmutableSet.of();
@@ -72,6 +87,55 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
       paperParcelGenerator.generate(descriptor);
     } catch (SourceFileGenerationException e) {
       e.printMessageTo(messager);
+    }
+  }
+
+  private void printMessages(WriteInfo.NonWritableFieldsException e, TypeElement element) {
+    ImmutableSet<ExecutableElement> validConstructors = e.allNonWritableFieldsMap().keySet();
+    ImmutableSet<ExecutableElement> invalidConstructors =
+        e.unassignableConstructorParameterMap().keySet();
+    if (validConstructors.size() > 0) {
+      // Log errors for each non-writable field in each valid constructor
+      for (ExecutableElement validConstructor : validConstructors) {
+        ImmutableList<VariableElement> nonWritableFields =
+            e.allNonWritableFieldsMap().get(validConstructor);
+        for (VariableElement nonWritableField : nonWritableFields) {
+          String fieldName = nonWritableField.getSimpleName().toString();
+          messager.printMessage(Diagnostic.Kind.ERROR,
+              String.format(ErrorMessages.FIELD_NOT_WRITABLE,
+                  element.getQualifiedName(),
+                  fieldName,
+                  validConstructor.toString(),
+                  ErrorMessages.SITE_URL),
+                  nonWritableField);
+        }
+      }
+    } else {
+      // Log errors for unassignable parameters in each invalid constructor
+      for (ExecutableElement invalidConstructor : invalidConstructors) {
+        ImmutableList<VariableElement> unassignableFields =
+            e.unassignableConstructorParameterMap().get(invalidConstructor);
+        for (VariableElement unassignableField : unassignableFields) {
+          String fieldName = unassignableField.getSimpleName().toString();
+          messager.printMessage(Diagnostic.Kind.ERROR,
+              String.format(ErrorMessages.UNMATCHED_CONSTRUCTOR_PARAMETER,
+                  fieldName,
+                  element.getQualifiedName()),
+              invalidConstructor);
+        }
+      }
+    }
+  }
+
+  private void printMessages(ReadInfo.NonReadableFieldsException e, TypeElement element) {
+    for (VariableElement nonReadableField : e.nonReadableFields()) {
+      String fieldName = nonReadableField.getSimpleName().toString();
+      messager.printMessage(Diagnostic.Kind.ERROR,
+          String.format(ErrorMessages.FIELD_NOT_ACCESSIBLE,
+              element.getQualifiedName(),
+              fieldName,
+              ErrorMessages.SITE_URL),
+          nonReadableField);
     }
   }
 }
