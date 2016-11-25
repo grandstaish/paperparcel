@@ -62,7 +62,7 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
             writeInfoFactory,
             readInfoFactory);
 
-    PaperParcelGenerator paperParcelGenerator = new PaperParcelGenerator(filer, elements);
+    PaperParcelGenerator paperParcelGenerator = new PaperParcelGenerator(filer);
 
     return ImmutableList.of(
         new RegisterAdapterProcessingStep(
