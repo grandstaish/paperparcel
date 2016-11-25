@@ -21,6 +21,7 @@ import com.google.auto.common.MoreTypes;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
@@ -48,9 +49,11 @@ import javax.lang.model.util.Types;
  */
 @AutoValue
 abstract class Adapter {
-
-  /** All adapter dependencies required to instantiate this adapter */
-  abstract ImmutableList<Adapter> dependencies();
+  /**
+   * The ordered parameter names of the primary constructor, or null if this adapter has a
+   * singleton instance (defined by {@link #singletonInstance()}.
+   */
+  abstract Optional<ConstructorInfo> constructorInfo();
 
   /**
    * An optional that may contain the name of a singleton instance field of this adapter. The
@@ -66,6 +69,35 @@ abstract class Adapter {
 
   /** Returns true if this type adapter handles null values. */
   abstract boolean nullSafe();
+
+  @AutoValue
+  static abstract class ConstructorInfo {
+
+    /** The ordered parameter names of the primary constructor. */
+    abstract ImmutableList<String> constructorParameterNames();
+
+    /**
+     * All adapter dependencies required to instantiate this adapter indexed by its constructor
+     * parameter name.
+     */
+    abstract ImmutableMap<String, Adapter> adapterDependencies();
+
+    /**
+     * All class dependencies required to instantiate this adapter indexed by its constructor
+     * parameter name.
+     */
+    abstract ImmutableMap<String, TypeName> classDependencies();
+
+    public static ConstructorInfo create(
+        ImmutableList<String> constructorParameterNames,
+        ImmutableMap<String, Adapter> adapterDependencies,
+        ImmutableMap<String, TypeName> classDependencies) {
+      return new AutoValue_Adapter_ConstructorInfo(
+          constructorParameterNames,
+          adapterDependencies,
+          classDependencies);
+    }
+  }
 
   static final class Factory {
     private final Elements elements;
@@ -89,21 +121,25 @@ abstract class Adapter {
       if (fieldType.getKind().isPrimitive()) {
         throw new IllegalArgumentException("Primitive types do not need a TypeAdapter.");
       }
+
       TypeName fieldTypeName = TypeName.get(fieldType);
       final Optional<Adapter> cached = adapterRegistry.getAdapterFor(fieldTypeName);
       if (cached.isPresent()) {
         return cached.get();
       }
+
       List<AdapterRegistry.Entry> adapterEntries = adapterRegistry.getEntries();
 
-      ImmutableList<Adapter> dependencies;
+      Optional<ConstructorInfo> constructorInfo;
       TypeName typeName;
       Optional<String> singletonInstance;
       TypeName adaptedTypeName;
 
       // Brute-force search of all adapters to see if any of them can produce this type.
       for (AdapterRegistry.Entry adapterEntry : adapterEntries) {
+
         if (adapterEntry instanceof AdapterRegistry.FieldEntry) {
+
           final AdapterRegistry.FieldEntry fieldEntry = (AdapterRegistry.FieldEntry) adapterEntry;
           TypeElement enclosingClass = elements.getTypeElement(fieldEntry.enclosingClass());
           Optional<VariableElement> adapterFieldOptional =
@@ -114,11 +150,13 @@ abstract class Adapter {
           TypeMirror adaptedType =
               Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(adapterType));
           if (adaptedType == null || !types.isSameType(adaptedType, fieldType)) continue;
-          dependencies = ImmutableList.of();
+          constructorInfo = Optional.absent();
           typeName = ClassName.get(enclosingClass);
           singletonInstance = Optional.of(fieldEntry.fieldName());
           adaptedTypeName = TypeName.get(adaptedType);
+
         } else if (adapterEntry instanceof AdapterRegistry.ClassEntry) {
+
           AdapterRegistry.ClassEntry classEntry = (AdapterRegistry.ClassEntry) adapterEntry;
           TypeElement adapterElement = elements.getTypeElement(classEntry.qualifiedName());
           TypeMirror adapterType = adapterElement.asType();
@@ -131,22 +169,25 @@ abstract class Adapter {
           TypeMirror resolvedAdaptedType = Utils.getAdaptedType(elements, types, resolvedAdapterType);
           if (resolvedAdaptedType == null
               || !types.isSameType(resolvedAdaptedType, fieldType)) continue;
-          dependencies = findDependencies(adapterElement, resolvedAdapterType);
-          if (dependencies == null) continue;
-          typeName = TypeName.get(resolvedAdapterType);
           // TODO(brad): This probably shouldn't be hardcoded to INSTANCE. Users should be able to
           // TODO(brad): name the instance whatever they want. Revisit this.
           singletonInstance = Utils.isSingleton(types, adapterElement)
               ? Optional.of("INSTANCE")
               : Optional.<String>absent();
+          constructorInfo = singletonInstance.isPresent()
+              ? Optional.<ConstructorInfo>absent()
+              : getConstructorInfo(adapterElement, resolvedAdapterType);
+          if (!singletonInstance.isPresent() && !constructorInfo.isPresent()) continue;
+          typeName = TypeName.get(resolvedAdapterType);
           adaptedTypeName = TypeName.get(resolvedAdaptedType);
+
         } else {
           throw new AssertionError("Unknown AdapterRegistry.Entry: " + adapterEntry);
         }
 
         // Create and cache the adapter
         Adapter adapter = new AutoValue_Adapter(
-            dependencies, singletonInstance, typeName, adaptedTypeName, adapterEntry.nullSafe());
+            constructorInfo, singletonInstance, typeName, adaptedTypeName, adapterEntry.nullSafe());
         adapterRegistry.registerAdapterFor(fieldTypeName, adapter);
 
         return adapter;
@@ -154,22 +195,50 @@ abstract class Adapter {
       return null;
     }
 
-    @Nullable private ImmutableList<Adapter> findDependencies(
+    @SuppressWarnings("ConstantConditions") // Already validated
+    private Optional<ConstructorInfo> getConstructorInfo(
         TypeElement adapterElement, DeclaredType resolvedAdapterType) {
-      ImmutableList.Builder<Adapter> dependencies = new ImmutableList.Builder<>();
+
+      ImmutableList.Builder<String> parameterNames = ImmutableList.builder();
+      ImmutableMap.Builder<String, Adapter> adapterDependencies = new ImmutableMap.Builder<>();
+      ImmutableMap.Builder<String, TypeName> classDependencies = new ImmutableMap.Builder<>();
+
       Optional<ExecutableElement> mainConstructor = Utils.findLargestConstructor(adapterElement);
-      if (mainConstructor.isPresent()) {
-        ExecutableType resolvedConstructorType =
-            MoreTypes.asExecutable(types.asMemberOf(resolvedAdapterType, mainConstructor.get()));
-        for (TypeMirror adapterDependencyType : resolvedConstructorType.getParameterTypes()) {
+      if (!mainConstructor.isPresent()) return Optional.absent();
+
+      ExecutableType resolvedConstructorType =
+          MoreTypes.asExecutable(types.asMemberOf(resolvedAdapterType, mainConstructor.get()));
+      List<? extends TypeMirror> resolveParameterList = resolvedConstructorType.getParameterTypes();
+      List<? extends VariableElement> parameters = mainConstructor.get().getParameters();
+
+      for (int i = 0; i < parameters.size(); i++) {
+        VariableElement dependencyElement = parameters.get(i);
+        TypeMirror resolvedDependencyType = resolveParameterList.get(i);
+        String parameterName = dependencyElement.getSimpleName().toString();
+        parameterNames.add(parameterName);
+
+        if (Utils.isAdapterType(dependencyElement, elements, types)) {
+
           TypeMirror dependencyAdaptedType =
-              Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(adapterDependencyType));
-          Adapter dependency = create(dependencyAdaptedType);
-          if (dependency == null) return null;
-          dependencies.add(dependency);
+              Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(resolvedDependencyType));
+          Adapter adapterDependency = create(dependencyAdaptedType);
+          if (adapterDependency == null) return Optional.absent();
+          adapterDependencies.put(parameterName, adapterDependency);
+
+        } else {
+
+          TypeMirror dependencyClassType =
+              Utils.getClassType(elements, types, MoreTypes.asDeclared(resolvedDependencyType));
+          TypeName dependencyClassTypeName = TypeName.get(dependencyClassType);
+          classDependencies.put(parameterName, dependencyClassTypeName);
+
         }
       }
-      return dependencies.build();
+
+      return Optional.of(ConstructorInfo.create(
+          parameterNames.build(),
+          adapterDependencies.build(),
+          classDependencies.build()));
     }
 
     @Nullable private TypeMirror[] findTypeArguments(
@@ -212,7 +281,9 @@ abstract class Adapter {
         public TypeMirror visitArray(ArrayType paramType, TypeMirror argType) {
           if (argType instanceof ArrayType) {
             ArrayType cast = (ArrayType) argType;
-            return paramType.getComponentType().accept(this, cast.getComponentType());
+            TypeMirror componentType = cast.getComponentType();
+            if (componentType.getKind().isPrimitive()) return null;
+            return paramType.getComponentType().accept(this, componentType);
           }
           return null;
         }

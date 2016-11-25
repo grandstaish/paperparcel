@@ -14,7 +14,7 @@ import static com.google.common.truth.Truth.assertThat;
 @Config(manifest = Config.NONE)
 public class EnumAdapterTests {
   @Test public void enumsAreCorrectlyParcelled() {
-    TypeAdapter<TestEnum> adapter = new EnumAdapter<>();
+    TypeAdapter<TestEnum> adapter = new EnumAdapter<>(TestEnum.class);
 
     TestEnum expected = TestEnum.A;
     TestEnum result = TestUtils.writeThenRead(adapter, expected);

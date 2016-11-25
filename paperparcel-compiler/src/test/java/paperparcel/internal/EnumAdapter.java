@@ -4,6 +4,10 @@ import android.os.Parcel;
 import paperparcel.TypeAdapter;
 
 public final class EnumAdapter<T extends Enum<T>> implements TypeAdapter<T> {
+  public EnumAdapter(Class<T> enumClass) {
+    throw new RuntimeException("Stub!");
+  }
+
   @Override public T readFromParcel(Parcel source) {
     throw new RuntimeException("Stub!");
   }

@@ -277,17 +277,6 @@ public final class StaticAdapters {
     }
   };
 
-  public static final TypeAdapter<String[]> STRING_ARRAY_ADAPTER =
-      new TypeAdapter<String[]>() {
-        @Nullable @Override public String[] readFromParcel(@NonNull Parcel source) {
-          return source.createStringArray();
-        }
-
-        @Override public void writeToParcel(@Nullable String[] value, @NonNull Parcel dest, int flags) {
-          dest.writeStringArray(value);
-        }
-      };
-
   private StaticAdapters() {
     throw new AssertionError("No instances.");
   }

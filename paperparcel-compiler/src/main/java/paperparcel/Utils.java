@@ -146,11 +146,40 @@ final class Utils {
         .toList();
   }
 
+  /** Returns true if {@code element} is a TypeAdapter type */
+  static boolean isAdapterType(Element element, Elements elements, Types types) {
+    TypeMirror typeAdapterType = types.getDeclaredType(
+        elements.getTypeElement(TYPE_ADAPTER_CLASS_NAME),
+        types.getWildcardType(null, null));
+    return types.isAssignable(element.asType(), typeAdapterType);
+  }
+
+  /** Returns true if {@code element} is a TypeAdapter type */
+  static boolean isClassType(Element element, Elements elements, Types types) {
+    TypeMirror typeAdapterType = types.getDeclaredType(
+        elements.getTypeElement(Class.class.getName()),
+        types.getWildcardType(null, null));
+    return types.isAssignable(element.asType(), typeAdapterType);
+  }
+
   /**
    * Returns the {@link TypeMirror} argument found in a given TypeAdapter type
    */
   static TypeMirror getAdaptedType(Elements elements, Types types, DeclaredType adapterType) {
     TypeElement typeAdapterElement = elements.getTypeElement(TYPE_ADAPTER_CLASS_NAME);
+    TypeParameterElement param = typeAdapterElement.getTypeParameters().get(0);
+    try {
+      return types.asMemberOf(adapterType, param);
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
+  }
+
+  /**
+   * Returns the {@link TypeMirror} argument found in a given Class type
+   */
+  static TypeMirror getClassType(Elements elements, Types types, DeclaredType adapterType) {
+    TypeElement typeAdapterElement = elements.getTypeElement(Class.class.getName());
     TypeParameterElement param = typeAdapterElement.getTypeParameters().get(0);
     try {
       return types.asMemberOf(adapterType, param);
