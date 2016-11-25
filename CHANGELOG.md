@@ -31,7 +31,7 @@ Version 2.0.0 *(TBD)*
 Version 1.0.1 *(2016-10-31)*
 ----------------------------
 
-* FIX: Can't reference `CREATOR` on `com.google.android.gms.maps.model.LatLng`
+* Fix: Can't reference `CREATOR` on `com.google.android.gms.maps.model.LatLng`
 
 Version 1.0.0 *(2016-05-27)*
 ----------------------------
