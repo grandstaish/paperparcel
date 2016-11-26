@@ -5,10 +5,18 @@ import android.os.Parcelable
 import java.lang.reflect.Method
 
 /**
- * {@link Parcelable} with a default {@link Parcelable#describeContents()} and
- * {@link Parcelable#writeToParcel(Parcel, Int) implementations.
+ * [Parcelable] with a default [Parcelable.describeContents] and [Parcelable.writeToParcel]
+ * implementations.
+ *
+ * @since 2.0
  */
 interface PaperParcelable : Parcelable {
+
+  /**
+   * A cache for class lookups.
+   *
+   * @suppress
+   */
   object Cache {
     val writeMethods = mutableMapOf<Class<*>, Method>()
   }
