@@ -24,7 +24,7 @@
 
 <p>PaperParcel is an annotation processor that automatically generates the <code>CREATOR</code> and <code>writeToParcel(...)</code> implementations for you when writing <a href="http://developer.android.com/intl/es/reference/android/os/Parcelable.html">Parcelable</a> objects. PaperParcel fully supports both Java and Kotlin (including <a href="https://kotlinlang.org/docs/reference/data-classes.html">Kotlin Data Classes</a>). Additionally, PaperParcel supports Google's <a href="https://github.com/google/auto/tree/master/value">AutoValue</a> via an <a href="http://jakewharton.com/presentation/2016-03-08-ny-android-meetup/">AutoValue Extension</a>.</p>
 
-<p>Out of the box, PaperParcel supports all of the types that are supported by the <a href="https://developer.android.com/reference/android/os/Parcel.html">Parcel</a> class, including a few minor additions (e.g. <code>java.util.Set</code>). Support for any other types can be added using custom <a href="README.md#typeadapters">TypeAdapters</a>.</p>
+<p>Out of the box, PaperParcel supports all of the types that are supported by the <a href="https://developer.android.com/reference/android/os/Parcel.html">Parcel</a> class, including a few minor additions (e.g. <code>java.util.Set</code>). Support for any other types can be added using custom <a href="#typeadapters">TypeAdapters</a>.</p>
 
 <h2>
 <a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
@@ -96,7 +96,7 @@
   }
 }</pre></div>
 
-<p><strong>Optional:</strong> If you don't mind a minor amount of reflection, the <code>paperparcel-kotlin</code> module provides <a href="paperparcel-kotlin/src/main/java/paperparcel/PaperParcelable.kt">PaperParcelable</a>. <code>PaperParcelable</code> is an interface with default implementations written for <code>describeContents</code> and <code>writeToParcel(...)</code> so you don't have to write them yourself, e.g.:</p>
+<p><strong>Optional:</strong> If you don't mind a minor amount of reflection, the <code>paperparcel-kotlin</code> module provides <a href="2.x/paperparcel-kotlin/paperparcel/PaperParcelable.html">PaperParcelable</a>. <code>PaperParcelable</code> is an interface with default implementations written for <code>describeContents</code> and <code>writeToParcel(...)</code> so you don't have to write them yourself, e.g.:</p>
 
 <div class="highlight highlight-source-Kotlin"><pre>@PaperParcel
 <span class="pl-k">data</span> class <span class="pl-en">User</span>(
@@ -133,7 +133,7 @@
 
 <p><strong>2)</strong> This is a completely optional singleton instance. If PaperParcel notices your class is a singleton, it will use the singleton instance. This helps greatly in preventing unecessary allocations. For this reason, most of the built-in type adapters are singletons. Note for Kotlin users, this is equivalent to defining your Adapter as an <code>object</code>.</p>
 
-<p>Many similar projects also use some variant of <code>TypeAdapter</code>, however the PaperParcel implementation is slightly more flexible. PaperParcel allows <code>TypeAdapter</code>s to be <a href="https://en.wikipedia.org/wiki/Object_composition">composable</a> and <a href="https://docs.oracle.com/javase/tutorial/java/generics/types.html">generic</a>. To see why this is useful, let's look at how PaperParcel's <a href="paperparcel/src/main/java/paperparcel/internal/SparseArrayAdapter.java">SparseArrayAdapter</a> is defined:</p>
+<p>Many similar projects also use some variant of <code>TypeAdapter</code>, however the PaperParcel implementation is slightly more flexible. PaperParcel allows <code>TypeAdapter</code>s to be <a href="https://en.wikipedia.org/wiki/Object_composition">composable</a> and <a href="https://docs.oracle.com/javase/tutorial/java/generics/types.html">generic</a>. To see why this is useful, let's look at how PaperParcel's built-in SparseArrayAdapter is defined:</p>
 
 <div class="highlight highlight-source-java"><pre><span class="pl-k">public</span> <span class="pl-k">final</span> <span class="pl-k">class</span> <span class="pl-en">SparseArrayAdapter</span>&lt;T&gt; <span class="pl-k">implements</span> <span class="pl-e">TypeAdapter&lt;<span class="pl-k">SparseArray&lt;<span class="pl-smi">T</span>&gt;</span>&gt;</span> {
   <span class="pl-k">private</span> <span class="pl-k">final</span> <span class="pl-k">TypeAdapter&lt;<span class="pl-smi">T</span>&gt;</span> itemAdapter;
