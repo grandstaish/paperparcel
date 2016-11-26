@@ -11,13 +11,7 @@ import java.lang.reflect.Method
  * @since 2.0
  */
 interface PaperParcelable : Parcelable {
-
-  /**
-   * A cache for class lookups.
-   *
-   * @suppress
-   */
-  object Cache {
+  private object Cache {
     val writeMethods = mutableMapOf<Class<*>, Method>()
   }
 
