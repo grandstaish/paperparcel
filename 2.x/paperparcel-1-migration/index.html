@@ -30,23 +30,23 @@
 
 <p>PaperParcel used to have a concept of "<code>Parcelable</code> wrappers". These no longer exist in 2.x. There are several reasons for removing them:</p>
 
-<ui>
+<ul>
   <li><span>They require reflection and runtime class lookups, which can be costly on Android (especially when unparcelling a lot of model objects at the same time). <code>Parcelable</code> is intended to be performant!</span></li>
   <li>They don't play well with other libraries that require <code>Parcelable</code>s. Examples include <a href="https://github.com/f2prateek/dart">Dart</a>, <a href="https://github.com/frankiesardo/icepick">IcePick</a>, and <a href="https://github.com/sockeqwe/fragmentargs">FragmentArgs</a>. Some of these libraries have workarounds for allowing wrapper objects, but it's better practice to just have objects that are <i>actually</i> <code>Parcelable</code> instead.</li>
   <li>Wrappers make it harder to opt out of using a library. They lock you in and we don't want that.</li>
-</ui>
+</ul>
 
 <p>Instead, PaperParcel 2.x just generates the <code>CREATOR</code> and <code>writeToParcel(...)</code> implementations for you. Then you can simply make your model objects implement <code>Parcelable</code> and use/call the generated code from your model.</p>
 
 <p>Here's a list of things you need to do to remove all of the old "wrapper" code:</p> 
 
-<ui>
+<ul>
   <li>Ensure that all of your <code>@PaperParcel</code> classes also implement <code>Parcelable</code>. Override the required methods, but leave them blank for now.</li>
   <li>If you have references to <code>PaperParcels</code>, delete them next. This class no longer exists as it was only used for wrapping and unwrapping types.</li>
   <li>If you have references to <code>TypedParcelable</code>, you need to delete those too. This interface no longer exists.</li>
   <li>If you have references to <code>PaperParcelable.Creator</code>, you need to delete those too. This was removed in favour of the newly generated <code>CREATOR</code>s that don't rely on wrappers.</li>
   <li>Build and then use the generated code in your models as shown in the <a href="../../#usage">Usage</a> section of the website.</li>
-</ui>
+</ul>
 
 <h2>
 <a id="type-adapters" class="anchor" href="#type-adapters" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Type Adapters</h2>
