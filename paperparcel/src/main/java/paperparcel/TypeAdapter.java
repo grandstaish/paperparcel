@@ -20,12 +20,12 @@ import android.os.Parcel;
 import android.support.annotation.NonNull;
 
 /**
- * A custom method for reading/writing a Type
+ * <p>A custom method for reading and writing a type using {@link Parcel}.</p>
  *
- * When defining a {@code TypeAdapter}, you may choose to handle {@code null} values or not. If
+ * <p>When defining a {@code TypeAdapter}, you may choose to handle {@code null} values or not. If
  * you choose not to, PaperParcel will handle the null-safety for you automatically. If you choose
  * to handle {@code null} values (or the adapted type can never be {@code null}), then you should
- * set {@link RegisterAdapter#nullSafe()} to {@code true}.
+ * set {@link RegisterAdapter#nullSafe()} to {@code true}.</p>
  *
  * @param <T> The Type to override the default reading/writing functionality for
  *
