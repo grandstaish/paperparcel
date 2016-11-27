@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>PaperParcel</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">PaperParcel</h1>
+      <h2 class="project-tagline">Android Parcelable boilerplate annotation processor </h2>
+      <a href="https://github.com/grandstaish/paperparcel" class="btn">View on GitHub</a>
+      <a href="#download" class="btn">Download v2.0.0-beta1</a>
+      <a href="2.x/paperparcel" class="btn">View Javadoc</a>
+    </section>
+
+    <section class="main-content">
+<h2>
+<a id="overview" class="anchor" href="#overview" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Overview</h2>
+
+<p>PaperParcel is an annotation processor that automatically generates the <code>CREATOR</code> and <code>writeToParcel(...)</code> implementations for you when writing <a href="http://developer.android.com/intl/es/reference/android/os/Parcelable.html">Parcelable</a> objects. PaperParcel fully supports both Java and Kotlin (including <a href="https://kotlinlang.org/docs/reference/data-classes.html">Kotlin Data Classes</a>). Additionally, PaperParcel supports Google's <a href="https://github.com/google/auto/tree/master/value">AutoValue</a> via an <a href="http://jakewharton.com/presentation/2016-03-08-ny-android-meetup/">AutoValue Extension</a>.</p>
+
+<p>Out of the box, PaperParcel supports all of the types that are supported by the <a href="https://developer.android.com/reference/android/os/Parcel.html">Parcel</a> class, including a few minor additions (e.g. <code>java.util.Set</code>). Support for any other types can be added using custom <a href="#typeadapters">Type Adapters</a>.</p>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
+
+<p>Using PaperParcel is easy, the API is extemely minimal. Let's look at an example:</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-k">@PaperParcel</span> <span class="pl-c">// (1)</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">User</span> <span class="pl-k">implements</span> <span class="pl-e">Parcelable</span> {
+  <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-k">Creator&lt;<span class="pl-smi">User</span>&gt;</span> <span class="pl-c1">CREATOR</span> <span class="pl-k">=</span> <span class="pl-smi">PaperParcelUser</span><span class="pl-c1"><span class="pl-k">.</span>CREATOR</span>; <span class="pl-c">// (2)</span>
+
+  <span class="pl-k">public</span> <span class="pl-k">long</span> id; <span class="pl-c">// (3)</span>
+  <span class="pl-k">public</span> <span class="pl-smi">String</span> firstName; <span class="pl-c">// (3)</span>
+  <span class="pl-k">public</span> <span class="pl-smi">String</span> lastName; <span class="pl-c">// (3)</span>
+
+  <span class="pl-k">@Override</span> <span class="pl-k">public</span> <span class="pl-k">int</span> <span class="pl-en">describeContents</span>() {
+    <span class="pl-k">return</span> <span class="pl-c1">0</span>;
+  }
+
+  <span class="pl-k">@Override</span> <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">writeToParcel</span>(<span class="pl-smi">Parcel</span> <span class="pl-v">dest</span>, <span class="pl-k">int</span> <span class="pl-v">flags</span>) {
+    <span class="pl-smi">PaperParcelUser</span><span class="pl-k">.</span>writeToParcel(<span class="pl-v">this</span>, dest, flags); <span class="pl-c">// (4)</span>
+  }
+}</pre></div>
+
+<p>I've annotated each important part with a comment and a number, let's look at each of these one by one:</p>
+
+<ol>
+    <li>Annotating a class with <code>@PaperParcel</code> will automatically generate the <code>CREATOR</code> and <code>writeToParcel(...)</code> implementations for that class at compile time. These implementations are generated into a java class (in the same package as your model) called <code>PaperParcel$CLASS_NAME$</code></li>
+    <li>This is the first usage of the generated code — the generated <code>CREATOR</code> instance.</li>
+    <li>These are the fields that will be processed by PaperParcel.</li>
+    <li>This is the second usage of the generated code — the generated <code>writeToParcel(...)</code> implementation.</li>
+</ol>
+
+<h2>
+<a id="even-easier-use-the-autovalue-extension" class="anchor" href="#even-easier-use-the-autovalue-extension" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Even Easier; Use The AutoValue Extension</h2>
+
+<p>If you are already using AutoValue, all you need to do is simply add <code>implements Parcelable</code> to your AutoValue object and that's it:</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-k">@AutoValue</span>
+<span class="pl-k">public</span> <span class="pl-k">abstract</span> <span class="pl-k">class</span> <span class="pl-en">User</span> <span class="pl-k">implements</span> <span class="pl-e">Parcelable</span> {
+  <span class="pl-k">public</span> <span class="pl-k">abstract</span> <span class="pl-k">long</span> <span class="pl-en">id</span>();
+  <span class="pl-k">public</span> <span class="pl-k">abstract</span> <span class="pl-smi">String</span> <span class="pl-en">firstName</span>();
+  <span class="pl-k">public</span> <span class="pl-k">abstract</span> <span class="pl-smi">String</span> <span class="pl-en">lastName</span>();
+
+  <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-smi">User</span> <span class="pl-en">create</span>(<span class="pl-k">long</span> <span class="pl-v">id</span>, <span class="pl-smi">String</span> <span class="pl-v">firstName</span>, <span class="pl-smi">String</span> <span class="pl-v">lastName</span>) {
+    <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-smi">AutoValue_User</span>(id, firstName, lastName);
+  }
+}</pre></div>
+
+<h2>
+<a id="kotlin" class="anchor" href="#kotlin" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Kotlin</h2>
+
+<p>Usage is exactly the same as java:</p>
+
+<div class="highlight highlight-source-Kotlin"><pre>@PaperParcel
+<span class="pl-k">data</span> class <span class="pl-en">User</span>(
+    <span class="pl-k">val</span> <span class="pl-smi">id</span><span class="pl-k">:</span> <span class="pl-k">Long</span>,
+    <span class="pl-k">val</span> <span class="pl-smi">firstName</span><span class="pl-k">:</span> <span class="pl-k">String</span>,
+    <span class="pl-k">val</span> <span class="pl-smi">lastName</span><span class="pl-k">:</span> <span class="pl-k">String</span>
+) <span class="pl-k">:</span> <span class="pl-e">Parcelable</span> {
+  <span class="pl-k">companion </span>object {
+    @JvmField <span class="pl-k">val</span> <span class="pl-en">CREATOR</span> <span class="pl-k">=</span> PaperParcelUser<span class="pl-k">.</span><span class="pl-c1">CREATOR</span>
+  }
+
+  <span class="pl-k">override</span> <span class="pl-k">fun</span> <span class="pl-en">describeContents</span>() <span class="pl-k">=</span> <span class="pl-c1">0</span>
+
+  <span class="pl-k">override</span> <span class="pl-k">fun</span> <span class="pl-en">writeToParcel</span>(<span class="pl-smi">dest</span><span class="pl-k">:</span> Parcel, <span class="pl-smi">flags</span><span class="pl-k">:</span> <span class="pl-k">Int</span>) {
+    PaperParcelUser<span class="pl-k">.</span>writeToParcel(<span class="pl-c1">this</span>, dest, flags)
+  }
+}</pre></div>
+
+<p><strong>Optional:</strong> If you don't mind a minor amount of reflection, the <code>paperparcel-kotlin</code> module provides <a href="2.x/paperparcel-kotlin/paperparcel/PaperParcelable.html">PaperParcelable</a>. <code>PaperParcelable</code> is an interface with default implementations written for <code>describeContents</code> and <code>writeToParcel(...)</code> so you don't have to write them yourself, e.g.:</p>
+
+<div class="highlight highlight-source-Kotlin"><pre>@PaperParcel
+<span class="pl-k">data</span> class <span class="pl-en">User</span>(
+    <span class="pl-k">val</span> <span class="pl-smi">id</span><span class="pl-k">:</span> <span class="pl-k">Long</span>,
+    <span class="pl-k">val</span> <span class="pl-smi">firstName</span><span class="pl-k">:</span> <span class="pl-k">String</span>,
+    <span class="pl-k">val</span> <span class="pl-smi">lastName</span><span class="pl-k">:</span> <span class="pl-k">String</span>
+) <span class="pl-k">:</span> <span class="pl-e">PaperParcelable</span> {
+  <span class="pl-k">companion </span>object {
+    @JvmField <span class="pl-k">val</span> <span class="pl-en">CREATOR</span> <span class="pl-k">=</span> PaperParcelUser<span class="pl-k">.</span><span class="pl-c1">CREATOR</span>
+  }
+}</pre></div>
+        
+<h2>
+<a id="migrating" class="anchor" href="#migrating" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Migrating from PaperParcel 1.x</h2>
+        
+<p>If you are a PaperParcel 1.x user and would like to move to 2.x, see <a href="2.x/paperparcel-1-migration">Migrating from PaperParcel 1.x</a>.</p>
+
+<h2>
+<a id="typeadapters" class="anchor" href="#typeadapters" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Type Adapters</h2>
+
+<p>PaperParcel keeps it built-in <code>TypeAdapter</code>s list minimal to ensure the library is as small as possible. If you want to extend the type system, you can do this by registering your own custom <code>TypeAdapter</code>. Defining a custom <code>TypeAdapter</code> is simple, let's look at an example that adds support for the <code>java.util.Date</code> class:</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-k">@RegisterAdapter</span> <span class="pl-c">// 1</span>
+<span class="pl-k">public</span> <span class="pl-k">final</span> <span class="pl-k">class</span> <span class="pl-en">DateAdapter</span> <span class="pl-k">implements</span> <span class="pl-e">TypeAdapter&lt;<span class="pl-smi">Date</span>&gt;</span> {
+  <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-smi">DateAdapter</span> <span class="pl-c1">INSTANCE</span> <span class="pl-k">=</span> <span class="pl-k">new</span> <span class="pl-smi">DateAdapter</span>(); <span class="pl-c">// 2</span>
+
+  <span class="pl-k">@NonNull</span> <span class="pl-k">@Override</span> <span class="pl-k">public</span> <span class="pl-smi">Date</span> <span class="pl-en">readFromParcel</span>(<span class="pl-k">@NonNull</span> <span class="pl-smi">Parcel</span> <span class="pl-v">source</span>) {
+    <span class="pl-k">return</span> <span class="pl-k">new</span> <span class="pl-smi">Date</span>(source<span class="pl-k">.</span>readLong());
+  }
+
+  <span class="pl-k">@Override</span> <span class="pl-k">public</span> <span class="pl-k">void</span> <span class="pl-en">writeToParcel</span>(<span class="pl-k">@NonNull</span> <span class="pl-smi">Date</span> <span class="pl-v">value</span>, <span class="pl-k">@NonNull</span> <span class="pl-smi">Parcel</span> <span class="pl-v">dest</span>, <span class="pl-k">int</span> <span class="pl-v">flags</span>) {
+    dest<span class="pl-k">.</span>writeLong(value<span class="pl-k">.</span>getTime());
+  }
+}</pre></div>
+
+<p>I've annotated each important part with a comment and a number, let's look at each of these one by one:</p>
+        
+<ol>
+    <li>This is how you register your custom adapter with the compiler — just by annotating this class, generated code will now use <code>DateAdapter</code> when reading and writing <code>Date</code> fields. Additionally, <code>Date</code> fields can now be used in <code>List</code>s, <code>Map</code>s, Arrays, etc too.</li>
+    <li>This is a completely optional singleton instance. If PaperParcel notices your class is a singleton, it will use the singleton instance. This helps greatly in preventing unecessary allocations. For this reason, most of the built-in type adapters are singletons. Note for Kotlin users, this is equivalent to defining your Adapter as an <code>object</code>.</li>
+</ol>
+
+<p>Many similar projects also use some variant of <code>TypeAdapter</code>, however the PaperParcel implementation is slightly more flexible. PaperParcel allows <code>TypeAdapter</code>s to be <a href="https://en.wikipedia.org/wiki/Object_composition">composable</a> and <a href="https://docs.oracle.com/javase/tutorial/java/generics/types.html">generic</a>. To see why this is useful, let's look at how PaperParcel's built-in SparseArrayAdapter is defined:</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-k">public</span> <span class="pl-k">final</span> <span class="pl-k">class</span> <span class="pl-en">SparseArrayAdapter</span>&lt;T&gt; <span class="pl-k">implements</span> <span class="pl-e">TypeAdapter&lt;<span class="pl-k">SparseArray&lt;<span class="pl-smi">T</span>&gt;</span>&gt;</span> {
+  <span class="pl-k">private</span> <span class="pl-k">final</span> <span class="pl-k">TypeAdapter&lt;<span class="pl-smi">T</span>&gt;</span> itemAdapter;
+
+  <span class="pl-k">public</span> <span class="pl-en">SparseArrayAdapter</span>(<span class="pl-k">TypeAdapter&lt;<span class="pl-smi">T</span>&gt;</span> <span class="pl-v">itemAdapter</span>) {
+    <span class="pl-v">this</span><span class="pl-k">.</span>itemAdapter <span class="pl-k">=</span> itemAdapter;
+  }
+  <span class="pl-c1">...</span>
+}</pre></div>
+
+<p>As you can see, <code>SparseArrayAdapter</code> has a dependency on another <code>TypeAdapter</code> to handle the parcelling of its items, but the item type is not hard-coded (it is generic). This means we don't need to define a new adapter class each time we use a <code>SparseArray</code> with a different item type, instead this single adapter will handle all item types. </p>
+
+<p>A <code>TypeAdapter</code> can list any number of <code>TypeAdapter</code> or <code>Class</code> dependencies as constructor parameters and PaperParcel will resolve them at compile time. You can take advantage of this power to easily add support for container types that don't come out of the box, e.g. <code>RealmList</code> for <a href="https://github.com/realm/realm-java">Realm</a>, various non-java <code>Collection</code> and <code>Tuple</code> types in <a href="https://github.com/JetBrains/kotlin/">Kotlin</a>, or even <code>ImmutableMap</code> for <a href="https://github.com/google/guava">Guava</a>. </p>
+
+<h2>
+<a id="excluding-fields" class="anchor" href="#excluding-fields" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Excluding Fields</h2>
+
+<p>By default, PaperParcel will exclude any <code>static</code> or <code>transient</code> fields from being included in the generated <code>CREATOR</code> and <code>writeToParcel(...)</code> implementations. If you have more complicated requirements for excluding fields, then you can customise this behaviour using the <code>@PaperParcel.Options</code> API:</p>
+
+<h4>
+<a id="exclude-via-modifiers" class="anchor" href="#exclude-via-modifiers" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Exclude via modifiers</h4>
+
+<p>Let's say you wanted to exclude all <code>transient</code> and <code>static final</code> fields (therefore keeping any non-final <code>static</code> field). You could achieve that like this:</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-k">@PaperParcel</span>
+<span class="pl-k">@PaperParcel.Options</span>(
+  <span class="pl-c1">excludeModifiers</span> <span class="pl-k">=</span> {
+    <span class="pl-smi">Modifier</span><span class="pl-c1"><span class="pl-k">.</span>TRANSIENT</span>,
+    <span class="pl-smi">Modifier</span><span class="pl-c1"><span class="pl-k">.</span>STATIC</span> <span class="pl-k">|</span> <span class="pl-smi">Modifier</span><span class="pl-c1"><span class="pl-k">.</span>FINAL</span>
+  }
+)
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Example</span> <span class="pl-k">implements</span> <span class="pl-e">Parcelable</span> {
+  <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-k">int</span> field1 <span class="pl-k">=</span> <span class="pl-c1">0</span>; <span class="pl-c">// Will not be parcelled</span>
+  <span class="pl-k">static</span> <span class="pl-k">int</span> field2; <span class="pl-c">// Will be parcelled</span>
+  <span class="pl-k">transient</span> <span class="pl-k">int</span> field3; <span class="pl-c">// Will not be parcelled</span>
+  <span class="pl-k">int</span> field4; <span class="pl-c">// Will be parcelled</span>
+  <span class="pl-c1">...</span>
+}</pre></div>
+
+<h4>
+<a id="exclude-via-annotation" class="anchor" href="#exclude-via-annotation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Exclude via annotation</h4>
+
+<p>Another API available to you is <code>excludeAnnotations</code>. This API lists all of the annotations that will be used to exclude fields. Let's see how this might look:</p>
+
+<p>First we'll create an annotation and call it <code>Exclude</code>:</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-k">@Retention</span>(<span class="pl-smi">RetentionPolicy</span><span class="pl-c1"><span class="pl-k">.</span>SOURCE</span>)
+<span class="pl-k">@Target</span>(<span class="pl-smi">ElementType</span><span class="pl-c1"><span class="pl-k">.</span>FIELD</span>)
+<span class="pl-k">public</span> <span class="pl-k">@interface</span> <span class="pl-en">Exclude</span> {
+}</pre></div>
+
+<p>Now we can use this annotation in any of our model classes to exclude fields like so:</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-k">@PaperParcel</span>
+<span class="pl-k">@PaperParcel.Options</span>(<span class="pl-c1">excludeAnnotations</span> <span class="pl-k">=</span> <span class="pl-smi">Exclude</span><span class="pl-k">.</span>class)
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Example</span> <span class="pl-k">implements</span> <span class="pl-e">Parcelable</span> {
+  <span class="pl-k">int</span> field1; <span class="pl-c">// Will be parcelled</span>
+  <span class="pl-k">@Exclude</span> <span class="pl-k">int</span> field2; <span class="pl-c">// Will not be parcelled</span>
+  <span class="pl-c1">...</span>
+}</pre></div>
+
+<h4>
+<a id="opt-in-field-strategy" class="anchor" href="#opt-in-field-strategy" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Opt-in field strategy</h4>
+
+<p>Lastly, PaperParcel can be configured to ignore all fields unless specified otherwise. This is useful in a style of programming where you want to explicitly specify all fields that should be considered for parcelling.</p>
+
+<p>Like the previous example, we can define our own annotation:</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-k">@Retention</span>(<span class="pl-smi">RetentionPolicy</span><span class="pl-c1"><span class="pl-k">.</span>SOURCE</span>)
+<span class="pl-k">@Target</span>(<span class="pl-smi">ElementType</span><span class="pl-c1"><span class="pl-k">.</span>FIELD</span>)
+<span class="pl-k">public</span> <span class="pl-k">@interface</span> <span class="pl-en">Expose</span> {
+}</pre></div>
+
+<p>Then our <code>@Expose</code> annotation can be used to include individual fields like so:</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-k">@PaperParcel</span>
+<span class="pl-k">@PaperParcel.Options</span>(
+  <span class="pl-c1">excludeNonExposedFields</span> <span class="pl-k">=</span> <span class="pl-c1">true</span>,
+  <span class="pl-c1">exposeAnnotations</span> <span class="pl-k">=</span> <span class="pl-smi">Expose</span><span class="pl-k">.</span>class
+)
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Example</span> <span class="pl-k">implements</span> <span class="pl-e">Parcelable</span> {
+  <span class="pl-k">@Expose</span> <span class="pl-k">int</span> field1; <span class="pl-c">// Will be parcelled</span>
+  <span class="pl-k">int</span> field2; <span class="pl-c">// Will not be parcelled</span>
+  <span class="pl-c1">...</span>
+}</pre></div>
+
+<h3>
+<a id="reusable-exclusion-rules" class="anchor" href="#reusable-exclusion-rules" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Reusable exclusion rules</h3>
+
+<p>Applying exclusion rules in this manner can become tedius if you if you want to apply the same rules to many (or all) of your model objects. For a more reusable strategy, you may wish to create a custom annotation which will define all of the rules you wish to apply; then use your custom annotation on your <code>@PaperParcel</code> classes instead. Here's an example of a custom annotation that has <code>@PaperParcel.Options</code> applied to it:</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-k">@PaperParcel.Options</span>(<span class="pl-c1">...</span>) <span class="pl-c">// Define your rules here</span>
+<span class="pl-k">@Retention</span>(<span class="pl-smi">RetentionPolicy</span><span class="pl-c1"><span class="pl-k">.</span>SOURCE</span>)
+<span class="pl-k">@Target</span>(<span class="pl-smi">ElementType</span><span class="pl-c1"><span class="pl-k">.</span>TYPE</span>)
+<span class="pl-k">public</span> <span class="pl-k">@interface</span> <span class="pl-en">MyOptions</span> {
+}</pre></div>
+
+<p>After defining <code>@MyOptions</code> (call it whatever you like), you can then apply it directly to any <code>@PaperParcel</code> class to apply the rules:</p>
+
+<div class="highlight highlight-source-java"><pre><span class="pl-k">@MyOptions</span>
+<span class="pl-k">@PaperParcel</span>
+<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">Example</span> <span class="pl-k">implements</span> <span class="pl-e">Parcelable</span> {
+  <span class="pl-c1">...</span>
+}</pre></div>
+
+<h2>
+<a id="model-conventions" class="anchor" href="#model-conventions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Model Conventions</h2>
+
+<p><em>Note: this section is only relevant if you are using PaperParcel without the assitance of AutoValue or Kotlin's data classes.</em></p>
+
+<p>By default, PaperParcel uses no reflection to access fields<sup id="a1"><a href="#footnote-reflect-annotations">1</a></sup>. Because of that, all of the fields that PaperParcel is going to process need to follow a few loose conventions in order for PaperParcel to know how to read your fields and re-instantiate your models. Any failure to follow these conventions will result in a compile time error with a clear message informing you of what is wrong.</p>
+
+<h4>
+<a id="reading-fields" class="anchor" href="#reading-fields" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Reading Fields</h4>
+
+<p>The easiest way for PaperParcel to read a field is for it to be non-private. Because the generated code lies in the same package as the model itself, <code>default</code>, <code>protected</code>, or <code>public</code> fields can be read directly. </p>
+
+<p>However private fields are common practice and need to be supported. Therefore, if a field is private, PaperParcel will look for an accessor method (AKA a getter method) for that field. PaperParcel relies on the following conventions to find accessor methods:</p>
+
+<ul>
+    <li>The method needs to return an assignable type to the field's type.</li>
+    <li>The method needs to have no arguments.</li>
+    <li>The method needs to have one of the following names: <code>$FIELD_NAME$</code>, <code>get$FIELD_NAME$</code>, or <code>is$FIELD_NAME$</code>. For example, if the field is named <code>firstName</code>, then the set of valid accessor method names would contain <code>firstName</code>, <code>getFirstName</code>, and <code>isFirstName</code>.</li>
+</ul>
+
+<h4>
+<a id="writing-fields" class="anchor" href="#writing-fields" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Writing Fields</h4>
+
+<p>The easiest way for PaperParcel to write a field is for it to be non-private and non-final. Because the generated code lies in the same package as the model itself, <code>default</code>, <code>protected</code>, or <code>public</code> fields can be written directly. </p>
+
+<p>As already mentioned, private fields to be supported. Therefore, if a field is private, PaperParcel will look for either a corresponding constructor arugment for the field, or a setter method for the field.</p>
+
+<p>Constructor arugments are simple: they must have the same name as the field that it is assigning. In addition, the argument type must be assignable to the field type. </p>
+
+<p>Setter methods are discovered using similar conventions to the aforementioned accessor method conventions:</p>
+
+<ul>
+    <li>The method needs to have one argument.</li>
+    <li>The argument type needs to be assignable to the field's type.</li>
+    <li>The method needs to have one of the following names: <code>$FIELD_NAME$</code>, or <code>set$FIELD_NAME$</code>. For example, if the field is named <code>firstName</code>, then the set of valid setter method names would contain <code>firstName</code> and <code>setFirstName</code>.</li>
+</ul>
+
+<h2></h2>
+
+<p><sub><b><a id="footnote-reflect-annotations" href="#footnote-reflect-annotations">1</a></b>: You can configure PaperParcel to access private fields via refelection using the PaperParcel.Options#reflectAnnotations() API. <a href="#a1">↩</a></sub></p>
+  
+<h2>
+<a id="download" class="anchor" href="#download" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Download</h2>
+
+<p><strong>Java:</strong></p>
+
+<div class="highlight highlight-source-groovy"><pre>dependencies {
+  compile <span class="pl-s"><span class="pl-pds">'</span>nz.bradcampbell:paperparcel:2.0.0-SNAPSHOT<span class="pl-pds">'</span></span>
+  annotationProcessor <span class="pl-s"><span class="pl-pds">'</span>nz.bradcampbell:paperparcel-compiler:2.0.0-SNAPSHOT<span class="pl-pds">'</span></span>
+}</pre></div>
+
+<p><strong>Kotlin:</strong></p>
+
+<p>PaperParcel requires <code>kapt2</code> and <code>kotlin 1.0.5</code> or greater. To use <code>kapt2</code>, apply the <code>kotlin-kapt</code> gradle plugin to your app's <code>build.gradle</code> file.</p>
+
+<div class="highlight highlight-source-groovy"><pre>apply <span class="pl-c1">plugin</span>: <span class="pl-s"><span class="pl-pds">'</span>kotlin-kapt<span class="pl-pds">'</span></span>
+
+dependencies {
+  compile <span class="pl-s"><span class="pl-pds">'</span>nz.bradcampbell:paperparcel:2.0.0-SNAPSHOT<span class="pl-pds">'</span></span>
+  compile <span class="pl-s"><span class="pl-pds">'</span>nz.bradcampbell:paperparcel-kotlin:2.0.0-SNAPSHOT<span class="pl-pds">'</span></span> <span class="pl-c">// Optional</span>
+  kapt <span class="pl-s"><span class="pl-pds">'</span>nz.bradcampbell:paperparcel-compiler:2.0.0-SNAPSHOT<span class="pl-pds">'</span></span>
+}</pre></div>
+
+<p>Development snapshots are available on <a href="https://oss.jfrog.org/oss-snapshot-local">JFrog OSS Artifactory</a>.</p>
+
+<h2>
+<a id="contributing" class="anchor" href="#contributing" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Contributing</h2>
+
+<p>If you would like to contribute code you can do so by forking the repository and sending a pull request.</p>
+
+<p>When submitting code, please make every effort to follow existing conventions and style in order to keep the code as readable as possible. Please also make sure your code compiles by running <code>gradlew clean build</code>.</p>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h2>
+
+<pre><code>Copyright 2016 Bradley Campbell.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+   http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+</code></pre>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/grandstaish/paperparcel">PaperParcel</a> is maintained by <a href="https://github.com/grandstaish">grandstaish</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+    <script src="javascripts/bootstrap.min.js"></script>
+    <script src="javascripts/jquery.smooth-scroll.min.js"></script>
+    <script src="javascripts/jquery.noisy.min.js"></script>
+    <script type="text/javascript">
+      $(function() {
+        // Spy on scroll position for real-time updating of current section.
+        $('body').scrollspy();
+        // Use smooth-scroll for internal links.
+        $('a').smoothScroll();
+        // Paper-like effect 
+        $('body').noisy();
+      });
+    </script>
+  </body>
+</html>
