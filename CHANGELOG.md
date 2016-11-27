@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-Version 2.0.0 *(TBD)*
+Version 2.0.0-beta1 *(2016-11-27)*
 ----------------------------
 
  * Change package name from `nz.bradcampbell.paperparcel` to just `paperparcel`
@@ -26,7 +26,7 @@ Version 2.0.0 *(TBD)*
  * Method count of output greatly reduced (as well as output being cleaner and easier to understand)
  * Improved error messaging
  * Fix: multi module builds
- * Release now on jcenter instead of jitpack
+ * Release now on jcenter and maven central instead of jitpack
 
 Version 1.0.1 *(2016-10-31)*
 ----------------------------
