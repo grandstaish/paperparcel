@@ -35,9 +35,9 @@
 <span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">User</span> <span class="pl-k">implements</span> <span class="pl-e">Parcelable</span> {
   <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-k">Creator&lt;<span class="pl-smi">User</span>&gt;</span> <span class="pl-c1">CREATOR</span> <span class="pl-k">=</span> <span class="pl-smi">PaperParcelUser</span><span class="pl-c1"><span class="pl-k">.</span>CREATOR</span>; <span class="pl-c">// (2)</span>
 
-  <span class="pl-k">public</span> <span class="pl-k">long</span> id; <span class="pl-c">// (3)</span>
-  <span class="pl-k">public</span> <span class="pl-smi">String</span> firstName; <span class="pl-c">// (3)</span>
-  <span class="pl-k">public</span> <span class="pl-smi">String</span> lastName; <span class="pl-c">// (3)</span>
+  <span class="pl-k">long</span> id; <span class="pl-c">// (3)</span>
+  <span class="pl-smi">String</span> firstName; <span class="pl-c">// (3)</span>
+  <span class="pl-smi">String</span> lastName; <span class="pl-c">// (3)</span>
 
   <span class="pl-k">@Override</span> <span class="pl-k">public</span> <span class="pl-k">int</span> <span class="pl-en">describeContents</span>() {
     <span class="pl-k">return</span> <span class="pl-c1">0</span>;
@@ -56,6 +56,8 @@
     <li>These are the fields that will be processed by PaperParcel.</li>
     <li>This is the second usage of the generated code — the generated <code>writeToParcel(...)</code> implementation.</li>
 </ol>
+        
+<p>The fields in this example are all package private, but that is absolutely not a necessity. See <a href="#model-conventions">Model Conventions</a> for detailed information on how you can structure your model classes.</p>
 
 <h2>
 <a id="even-easier-use-the-autovalue-extension" class="anchor" href="#even-easier-use-the-autovalue-extension" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Even Easier; Use The AutoValue Extension</h2>
