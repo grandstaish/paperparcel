@@ -22,7 +22,6 @@ import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.TypeSpec;
 import javax.annotation.processing.Filer;
 import javax.lang.model.element.Element;
-import javax.lang.model.util.Elements;
 
 /**
  * The class responsible for generating the Parcelable implementation code classes for the
@@ -30,9 +29,8 @@ import javax.lang.model.util.Elements;
  */
 final class PaperParcelGenerator extends SourceFileGenerator<PaperParcelDescriptor> {
   PaperParcelGenerator(
-      Filer filer,
-      Elements elements) {
-    super(filer, elements);
+      Filer filer) {
+    super(filer);
   }
 
   @Override ClassName nameGeneratedType(PaperParcelDescriptor input) {
