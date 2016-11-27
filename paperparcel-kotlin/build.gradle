@@ -30,7 +30,7 @@ dokka {
 }
 
 dependencies {
-  compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+  provided "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
   provided project(":paperparcel")
 }
