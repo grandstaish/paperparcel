@@ -72,6 +72,9 @@ final class RegisterAdapterValidator {
     if (adaptedType != null) {
       if (isJavaLangObject(adaptedType)) {
         builder.addError(ErrorMessages.REGISTERADAPTER_ON_RAW_TYPE_ADAPTER);
+      } else if (containsWildcards(adaptedType)) {
+        builder.addError(String.format(ErrorMessages.WILDCARD_IN_ADAPTED_TYPE,
+            element.getSimpleName(), adaptedType));
       } else if (!hasValidTypeParameters(element, adaptedType)) {
         builder.addError(ErrorMessages.INCOMPATIBLE_TYPE_PARAMETERS);
       }
@@ -103,6 +106,26 @@ final class RegisterAdapterValidator {
       }
     }
     return constructorReport.build();
+  }
+
+  /** Returns true if {@code typeMirror} contains any wildcards. */
+  private boolean containsWildcards(TypeMirror typeMirror) {
+    return typeMirror.accept(new SimpleTypeVisitor6<Boolean, Void>(false) {
+      @Override public Boolean visitArray(ArrayType type, Void p) {
+        return type.getComponentType().accept(this, p);
+      }
+
+      @Override public Boolean visitDeclared(DeclaredType type, Void p) {
+        for (TypeMirror arg : type.getTypeArguments()) {
+          if (arg.accept(this, p)) return true;
+        }
+        return false;
+      }
+
+      @Override public Boolean visitWildcard(WildcardType type, Void p) {
+        return true;
+      }
+    }, null);
   }
 
   /**
