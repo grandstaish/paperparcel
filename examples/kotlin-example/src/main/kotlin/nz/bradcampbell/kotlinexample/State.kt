@@ -4,8 +4,7 @@ import paperparcel.PaperParcelable
 import paperparcel.PaperParcel
 import java.util.Date
 
-@PaperParcel
-data class State(
+@PaperParcel data class State(
     val count: Int,
     val modificationDate: Date
 ) : PaperParcelable {

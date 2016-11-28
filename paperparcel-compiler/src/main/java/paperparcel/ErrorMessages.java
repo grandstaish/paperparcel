@@ -18,7 +18,7 @@ package paperparcel;
 
 /** The collection of error messages to be reported back to users. */
 final class ErrorMessages {
-  static final String SITE_URL = "https://github.com/grandstaish/paperparcel";
+  static final String SITE_URL = "http://grandstaish.github.io/paperparcel";
 
   /* Shared */
   static final String NO_VISIBLE_CONSTRUCTOR =
@@ -40,6 +40,11 @@ final class ErrorMessages {
       "TypeAdapter type argument must be specified.";
   static final String RAW_CLASS_TYPE_IN_CONSTRUCTOR =
       "Class type argument must be specified.";
+  static final String INCOMPATIBLE_TYPE_PARAMETERS =
+      "TypeAdapter defined with incompatible type parameters.";
+  static final String WILDCARD_IN_ADAPTED_TYPE =
+      "%s is adapting a type containing one or more wildcards: %s. Wildcard types are not "
+          + "supported.";
 
   /* @PaperParcel errors */
   static final String PAPERPARCEL_ON_INTERFACE =
@@ -51,14 +56,12 @@ final class ErrorMessages {
   static final String UNMATCHED_CONSTRUCTOR_PARAMETER =
       "No field match found for the constructor parameter \"%1$s\" in %2$s. Constructor "
           + "arguments are matched with fields via their name and type.";
+  static final String WILDCARD_IN_FIELD_TYPE =
+      "Wildcard field types are not supported.";
 
   /* @PaperParcel.Options errors */
   static final String OPTIONS_NO_EXPOSE_ANNOTATIONS =
       "No expose annotations returned from exposeAnnotations().";
-
-  /* Adapter errors */
-  static final String INCOMPATIBLE_TYPE_PARAMETERS =
-      "TypeAdapter defined with incompatible type parameters.";
 
   /* FieldDescriptor errors */
   static final String FIELD_NOT_ACCESSIBLE =

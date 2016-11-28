@@ -74,7 +74,7 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
           messager.printMessage(Diagnostic.Kind.ERROR,
               String.format(ErrorMessages.MISSING_TYPE_ADAPTER,
                   e.getUnknownType().toString(),
-                  ErrorMessages.SITE_URL),
+                  ErrorMessages.SITE_URL + "#typeadapters"),
               (Element) e.getArgument());
         }
       }
@@ -106,7 +106,7 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
                   element.getQualifiedName(),
                   fieldName,
                   validConstructor.toString(),
-                  ErrorMessages.SITE_URL),
+                  ErrorMessages.SITE_URL + "#model-conventions"),
                   nonWritableField);
         }
       }
@@ -134,7 +134,7 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
           String.format(ErrorMessages.FIELD_NOT_ACCESSIBLE,
               element.getQualifiedName(),
               fieldName,
-              ErrorMessages.SITE_URL),
+              ErrorMessages.SITE_URL + "#model-conventions"),
           nonReadableField);
     }
   }

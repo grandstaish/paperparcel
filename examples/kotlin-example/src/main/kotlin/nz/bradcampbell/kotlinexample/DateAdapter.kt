@@ -5,8 +5,7 @@ import paperparcel.RegisterAdapter
 import paperparcel.TypeAdapter
 import java.util.Date
 
-@RegisterAdapter
-object DateAdapter : TypeAdapter<Date> {
+@RegisterAdapter object DateAdapter : TypeAdapter<@JvmSuppressWildcards Date> {
   override fun readFromParcel(source: Parcel): Date {
     return Date(source.readLong())
   }
