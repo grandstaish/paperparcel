@@ -107,7 +107,7 @@ final class Utils {
         visibleConstructors.add(constructor);
       }
     }
-    Collections.sort(visibleConstructors, PARAMETER_COUNT_ORDER);
+    Collections.sort(visibleConstructors, PARAMETER_COUNT_ORDER.reverse());
 
     List<ExecutableElement> reflectConstructors = new ArrayList<>();
     if (reflectAnnotations.size() > 0) {
@@ -117,7 +117,7 @@ final class Utils {
           reflectConstructors.add(constructor);
         }
       }
-      Collections.sort(reflectConstructors, PARAMETER_COUNT_ORDER);
+      Collections.sort(reflectConstructors, PARAMETER_COUNT_ORDER.reverse());
     }
 
     return ImmutableList.<ExecutableElement>builder()
