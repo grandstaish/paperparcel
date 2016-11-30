@@ -30,7 +30,6 @@ import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
@@ -52,6 +51,7 @@ final class RegisterAdapterValidator {
 
   ValidationReport<TypeElement> validate(TypeElement element) {
     ValidationReport.Builder<TypeElement> builder = ValidationReport.about(element);
+
     if (!Utils.isAdapterType(element, elements, types)) {
       builder.addError(ErrorMessages.REGISTERADAPTER_ON_NON_TYPE_ADAPTER);
     }
@@ -61,16 +61,18 @@ final class RegisterAdapterValidator {
     if (element.getModifiers().contains(Modifier.ABSTRACT)) {
       builder.addError(ErrorMessages.REGISTERADAPTER_ON_ABSTRACT_CLASS);
     }
+
     Optional<ExecutableElement> mainConstructor = Utils.findLargestConstructor(element);
     if (mainConstructor.isPresent()) {
       builder.addSubreport(validateConstructor(mainConstructor.get()));
     } else if (!Utils.isSingleton(types, element)) {
       builder.addError(ErrorMessages.NO_VISIBLE_CONSTRUCTOR);
     }
+
     TypeMirror adaptedType =
         Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(element.asType()));
     if (adaptedType != null) {
-      if (isJavaLangObject(adaptedType)) {
+      if (Utils.isJavaLangObject(adaptedType)) {
         builder.addError(ErrorMessages.REGISTERADAPTER_ON_RAW_TYPE_ADAPTER);
       } else if (containsWildcards(adaptedType)) {
         builder.addError(String.format(ErrorMessages.WILDCARD_IN_ADAPTED_TYPE,
@@ -79,6 +81,7 @@ final class RegisterAdapterValidator {
         builder.addError(ErrorMessages.INCOMPATIBLE_TYPE_PARAMETERS);
       }
     }
+
     return builder.build();
   }
 
@@ -94,13 +97,13 @@ final class RegisterAdapterValidator {
       TypeMirror parameterType = parameter.asType();
       if (isAdapter) {
         TypeMirror adaptedType = Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(parameterType));
-        if (isJavaLangObject(adaptedType)) {
+        if (Utils.isJavaLangObject(adaptedType)) {
           constructorReport.addError(ErrorMessages.RAW_TYPE_ADAPTER_IN_CONSTRUCTOR, parameter);
         }
       }
       if (isClass) {
         TypeMirror classType = Utils.getClassType(elements, types, MoreTypes.asDeclared(parameterType));
-        if (isJavaLangObject(classType)) {
+        if (Utils.isJavaLangObject(classType)) {
           constructorReport.addError(ErrorMessages.RAW_CLASS_TYPE_IN_CONSTRUCTOR, parameter);
         }
       }
@@ -137,7 +140,7 @@ final class RegisterAdapterValidator {
     if (maybeTypeVariable != null) {
       // For this type variable to have any meaning, it must have an extends bounds
       TypeMirror erasedTypeVariable = types.erasure(maybeTypeVariable);
-      if (isJavaLangObject(erasedTypeVariable)) {
+      if (Utils.isJavaLangObject(erasedTypeVariable)) {
         return false;
       }
     }
@@ -201,14 +204,5 @@ final class RegisterAdapterValidator {
         return type;
       }
     }, null);
-  }
-
-  private boolean isJavaLangObject(TypeMirror type) {
-    if (type.getKind() != TypeKind.DECLARED) {
-      return false;
-    }
-    DeclaredType declaredType = (DeclaredType) type;
-    TypeElement typeElement = (TypeElement) declaredType.asElement();
-    return typeElement.getQualifiedName().contentEquals("java.lang.Object");
   }
 }

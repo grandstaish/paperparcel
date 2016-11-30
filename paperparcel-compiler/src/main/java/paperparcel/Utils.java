@@ -132,18 +132,25 @@ final class Utils {
    */
   static ImmutableList<ExecutableElement> getLocalAndInheritedMethods(
       Elements elements, Types types, TypeElement element) {
-    // TODO(brad): use the new overload for getLocalAndInheritedMethods once JetBrains has
-    // fixed https://youtrack.jetbrains.com/issue/KT-14613
-    return FluentIterable.from(MoreElements.getLocalAndInheritedMethods(element, elements))
+    return FluentIterable.from(MoreElements.getLocalAndInheritedMethods(element, types, elements))
         .filter(new Predicate<ExecutableElement>() {
           @Override public boolean apply(ExecutableElement method) {
             // Filter out any methods defined in java.lang.Object as they are just
             // wasted cycles
-            return !method.getEnclosingElement().asType().toString()
-                .equals("java.lang.Object");
+            return !isJavaLangObject(method.getEnclosingElement().asType());
           }
         })
         .toList();
+  }
+
+  /** Returns true if {@code type} is {@link Object}. */
+  static boolean isJavaLangObject(TypeMirror type) {
+    if (type.getKind() != TypeKind.DECLARED) {
+      return false;
+    }
+    DeclaredType declaredType = (DeclaredType) type;
+    TypeElement typeElement = (TypeElement) declaredType.asElement();
+    return typeElement.getQualifiedName().contentEquals("java.lang.Object");
   }
 
   /** Returns true if {@code element} is a TypeAdapter type */
