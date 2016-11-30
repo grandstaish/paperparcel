@@ -19,7 +19,7 @@ dependencies {
 
 **Kotlin:**
 
-PaperParcel requires `kapt2` and `kotlin 1.0.5` or greater. To use `kapt2`, apply the `kotlin-kapt` gradle plugin to your app's `build.gradle` file. Please note that the new kapt is still experimental and may have issues. The official 2.0.0 release of PaperParcel will be released when kapt is stable.
+PaperParcel requires `kapt3` and `kotlin 1.0.6` or greater. To use `kapt3`, apply the `kotlin-kapt` gradle plugin to your app's `build.gradle` file. Please note that `kapt3` is still experimental and may have issues. PaperParcel 2.0 (non-beta) will be released when `kapt3` is stable.
 
 ```groovy
 apply plugin: 'kotlin-kapt'
