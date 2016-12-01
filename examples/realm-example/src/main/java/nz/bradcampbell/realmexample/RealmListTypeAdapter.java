@@ -8,7 +8,7 @@ import paperparcel.RegisterAdapter;
 import paperparcel.TypeAdapter;
 
 @RegisterAdapter
-class RealmListTypeAdapter<T extends RealmModel> implements TypeAdapter<RealmList<T>> {
+public class RealmListTypeAdapter<T extends RealmModel> implements TypeAdapter<RealmList<T>> {
   private final TypeAdapter<T> itemAdapter;
 
   RealmListTypeAdapter(TypeAdapter<T> itemAdapter) {
