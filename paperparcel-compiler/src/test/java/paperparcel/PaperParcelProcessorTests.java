@@ -368,7 +368,7 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.REGISTERADAPTER_ON_INTERFACE)
+        .withErrorContaining(ErrorMessages.REGISTERADAPTER_ON_NON_CLASS)
         .in(source)
         .onLine(5);
   }
@@ -3140,6 +3140,58 @@ public class PaperParcelProcessorTests {
         .withErrorContaining(ErrorMessages.PAPERPARCEL_ON_NON_STATIC_INNER_CLASS)
         .in(source)
         .onLine(7);
+  }
+
+  @Test public void failIfRegisterAdapterIsOnNonStaticNestedClass() {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.TestOuter", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.TypeAdapter;",
+            "public class TestOuter {",
+            "  @RegisterAdapter",
+            "  public class TestInner implements TypeAdapter<Integer> {",
+            "    public Integer readFromParcel(Parcel in) {",
+            "      return null;",
+            "    }",
+            "    public void writeToParcel(Integer value, Parcel dest, int flags) {",
+            "    }",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(ErrorMessages.REGISTER_ADAPTER_ON_NON_STATIC_INNER_CLASS)
+        .in(source)
+        .onLine(7);
+  }
+
+  @Test public void failIfRegisterAdapterIsOnNonPublicClass() {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.TestOuter", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.TypeAdapter;",
+            "@RegisterAdapter",
+            "class TestOuter implements TypeAdapter<Integer> {",
+            "  public Integer readFromParcel(Parcel in) {",
+            "    return null;",
+            "  }",
+            "  public void writeToParcel(Integer value, Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(ErrorMessages.REGISTER_ADAPTER_ON_NON_PUBLIC_CLASS)
+        .in(source)
+        .onLine(6);
   }
 
 }

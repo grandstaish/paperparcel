@@ -17,6 +17,7 @@
 package paperparcel;
 
 import com.google.auto.common.MoreTypes;
+import com.google.auto.common.Visibility;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
@@ -55,11 +56,20 @@ final class RegisterAdapterValidator {
     if (!Utils.isAdapterType(element, elements, types)) {
       builder.addError(ErrorMessages.REGISTERADAPTER_ON_NON_TYPE_ADAPTER);
     }
-    if (element.getKind() == ElementKind.INTERFACE) {
-      builder.addError(ErrorMessages.REGISTERADAPTER_ON_INTERFACE);
+    if (element.getKind() != ElementKind.CLASS) {
+      builder.addError(ErrorMessages.REGISTERADAPTER_ON_NON_CLASS);
     }
     if (element.getModifiers().contains(Modifier.ABSTRACT)) {
       builder.addError(ErrorMessages.REGISTERADAPTER_ON_ABSTRACT_CLASS);
+    }
+    if (Visibility.ofElement(element) != Visibility.PUBLIC) {
+      builder.addError(ErrorMessages.REGISTER_ADAPTER_ON_NON_PUBLIC_CLASS);
+    }
+    ElementKind enclosingKind = element.getEnclosingElement().getKind();
+    if (enclosingKind.isClass() || enclosingKind.isInterface()) {
+      if (!element.getModifiers().contains(Modifier.STATIC)) {
+        builder.addError(ErrorMessages.REGISTER_ADAPTER_ON_NON_STATIC_INNER_CLASS);
+      }
     }
 
     Optional<ExecutableElement> mainConstructor = Utils.findLargestConstructor(element);
