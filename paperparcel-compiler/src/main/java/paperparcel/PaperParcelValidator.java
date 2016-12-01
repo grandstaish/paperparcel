@@ -18,6 +18,7 @@ package paperparcel;
 
 import com.google.auto.common.MoreElements;
 import com.google.common.collect.ImmutableList;
+import java.lang.annotation.Annotation;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -25,6 +26,7 @@ import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Elements;
@@ -46,14 +48,29 @@ final class PaperParcelValidator {
   ValidationReport<TypeElement> validate(TypeElement element) {
     ValidationReport.Builder<TypeElement> builder = ValidationReport.about(element);
 
-    if (element.getKind() == ElementKind.INTERFACE) {
-      builder.addError(ErrorMessages.PAPERPARCEL_ON_INTERFACE);
+    if (element.getKind() != ElementKind.CLASS) {
+      builder.addError(ErrorMessages.PAPERPARCEL_ON_NON_CLASS);
     }
     if (element.getModifiers().contains(Modifier.ABSTRACT)) {
       builder.addError(ErrorMessages.PAPERPARCEL_ON_ABSTRACT_CLASS);
     }
     if (!Utils.isParcelable(elements, types, element.asType())) {
       builder.addError(ErrorMessages.PAPERPARCEL_ON_NON_PARCELABLE);
+    }
+    if (ancestorIsPaperParcel(types, element)) {
+      builder.addError(ErrorMessages.PAPERPARCEL_EXTENDS_PAPERPARCEL);
+    }
+    if (implementsAnnotation(elements, types, element)) {
+      builder.addError(ErrorMessages.PAPERPARCEL_ON_ANNOTATION);
+    }
+    ElementKind enclosingKind = element.getEnclosingElement().getKind();
+    if (enclosingKind.isClass() || enclosingKind.isInterface()) {
+      if (element.getModifiers().contains(Modifier.PRIVATE)) {
+        builder.addError(ErrorMessages.PAPERPARCEL_ON_PRIVATE_CLASS);
+      }
+      if (!element.getModifiers().contains(Modifier.STATIC)) {
+        builder.addError(ErrorMessages.PAPERPARCEL_ON_NON_STATIC_INNER_CLASS);
+      }
     }
 
     Options options = Utils.getOptions(element);
@@ -116,5 +133,24 @@ final class PaperParcelValidator {
         return expected != actual;
       }
     }, null);
+  }
+
+  private boolean implementsAnnotation(Elements elements, Types types, TypeElement type) {
+    TypeMirror annotationType = elements.getTypeElement(Annotation.class.getName()).asType();
+    return types.isAssignable(type.asType(), annotationType);
+  }
+
+  private boolean ancestorIsPaperParcel(Types types, TypeElement type) {
+    while (true) {
+      TypeMirror parentMirror = type.getSuperclass();
+      if (parentMirror.getKind() == TypeKind.NONE) {
+        return false;
+      }
+      TypeElement parentElement = (TypeElement) types.asElement(parentMirror);
+      if (MoreElements.isAnnotationPresent(parentElement, PaperParcel.class)) {
+        return true;
+      }
+      type = parentElement;
+    }
   }
 }
