@@ -47,8 +47,8 @@ final class ErrorMessages {
           + "supported.";
 
   /* @PaperParcel errors */
-  static final String PAPERPARCEL_ON_INTERFACE =
-      "@PaperParcel cannot be applied to an interface.";
+  static final String PAPERPARCEL_ON_NON_CLASS =
+      "@PaperParcel only applies to classes.";
   static final String PAPERPARCEL_ON_ABSTRACT_CLASS =
       "@PaperParcel cannot be applied to an abstract class.";
   static final String PAPERPARCEL_ON_NON_PARCELABLE =
@@ -58,6 +58,14 @@ final class ErrorMessages {
           + "arguments are matched with fields via their name and type.";
   static final String WILDCARD_IN_FIELD_TYPE =
       "Wildcard field types are not supported.";
+  static final String PAPERPARCEL_EXTENDS_PAPERPARCEL =
+      "One @PaperParcel class may not extend another.";
+  static final String PAPERPARCEL_ON_ANNOTATION =
+      "@PaperParcel may not be used to implement an annotation interface.";
+  static final String PAPERPARCEL_ON_PRIVATE_CLASS =
+      "@PaperParcel class must not be private.";
+  static final String PAPERPARCEL_ON_NON_STATIC_INNER_CLASS =
+      "Nested @PaperParcel class must be static.";
 
   /* @PaperParcel.Options errors */
   static final String OPTIONS_NO_EXPOSE_ANNOTATIONS =
@@ -75,7 +83,7 @@ final class ErrorMessages {
   static final String RAW_FIELD =
       "Field type argument must be specified (%1$s.%2$s).";
 
-  /* AutoValue errors */
+  /* AutoValue Extension errors */
   static final String MANUAL_IMPLEMENTATION_OF_CREATOR =
       "Manual implementation of a static Parcelable.Creator<T> CREATOR found in %s.";
   static final String MANUAL_IMPLEMENTATION_OF_WRITE_TO_PARCEL =
