@@ -330,7 +330,7 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.PAPERPARCEL_ON_INTERFACE)
+        .withErrorContaining(ErrorMessages.PAPERPARCEL_ON_NON_CLASS)
         .in(source)
         .onLine(5);
   }
@@ -368,7 +368,7 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.REGISTERADAPTER_ON_INTERFACE)
+        .withErrorContaining(ErrorMessages.REGISTERADAPTER_ON_NON_CLASS)
         .in(source)
         .onLine(5);
   }
@@ -2998,6 +2998,200 @@ public class PaperParcelProcessorTests {
         .compilesWithoutError()
         .and()
         .generatesSources(expected);
+  }
+
+  @Test public void failIfPaperParcelClassExtendsAnotherPaperParcelClass() {
+    JavaFileObject subclass =
+        JavaFileObjects.forSourceString("test.BaseTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public class BaseTest implements Parcelable {",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public class Test extends BaseTest {",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(subclass, source))
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(ErrorMessages.PAPERPARCEL_EXTENDS_PAPERPARCEL)
+        .in(source)
+        .onLine(6);
+  }
+
+  @Test public void failIfPaperParcelDoesNotImplementParcelable() {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public class Test {",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(ErrorMessages.PAPERPARCEL_ON_NON_PARCELABLE)
+        .in(source)
+        .onLine(4);
+  }
+
+  @Test public void failIfPaperParcelIsOnAnnotationClass() {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.TestAnnotation", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "import java.lang.annotation.Retention;",
+            "@PaperParcel",
+            "public class TestAnnotation implements Retention, Parcelable {",
+            "  @Override public Class<? extends Retention> annotationType() {",
+            "    return Retention.class;",
+            "  }",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(ErrorMessages.PAPERPARCEL_ON_ANNOTATION)
+        .in(source)
+        .onLine(7);
+  }
+
+  @Test public void failIfPaperParcelIsOnPrivateNestedClass() {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.TestOuter", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "public class TestOuter {",
+            "  @PaperParcel",
+            "  private static class TestInner implements Parcelable {",
+            "    public int describeContents() {",
+            "      return 0;",
+            "    }",
+            "    public void writeToParcel(Parcel dest, int flags) {",
+            "    }",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(ErrorMessages.PAPERPARCEL_ON_PRIVATE_CLASS)
+        .in(source)
+        .onLine(7);
+  }
+
+  @Test public void failIfPaperParcelIsOnNonStaticNestedClass() {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.TestOuter", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "public class TestOuter {",
+            "  @PaperParcel",
+            "  public class TestInner implements Parcelable {",
+            "    public int describeContents() {",
+            "      return 0;",
+            "    }",
+            "    public void writeToParcel(Parcel dest, int flags) {",
+            "    }",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(ErrorMessages.PAPERPARCEL_ON_NON_STATIC_INNER_CLASS)
+        .in(source)
+        .onLine(7);
+  }
+
+  @Test public void failIfRegisterAdapterIsOnNonStaticNestedClass() {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.TestOuter", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.TypeAdapter;",
+            "public class TestOuter {",
+            "  @RegisterAdapter",
+            "  public class TestInner implements TypeAdapter<Integer> {",
+            "    public Integer readFromParcel(Parcel in) {",
+            "      return null;",
+            "    }",
+            "    public void writeToParcel(Integer value, Parcel dest, int flags) {",
+            "    }",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(ErrorMessages.REGISTER_ADAPTER_ON_NON_STATIC_INNER_CLASS)
+        .in(source)
+        .onLine(7);
+  }
+
+  @Test public void failIfRegisterAdapterIsOnNonPublicClass() {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.TestOuter", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.TypeAdapter;",
+            "@RegisterAdapter",
+            "class TestOuter implements TypeAdapter<Integer> {",
+            "  public Integer readFromParcel(Parcel in) {",
+            "    return null;",
+            "  }",
+            "  public void writeToParcel(Integer value, Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(ErrorMessages.REGISTER_ADAPTER_ON_NON_PUBLIC_CLASS)
+        .in(source)
+        .onLine(6);
   }
 
 }
