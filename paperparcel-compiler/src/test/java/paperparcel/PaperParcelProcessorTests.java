@@ -3380,4 +3380,103 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
+  @Test public void intersectionTypeTypeAdapterTest() {
+    JavaFileObject typeAdapter =
+        JavaFileObjects.forSourceString("test.MixedAdapter", Joiner.on('\n').join(
+            "package test;",
+            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.TypeAdapter;",
+            "import java.io.Serializable;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "@RegisterAdapter(priority = RegisterAdapter.Priority.HIGH)",
+            "public class MixedAdapter<T extends Parcelable & Serializable> ",
+            "    implements TypeAdapter<T> {",
+            "  public T readFromParcel(Parcel in) {",
+            "    return null;",
+            "  }",
+            "  public void writeToParcel(T value, Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject myClass =
+        JavaFileObjects.forSourceString("test.MyClass", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcelable;",
+            "import java.io.Serializable;",
+            "public abstract class MyClass implements Serializable, Parcelable {",
+            "}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public class Test implements Parcelable {",
+            "  public MyClass value1;",
+            "  public Parcelable value2;",
+            "  public String value3;",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import paperparcel.TypeAdapter;",
+            "import paperparcel.internal.ParcelableAdapter;",
+            "import paperparcel.internal.StaticAdapters;",
+            "import paperparcel.internal.Utils;",
+            "final class PaperParcelTest {",
+            "  static final TypeAdapter<MyClass> MY_CLASS_MIXED_ADAPTER = new MixedAdapter<MyClass>();",
+            "  static final TypeAdapter<Parcelable> PARCELABLE_PARCELABLE_ADAPTER = ",
+            "      new ParcelableAdapter<Parcelable>();",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      MyClass value1 = Utils.readNullable(in, PaperParcelTest.MY_CLASS_MIXED_ADAPTER);",
+            "      Parcelable value2 = PaperParcelTest.PARCELABLE_PARCELABLE_ADAPTER.readFromParcel(in);",
+            "      String value3 = StaticAdapters.STRING_ADAPTER.readFromParcel(in);",
+            "      Test data = new Test();",
+            "      data.value1 = value1;",
+            "      data.value2 = value2;",
+            "      data.value3 = value3;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    Utils.writeNullable(data.value1, dest, flags, PaperParcelTest.MY_CLASS_MIXED_ADAPTER);",
+            "    PaperParcelTest.PARCELABLE_PARCELABLE_ADAPTER.writeToParcel(data.value2, dest, flags);",
+            "    StaticAdapters.STRING_ADAPTER.writeToParcel(data.value3, dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(typeAdapter, myClass, source))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
 }
