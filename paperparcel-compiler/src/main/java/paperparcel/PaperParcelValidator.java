@@ -17,6 +17,7 @@
 package paperparcel;
 
 import com.google.auto.common.MoreElements;
+import com.google.auto.common.Visibility;
 import com.google.common.collect.ImmutableList;
 import java.lang.annotation.Annotation;
 import javax.lang.model.element.ElementKind;
@@ -65,7 +66,7 @@ final class PaperParcelValidator {
     }
     ElementKind enclosingKind = element.getEnclosingElement().getKind();
     if (enclosingKind.isClass() || enclosingKind.isInterface()) {
-      if (element.getModifiers().contains(Modifier.PRIVATE)) {
+      if (Visibility.ofElement(element) == Visibility.PRIVATE) {
         builder.addError(ErrorMessages.PAPERPARCEL_ON_PRIVATE_CLASS);
       }
       if (!element.getModifiers().contains(Modifier.STATIC)) {
