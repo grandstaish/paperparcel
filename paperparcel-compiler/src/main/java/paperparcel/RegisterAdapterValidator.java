@@ -74,13 +74,6 @@ final class RegisterAdapterValidator {
       }
     }
 
-    Optional<ExecutableElement> mainConstructor = Utils.findLargestConstructor(element);
-    if (mainConstructor.isPresent()) {
-      builder.addSubreport(validateConstructor(mainConstructor.get()));
-    } else if (!Utils.isSingleton(types, element)) {
-      builder.addError(ErrorMessages.NO_VISIBLE_CONSTRUCTOR);
-    }
-
     TypeMirror adaptedType =
         Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(element.asType()));
     if (adaptedType != null) {
@@ -91,6 +84,15 @@ final class RegisterAdapterValidator {
             element.getSimpleName(), adaptedType));
       } else if (!hasValidTypeParameters(element, adaptedType)) {
         builder.addError(ErrorMessages.INCOMPATIBLE_TYPE_PARAMETERS);
+      }
+    }
+
+    Optional<ExecutableElement> mainConstructor = Utils.findLargestConstructor(element);
+    if (mainConstructor.isPresent()) {
+      builder.addSubreport(validateConstructor(mainConstructor.get()));
+    } else if (adaptedType != null) {
+      if (!Utils.isSingletonAdapter(elements, types, element, adaptedType)) {
+        builder.addError(ErrorMessages.NO_VISIBLE_CONSTRUCTOR);
       }
     }
 

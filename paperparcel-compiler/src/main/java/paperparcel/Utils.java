@@ -197,18 +197,29 @@ final class Utils {
 
   /**
    * A singleton is defined by a class with a public static final field named "INSTANCE"
-   * with a type assignable from itself
+   * with a type assignable from itself.
    */
   static boolean isSingleton(Types types, TypeElement element) {
+    return isSingleton(types, element, element.asType());
+  }
+
+  /**
+   * A singleton is defined by a class with a public static final field named "INSTANCE"
+   * with a type assignable from a {@code TypeAdapter} of {@code adaptedType}.
+   */
+  static boolean isSingletonAdapter(
+      Elements elements, Types types, TypeElement element, TypeMirror adaptedType) {
+    TypeElement typeAdapterElement = elements.getTypeElement(TYPE_ADAPTER_CLASS_NAME);
+    DeclaredType typeAdapterType = types.getDeclaredType(typeAdapterElement, adaptedType);
+    return isSingleton(types, element, typeAdapterType);
+  }
+
+  private static boolean isSingleton(Types types, TypeElement element, TypeMirror assignableType) {
     for (Element e : ElementFilter.fieldsIn(element.getEnclosedElements())) {
       Set<Modifier> modifiers = e.getModifiers();
-      if (modifiers.contains(STATIC)
-          && modifiers.contains(PUBLIC)
-          && modifiers.contains(FINAL)) {
+      if (modifiers.contains(STATIC) && modifiers.contains(PUBLIC)) {
         if (e.getSimpleName().contentEquals("INSTANCE")) {
-          TypeMirror erasedClassType = types.erasure(element.asType());
-          TypeMirror erasedFieldType = types.erasure(e.asType());
-          return types.isAssignable(erasedFieldType, erasedClassType);
+          return types.isAssignable(e.asType(), assignableType);
         }
       }
     }
