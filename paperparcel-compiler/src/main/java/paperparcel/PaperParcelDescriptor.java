@@ -87,14 +87,15 @@ abstract class PaperParcelDescriptor {
 
       WriteInfo writeInfo = null;
       ReadInfo readInfo = null;
-      if (!Utils.isSingleton(types, element)) {
+
+      boolean singleton = Utils.isSingleton(types, element);
+      if (!singleton) {
         writeInfo = writeInfoFactory.create(
             fields, methods, constructors, options.reflectAnnotations());
         readInfo = readInfoFactory.create(fields, methods, options.reflectAnnotations());
       }
 
       ImmutableMap<FieldDescriptor, Adapter> adapters = getAdapterMap(readInfo);
-      boolean singleton = Utils.isSingleton(types, element);
 
       return new AutoValue_PaperParcelDescriptor(element, writeInfo, readInfo, adapters, singleton);
     }

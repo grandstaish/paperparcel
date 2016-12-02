@@ -167,9 +167,7 @@ abstract class Adapter {
           TypeMirror resolvedAdaptedType = Utils.getAdaptedType(elements, types, resolvedAdapterType);
           if (resolvedAdaptedType == null
               || !types.isSameType(resolvedAdaptedType, fieldType)) continue;
-          // TODO(brad): This probably shouldn't be hardcoded to INSTANCE. Users should be able to
-          // TODO(brad): name the instance whatever they want. Revisit this.
-          singletonInstance = Utils.isSingleton(types, adapterElement)
+          singletonInstance = Utils.isSingletonAdapter(elements, types, adapterElement, adaptedType)
               ? Optional.of("INSTANCE")
               : Optional.<String>absent();
           constructorInfo = singletonInstance.isPresent()
