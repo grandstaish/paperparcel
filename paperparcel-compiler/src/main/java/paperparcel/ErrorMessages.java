@@ -47,6 +47,8 @@ final class ErrorMessages {
           + "supported.";
   static final String REGISTER_ADAPTER_ON_NON_PUBLIC_CLASS =
       "@RegisterAdapter classes must be public.";
+  static final String REGISTER_ADAPTER_NOT_VISIBLE =
+      "@RegisterAdapter classes cannot be enclosed in non-public types.";
   static final String REGISTER_ADAPTER_ON_NON_STATIC_INNER_CLASS =
       "Nested @RegisterAdapter class must be static.";
 

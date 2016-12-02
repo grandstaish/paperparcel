@@ -64,6 +64,8 @@ final class RegisterAdapterValidator {
     }
     if (Visibility.ofElement(element) != Visibility.PUBLIC) {
       builder.addError(ErrorMessages.REGISTER_ADAPTER_ON_NON_PUBLIC_CLASS);
+    } else if (Visibility.effectiveVisibilityOfElement(element) != Visibility.PUBLIC) {
+      builder.addError(ErrorMessages.REGISTER_ADAPTER_NOT_VISIBLE);
     }
     ElementKind enclosingKind = element.getEnclosingElement().getKind();
     if (enclosingKind.isClass() || enclosingKind.isInterface()) {
