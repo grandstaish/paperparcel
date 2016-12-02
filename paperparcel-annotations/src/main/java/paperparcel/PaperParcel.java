@@ -40,7 +40,7 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
  * <p>For example: <pre><code>
  *  {@literal @}PaperParcel
  *   class User {
- *     public static final {@literal Parcelable.Creator<User>} CREATOR = PaperParcelUser.CREATOR;
+ *     public static final{@literal Parcelable.Creator<User>} CREATOR = PaperParcelUser.CREATOR;
  *
  *     long id;
  *     String firstName;
@@ -57,9 +57,6 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
  *     }
  *   }
  * </code></pre></p>
- *
- * <p>This annotation must be applied to a top-level class. It can't be applied to a base class,
- * an interface, or an abstract class.</p>
  */
 @Documented
 @Retention(RUNTIME)
