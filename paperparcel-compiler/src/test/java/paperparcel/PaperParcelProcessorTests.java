@@ -3177,6 +3177,33 @@ public class PaperParcelProcessorTests {
         .onLine(7);
   }
 
+  @Test public void failIfRegisterAdapterClassIsEnclosedInNonPublicClass() {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.TestOuter", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.TypeAdapter;",
+            "class TestOuter {",
+            "  @RegisterAdapter",
+            "  public class TestInner implements TypeAdapter<Integer> {",
+            "    public Integer readFromParcel(Parcel in) {",
+            "      return null;",
+            "    }",
+            "    public void writeToParcel(Integer value, Parcel dest, int flags) {",
+            "    }",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(ErrorMessages.REGISTER_ADAPTER_NOT_VISIBLE)
+        .in(source)
+        .onLine(7);
+  }
+
   @Test public void failIfRegisterAdapterIsOnNonPublicClass() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.TestOuter", Joiner.on('\n').join(
