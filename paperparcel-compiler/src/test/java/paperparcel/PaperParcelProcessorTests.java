@@ -1009,15 +1009,16 @@ public class PaperParcelProcessorTests {
             "package test;",
             "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
-            "import java.util.List;",
+            "import java.util.HashMap;",
             "import java.util.Map;",
+            "import java.util.List;",
             "import android.os.Parcel;",
             "@RegisterAdapter",
-            "public class ReallySpecificTypeAdapter<T1, T2> implements TypeAdapter<Map<List<T1>[], Map<T1, T2>>> {",
-            "  public Map<List<T1>[], Map<T1, T2>> readFromParcel(Parcel in) {",
+            "public class ReallySpecificTypeAdapter<T1, T2> implements TypeAdapter<HashMap<List<T1>[], Map<T1, T2>>> {",
+            "  public HashMap<List<T1>[], Map<T1, T2>> readFromParcel(Parcel in) {",
             "    return null;",
             "  }",
-            "  public void writeToParcel(Map<List<T1>[], Map<T1, T2>> value, Parcel dest, int flags) {",
+            "  public void writeToParcel(HashMap<List<T1>[], Map<T1, T2>> value, Parcel dest, int flags) {",
             "  }",
             "}"
         ));
@@ -1028,11 +1029,12 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
+            "import java.util.HashMap;",
             "import java.util.List;",
             "import java.util.Map;",
             "@PaperParcel",
             "public class Test implements Parcelable {",
-            "  public Map<List<Integer>[], Map<Integer, Boolean>> field1;",
+            "  public HashMap<List<Integer>[], Map<Integer, Boolean>> field1;",
             "  public Map<Integer, Integer> field2;",
             "  @Override",
             "  public int describeContents() {",
@@ -1050,6 +1052,7 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import android.support.annotation.NonNull;",
+            "import java.util.HashMap;",
             "import java.util.List;",
             "import java.util.Map;",
             "import paperparcel.TypeAdapter;",
@@ -1057,7 +1060,7 @@ public class PaperParcelProcessorTests {
             "import paperparcel.internal.StaticAdapters;",
             "import paperparcel.internal.Utils;",
             "final class PaperParcelTest {",
-            "  static final TypeAdapter<Map<List<Integer>[], Map<Integer, Boolean>>> ",
+            "  static final TypeAdapter<HashMap<List<Integer>[], Map<Integer, Boolean>>> ",
             "      INTEGER_BOOLEAN_REALLY_SPECIFIC_TYPE_ADAPTER = ",
             "          new ReallySpecificTypeAdapter<Integer, Boolean>();",
             "  static final TypeAdapter<Map<Integer, Integer>> INTEGER_INTEGER_MAP_ADAPTER = ",
@@ -1068,7 +1071,7 @@ public class PaperParcelProcessorTests {
             "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
             "    @Override",
             "    public Test createFromParcel(Parcel in) {",
-            "      Map<List<Integer>[], Map<Integer, Boolean>> field1 = ",
+            "      HashMap<List<Integer>[], Map<Integer, Boolean>> field1 = ",
             "          Utils.readNullable(in, PaperParcelTest.INTEGER_BOOLEAN_REALLY_SPECIFIC_TYPE_ADAPTER);",
             "      Map<Integer, Integer> field2 = ",
             "          Utils.readNullable(in, PaperParcelTest.INTEGER_INTEGER_MAP_ADAPTER);",
@@ -2732,12 +2735,13 @@ public class PaperParcelProcessorTests {
             "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import android.os.Parcel;",
+            "import java.util.Date;",
             "@RegisterAdapter(nullSafe = true)",
-            "public class MyTypeAdapter implements TypeAdapter<Integer> {",
-            "  public Integer readFromParcel(Parcel in) {",
+            "public class MyTypeAdapter implements TypeAdapter<Date> {",
+            "  public Date readFromParcel(Parcel in) {",
             "    return null;",
             "  }",
-            "  public void writeToParcel(Integer value, Parcel dest, int flags) {",
+            "  public void writeToParcel(Date value, Parcel dest, int flags) {",
             "  }",
             "}"
         ));
@@ -2748,9 +2752,10 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
+            "import java.util.Date;",
             "@PaperParcel",
             "public class Test implements Parcelable {",
-            "  public Integer value;",
+            "  public Date value;",
             "  @Override",
             "  public int describeContents() {",
             "    return 0;",
@@ -2767,14 +2772,15 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import android.support.annotation.NonNull;",
+            "import java.util.Date;",
             "import paperparcel.TypeAdapter;",
             "final class PaperParcelTest {",
-            "  static final TypeAdapter<Integer> MY_TYPE_ADAPTER = new MyTypeAdapter();",
+            "  static final TypeAdapter<Date> MY_TYPE_ADAPTER = new MyTypeAdapter();",
             "  @NonNull",
             "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
             "    @Override",
             "    public Test createFromParcel(Parcel in) {",
-            "      Integer value = PaperParcelTest.MY_TYPE_ADAPTER.readFromParcel(in);",
+            "      Date value = PaperParcelTest.MY_TYPE_ADAPTER.readFromParcel(in);",
             "      Test data = new Test();",
             "      data.value = value;",
             "      return data;",
@@ -2805,20 +2811,20 @@ public class PaperParcelProcessorTests {
             "package test;",
             "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
-            "import java.util.Map;",
+            "import java.util.HashMap;",
             "import android.os.Parcel;",
             "@RegisterAdapter",
-            "public class MyTypeAdapter<K, V> implements TypeAdapter<Map<K, V>> {",
+            "public class MyTypeAdapter<K, V> implements TypeAdapter<HashMap<K, V>> {",
             "  public MyTypeAdapter(",
             "      TypeAdapter<K> keyAdapter, ",
             "      Class<K> keyClass, ",
             "      TypeAdapter<V> valueAdapter, ",
             "      Class<V> valueClass) {",
             "  }",
-            "  public Map<K, V> readFromParcel(Parcel in) {",
+            "  public HashMap<K, V> readFromParcel(Parcel in) {",
             "    return null;",
             "  }",
-            "  public void writeToParcel(Map<K, V> value, Parcel dest, int flags) {",
+            "  public void writeToParcel(HashMap<K, V> value, Parcel dest, int flags) {",
             "  }",
             "}"
         ));
@@ -2829,11 +2835,10 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
-            "import java.util.List;",
-            "import java.util.Map;",
+            "import java.util.HashMap;",
             "@PaperParcel",
             "public class Test implements Parcelable {",
-            "  public Map<Integer, Boolean> value;",
+            "  public HashMap<Integer, Boolean> value;",
             "  @Override",
             "  public int describeContents() {",
             "    return 0;",
@@ -2850,12 +2855,12 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import android.support.annotation.NonNull;",
-            "import java.util.Map;",
+            "import java.util.HashMap;",
             "import paperparcel.TypeAdapter;",
             "import paperparcel.internal.StaticAdapters;",
             "import paperparcel.internal.Utils;",
             "final class PaperParcelTest {",
-            "  static final TypeAdapter<Map<Integer, Boolean>> INTEGER_BOOLEAN_MY_TYPE_ADAPTER = ",
+            "  static final TypeAdapter<HashMap<Integer, Boolean>> INTEGER_BOOLEAN_MY_TYPE_ADAPTER = ",
             "      new MyTypeAdapter<Integer, Boolean>(",
             "          Utils.nullSafeClone(StaticAdapters.INTEGER_ADAPTER),",
             "          Integer.class,",
@@ -2865,7 +2870,7 @@ public class PaperParcelProcessorTests {
             "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
             "    @Override",
             "    public Test createFromParcel(Parcel in) {",
-            "       Map<Integer, Boolean> value = ",
+            "       HashMap<Integer, Boolean> value = ",
             "          Utils.readNullable(in, PaperParcelTest.INTEGER_BOOLEAN_MY_TYPE_ADAPTER);",
             "      Test data = new Test();",
             "      data.value = value;",
@@ -2925,15 +2930,16 @@ public class PaperParcelProcessorTests {
             "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import android.os.Parcel;",
+            "import java.util.ArrayList;",
             "import java.util.List;",
             "@RegisterAdapter",
-            "public class MyTypeAdapter<T> implements TypeAdapter<List<T>> {",
+            "public class MyTypeAdapter<T> implements TypeAdapter<ArrayList<T>> {",
             "  public MyTypeAdapter(Class<T> myClass) {",
             "  }",
-            "  public List<T> readFromParcel(Parcel in) {",
+            "  public ArrayList<T> readFromParcel(Parcel in) {",
             "    return null;",
             "  }",
-            "  public void writeToParcel(List<T> value, Parcel dest, int flags) {",
+            "  public void writeToParcel(ArrayList<T> value, Parcel dest, int flags) {",
             "  }",
             "}"
         ));
@@ -2944,10 +2950,11 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
+            "import java.util.ArrayList;",
             "import java.util.List;",
             "@PaperParcel",
             "public class Test implements Parcelable {",
-            "  public List<List<Integer>> value;",
+            "  public ArrayList<List<Integer>> value;",
             "  @Override",
             "  public int describeContents() {",
             "    return 0;",
@@ -2964,17 +2971,18 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import android.support.annotation.NonNull;",
+            "import java.util.ArrayList;",
             "import java.util.List;",
             "import paperparcel.TypeAdapter;",
             "import paperparcel.internal.Utils;",
             "final class PaperParcelTest {",
-            "  static final TypeAdapter<List<List<Integer>>> INTEGER_LIST_MY_TYPE_ADAPTER = ",
+            "  static final TypeAdapter<ArrayList<List<Integer>>> INTEGER_LIST_MY_TYPE_ADAPTER = ",
             "      new MyTypeAdapter<List<Integer>>((Class<List<Integer>>) (Class<?>) List.class);",
             "  @NonNull",
             "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
             "    @Override",
             "    public Test createFromParcel(Parcel in) {",
-            "       List<List<Integer>> value = ",
+            "      ArrayList<List<Integer>> value = ",
             "          Utils.readNullable(in, PaperParcelTest.INTEGER_LIST_MY_TYPE_ADAPTER);",
             "      Test data = new Test();",
             "      data.value = value;",
@@ -3192,6 +3200,157 @@ public class PaperParcelProcessorTests {
         .withErrorContaining(ErrorMessages.REGISTER_ADAPTER_ON_NON_PUBLIC_CLASS)
         .in(source)
         .onLine(6);
+  }
+
+  @Test public void overrideDefaultAdapterTest() {
+    JavaFileObject typeAdapter =
+        JavaFileObjects.forSourceString("test.MyIntegerAdapter", Joiner.on('\n').join(
+            "package test;",
+            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.TypeAdapter;",
+            "import android.os.Parcel;",
+            "import paperparcel.internal.Utils;",
+            "@RegisterAdapter(priority = RegisterAdapter.Priority.HIGH)",
+            "public class MyIntegerAdapter implements TypeAdapter<Integer> {",
+            "  public Integer readFromParcel(Parcel in) {",
+            "    return null;",
+            "  }",
+            "  public void writeToParcel(Integer value, Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public class Test implements Parcelable {",
+            "  public Integer value;",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import paperparcel.TypeAdapter;",
+            "import paperparcel.internal.Utils;",
+            "final class PaperParcelTest {",
+            "  static final TypeAdapter<Integer> MY_INTEGER_ADAPTER = new MyIntegerAdapter();",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      Integer value = Utils.readNullable(in, PaperParcelTest.MY_INTEGER_ADAPTER);",
+            "      Test data = new Test();",
+            "      data.value = value;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    Utils.writeNullable(data.value, dest, flags, PaperParcelTest.MY_INTEGER_ADAPTER);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(typeAdapter, source))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void builtInAdapterIsUsedWhenCustomAdapterHasTheSamePriority() {
+    JavaFileObject typeAdapter =
+        JavaFileObjects.forSourceString("test.MyIntegerAdapter", Joiner.on('\n').join(
+            "package test;",
+            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.TypeAdapter;",
+            "import android.os.Parcel;",
+            "import paperparcel.internal.Utils;",
+            "@RegisterAdapter",
+            "public class MyIntegerAdapter implements TypeAdapter<Integer> {",
+            "  public Integer readFromParcel(Parcel in) {",
+            "    return null;",
+            "  }",
+            "  public void writeToParcel(Integer value, Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public class Test implements Parcelable {",
+            "  public Integer value;",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import paperparcel.internal.StaticAdapters;",
+            "import paperparcel.internal.Utils;",
+            "final class PaperParcelTest {",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      Integer value = Utils.readNullable(in, StaticAdapters.INTEGER_ADAPTER);",
+            "      Test data = new Test();",
+            "      data.value = value;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    Utils.writeNullable(data.value, dest, flags, StaticAdapters.INTEGER_ADAPTER);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(typeAdapter, source))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
   }
 
 }

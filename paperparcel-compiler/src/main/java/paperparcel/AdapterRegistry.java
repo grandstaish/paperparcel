@@ -16,11 +16,13 @@
 
 package paperparcel;
 
+import android.support.annotation.NonNull;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.primitives.Ints;
 import com.squareup.javapoet.TypeName;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +33,15 @@ import java.util.Map;
  * expensive to create.
  */
 final class AdapterRegistry {
-  static abstract class Entry {
+  private static final int DEFAULT_PRIORITY = 150; // Between Priority.HIGH and Priority.LOW.
+
+  static abstract class Entry implements Comparable<Entry> {
+    abstract int priority();
     abstract boolean nullSafe();
+
+    @Override public int compareTo(@NonNull Entry entry) {
+      return Ints.compare(priority(), entry.priority());
+    }
   }
 
   @AutoValue
@@ -40,7 +49,11 @@ final class AdapterRegistry {
     abstract String qualifiedName();
 
     static ClassEntry create(String qualifiedName, boolean nullSafe) {
-      return new AutoValue_AdapterRegistry_ClassEntry(nullSafe, qualifiedName);
+      return create(qualifiedName, DEFAULT_PRIORITY, nullSafe);
+    }
+
+    static ClassEntry create(String qualifiedName, int priority, boolean nullSafe) {
+      return new AutoValue_AdapterRegistry_ClassEntry(priority, nullSafe, qualifiedName);
     }
   }
 
@@ -50,7 +63,8 @@ final class AdapterRegistry {
     abstract String fieldName();
 
     static FieldEntry create(String enclosingClass, String fieldName, boolean nullSafe) {
-      return new AutoValue_AdapterRegistry_FieldEntry(nullSafe, enclosingClass, fieldName);
+      return new AutoValue_AdapterRegistry_FieldEntry(
+          DEFAULT_PRIORITY, nullSafe, enclosingClass, fieldName);
     }
   }
 
@@ -91,8 +105,14 @@ final class AdapterRegistry {
   private final List<Entry> entries = Lists.newArrayList(BUILT_IN_ADAPTER_ENTRIES);
   private final Map<TypeName, Adapter> adapters = Maps.newLinkedHashMap();
 
-  void addClassEntry(String qualifiedName, boolean nullSafe) {
-    entries.add(0, ClassEntry.create(qualifiedName, nullSafe));
+  void addClassEntry(String qualifiedName, int priority, boolean nullSafe) {
+    Entry entry = ClassEntry.create(qualifiedName, priority, nullSafe);
+    int size = entries.size();
+    int i = 0;
+    while (i < size && entries.get(i).compareTo(entry) > 0) {
+      i++;
+    }
+    entries.add(i, entry);
   }
 
   List<Entry> getEntries() {
