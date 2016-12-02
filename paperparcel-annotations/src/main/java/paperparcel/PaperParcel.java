@@ -40,7 +40,7 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
  * <p>For example: <pre><code>
  *  {@literal @}PaperParcel
  *   class User {
- *     public static final {@literal Parcelable.Creator<User>} CREATOR = PaperParcelUser.CREATOR;
+ *     public static final{@literal Parcelable.Creator<User>} CREATOR = PaperParcelUser.CREATOR;
  *
  *     long id;
  *     String firstName;
