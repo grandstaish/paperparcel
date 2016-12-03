@@ -253,16 +253,20 @@ abstract class Adapter {
         TypeParameterElement parameter, TypeMirror adaptedType, TypeMirror fieldType) {
       final String target = parameter.getSimpleName().toString();
       return adaptedType.accept(new SimpleTypeVisitor6<TypeMirror, TypeMirror>() {
+
         @Override
         public TypeMirror visitTypeVariable(TypeVariable paramType, TypeMirror argType) {
           TypeMirror upperBound = paramType.getUpperBound();
+          boolean isIntersectionType = IntersectionCompat.isIntersectionType(upperBound);
+
           if (target.contentEquals(paramType.toString())) {
             // This is the one we're looking for. Check to see if it is assignable to the argType.
-            if (IntersectionCompat.isIntersectionType(upperBound)) {
+            if (isIntersectionType) {
               if (IntersectionCompat.isAssignableToIntersectionType(
                   types, argType, upperBound, target, argType)) {
                 return argType;
               }
+
             } else {
               TypeMirror wildcardedUpperBound =
                   Utils.substituteTypeVariables(types, upperBound, target, argType);
@@ -271,26 +275,46 @@ abstract class Adapter {
               }
             }
           } else {
-            // Not the TypeVariable we're looking for, but maybe it contains the one we're
-            // looking for.
+
+            // Not the TypeVariable we're looking for, check if it contains the target.
             ImmutableSet<String> containedTypeVars = Utils.getTypeVariableNames(upperBound);
             if (containedTypeVars.contains(target)) {
-              // It does contain the target. Substitute the target with the argType and see if
-              // it is still assignable.
-              if (IntersectionCompat.isIntersectionType(upperBound)) {
-                if (IntersectionCompat.isAssignableToIntersectionType(
-                    types, argType, upperBound, target, argType)) {
-                  return argType;
+
+              TypeMirror rawUpperBound = types.erasure(upperBound);
+              TypeMirror rawArgType = types.erasure(argType);
+
+              if (types.isSameType(rawUpperBound, rawArgType)) {
+                // Try to run it through this visitor again and resolve the parameters that way.
+                if (isIntersectionType) {
+                  List<? extends TypeMirror> bounds = IntersectionCompat.getBounds(upperBound);
+                  for (TypeMirror bound : bounds) {
+                    TypeMirror result = bound.accept(this, argType);
+                    if (result != null) return result;
+                  }
+
+                } else {
+                  return upperBound.accept(this, argType);
                 }
+
               } else {
-                TypeMirror substitutedUpperBound =
-                    Utils.substituteTypeVariables(types, upperBound, target, argType);
-                if (types.isAssignable(argType, substitutedUpperBound)) {
-                  return argType;
+                // Try to substitute the variable and then check it's assignability.
+                if (isIntersectionType) {
+                  if (IntersectionCompat.isAssignableToIntersectionType(
+                      types, argType, upperBound, target, argType)) {
+                    return argType;
+                  }
+
+                } else {
+                  TypeMirror substitutedUpperBound =
+                      Utils.substituteTypeVariables(types, upperBound, target, argType);
+                  if (types.isAssignable(argType, substitutedUpperBound)) {
+                    return argType;
+                  }
                 }
               }
             }
           }
+
           return null;
         }
 

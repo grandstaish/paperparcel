@@ -3685,4 +3685,89 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
+  @Test public void typeParameterContainedInDeclaredTypeArgumentTest() {
+    JavaFileObject typeAdapter =
+        JavaFileObjects.forSourceString("test.MixedAdapter", Joiner.on('\n').join(
+            "package test;",
+            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.TypeAdapter;",
+            "import java.io.Serializable;",
+            "import java.util.Date;",
+            "import java.util.Map;",
+            "import android.os.Parcel;",
+            "@RegisterAdapter",
+            "public class MixedAdapter<D extends Serializable & Comparable<Date>, T extends Map<D, D>> ",
+            "    implements TypeAdapter<T> {",
+            "  public T readFromParcel(Parcel in) {",
+            "    return null;",
+            "  }",
+            "  public void writeToParcel(T value, Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import java.util.Date;",
+            "import java.util.Map;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public class Test implements Parcelable {",
+            "  public Map<Date, Date> value;",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import java.util.Date;",
+            "import java.util.Map;",
+            "import paperparcel.TypeAdapter;",
+            "import paperparcel.internal.Utils;",
+            "final class PaperParcelTest {",
+            "  static final TypeAdapter<Map<Date, Date>> DATE_DATE_DATE_MAP_MIXED_ADAPTER = ",
+            "      new MixedAdapter<Date, Map<Date, Date>>();",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      Map<Date, Date> value = ",
+            "          Utils.readNullable(in, PaperParcelTest.DATE_DATE_DATE_MAP_MIXED_ADAPTER);",
+            "      Test data = new Test();",
+            "      data.value = value;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    Utils.writeNullable(data.value, dest, flags, PaperParcelTest.DATE_DATE_DATE_MAP_MIXED_ADAPTER);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(typeAdapter, source))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
 }
