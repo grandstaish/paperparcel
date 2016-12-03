@@ -451,12 +451,23 @@ final class Utils {
   }
 
   /**
+   * Replace all type vars named {@code targetName} with {@code targetType}. All other type vars
+   * will be replaced with wildcards.
+   *
    * Use this when you want to check assignability against a type that potentially has type vars.
    */
-  static TypeMirror replaceTypeVariablesWithWildcards(Types types, TypeMirror type) {
+  static TypeMirror substituteTypeVariables(
+      Types types,
+      TypeMirror type,
+      @Nullable final String targetName,
+      @Nullable final TypeMirror targetType) {
     return type.accept(new TypeSubstitutor() {
       @Override public TypeMirror visitTypeVariable(TypeVariable type, Types types) {
-        return types.getWildcardType(null, null);
+        if (targetName != null && targetName.contentEquals(type.toString())) {
+          return targetType;
+        } else {
+          return types.getWildcardType(null, null);
+        }
       }
     }, types);
   }
@@ -484,6 +495,54 @@ final class Utils {
     @Override protected TypeMirror defaultAction(TypeMirror typeMirror, Types p) {
       throw new UnknownTypeException(typeMirror, p);
     }
+  }
+
+  static ImmutableSet<String> getTypeVariableNames(TypeMirror type) {
+    ImmutableSet.Builder<String> adaptedTypeArguments = ImmutableSet.builder();
+
+    type.accept(new SimpleTypeVisitor6<Void, ImmutableSet.Builder<String>>() {
+      @Override
+      public Void visitTypeVariable(TypeVariable type, ImmutableSet.Builder<String> set) {
+        TypeMirror upperBound = type.getUpperBound();
+        if (IntersectionCompat.isIntersectionType(upperBound)) {
+          List<? extends TypeMirror> bounds = IntersectionCompat.getBounds(upperBound);
+          for (TypeMirror bound : bounds) {
+            bound.accept(this, set);
+          }
+        } else {
+          upperBound.accept(this, set);
+        }
+        set.add(type.toString());
+        return null;
+      }
+
+      @Override
+      public Void visitArray(ArrayType type, ImmutableSet.Builder<String> set) {
+        type.getComponentType().accept(this, set);
+        return null;
+      }
+
+      @Override
+      public Void visitDeclared(DeclaredType type, ImmutableSet.Builder<String> set) {
+        for (TypeMirror arg : type.getTypeArguments()) {
+          arg.accept(this, set);
+        }
+        return null;
+      }
+
+      @Override
+      public Void visitWildcard(WildcardType type, ImmutableSet.Builder<String> set) {
+        if (type.getSuperBound() != null) {
+          type.getSuperBound().accept(this, set);
+        }
+        if (type.getExtendsBound() != null) {
+          type.getExtendsBound().accept(this, set);
+        }
+        return null;
+      }
+    }, adaptedTypeArguments);
+
+    return adaptedTypeArguments.build();
   }
 
   /** Finds an annotation with the given name on the given element, or null if not found. */

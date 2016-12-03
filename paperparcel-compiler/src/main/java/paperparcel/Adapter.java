@@ -22,6 +22,7 @@ import com.google.auto.value.AutoValue;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
@@ -249,22 +250,44 @@ abstract class Adapter {
     }
 
     @Nullable private TypeMirror findArgument(
-        final TypeParameterElement parameter, TypeMirror adaptedType, TypeMirror fieldType) {
+        TypeParameterElement parameter, TypeMirror adaptedType, TypeMirror fieldType) {
       final String target = parameter.getSimpleName().toString();
       return adaptedType.accept(new SimpleTypeVisitor6<TypeMirror, TypeMirror>() {
         @Override
         public TypeMirror visitTypeVariable(TypeVariable paramType, TypeMirror argType) {
+          TypeMirror upperBound = paramType.getUpperBound();
           if (target.contentEquals(paramType.toString())) {
-            TypeMirror upperBound = paramType.getUpperBound();
+            // This is the one we're looking for. Check to see if it is assignable to the argType.
             if (IntersectionCompat.isIntersectionType(upperBound)) {
-              if (IntersectionCompat.isAssignableToIntersectionType(types, argType, upperBound)) {
+              if (IntersectionCompat.isAssignableToIntersectionType(
+                  types, argType, upperBound, null, null)) {
                 return argType;
               }
             } else {
               TypeMirror wildcardedUpperBound =
-                  Utils.replaceTypeVariablesWithWildcards(types, upperBound);
+                  Utils.substituteTypeVariables(types, upperBound, null, null);
               if (types.isAssignable(argType, wildcardedUpperBound)) {
                 return argType;
+              }
+            }
+          } else {
+            // Not the TypeVariable we're looking for, but maybe it contains the one we're
+            // looking for.
+            ImmutableSet<String> containedTypeVars = Utils.getTypeVariableNames(upperBound);
+            if (containedTypeVars.contains(target)) {
+              // It does contain the target. Substitute the target with the argType and see if
+              // it is still assignable.
+              if (IntersectionCompat.isIntersectionType(upperBound)) {
+                if (IntersectionCompat.isAssignableToIntersectionType(
+                    types, argType, upperBound, target, argType)) {
+                  return argType;
+                }
+              } else {
+                TypeMirror substitutedUpperBound =
+                    Utils.substituteTypeVariables(types, upperBound, target, argType);
+                if (types.isAssignable(argType, substitutedUpperBound)) {
+                  return argType;
+                }
               }
             }
           }
@@ -327,7 +350,5 @@ abstract class Adapter {
       }
       return Optional.absent();
     }
-
-
   }
 }

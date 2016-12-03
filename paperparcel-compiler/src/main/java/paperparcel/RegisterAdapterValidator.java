@@ -160,39 +160,7 @@ final class RegisterAdapterValidator {
     }
 
     // Collect all of the unique type variables used in the adapted type
-    ImmutableSet.Builder<String> adaptedTypeArguments = ImmutableSet.builder();
-    adaptedType.accept(new SimpleTypeVisitor6<Void, ImmutableSet.Builder<String>>() {
-      @Override
-      public Void visitTypeVariable(TypeVariable type, ImmutableSet.Builder<String> set) {
-        set.add(type.toString());
-        return null;
-      }
-
-      @Override
-      public Void visitArray(ArrayType type, ImmutableSet.Builder<String> set) {
-        type.getComponentType().accept(this, set);
-        return null;
-      }
-
-      @Override
-      public Void visitDeclared(DeclaredType type, ImmutableSet.Builder<String> set) {
-        for (TypeMirror arg : type.getTypeArguments()) {
-          arg.accept(this, set);
-        }
-        return null;
-      }
-
-      @Override
-      public Void visitWildcard(WildcardType type, ImmutableSet.Builder<String> set) {
-        if (type.getSuperBound() != null) {
-          type.getSuperBound().accept(this, set);
-        }
-        if (type.getExtendsBound() != null) {
-          type.getExtendsBound().accept(this, set);
-        }
-        return null;
-      }
-    }, adaptedTypeArguments);
+    ImmutableSet<String> adaptedTypeArguments = Utils.getTypeVariableNames(adaptedType);
 
     // Get a set of all of the adapter's type parameter names
     ImmutableSet<String> adapterParameters = FluentIterable.from(element.getTypeParameters())
@@ -205,7 +173,7 @@ final class RegisterAdapterValidator {
 
     // Verify the type parameters on the adapter are all passed to the adapted type by getting
     // the difference between the two sets and verifying it is empty.
-    return Sets.difference(adapterParameters, adaptedTypeArguments.build()).size() == 0;
+    return Sets.difference(adapterParameters, adaptedTypeArguments).size() == 0;
   }
 
   /**

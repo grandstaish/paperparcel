@@ -17,6 +17,7 @@
 
 package paperparcel;
 
+import android.support.annotation.Nullable;
 import com.google.common.base.Throwables;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -53,17 +54,27 @@ final class IntersectionCompat {
   }
 
   @SuppressWarnings("unchecked")
-  static boolean isAssignableToIntersectionType(
-      Types types, TypeMirror type, TypeMirror intersectionType) {
+  static List<? extends TypeMirror> getBounds(TypeMirror intersectionType) {
     List<? extends TypeMirror> bounds;
     try {
       bounds = (List<? extends TypeMirror>) GET_BOUNDS.invoke(intersectionType);
     } catch (Exception e) {
       throw Throwables.propagate(e);
     }
+    return bounds;
+  }
+
+  static boolean isAssignableToIntersectionType(
+      Types types,
+      TypeMirror type,
+      TypeMirror intersectionType,
+      @Nullable String substituteTargetName,
+      @Nullable TypeMirror substituteTargetType) {
+    List<? extends TypeMirror> bounds = getBounds(intersectionType);
     boolean isAssignable = true;
-    for (TypeMirror upperBound : bounds) {
-      TypeMirror wildcardedUpperBound = Utils.replaceTypeVariablesWithWildcards(types, upperBound);
+    for (TypeMirror bound : bounds) {
+      TypeMirror wildcardedUpperBound =
+          Utils.substituteTypeVariables(types, bound, substituteTargetName, substituteTargetType);
       if (!types.isAssignable(type, wildcardedUpperBound)) {
         isAssignable = false;
         break;
