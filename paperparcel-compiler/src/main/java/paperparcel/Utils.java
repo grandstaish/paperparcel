@@ -459,8 +459,8 @@ final class Utils {
   static TypeMirror substituteTypeVariables(
       Types types,
       TypeMirror type,
-      @Nullable final String targetName,
-      @Nullable final TypeMirror targetType) {
+      final String targetName,
+      final TypeMirror targetType) {
     return type.accept(new TypeSubstitutor() {
       @Override public TypeMirror visitTypeVariable(TypeVariable type, Types types) {
         if (targetName != null && targetName.contentEquals(type.toString())) {

@@ -260,12 +260,12 @@ abstract class Adapter {
             // This is the one we're looking for. Check to see if it is assignable to the argType.
             if (IntersectionCompat.isIntersectionType(upperBound)) {
               if (IntersectionCompat.isAssignableToIntersectionType(
-                  types, argType, upperBound, null, null)) {
+                  types, argType, upperBound, target, argType)) {
                 return argType;
               }
             } else {
               TypeMirror wildcardedUpperBound =
-                  Utils.substituteTypeVariables(types, upperBound, null, null);
+                  Utils.substituteTypeVariables(types, upperBound, target, argType);
               if (types.isAssignable(argType, wildcardedUpperBound)) {
                 return argType;
               }

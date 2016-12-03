@@ -17,7 +17,6 @@
 
 package paperparcel;
 
-import android.support.annotation.Nullable;
 import com.google.common.base.Throwables;
 import java.lang.reflect.Method;
 import java.util.List;
@@ -68,8 +67,8 @@ final class IntersectionCompat {
       Types types,
       TypeMirror type,
       TypeMirror intersectionType,
-      @Nullable String substituteTargetName,
-      @Nullable TypeMirror substituteTargetType) {
+      String substituteTargetName,
+      TypeMirror substituteTargetType) {
     List<? extends TypeMirror> bounds = getBounds(intersectionType);
     boolean isAssignable = true;
     for (TypeMirror bound : bounds) {
