@@ -20,13 +20,11 @@ import android.support.annotation.Nullable;
 import com.google.auto.common.MoreTypes;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Optional;
-import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
-import java.lang.reflect.Method;
 import java.util.List;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
@@ -257,13 +255,15 @@ abstract class Adapter {
         @Override
         public TypeMirror visitTypeVariable(TypeVariable paramType, TypeMirror argType) {
           if (target.contentEquals(paramType.toString())) {
-            if (isIntersectionType(paramType.getUpperBound())) {
-              if (isAssignableToIntersectionType(types, argType, paramType.getUpperBound())) {
+            TypeMirror upperBound = paramType.getUpperBound();
+            if (IntersectionCompat.isIntersectionType(upperBound)) {
+              if (IntersectionCompat.isAssignableToIntersectionType(types, argType, upperBound)) {
                 return argType;
               }
             } else {
-              TypeMirror erased = types.erasure(paramType);
-              if (types.isAssignable(argType, erased)) {
+              TypeMirror wildcardedUpperBound =
+                  Utils.replaceTypeVariablesWithWildcards(types, upperBound);
+              if (types.isAssignable(argType, wildcardedUpperBound)) {
                 return argType;
               }
             }
@@ -328,48 +328,6 @@ abstract class Adapter {
       return Optional.absent();
     }
 
-    private static final Method GET_BOUNDS;
 
-    static {
-      Method m;
-      try {
-        Class<?> c = Class.forName("javax.lang.model.type.IntersectionType");
-        m = c.getMethod("getBounds");
-      } catch (Exception e) {
-        m = null;
-      }
-      GET_BOUNDS = m;
-    }
-
-    private static boolean isIntersectionType(TypeMirror t) {
-      return t != null && t.getKind().name().equals("INTERSECTION");
-    }
-
-    // The representation of an intersection type, as in <T extends Number & Comparable<T>>, changed
-    // between Java 7 and Java 8. In Java 7 it was modeled as a fake DeclaredType, and our logic
-    // for DeclaredType does the right thing. In Java 8 it is modeled as a new type IntersectionType.
-    // In order for our code to run on Java 7 (and Java 6) we can't even mention IntersectionType,
-    // so we can't override visitIntersectionType(IntersectionType). Instead, we discover through
-    // reflection whether IntersectionType exists, and if it does we extract the bounds of the
-    // intersection and check them directly.
-    @SuppressWarnings("unchecked")
-    private static boolean isAssignableToIntersectionType(
-        Types types, TypeMirror type, TypeMirror intersectionType) {
-      List<? extends TypeMirror> bounds;
-      try {
-        bounds = (List<? extends TypeMirror>) GET_BOUNDS.invoke(intersectionType);
-      } catch (Exception e) {
-        throw Throwables.propagate(e);
-      }
-      boolean isAssignable = true;
-      for (TypeMirror bound : bounds) {
-        TypeMirror erased = types.erasure(bound);
-        if (!types.isAssignable(type, erased)) {
-          isAssignable = false;
-          break;
-        }
-      }
-      return isAssignable;
-    }
   }
 }

@@ -48,6 +48,7 @@ import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
+import javax.lang.model.type.UnknownTypeException;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
@@ -433,36 +434,56 @@ final class Utils {
     return types.isAssignable(type, parcelableType);
   }
 
-  /** Replaces any type variables with their upper bounds. */
-  static TypeMirror eraseTypeVariables(Types types, TypeMirror type) {
-    return type.accept(new SimpleTypeVisitor6<TypeMirror, Types>() {
-      @Override public TypeMirror visitArray(ArrayType type, Types types) {
-        return types.getArrayType(type.getComponentType().accept(this, types));
-      }
-
-      @Override public TypeMirror visitDeclared(DeclaredType type, Types types) {
-        TypeElement element = MoreTypes.asTypeElement(type);
-        List<? extends TypeMirror> args = type.getTypeArguments();
-        TypeMirror[] strippedArgs = new TypeMirror[args.size()];
-        for (int i = 0; i < args.size(); i++) {
-          TypeMirror arg = args.get(i);
-          strippedArgs[i] = arg.accept(this, types);
-        }
-        return types.getDeclaredType(element, strippedArgs);
-      }
-
-      @Override public TypeMirror visitWildcard(WildcardType type, Types types) {
-        return types.getWildcardType(type.getExtendsBound().accept(this, types), null);
-      }
-
-      @Override public TypeMirror visitPrimitive(PrimitiveType type, Types types) {
-        return type;
-      }
-
+  /**
+   * Use this when you want a field's type that can be used from a static context (e.g. where
+   * the type vars are no longer available).
+   */
+  static TypeMirror replaceTypeVariablesWithUpperBounds(Types types, TypeMirror type) {
+    return type.accept(new TypeSubstitutor() {
       @Override public TypeMirror visitTypeVariable(TypeVariable type, Types types) {
         return type.getUpperBound().accept(this, types);
       }
+
+      @Override public TypeMirror visitWildcard(WildcardType type, Types types) {
+        return type.getExtendsBound().accept(this, types);
+      }
     }, types);
+  }
+
+  /**
+   * Use this when you want to check assignability against a type that potentially has type vars.
+   */
+  static TypeMirror replaceTypeVariablesWithWildcards(Types types, TypeMirror type) {
+    return type.accept(new TypeSubstitutor() {
+      @Override public TypeMirror visitTypeVariable(TypeVariable type, Types types) {
+        return types.getWildcardType(null, null);
+      }
+    }, types);
+  }
+
+  private abstract static class TypeSubstitutor extends SimpleTypeVisitor6<TypeMirror, Types> {
+    @Override public TypeMirror visitArray(ArrayType type, Types types) {
+      return types.getArrayType(type.getComponentType().accept(this, types));
+    }
+
+    @Override public TypeMirror visitDeclared(DeclaredType type, Types types) {
+      TypeElement element = MoreTypes.asTypeElement(type);
+      List<? extends TypeMirror> args = type.getTypeArguments();
+      TypeMirror[] strippedArgs = new TypeMirror[args.size()];
+      for (int i = 0; i < args.size(); i++) {
+        TypeMirror arg = args.get(i);
+        strippedArgs[i] = arg.accept(this, types);
+      }
+      return types.getDeclaredType(element, strippedArgs);
+    }
+
+    @Override public TypeMirror visitPrimitive(PrimitiveType type, Types types) {
+      return type;
+    }
+
+    @Override protected TypeMirror defaultAction(TypeMirror typeMirror, Types p) {
+      throw new UnknownTypeException(typeMirror, p);
+    }
   }
 
   /** Finds an annotation with the given name on the given element, or null if not found. */

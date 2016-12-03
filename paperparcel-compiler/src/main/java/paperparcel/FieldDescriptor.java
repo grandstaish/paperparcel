@@ -57,7 +57,7 @@ abstract class FieldDescriptor {
     FieldDescriptor create(VariableElement element) {
       String name = element.getSimpleName().toString();
       TypeMirror type = element.asType();
-      TypeMirror fieldType = Utils.eraseTypeVariables(types, type);
+      TypeMirror fieldType = Utils.replaceTypeVariablesWithUpperBounds(types, type);
       Equivalence.Wrapper<TypeMirror> wrappedType = MoreTypes.equivalence().wrap(fieldType);
       boolean isVisible = Visibility.ofElement(element) != Visibility.PRIVATE;
       boolean isNullable =
