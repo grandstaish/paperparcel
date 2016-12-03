@@ -502,6 +502,19 @@ final class Utils {
 
     type.accept(new SimpleTypeVisitor6<Void, ImmutableSet.Builder<String>>() {
       @Override
+      public Void visitUnknown(TypeMirror typeMirror, ImmutableSet.Builder<String> set) {
+        if (IntersectionCompat.isIntersectionType(typeMirror)) {
+          List<? extends TypeMirror> bounds = IntersectionCompat.getBounds(typeMirror);
+          for (TypeMirror bound : bounds) {
+            bound.accept(this, set);
+          }
+        } else {
+          super.visitUnknown(typeMirror, set);
+        }
+        return null;
+      }
+
+      @Override
       public Void visitTypeVariable(TypeVariable type, ImmutableSet.Builder<String> set) {
         TypeMirror upperBound = type.getUpperBound();
         if (IntersectionCompat.isIntersectionType(upperBound)) {
