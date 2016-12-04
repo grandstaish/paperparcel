@@ -25,6 +25,7 @@ import com.google.common.collect.ImmutableMap;
 import com.squareup.javapoet.ClassName;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.lang.model.element.Element;
@@ -154,7 +155,8 @@ abstract class Adapter {
             TypeMirror adaptedType =
                 Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(adapterType));
             Map<String, TypeMirror> parametersToArguments =
-                entry.typeKey().parametersToArgumentsMap(elements, types, fieldType);
+                new HashMap<>(adapterElement.getTypeParameters().size());
+            entry.typeKey().parametersToArgumentsMap(elements, types, fieldType, parametersToArguments);
             TypeMirror[] adapterArguments = argumentsAsArray(parametersToArguments, adapterElement);
             DeclaredType resolvedAdapterType = types.getDeclaredType(adapterElement, adapterArguments);
             TypeMirror resolvedAdaptedType = Utils.getAdaptedType(elements, types, resolvedAdapterType);

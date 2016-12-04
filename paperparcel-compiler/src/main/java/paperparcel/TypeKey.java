@@ -16,10 +16,10 @@
 
 package paperparcel;
 
+import android.support.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
@@ -45,8 +45,9 @@ abstract class TypeKey {
   /**
    *
    */
-  abstract Map<String, TypeMirror> parametersToArgumentsMap(
-      Elements elements, Types types, TypeMirror target);
+  void parametersToArgumentsMap(
+      Elements elements, Types types, TypeMirror target, Map<String, TypeMirror> outMap) {
+  }
 
   /**
    *
@@ -55,24 +56,15 @@ abstract class TypeKey {
     return type.accept(new SimpleTypeVisitor6<TypeKey, Void>() {
       @Override public TypeKey visitArray(ArrayType t, Void p) {
         switch (t.getKind()) {
-          case BOOLEAN:
-            return PrimitiveArrayKey.BOOLEAN_ARRAY;
-          case BYTE:
-            return PrimitiveArrayKey.BYTE_ARRAY;
-          case SHORT:
-            return PrimitiveArrayKey.SHORT_ARRAY;
-          case INT:
-            return PrimitiveArrayKey.INT_ARRAY;
-          case LONG:
-            return PrimitiveArrayKey.LONG_ARRAY;
-          case CHAR:
-            return PrimitiveArrayKey.CHAR_ARRAY;
-          case FLOAT:
-            return PrimitiveArrayKey.FLOAT_ARRAY;
-          case DOUBLE:
-            return PrimitiveArrayKey.DOUBLE_ARRAY;
-          default:
-            return ArrayKey.of(t.getComponentType().accept(this, p));
+          case BOOLEAN: return PrimitiveArrayKey.BOOLEAN_ARRAY;
+          case BYTE: return PrimitiveArrayKey.BYTE_ARRAY;
+          case SHORT: return PrimitiveArrayKey.SHORT_ARRAY;
+          case INT: return PrimitiveArrayKey.INT_ARRAY;
+          case LONG: return PrimitiveArrayKey.LONG_ARRAY;
+          case CHAR: return PrimitiveArrayKey.CHAR_ARRAY;
+          case FLOAT: return PrimitiveArrayKey.FLOAT_ARRAY;
+          case DOUBLE: return PrimitiveArrayKey.DOUBLE_ARRAY;
+          default: return ArrayKey.of(t.getComponentType().accept(this, p));
         }
       }
 
@@ -124,10 +116,9 @@ abstract class TypeKey {
       return true;
     }
 
-    @Override
-    Map<String, TypeMirror> parametersToArgumentsMap(
-        Elements elements, Types types, TypeMirror target) {
-      return Collections.singletonMap(name(), target);
+    @Override void parametersToArgumentsMap(
+        Elements elements, Types types, TypeMirror target, Map<String, TypeMirror> outMap) {
+      outMap.put(name(), target);
     }
 
     static AnyKey get(String name) {
@@ -149,36 +140,18 @@ abstract class TypeKey {
       if (type.getKind() == TypeKind.ARRAY) {
         ArrayType arrayType = (ArrayType) type;
         switch (arrayType.getComponentType().getKind()) {
-          case BOOLEAN:
-            return this == BOOLEAN_ARRAY;
-          case BYTE:
-            return this == BYTE_ARRAY;
-          case SHORT:
-            return this == SHORT_ARRAY;
-          case INT:
-            return this == INT_ARRAY;
-          case LONG:
-            return this == LONG_ARRAY;
-          case CHAR:
-            return this == CHAR_ARRAY;
-          case FLOAT:
-            return this == FLOAT_ARRAY;
-          case DOUBLE:
-            return this == DOUBLE_ARRAY;
-          default:
-            return false;
+          case BOOLEAN: return this == BOOLEAN_ARRAY;
+          case BYTE: return this == BYTE_ARRAY;
+          case SHORT: return this == SHORT_ARRAY;
+          case INT: return this == INT_ARRAY;
+          case LONG: return this == LONG_ARRAY;
+          case CHAR: return this == CHAR_ARRAY;
+          case FLOAT: return this == FLOAT_ARRAY;
+          case DOUBLE: return this == DOUBLE_ARRAY;
+          default: return false;
         }
       }
       return false;
-    }
-
-    @Override
-    Map<String, TypeMirror> parametersToArgumentsMap(
-        Elements elements, Types types, TypeMirror target) {
-      return new HashMap<>(0);
-    }
-
-    private PrimitiveArrayKey() {
     }
   }
 
@@ -195,12 +168,11 @@ abstract class TypeKey {
       return false;
     }
 
-    @Override
-    Map<String, TypeMirror> parametersToArgumentsMap(
-        Elements elements, Types types, TypeMirror target) {
+    @Override void parametersToArgumentsMap(
+        Elements elements, Types types, TypeMirror target, Map<String, TypeMirror> outMap) {
       ArrayType targetArrayType = (ArrayType) target;
       TypeMirror targetComponentType = targetArrayType.getComponentType();
-      return componentType().parametersToArgumentsMap(elements, types, targetComponentType);
+      componentType().parametersToArgumentsMap(elements, types, targetComponentType, outMap);
     }
 
     static ArrayKey of(TypeKey componentType) {
@@ -216,12 +188,6 @@ abstract class TypeKey {
       return type.getKind() == TypeKind.DECLARED
           && ((TypeElement)((DeclaredType) type).asElement())
           .getQualifiedName().contentEquals(name());
-    }
-
-    @Override
-    Map<String, TypeMirror> parametersToArgumentsMap(
-        Elements elements, Types types, TypeMirror target) {
-      return new HashMap<>(0);
     }
 
     static ClassKey get(String name) {
@@ -255,17 +221,14 @@ abstract class TypeKey {
       return true;
     }
 
-    @Override
-    Map<String, TypeMirror> parametersToArgumentsMap(
-        Elements elements, Types types, TypeMirror target) {
-      Map<String, TypeMirror> result = new HashMap<>(typeArguments().size());
+    @Override void parametersToArgumentsMap(
+        Elements elements, Types types, TypeMirror target, Map<String, TypeMirror> outMap) {
       DeclaredType targetDeclaredType = (DeclaredType) target;
       for (int i = 0; i < typeArguments().size(); i++) {
         TypeMirror targetArgument = targetDeclaredType.getTypeArguments().get(i);
         TypeKey argument = typeArguments().get(i);
-        result.putAll(argument.parametersToArgumentsMap(elements, types, targetArgument));
+        argument.parametersToArgumentsMap(elements, types, targetArgument, outMap);
       }
-      return result;
     }
 
     static ParameterizedKey get(ClassKey rawType, ImmutableList<TypeKey> typeArguments) {
@@ -276,145 +239,44 @@ abstract class TypeKey {
   @AutoValue
   static abstract class BoundedKey extends TypeKey {
     abstract String name();
+
     abstract ImmutableList<TypeKey> bounds();
 
     @Override boolean isMatch(Elements elements, Types types, TypeMirror type) {
       for (TypeKey bound : bounds()) {
-        if (!types.isAssignable(type, toMirror(elements, types, bound))) {
+        if (boundMirror(elements, types, bound, type) == null) {
           return false;
         }
       }
       return true;
     }
 
-    @Override
-    Map<String, TypeMirror> parametersToArgumentsMap(
-        Elements elements, Types types, TypeMirror target) {
-      Map<String, TypeMirror> result = new HashMap<>();
+    @Override void parametersToArgumentsMap(
+        Elements elements, Types types, TypeMirror target, Map<String, TypeMirror> outMap) {
       for (TypeKey bound : bounds()) {
-        result.putAll(parametersToArgumentsMap(elements, types, target, bound));
+        TypeMirror boundMirror = boundMirror(elements, types, bound, target);
+        bound.parametersToArgumentsMap(elements, types, boundMirror, outMap);
       }
-      result.put(name(), target);
-      return result;
+      outMap.put(name(), target);
+    }
+
+    @Nullable
+    TypeMirror boundMirror(Elements elements, Types types, TypeKey bound, TypeMirror type) {
+      if (bound.isMatch(elements, types, type)) {
+        return type;
+      }
+      List<? extends TypeMirror> superTypes = types.directSupertypes(type);
+      for (TypeMirror superType : superTypes) {
+        if (superType.getKind() != TypeKind.NONE) {
+          TypeMirror boundMirror = boundMirror(elements, types, bound, superType);
+          if (boundMirror != null) return boundMirror;
+        }
+      }
+      return null;
     }
 
     static BoundedKey get(String name, ImmutableList<TypeKey> bounds) {
       return new AutoValue_TypeKey_BoundedKey(name, bounds);
-    }
-
-    private static TypeMirror toMirror(Elements elements, Types types, TypeKey typeKey) {
-      TypeMirror mirror = toMirrorInternal(elements, types, typeKey);
-      if (mirror.getKind() == TypeKind.WILDCARD) {
-        mirror = elements.getTypeElement("java.lang.Object").asType();
-      }
-      return mirror;
-    }
-
-    private static TypeMirror toMirrorInternal(Elements elements, Types types, TypeKey typeKey) {
-      if (typeKey instanceof ClassKey) {
-        return elements.getTypeElement(((ClassKey) typeKey).name()).asType();
-
-      } else if (typeKey instanceof ParameterizedKey) {
-        ParameterizedKey cast = (ParameterizedKey) typeKey;
-        TypeMirror[] arguments = new TypeMirror[cast.typeArguments().size()];
-        ImmutableList<TypeKey> typeArguments = cast.typeArguments();
-        for (int i = 0; i < typeArguments.size(); i++) {
-          TypeKey key = typeArguments.get(i);
-          if (key instanceof AnyKey) {
-            arguments[i] = types.getWildcardType(null, null);
-          } else {
-            arguments[i] = toMirrorInternal(elements, types, key);
-          }
-        }
-        TypeElement element = elements.getTypeElement(cast.rawType().name());
-        return types.getDeclaredType(element, arguments);
-
-      } else if (typeKey instanceof ArrayKey) {
-        ArrayKey cast = (ArrayKey) typeKey;
-        if (cast.componentType() instanceof AnyKey) {
-          return types.getArrayType(
-              types.getWildcardType(elements.getTypeElement(OBJECT.name()).asType(), null));
-        } else {
-          return types.getArrayType(toMirrorInternal(elements, types, cast.componentType()));
-        }
-
-      } else if (typeKey instanceof PrimitiveArrayKey) {
-        if (typeKey == PrimitiveArrayKey.BOOLEAN_ARRAY) {
-          return types.getArrayType(types.getPrimitiveType(TypeKind.BOOLEAN));
-        } else if (typeKey == PrimitiveArrayKey.BYTE_ARRAY) {
-          return types.getArrayType(types.getPrimitiveType(TypeKind.BYTE));
-        } else if (typeKey == PrimitiveArrayKey.CHAR_ARRAY) {
-          return types.getArrayType(types.getPrimitiveType(TypeKind.CHAR));
-        } else if (typeKey == PrimitiveArrayKey.DOUBLE_ARRAY) {
-          return types.getArrayType(types.getPrimitiveType(TypeKind.DOUBLE));
-        } else if (typeKey == PrimitiveArrayKey.FLOAT_ARRAY) {
-          return types.getArrayType(types.getPrimitiveType(TypeKind.FLOAT));
-        } else if (typeKey == PrimitiveArrayKey.INT_ARRAY) {
-          return types.getArrayType(types.getPrimitiveType(TypeKind.INT));
-        } else if (typeKey == PrimitiveArrayKey.LONG_ARRAY) {
-          return types.getArrayType(types.getPrimitiveType(TypeKind.LONG));
-        } else if (typeKey == PrimitiveArrayKey.SHORT_ARRAY) {
-          return types.getArrayType(types.getPrimitiveType(TypeKind.SHORT));
-        } else {
-          throw new IllegalArgumentException("Unexpected primitive key: " + typeKey);
-        }
-
-      } else if (typeKey instanceof AnyKey) {
-        return types.getWildcardType(null, null);
-
-      } else if (typeKey instanceof BoundedKey) {
-        BoundedKey cast = (BoundedKey) typeKey;
-        for (TypeKey key : cast.bounds()) {
-          if (!key.isMatch(elements, types, toMirrorInternal(elements, types, key))) {
-            return types.getNoType(TypeKind.NONE);
-          }
-        }
-        return types.getWildcardType(null, null);
-
-      } else {
-        throw new IllegalArgumentException("Unexpected type key: " + typeKey);
-      }
-    }
-
-    private static Map<String, TypeMirror> parametersToArgumentsMap(
-        Elements elements, Types types, TypeMirror target, TypeKey bound) {
-
-      if (bound instanceof AnyKey) {
-        return Collections.singletonMap(((AnyKey) bound).name(), target);
-      }
-
-      if (bound instanceof BoundedKey) {
-        return bound.parametersToArgumentsMap(elements, types, target);
-      }
-
-      if (bound instanceof ParameterizedKey) {
-        ParameterizedKey parameterizedKey = (ParameterizedKey) bound;
-        Map<String, TypeMirror> result = new HashMap<>();
-        for (int i = 0; i < parameterizedKey.typeArguments().size(); i++) {
-          TypeKey arg = parameterizedKey.typeArguments().get(i);
-          if (arg.isMatch(elements, types, target)) {
-            result.putAll(arg.parametersToArgumentsMap(elements, types, target));
-          }
-        }
-        if (parameterizedKey.isMatch(elements, types, target)) {
-          result.putAll(parameterizedKey.parametersToArgumentsMap(elements, types, target));
-        }
-        return result;
-      }
-
-      if (bound instanceof ClassKey) {
-        return new HashMap<>(0);
-      }
-
-      if (bound instanceof PrimitiveArrayKey) {
-        return new HashMap<>(0);
-      }
-
-      if (bound instanceof ArrayKey) {
-        return new HashMap<>(0);
-      }
-
-      throw new IllegalArgumentException("Unknown TypeKey: " + bound);
     }
   }
 }
