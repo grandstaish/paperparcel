@@ -450,28 +450,6 @@ final class Utils {
     }, types);
   }
 
-  /**
-   * Replace all type vars named {@code targetName} with {@code targetType}. All other type vars
-   * will be replaced with wildcards.
-   *
-   * Use this when you want to check assignability against a type that potentially has type vars.
-   */
-  static TypeMirror substituteTypeVariables(
-      Types types,
-      TypeMirror type,
-      final String targetName,
-      final TypeMirror targetType) {
-    return type.accept(new TypeSubstitutor() {
-      @Override public TypeMirror visitTypeVariable(TypeVariable type, Types types) {
-        if (targetName != null && targetName.contentEquals(type.toString())) {
-          return targetType;
-        } else {
-          return types.getWildcardType(null, null);
-        }
-      }
-    }, types);
-  }
-
   private abstract static class TypeSubstitutor extends SimpleTypeVisitor6<TypeMirror, Types> {
     @Override public TypeMirror visitArray(ArrayType type, Types types) {
       return types.getArrayType(type.getComponentType().accept(this, types));
@@ -502,28 +480,10 @@ final class Utils {
 
     type.accept(new SimpleTypeVisitor6<Void, ImmutableSet.Builder<String>>() {
       @Override
-      public Void visitUnknown(TypeMirror typeMirror, ImmutableSet.Builder<String> set) {
-        if (IntersectionCompat.isIntersectionType(typeMirror)) {
-          List<? extends TypeMirror> bounds = IntersectionCompat.getBounds(typeMirror);
-          for (TypeMirror bound : bounds) {
-            bound.accept(this, set);
-          }
-        } else {
-          super.visitUnknown(typeMirror, set);
-        }
-        return null;
-      }
-
-      @Override
       public Void visitTypeVariable(TypeVariable type, ImmutableSet.Builder<String> set) {
-        TypeMirror upperBound = type.getUpperBound();
-        if (IntersectionCompat.isIntersectionType(upperBound)) {
-          List<? extends TypeMirror> bounds = IntersectionCompat.getBounds(upperBound);
-          for (TypeMirror bound : bounds) {
-            bound.accept(this, set);
-          }
-        } else {
-          upperBound.accept(this, set);
+        TypeParameterElement element = (TypeParameterElement) type.asElement();
+        for (TypeMirror bound : element.getBounds()) {
+          bound.accept(this, set);
         }
         set.add(type.toString());
         return null;

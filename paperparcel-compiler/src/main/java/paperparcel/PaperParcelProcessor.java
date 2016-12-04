@@ -43,7 +43,7 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
     Elements elements = processingEnv.getElementUtils();
     Filer filer = new FormattingFiler(processingEnv.getFiler());
 
-    AdapterRegistry adapterRegistry = new AdapterRegistry();
+    AdapterRegistry adapterRegistry = new AdapterRegistry(elements, types);
 
     RegisterAdapterValidator registerAdapterValidator =
         new RegisterAdapterValidator(elements, types);
