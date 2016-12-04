@@ -232,14 +232,16 @@ abstract class Adapter {
           classDependencies.build()));
     }
 
-    @Nullable private TypeMirror[] argumentsAsArray(
+    private TypeMirror[] argumentsAsArray(
         Map<String, TypeMirror> parametersToArguments, TypeElement adapterElement) {
       List<? extends TypeParameterElement> adapterParameters = adapterElement.getTypeParameters();
       TypeMirror[] adapterArguments = new TypeMirror[adapterParameters.size()];
       for (int i = 0; i < adapterParameters.size(); i++) {
         TypeParameterElement parameter = adapterParameters.get(i);
         adapterArguments[i] = parametersToArguments.get(parameter.getSimpleName().toString());
-        //if (adapterArguments[i] == null) return null;
+        if (adapterArguments[i] == null) {
+          throw new AssertionError("Missing parameter information " + parameter);
+        }
       }
       return adapterArguments;
     }
