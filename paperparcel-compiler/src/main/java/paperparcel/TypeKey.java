@@ -29,7 +29,6 @@ import javax.lang.model.type.ErrorType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
-import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
 
@@ -37,21 +36,20 @@ import javax.lang.model.util.Types;
 abstract class TypeKey {
   private static final ClassKey OBJECT = ClassKey.get("java.lang.Object");
 
-  /**
-   *
-   */
-  abstract boolean isMatch(Elements elements, Types types, TypeMirror type);
+  /** Checks if {@code type} can be handled by this {@code TypeKey}. */
+  abstract boolean isMatch(Types types, TypeMirror type);
 
   /**
+   * <p>Matches any {@code TypeKey} parameter names to the associated {@link TypeMirror} values
+   * derived from {@code target}.</p>
    *
+   * <p>This method should only be called with a {@code target} that has matched via
+   * {@link #isMatch(Types, TypeMirror)}.</p>
    */
-  void parametersToArgumentsMap(
-      Elements elements, Types types, TypeMirror target, Map<String, TypeMirror> outMap) {
+  void mapTypeParamsToVars(Types types, TypeMirror target, Map<String, TypeMirror> outMap) {
   }
 
-  /**
-   *
-   */
+  /** Factory method for creating {@code TypeKey} instances from a {@link TypeMirror}. */
   static TypeKey get(TypeMirror type) {
     return type.accept(new SimpleTypeVisitor6<TypeKey, Void>() {
       @Override public TypeKey visitArray(ArrayType t, Void p) {
@@ -108,16 +106,15 @@ abstract class TypeKey {
     }, null);
   }
 
-  @AutoValue
-  static abstract class AnyKey extends TypeKey {
+  @AutoValue static abstract class AnyKey extends TypeKey {
     abstract String name();
 
-    @Override boolean isMatch(Elements elements, Types types, TypeMirror type) {
+    @Override boolean isMatch(Types types, TypeMirror type) {
       return true;
     }
 
-    @Override void parametersToArgumentsMap(
-        Elements elements, Types types, TypeMirror target, Map<String, TypeMirror> outMap) {
+    @Override
+    void mapTypeParamsToVars(Types types, TypeMirror target, Map<String, TypeMirror> outMap) {
       outMap.put(name(), target);
     }
 
@@ -136,7 +133,7 @@ abstract class TypeKey {
     static final PrimitiveArrayKey BYTE_ARRAY = new PrimitiveArrayKey();
     static final PrimitiveArrayKey SHORT_ARRAY = new PrimitiveArrayKey();
 
-    @Override boolean isMatch(Elements elements, Types types, TypeMirror type) {
+    @Override boolean isMatch(Types types, TypeMirror type) {
       if (type.getKind() == TypeKind.ARRAY) {
         ArrayType arrayType = (ArrayType) type;
         switch (arrayType.getComponentType().getKind()) {
@@ -155,24 +152,23 @@ abstract class TypeKey {
     }
   }
 
-  @AutoValue
-  static abstract class ArrayKey extends TypeKey {
+  @AutoValue static abstract class ArrayKey extends TypeKey {
     abstract TypeKey componentType();
 
-    @Override boolean isMatch(Elements elements, Types types, TypeMirror type) {
+    @Override boolean isMatch(Types types, TypeMirror type) {
       if (type.getKind() == TypeKind.ARRAY) {
         ArrayType arrayType = (ArrayType) type;
         return !arrayType.getComponentType().getKind().isPrimitive()
-            && componentType().isMatch(elements, types, arrayType.getComponentType());
+            && componentType().isMatch(types, arrayType.getComponentType());
       }
       return false;
     }
 
-    @Override void parametersToArgumentsMap(
-        Elements elements, Types types, TypeMirror target, Map<String, TypeMirror> outMap) {
+    @Override
+    void mapTypeParamsToVars(Types types, TypeMirror target, Map<String, TypeMirror> outMap) {
       ArrayType targetArrayType = (ArrayType) target;
       TypeMirror targetComponentType = targetArrayType.getComponentType();
-      componentType().parametersToArgumentsMap(elements, types, targetComponentType, outMap);
+      componentType().mapTypeParamsToVars(types, targetComponentType, outMap);
     }
 
     static ArrayKey of(TypeKey componentType) {
@@ -180,11 +176,10 @@ abstract class TypeKey {
     }
   }
 
-  @AutoValue
-  static abstract class ClassKey extends TypeKey {
+  @AutoValue static abstract class ClassKey extends TypeKey {
     abstract String name();
 
-    @Override boolean isMatch(Elements elements, Types types, TypeMirror type) {
+    @Override boolean isMatch(Types types, TypeMirror type) {
       return type.getKind() == TypeKind.DECLARED
           && ((TypeElement)((DeclaredType) type).asElement())
           .getQualifiedName().contentEquals(name());
@@ -195,16 +190,15 @@ abstract class TypeKey {
     }
   }
 
-  @AutoValue
-  static abstract class ParameterizedKey extends TypeKey {
+  @AutoValue static abstract class ParameterizedKey extends TypeKey {
     abstract ClassKey rawType();
     abstract ImmutableList<TypeKey> typeArguments();
 
-    @Override boolean isMatch(Elements elements, Types types, TypeMirror type) {
+    @Override boolean isMatch(Types types, TypeMirror type) {
       if (type.getKind() != TypeKind.DECLARED) {
         return false;
       }
-      if (!rawType().isMatch(elements, types, type)) {
+      if (!rawType().isMatch(types, type)) {
         return false;
       }
       DeclaredType declaredType = (DeclaredType) type;
@@ -214,20 +208,20 @@ abstract class TypeKey {
       for (int i = 0; i < typeArguments().size(); i++) {
         TypeMirror mirrorArgument = declaredType.getTypeArguments().get(i);
         TypeKey argument = typeArguments().get(i);
-        if (!argument.isMatch(elements, types, mirrorArgument)) {
+        if (!argument.isMatch(types, mirrorArgument)) {
           return false;
         }
       }
       return true;
     }
 
-    @Override void parametersToArgumentsMap(
-        Elements elements, Types types, TypeMirror target, Map<String, TypeMirror> outMap) {
+    @Override
+    void mapTypeParamsToVars(Types types, TypeMirror target, Map<String, TypeMirror> outMap) {
       DeclaredType targetDeclaredType = (DeclaredType) target;
       for (int i = 0; i < typeArguments().size(); i++) {
         TypeMirror targetArgument = targetDeclaredType.getTypeArguments().get(i);
         TypeKey argument = typeArguments().get(i);
-        argument.parametersToArgumentsMap(elements, types, targetArgument, outMap);
+        argument.mapTypeParamsToVars(types, targetArgument, outMap);
       }
     }
 
@@ -242,33 +236,33 @@ abstract class TypeKey {
 
     abstract ImmutableList<TypeKey> bounds();
 
-    @Override boolean isMatch(Elements elements, Types types, TypeMirror type) {
+    @Override boolean isMatch(Types types, TypeMirror type) {
       for (TypeKey bound : bounds()) {
-        if (boundMirror(elements, types, bound, type) == null) {
+        if (boundMirror(types, bound, type) == null) {
           return false;
         }
       }
       return true;
     }
 
-    @Override void parametersToArgumentsMap(
-        Elements elements, Types types, TypeMirror target, Map<String, TypeMirror> outMap) {
+    @Override
+    void mapTypeParamsToVars(Types types, TypeMirror target, Map<String, TypeMirror> outMap) {
       for (TypeKey bound : bounds()) {
-        TypeMirror boundMirror = boundMirror(elements, types, bound, target);
-        bound.parametersToArgumentsMap(elements, types, boundMirror, outMap);
+        TypeMirror boundMirror = boundMirror(types, bound, target);
+        bound.mapTypeParamsToVars(types, boundMirror, outMap);
       }
       outMap.put(name(), target);
     }
 
     @Nullable
-    TypeMirror boundMirror(Elements elements, Types types, TypeKey bound, TypeMirror type) {
-      if (bound.isMatch(elements, types, type)) {
+    TypeMirror boundMirror(Types types, TypeKey bound, TypeMirror type) {
+      if (bound.isMatch(types, type)) {
         return type;
       }
       List<? extends TypeMirror> superTypes = types.directSupertypes(type);
       for (TypeMirror superType : superTypes) {
         if (superType.getKind() != TypeKind.NONE) {
-          TypeMirror boundMirror = boundMirror(elements, types, bound, superType);
+          TypeMirror boundMirror = boundMirror(types, bound, superType);
           if (boundMirror != null) return boundMirror;
         }
       }

@@ -129,7 +129,7 @@ abstract class Adapter {
 
       List<AdapterRegistry.Entry> adapterEntries = adapterRegistry.getEntries();
       for (AdapterRegistry.Entry entry : adapterEntries) {
-        if (entry.typeKey().isMatch(elements, types, fieldType)) {
+        if (entry.typeKey().isMatch(types, fieldType)) {
 
           Optional<ConstructorInfo> constructorInfo;
           TypeName typeName;
@@ -156,7 +156,7 @@ abstract class Adapter {
                 Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(adapterType));
             Map<String, TypeMirror> parametersToArguments =
                 new HashMap<>(adapterElement.getTypeParameters().size());
-            entry.typeKey().parametersToArgumentsMap(elements, types, fieldType, parametersToArguments);
+            entry.typeKey().mapTypeParamsToVars(types, fieldType, parametersToArguments);
             TypeMirror[] adapterArguments = argumentsAsArray(parametersToArguments, adapterElement);
             DeclaredType resolvedAdapterType = types.getDeclaredType(adapterElement, adapterArguments);
             TypeMirror resolvedAdaptedType = Utils.getAdaptedType(elements, types, resolvedAdapterType);
@@ -222,7 +222,6 @@ abstract class Adapter {
               Utils.getClassType(elements, types, MoreTypes.asDeclared(resolvedDependencyType));
           TypeName dependencyClassTypeName = TypeName.get(dependencyClassType);
           classDependencies.put(parameterName, dependencyClassTypeName);
-
         }
       }
 

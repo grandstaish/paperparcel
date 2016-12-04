@@ -127,40 +127,39 @@ final class AdapterRegistry {
     }
   }
 
-  private static final ImmutableList<Entry> BUILT_IN_ADAPTER_ENTRIES = ImmutableList.<Entry>builder()
-      .add(FieldEntry.create(STATIC_ADAPTERS, "STRING_ADAPTER", STRING, true))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "INTEGER_ADAPTER", INTEGER, false))
-      .add(ClassEntry.create("paperparcel.internal.MapAdapter", MAP, false))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "BUNDLE_ADAPTER", BUNDLE, true))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "PERSISTABLE_BUNDLE_ADAPTER", PERSISTABLE_BUNDLE, true))
-      .add(ClassEntry.create("paperparcel.internal.ParcelableAdapter", PARCELABLE, true))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "SHORT_ADAPTER", SHORT, false))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "LONG_ADAPTER", LONG, false))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "FLOAT_ADAPTER", FLOAT, false))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "DOUBLE_ADAPTER", DOUBLE, false))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "BOOLEAN_ADAPTER", BOOLEAN, false))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "CHAR_SEQUENCE_ADAPTER", CHAR_SEQUENCE, true))
-      .add(ClassEntry.create("paperparcel.internal.ListAdapter", LIST, false))
-      .add(ClassEntry.create("paperparcel.internal.SparseArrayAdapter", SPARSE_ARRAY, false))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "BOOLEAN_ARRAY_ADAPTER", BOOLEAN_ARRAY, true))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "BYTE_ARRAY_ADAPTER", BYTE_ARRAY, true))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "IBINDER_ADAPTER", IBINDER, true))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "INT_ARRAY_ADAPTER", INT_ARRAY, true))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "LONG_ARRAY_ADAPTER", LONG_ARRAY, true))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "BYTE_ADAPTER", BYTE, false))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "SIZE_ADAPTER", SIZE, false))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "SIZE_F_ADAPTER", SIZE_F, false))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "DOUBLE_ARRAY_ADAPTER", DOUBLE_ARRAY, true))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "SPARSE_BOOLEAN_ARRAY_ADAPTER", SPARSE_BOOLEAN_ARRAY, true))
-      .add(ClassEntry.create("paperparcel.internal.CollectionAdapter", COLLECTION, false))
-      .add(ClassEntry.create("paperparcel.internal.ArrayAdapter", OBJECT_ARRAY, false))
-      .add(ClassEntry.create("paperparcel.internal.SetAdapter", SET, false))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "CHAR_ARRAY_ADAPTER", CHAR_ARRAY, true))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "FLOAT_ARRAY_ADAPTER", FLOAT_ARRAY, true))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "SHORT_ARRAY_ADAPTER", SHORT_ARRAY, false))
-      .add(FieldEntry.create(STATIC_ADAPTERS, "CHARACTER_ADAPTER", CHARACTER, false))
-      .add(ClassEntry.create("paperparcel.internal.EnumAdapter", ENUM, false))
-      .build();
+  private static final ImmutableList<Entry> BUILT_IN_ADAPTER_ENTRIES = ImmutableList.of(
+      FieldEntry.create(STATIC_ADAPTERS, "STRING_ADAPTER", STRING, true),
+      FieldEntry.create(STATIC_ADAPTERS, "INTEGER_ADAPTER", INTEGER, false),
+      ClassEntry.create("paperparcel.internal.MapAdapter", MAP, false),
+      FieldEntry.create(STATIC_ADAPTERS, "BUNDLE_ADAPTER", BUNDLE, true),
+      FieldEntry.create(STATIC_ADAPTERS, "PERSISTABLE_BUNDLE_ADAPTER", PERSISTABLE_BUNDLE, true),
+      ClassEntry.create("paperparcel.internal.ParcelableAdapter", PARCELABLE, true),
+      FieldEntry.create(STATIC_ADAPTERS, "SHORT_ADAPTER", SHORT, false),
+      FieldEntry.create(STATIC_ADAPTERS, "LONG_ADAPTER", LONG, false),
+      FieldEntry.create(STATIC_ADAPTERS, "FLOAT_ADAPTER", FLOAT, false),
+      FieldEntry.create(STATIC_ADAPTERS, "DOUBLE_ADAPTER", DOUBLE, false),
+      FieldEntry.create(STATIC_ADAPTERS, "BOOLEAN_ADAPTER", BOOLEAN, false),
+      FieldEntry.create(STATIC_ADAPTERS, "CHAR_SEQUENCE_ADAPTER", CHAR_SEQUENCE, true),
+      ClassEntry.create("paperparcel.internal.ListAdapter", LIST, false),
+      ClassEntry.create("paperparcel.internal.SparseArrayAdapter", SPARSE_ARRAY, false),
+      FieldEntry.create(STATIC_ADAPTERS, "BOOLEAN_ARRAY_ADAPTER", BOOLEAN_ARRAY, true),
+      FieldEntry.create(STATIC_ADAPTERS, "BYTE_ARRAY_ADAPTER", BYTE_ARRAY, true),
+      FieldEntry.create(STATIC_ADAPTERS, "IBINDER_ADAPTER", IBINDER, true),
+      FieldEntry.create(STATIC_ADAPTERS, "INT_ARRAY_ADAPTER", INT_ARRAY, true),
+      FieldEntry.create(STATIC_ADAPTERS, "LONG_ARRAY_ADAPTER", LONG_ARRAY, true),
+      FieldEntry.create(STATIC_ADAPTERS, "BYTE_ADAPTER", BYTE, false),
+      FieldEntry.create(STATIC_ADAPTERS, "SIZE_ADAPTER", SIZE, false),
+      FieldEntry.create(STATIC_ADAPTERS, "SIZE_F_ADAPTER", SIZE_F, false),
+      FieldEntry.create(STATIC_ADAPTERS, "DOUBLE_ARRAY_ADAPTER", DOUBLE_ARRAY, true),
+      FieldEntry.create(STATIC_ADAPTERS, "SPARSE_BOOLEAN_ARRAY_ADAPTER", SPARSE_BOOLEAN_ARRAY, true),
+      ClassEntry.create("paperparcel.internal.CollectionAdapter", COLLECTION, false),
+      ClassEntry.create("paperparcel.internal.ArrayAdapter", OBJECT_ARRAY, false),
+      ClassEntry.create("paperparcel.internal.SetAdapter", SET, false),
+      FieldEntry.create(STATIC_ADAPTERS, "CHAR_ARRAY_ADAPTER", CHAR_ARRAY, true),
+      FieldEntry.create(STATIC_ADAPTERS, "FLOAT_ARRAY_ADAPTER", FLOAT_ARRAY, true),
+      FieldEntry.create(STATIC_ADAPTERS, "SHORT_ARRAY_ADAPTER", SHORT_ARRAY, false),
+      FieldEntry.create(STATIC_ADAPTERS, "CHARACTER_ADAPTER", CHARACTER, false),
+      ClassEntry.create("paperparcel.internal.EnumAdapter", ENUM, false));
 
   private final List<Entry> entries = Lists.newArrayList(BUILT_IN_ADAPTER_ENTRIES);
   private final Map<TypeName, Adapter> adapters = Maps.newLinkedHashMap();
