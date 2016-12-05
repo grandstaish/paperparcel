@@ -230,8 +230,7 @@ abstract class TypeKey {
     }
   }
 
-  @AutoValue
-  static abstract class BoundedKey extends TypeKey {
+  @AutoValue static abstract class BoundedKey extends TypeKey {
     abstract String name();
 
     abstract ImmutableList<TypeKey> bounds();
@@ -254,8 +253,7 @@ abstract class TypeKey {
       outMap.put(name(), target);
     }
 
-    @Nullable
-    TypeMirror boundMirror(Types types, TypeKey bound, TypeMirror type) {
+    @Nullable TypeMirror boundMirror(Types types, TypeKey bound, TypeMirror type) {
       if (bound.isMatch(types, type)) {
         return type;
       }
