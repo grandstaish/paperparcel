@@ -24,10 +24,13 @@ import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
@@ -89,13 +92,8 @@ final class PaperParcelValidator {
       for (VariableElement field : fields) {
         if (Utils.containsWildcards(field.asType())) {
           builder.addError(ErrorMessages.WILDCARD_IN_FIELD_TYPE, field);
-        }
-
-        if (isRawType(field.asType())) {
-          builder.addError(
-              String.format(ErrorMessages.RAW_FIELD,
-                  builder.getSubject().getQualifiedName(), field.getSimpleName()),
-              field);
+        } else if (isRawType(field.asType())) {
+          builder.addError(ErrorMessages.FIELD_MISSING_TYPE_ARGUMENTS, field);
         }
       }
     }
@@ -109,7 +107,26 @@ final class PaperParcelValidator {
       @Override public Boolean visitDeclared(DeclaredType t, Void p) {
         int expected = MoreElements.asType(t.asElement()).getTypeParameters().size();
         int actual = t.getTypeArguments().size();
-        return expected != actual;
+        boolean raw = expected != actual;
+        if (!raw) {
+          for (int i = 0; i < t.getTypeArguments().size(); i++) {
+            raw = t.getTypeArguments().get(i).accept(this, p);
+            if (raw) break;
+          }
+        }
+        return raw;
+      }
+
+      @Override public Boolean visitArray(ArrayType t, Void p) {
+        return t.getComponentType().accept(this, p);
+      }
+
+      @Override public Boolean visitTypeVariable(TypeVariable t, Void p) {
+        TypeParameterElement element = (TypeParameterElement) t.asElement();
+        for (TypeMirror bound : element.getBounds()) {
+          if (bound.accept(this, p)) return true;
+        }
+        return false;
       }
     }, null);
   }

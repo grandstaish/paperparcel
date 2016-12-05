@@ -678,9 +678,43 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(String.format(ErrorMessages.RAW_FIELD, "test.Test", "child"))
+        .withErrorContaining(ErrorMessages.FIELD_MISSING_TYPE_ARGUMENTS)
         .in(source)
         .onLine(8);
+  }
+
+  @Test public void failIfGenericFieldTypeIsRaw2() {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import paperparcel.PaperParcel;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import java.util.List;",
+            "import java.util.Map;",
+            "@PaperParcel",
+            "public final class Test implements Parcelable {",
+            "  private final List<Map> child;",
+            "  public Test(List child) {",
+            "    this.child = child;",
+            "  }",
+            "  public List getChild() {",
+            "    return this.child;",
+            "  }",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(ErrorMessages.FIELD_MISSING_TYPE_ARGUMENTS)
+        .in(source)
+        .onLine(9);
   }
 
   @Test public void basicExcludeTest() {
@@ -1125,7 +1159,7 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(String.format(ErrorMessages.MISSING_TYPE_ADAPTER,
+        .withErrorContaining(String.format(ErrorMessages.FIELD_MISSING_TYPE_ADAPTER,
             "java.util.Date", ErrorMessages.SITE_URL + "#typeadapters"))
         .in(source)
         .onLine(8);
@@ -3519,7 +3553,7 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSources()).that(Arrays.asList(typeAdapter, source))
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(String.format(ErrorMessages.MISSING_TYPE_ADAPTER,
+        .withErrorContaining(String.format(ErrorMessages.FIELD_MISSING_TYPE_ADAPTER,
             "java.util.Date", ErrorMessages.SITE_URL + "#typeadapters"))
         .in(source)
         .onLine(8);
