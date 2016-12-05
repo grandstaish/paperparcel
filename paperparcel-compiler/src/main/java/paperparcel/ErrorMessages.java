@@ -88,6 +88,8 @@ final class ErrorMessages {
           + "see %2$s.";
   static final String FIELD_MISSING_TYPE_ARGUMENTS =
       "All field type arguments must be specified.";
+  static final String FIELD_TYPE_IS_RECURSIVE =
+      "PaperParcel does not support recursive generic field types.";
 
   /* AutoValue Extension errors */
   static final String MANUAL_IMPLEMENTATION_OF_CREATOR =

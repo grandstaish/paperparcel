@@ -23,6 +23,7 @@ import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import java.util.Set;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -137,7 +138,7 @@ final class RegisterAdapterValidator {
     }
 
     // Collect all of the unique type variables used in the adapted type
-    ImmutableSet<String> adaptedTypeArguments = Utils.getTypeVariableNames(adaptedType);
+    Set<String> adaptedTypeArguments = Utils.getTypeVariableNames(adaptedType);
 
     // Get a set of all of the adapter's type parameter names
     ImmutableSet<String> adapterParameters = FluentIterable.from(element.getTypeParameters())

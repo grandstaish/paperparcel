@@ -19,8 +19,10 @@ package paperparcel;
 import android.support.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.type.ArrayType;
@@ -51,59 +53,72 @@ abstract class TypeKey {
 
   /** Factory method for creating {@code TypeKey} instances from a {@link TypeMirror}. */
   static TypeKey get(TypeMirror type) {
-    return type.accept(new SimpleTypeVisitor6<TypeKey, Void>() {
-      @Override public TypeKey visitArray(ArrayType t, Void p) {
-        switch (t.getKind()) {
-          case BOOLEAN: return PrimitiveArrayKey.BOOLEAN_ARRAY;
-          case BYTE: return PrimitiveArrayKey.BYTE_ARRAY;
-          case SHORT: return PrimitiveArrayKey.SHORT_ARRAY;
-          case INT: return PrimitiveArrayKey.INT_ARRAY;
-          case LONG: return PrimitiveArrayKey.LONG_ARRAY;
-          case CHAR: return PrimitiveArrayKey.CHAR_ARRAY;
-          case FLOAT: return PrimitiveArrayKey.FLOAT_ARRAY;
-          case DOUBLE: return PrimitiveArrayKey.DOUBLE_ARRAY;
-          default: return ArrayKey.of(t.getComponentType().accept(this, p));
-        }
-      }
+    Set<TypeParameterElement> visited = new HashSet<>();
+    return type.accept(TypeKeyVisitor.INSTANCE, visited);
+  }
 
-      @Override public TypeKey visitError(ErrorType t, Void p) {
-        return visitDeclared(t, p);
-      }
+  private static final class TypeKeyVisitor
+      extends SimpleTypeVisitor6<TypeKey, Set<TypeParameterElement>> {
+    private static final TypeKeyVisitor INSTANCE = new TypeKeyVisitor();
 
-      @Override public TypeKey visitDeclared(DeclaredType t, Void p) {
-        ClassKey rawType =
-            ClassKey.get(((TypeElement) t.asElement()).getQualifiedName().toString());
-        if (t.getTypeArguments().isEmpty()) {
-          return rawType;
-        }
-        ImmutableList.Builder<TypeKey> typeArguments = ImmutableList.builder();
-        for (TypeMirror mirror : t.getTypeArguments()) {
-          typeArguments.add(mirror.accept(this, p));
-        }
-        return ParameterizedKey.get(rawType, typeArguments.build());
+    @Override public TypeKey visitArray(ArrayType t, Set<TypeParameterElement> visited) {
+      switch (t.getKind()) {
+        case BOOLEAN: return PrimitiveArrayKey.BOOLEAN_ARRAY;
+        case BYTE: return PrimitiveArrayKey.BYTE_ARRAY;
+        case SHORT: return PrimitiveArrayKey.SHORT_ARRAY;
+        case INT: return PrimitiveArrayKey.INT_ARRAY;
+        case LONG: return PrimitiveArrayKey.LONG_ARRAY;
+        case CHAR: return PrimitiveArrayKey.CHAR_ARRAY;
+        case FLOAT: return PrimitiveArrayKey.FLOAT_ARRAY;
+        case DOUBLE: return PrimitiveArrayKey.DOUBLE_ARRAY;
+        default: return ArrayKey.of(t.getComponentType().accept(this, visited));
       }
+    }
 
-      @Override public TypeKey visitTypeVariable(TypeVariable t, Void p) {
-        TypeParameterElement element = (TypeParameterElement) t.asElement();
-        ImmutableList.Builder<TypeKey> builder = ImmutableList.builder();
-        for (TypeMirror bound : element.getBounds()) {
-          TypeKey boundKey = bound.accept(this, p);
-          if (!boundKey.equals(OBJECT)) {
-            builder.add(boundKey);
-          }
-        }
-        ImmutableList<TypeKey> bounds = builder.build();
-        if (bounds.size() == 0) {
-          return AnyKey.get(t.toString());
-        } else {
-          return BoundedKey.get(t.toString(), bounds);
-        }
-      }
+    @Override public TypeKey visitError(ErrorType t, Set<TypeParameterElement> visited) {
+      return visitDeclared(t, visited);
+    }
 
-      @Override protected TypeKey defaultAction(TypeMirror e, Void p) {
-        throw new IllegalArgumentException("Unexpected type: " + e);
+    @Override public TypeKey visitDeclared(DeclaredType t, Set<TypeParameterElement> visited) {
+      ClassKey rawType =
+          ClassKey.get(((TypeElement) t.asElement()).getQualifiedName().toString());
+      if (t.getTypeArguments().isEmpty()) {
+        return rawType;
       }
-    }, null);
+      ImmutableList.Builder<TypeKey> typeArguments = ImmutableList.builder();
+      for (TypeMirror mirror : t.getTypeArguments()) {
+        typeArguments.add(mirror.accept(this, visited));
+      }
+      return ParameterizedKey.get(rawType, typeArguments.build());
+    }
+
+    @Override public TypeKey visitTypeVariable(TypeVariable t, Set<TypeParameterElement> visited) {
+      TypeParameterElement element = (TypeParameterElement) t.asElement();
+      if (visited.contains(element)) {
+        // This avoids infinite recursion with adapted types like <T extends Comparable<T>>.
+        // It should probably check that T is bound correctly, but this is unlikely to be an issue
+        // in the wild.
+        return AnyKey.get(t.toString());
+      }
+      visited.add(element);
+      ImmutableList.Builder<TypeKey> builder = ImmutableList.builder();
+      for (TypeMirror bound : element.getBounds()) {
+        TypeKey boundKey = bound.accept(this, visited);
+        if (!boundKey.equals(OBJECT)) {
+          builder.add(boundKey);
+        }
+      }
+      ImmutableList<TypeKey> bounds = builder.build();
+      if (bounds.size() == 0) {
+        return AnyKey.get(t.toString());
+      } else {
+        return BoundedKey.get(t.toString(), bounds);
+      }
+    }
+
+    @Override protected TypeKey defaultAction(TypeMirror e, Set<TypeParameterElement> visited) {
+      throw new IllegalArgumentException("Unexpected type: " + e);
+    }
   }
 
   @AutoValue static abstract class AnyKey extends TypeKey {
