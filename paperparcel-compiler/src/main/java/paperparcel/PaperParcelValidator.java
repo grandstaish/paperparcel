@@ -91,6 +91,8 @@ final class PaperParcelValidator {
           builder.addError(ErrorMessages.FIELD_MISSING_TYPE_ARGUMENTS, field);
         } else if (Utils.hasRecursiveTypeParameter(field.asType())) {
           builder.addError(ErrorMessages.FIELD_TYPE_IS_RECURSIVE, field);
+        } else if (Utils.containsIntersection(field.asType())) {
+          builder.addError(ErrorMessages.FIELD_TYPE_IS_INTERSECTION_TYPE, field);
         }
       }
     }

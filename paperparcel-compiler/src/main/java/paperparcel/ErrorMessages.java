@@ -90,6 +90,8 @@ final class ErrorMessages {
       "All field type arguments must be specified.";
   static final String FIELD_TYPE_IS_RECURSIVE =
       "PaperParcel does not support recursive generic field types.";
+  static final String FIELD_TYPE_IS_INTERSECTION_TYPE =
+      "PaperParcel does not support intersection field types.";
 
   /* AutoValue Extension errors */
   static final String MANUAL_IMPLEMENTATION_OF_CREATOR =

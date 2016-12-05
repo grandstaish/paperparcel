@@ -519,6 +519,35 @@ final class Utils {
     }
   }
 
+  /** Returns true if {@code typeMirror} contains any intersection types. */
+  static boolean containsIntersection(TypeMirror typeMirror) {
+    return typeMirror.accept(CheckIntersectionVisitor.INSTANCE, null);
+  }
+
+  private static class CheckIntersectionVisitor extends SimpleTypeVisitor6<Boolean, Void> {
+    private static final CheckIntersectionVisitor INSTANCE = new CheckIntersectionVisitor();
+
+    @Override public Boolean visitArray(ArrayType type, Void p) {
+      return type.getComponentType().accept(this, p);
+    }
+
+    @Override public Boolean visitDeclared(DeclaredType type, Void p) {
+      for (TypeMirror arg : type.getTypeArguments()) {
+        if (arg.accept(this, p)) return true;
+      }
+      return false;
+    }
+
+    @Override public Boolean visitTypeVariable(TypeVariable t, Void p) {
+      return t.getUpperBound() != null
+          && t.getUpperBound().getKind().name().equals("INTERSECTION");
+    }
+
+    @Override protected Boolean defaultAction(TypeMirror t, Void p) {
+      return false;
+    }
+  }
+
   /**
    * Returns {@code true} if {@code typeMirror} has recursive type arguments, e.g.
    * {@literal T extends Comparable<T>}.

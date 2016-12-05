@@ -1447,6 +1447,33 @@ public class PaperParcelProcessorTests {
         .onLine(7);
   }
 
+  @Test public void intersectionFieldTypeTest() {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "import java.io.Serializable;",
+            "@PaperParcel",
+            "public final class Test<T extends Number & Serializable> implements Parcelable {",
+            "  public T value;",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(ErrorMessages.FIELD_TYPE_IS_INTERSECTION_TYPE)
+        .in(source)
+        .onLine(8);
+  }
+
   @Test public void complexExcludeModifiersTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
