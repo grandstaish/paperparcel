@@ -29,11 +29,8 @@ import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.ArrayType;
-import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
-import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
@@ -79,7 +76,7 @@ final class RegisterAdapterValidator {
     if (adaptedType != null) {
       if (Utils.isJavaLangObject(adaptedType)) {
         builder.addError(ErrorMessages.REGISTERADAPTER_ON_RAW_TYPE_ADAPTER);
-      } else if (containsWildcards(adaptedType)) {
+      } else if (Utils.containsWildcards(adaptedType)) {
         builder.addError(String.format(ErrorMessages.WILDCARD_IN_ADAPTED_TYPE,
             element.getSimpleName(), adaptedType));
       } else if (!hasValidTypeParameters(element, adaptedType)) {
@@ -123,26 +120,6 @@ final class RegisterAdapterValidator {
       }
     }
     return constructorReport.build();
-  }
-
-  /** Returns true if {@code typeMirror} contains any wildcards. */
-  private boolean containsWildcards(TypeMirror typeMirror) {
-    return typeMirror.accept(new SimpleTypeVisitor6<Boolean, Void>(false) {
-      @Override public Boolean visitArray(ArrayType type, Void p) {
-        return type.getComponentType().accept(this, p);
-      }
-
-      @Override public Boolean visitDeclared(DeclaredType type, Void p) {
-        for (TypeMirror arg : type.getTypeArguments()) {
-          if (arg.accept(this, p)) return true;
-        }
-        return false;
-      }
-
-      @Override public Boolean visitWildcard(WildcardType type, Void p) {
-        return true;
-      }
-    }, null);
   }
 
   /**

@@ -48,7 +48,6 @@ import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
-import javax.lang.model.type.UnknownTypeException;
 import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
@@ -439,7 +438,7 @@ final class Utils {
    * the type vars are no longer available).
    */
   static TypeMirror replaceTypeVariablesWithUpperBounds(Types types, TypeMirror type) {
-    return type.accept(new TypeSubstitutor() {
+    return type.accept(new SimpleTypeVisitor6<TypeMirror, Types>() {
       @Override public TypeMirror visitTypeVariable(TypeVariable type, Types types) {
         return type.getUpperBound().accept(this, types);
       }
@@ -447,75 +446,90 @@ final class Utils {
       @Override public TypeMirror visitWildcard(WildcardType type, Types types) {
         return type.getExtendsBound().accept(this, types);
       }
+
+      @Override public TypeMirror visitArray(ArrayType type, Types types) {
+        return types.getArrayType(type.getComponentType().accept(this, types));
+      }
+
+      @Override public TypeMirror visitDeclared(DeclaredType type, Types types) {
+        TypeElement element = MoreTypes.asTypeElement(type);
+        List<? extends TypeMirror> args = type.getTypeArguments();
+        TypeMirror[] strippedArgs = new TypeMirror[args.size()];
+        for (int i = 0; i < args.size(); i++) {
+          TypeMirror arg = args.get(i);
+          strippedArgs[i] = arg.accept(this, types);
+        }
+        return types.getDeclaredType(element, strippedArgs);
+      }
+
+      @Override public TypeMirror visitPrimitive(PrimitiveType type, Types types) {
+        return type;
+      }
+
+      @Override protected TypeMirror defaultAction(TypeMirror type, Types p) {
+        throw new IllegalArgumentException("Unexpected type: " + type);
+      }
     }, types);
   }
 
-  private abstract static class TypeSubstitutor extends SimpleTypeVisitor6<TypeMirror, Types> {
-    @Override public TypeMirror visitArray(ArrayType type, Types types) {
-      return types.getArrayType(type.getComponentType().accept(this, types));
-    }
-
-    @Override public TypeMirror visitDeclared(DeclaredType type, Types types) {
-      TypeElement element = MoreTypes.asTypeElement(type);
-      List<? extends TypeMirror> args = type.getTypeArguments();
-      TypeMirror[] strippedArgs = new TypeMirror[args.size()];
-      for (int i = 0; i < args.size(); i++) {
-        TypeMirror arg = args.get(i);
-        strippedArgs[i] = arg.accept(this, types);
-      }
-      return types.getDeclaredType(element, strippedArgs);
-    }
-
-    @Override public TypeMirror visitPrimitive(PrimitiveType type, Types types) {
-      return type;
-    }
-
-    @Override protected TypeMirror defaultAction(TypeMirror typeMirror, Types p) {
-      throw new UnknownTypeException(typeMirror, p);
-    }
-  }
-
+  /** Returns the complete set of type variable names used in {@code type}. */
   static ImmutableSet<String> getTypeVariableNames(TypeMirror type) {
-    ImmutableSet.Builder<String> adaptedTypeArguments = ImmutableSet.builder();
-
-    type.accept(new SimpleTypeVisitor6<Void, ImmutableSet.Builder<String>>() {
-      @Override
-      public Void visitTypeVariable(TypeVariable type, ImmutableSet.Builder<String> set) {
+    final ImmutableSet.Builder<String> set = ImmutableSet.builder();
+    type.accept(new SimpleTypeVisitor6<Void, Void>() {
+      @Override public Void visitTypeVariable(TypeVariable type, Void p) {
         TypeParameterElement element = (TypeParameterElement) type.asElement();
         for (TypeMirror bound : element.getBounds()) {
-          bound.accept(this, set);
+          bound.accept(this, p);
         }
         set.add(type.toString());
         return null;
       }
 
-      @Override
-      public Void visitArray(ArrayType type, ImmutableSet.Builder<String> set) {
-        type.getComponentType().accept(this, set);
+      @Override public Void visitArray(ArrayType type, Void p) {
+        type.getComponentType().accept(this, p);
         return null;
       }
 
-      @Override
-      public Void visitDeclared(DeclaredType type, ImmutableSet.Builder<String> set) {
+      @Override public Void visitDeclared(DeclaredType type, Void p) {
         for (TypeMirror arg : type.getTypeArguments()) {
-          arg.accept(this, set);
+          arg.accept(this, p);
         }
         return null;
       }
 
-      @Override
-      public Void visitWildcard(WildcardType type, ImmutableSet.Builder<String> set) {
-        if (type.getSuperBound() != null) {
-          type.getSuperBound().accept(this, set);
-        }
-        if (type.getExtendsBound() != null) {
-          type.getExtendsBound().accept(this, set);
-        }
-        return null;
+      @Override public Void defaultAction(TypeMirror type, Void p) {
+        throw new IllegalArgumentException("Unexpected type: " + type);
       }
-    }, adaptedTypeArguments);
+    }, null);
+    return set.build();
+  }
 
-    return adaptedTypeArguments.build();
+  /** Returns true if {@code typeMirror} contains any wildcards. */
+  static boolean containsWildcards(TypeMirror typeMirror) {
+    return typeMirror.accept(new SimpleTypeVisitor6<Boolean, Void>(false) {
+      @Override public Boolean visitArray(ArrayType type, Void p) {
+        return type.getComponentType().accept(this, p);
+      }
+
+      @Override public Boolean visitDeclared(DeclaredType type, Void p) {
+        for (TypeMirror arg : type.getTypeArguments()) {
+          if (arg.accept(this, p)) return true;
+        }
+        return false;
+      }
+
+      @Override public Boolean visitTypeVariable(TypeVariable t, Void p) {
+        TypeParameterElement element = (TypeParameterElement) t.asElement();
+        for (TypeMirror mirror : element.getBounds()) {
+          if (mirror.accept(this, p)) return true;
+        }
+        return false;
+      }
+
+      @Override public Boolean visitWildcard(WildcardType type, Void p) {
+        return true;
+      }
+    }, null);
   }
 
   /** Finds an annotation with the given name on the given element, or null if not found. */

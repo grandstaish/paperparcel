@@ -101,7 +101,7 @@ abstract class TypeKey {
       }
 
       @Override protected TypeKey defaultAction(TypeMirror e, Void p) {
-        throw new IllegalArgumentException("Unexpected type mirror: " + e);
+        throw new IllegalArgumentException("Unexpected type: " + e);
       }
     }, null);
   }

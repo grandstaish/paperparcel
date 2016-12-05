@@ -25,11 +25,9 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.ArrayType;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
@@ -89,7 +87,7 @@ final class PaperParcelValidator {
 
       ImmutableList<VariableElement> fields = Utils.getFieldsToParcel(types, element, options);
       for (VariableElement field : fields) {
-        if (containsWildcards(field.asType())) {
+        if (Utils.containsWildcards(field.asType())) {
           builder.addError(ErrorMessages.WILDCARD_IN_FIELD_TYPE, field);
         }
 
@@ -103,26 +101,6 @@ final class PaperParcelValidator {
     }
 
     return builder.build();
-  }
-
-  /** Returns true if {@code typeMirror} contains any wildcards. */
-  private boolean containsWildcards(TypeMirror typeMirror) {
-    return typeMirror.accept(new SimpleTypeVisitor6<Boolean, Void>(false) {
-      @Override public Boolean visitArray(ArrayType type, Void p) {
-        return type.getComponentType().accept(this, p);
-      }
-
-      @Override public Boolean visitDeclared(DeclaredType type, Void p) {
-        for (TypeMirror arg : type.getTypeArguments()) {
-          if (arg.accept(this, p)) return true;
-        }
-        return false;
-      }
-
-      @Override public Boolean visitWildcard(WildcardType type, Void p) {
-        return true;
-      }
-    }, null);
   }
 
   /** Returns true if {@code typeMirror} is a raw type. */
