@@ -24,11 +24,34 @@ import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
 public final class ParcelableAdapter<T extends Parcelable> implements TypeAdapter<T> {
+  private final Parcelable.Creator<T> creator;
+
+  public ParcelableAdapter(@Nullable Parcelable.Creator<T> creator) {
+    this.creator = creator;
+  }
+
   @Nullable @Override public T readFromParcel(@NonNull Parcel source) {
-    return source.readParcelable(ParcelableAdapter.class.getClassLoader());
+    if (creator != null) {
+      T result = null;
+      if (source.readInt() == 1) {
+        result = creator.createFromParcel(source);
+      }
+      return result;
+    } else {
+      return source.readParcelable(ParcelableAdapter.class.getClassLoader());
+    }
   }
 
   @Override public void writeToParcel(@Nullable T value, @NonNull Parcel dest, int flags) {
-    dest.writeParcelable(value, flags);
+    if (creator != null) {
+      if (value == null) {
+        dest.writeInt(0);
+      } else {
+        dest.writeInt(1);
+        value.writeToParcel(dest, flags);
+      }
+    } else {
+      dest.writeParcelable(value, flags);
+    }
   }
 }

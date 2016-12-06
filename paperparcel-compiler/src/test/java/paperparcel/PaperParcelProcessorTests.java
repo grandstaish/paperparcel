@@ -141,7 +141,7 @@ public class PaperParcelProcessorTests {
             "          Utils.nullSafeClone(StaticAdapters.INTEGER_ADAPTER), ",
             "          Utils.nullSafeClone(StaticAdapters.INTEGER_ADAPTER));",
             "  static final TypeAdapter<TestParcelable> TEST_PARCELABLE_PARCELABLE_ADAPTER = ",
-            "      new ParcelableAdapter<TestParcelable>();",
+            "      new ParcelableAdapter<TestParcelable>(null);",
             "  static final TypeAdapter<Set<Integer>> INTEGER_SET_ADAPTER = ",
             "      new SetAdapter<Integer>(Utils.nullSafeClone(StaticAdapters.INTEGER_ADAPTER));",
             "  static final TypeAdapter<SparseArray<Integer>> INTEGER_SPARSE_ARRAY_ADAPTER = ",
@@ -1248,7 +1248,7 @@ public class PaperParcelProcessorTests {
             "import paperparcel.internal.ParcelableAdapter;",
             "final class PaperParcelTest {",
             "  static final TypeAdapter<Parcelable> PARCELABLE_PARCELABLE_ADAPTER = ",
-            "      new ParcelableAdapter<Parcelable>();",
+            "      new ParcelableAdapter<Parcelable>(null);",
             "  @NonNull",
             "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
             "    @Override",
@@ -1311,7 +1311,7 @@ public class PaperParcelProcessorTests {
             "import paperparcel.internal.Utils;",
             "final class PaperParcelTest {",
             "  static final TypeAdapter<Parcelable> PARCELABLE_PARCELABLE_ADAPTER = ",
-            "      new ParcelableAdapter<Parcelable>();",
+            "      new ParcelableAdapter<Parcelable>(null);",
             "  static final TypeAdapter<Map<Parcelable, String>> PARCELABLE_STRING_MAP_ADAPTER = ",
             "      new MapAdapter<Parcelable, String>(",
             "          PaperParcelTest.PARCELABLE_PARCELABLE_ADAPTER, StaticAdapters.STRING_ADAPTER);",
@@ -3606,7 +3606,7 @@ public class PaperParcelProcessorTests {
             "final class PaperParcelTest {",
             "  static final TypeAdapter<MyClass> MY_CLASS_MIXED_ADAPTER = new MixedAdapter<MyClass>();",
             "  static final TypeAdapter<Parcelable> PARCELABLE_PARCELABLE_ADAPTER = ",
-            "      new ParcelableAdapter<Parcelable>();",
+            "      new ParcelableAdapter<Parcelable>(null);",
             "  @NonNull",
             "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
             "    @Override",
@@ -4007,6 +4007,163 @@ public class PaperParcelProcessorTests {
         ));
 
     assertAbout(javaSources()).that(Arrays.asList(typeAdapter, source))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void parcelableAdapterWithCreatorTest() {
+    JavaFileObject testParcelable =
+        JavaFileObjects.forSourceString("test.TestParcelable", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "public class TestParcelable implements Parcelable {",
+            "  public static final Parcelable.Creator<TestParcelable> CREATOR = null;",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public final class Test implements Parcelable {",
+            "  public TestParcelable value;",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import paperparcel.TypeAdapter;",
+            "import paperparcel.internal.ParcelableAdapter;",
+            "final class PaperParcelTest {",
+            "  static final TypeAdapter<TestParcelable> TEST_PARCELABLE_PARCELABLE_ADAPTER = ",
+            "      new ParcelableAdapter<TestParcelable>(TestParcelable.CREATOR);",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override public Test createFromParcel(Parcel in) {",
+            "      TestParcelable value = ",
+            "          PaperParcelTest.TEST_PARCELABLE_PARCELABLE_ADAPTER.readFromParcel(in);",
+            "      Test data = new Test();",
+            "      data.value = value;",
+            "      return data;",
+            "    }",
+            "    @Override public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    PaperParcelTest.TEST_PARCELABLE_PARCELABLE_ADAPTER.writeToParcel(data.value, dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(source, testParcelable))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void parcelableAdapterWithObfuscatedCreatorTest() {
+    JavaFileObject obfuscatedCreator =
+        JavaFileObjects.forSourceString("test.Zza", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcelable;",
+            "public interface Zza extends Parcelable.Creator<TestParcelable> {",
+            "}"
+        ));
+
+
+    JavaFileObject testParcelable =
+        JavaFileObjects.forSourceString("test.TestParcelable", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "public class TestParcelable implements Parcelable {",
+            "  public static final Zza CREATOR = null;",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public final class Test implements Parcelable {",
+            "  public TestParcelable value;",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import paperparcel.TypeAdapter;",
+            "import paperparcel.internal.ParcelableAdapter;",
+            "final class PaperParcelTest {",
+            "  static final TypeAdapter<TestParcelable> TEST_PARCELABLE_PARCELABLE_ADAPTER = ",
+            "      new ParcelableAdapter<TestParcelable>(TestParcelable.CREATOR);",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override public Test createFromParcel(Parcel in) {",
+            "      TestParcelable value = ",
+            "          PaperParcelTest.TEST_PARCELABLE_PARCELABLE_ADAPTER.readFromParcel(in);",
+            "      Test data = new Test();",
+            "      data.value = value;",
+            "      return data;",
+            "    }",
+            "    @Override public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    PaperParcelTest.TEST_PARCELABLE_PARCELABLE_ADAPTER.writeToParcel(data.value, dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(source, obfuscatedCreator, testParcelable))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()

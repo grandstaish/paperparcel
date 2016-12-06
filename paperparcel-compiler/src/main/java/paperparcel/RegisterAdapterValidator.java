@@ -102,8 +102,9 @@ final class RegisterAdapterValidator {
         ValidationReport.about(constructor);
     for (VariableElement parameter : constructor.getParameters()) {
       boolean isAdapter = Utils.isAdapterType(parameter, elements, types);
+      boolean isCreator = Utils.isCreatorType(parameter, elements, types);
       boolean isClass = Utils.isClassType(parameter, elements, types);
-      if (!isClass && !isAdapter) {
+      if (!isClass && !isCreator && !isAdapter) {
         constructorReport.addError(ErrorMessages.INVALID_TYPE_ADAPTER_CONSTRUCTOR);
       }
       TypeMirror parameterType = parameter.asType();
@@ -114,7 +115,7 @@ final class RegisterAdapterValidator {
         }
       }
       if (isClass) {
-        TypeMirror classType = Utils.getClassType(elements, types, MoreTypes.asDeclared(parameterType));
+        TypeMirror classType = Utils.getClassArg(elements, types, MoreTypes.asDeclared(parameterType));
         if (Utils.isJavaLangObject(classType)) {
           constructorReport.addError(ErrorMessages.RAW_CLASS_TYPE_IN_CONSTRUCTOR, parameter);
         }

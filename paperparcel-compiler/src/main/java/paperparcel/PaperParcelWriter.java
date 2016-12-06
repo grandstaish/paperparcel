@@ -35,11 +35,15 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
 import javax.lang.model.type.TypeMirror;
+import paperparcel.Adapter.ConstructorInfo;
 
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
@@ -362,7 +366,8 @@ final class PaperParcelWriter {
   /** Returns a list of all of the {@link FieldSpec}s that define the required TypeAdapters */
   @SuppressWarnings("OptionalGetWithoutIsPresent") // Previous validation ensures this is fine.
   private ImmutableList<FieldSpec> adapterDependenciesInternal(
-      ImmutableCollection<Adapter> adapters, Set<TypeName> scoped) {
+      Collection<Adapter> adapters, Set<TypeName> scoped) {
+
     ImmutableList.Builder<FieldSpec> adapterFields = new ImmutableList.Builder<>();
     for (Adapter adapter : adapters) {
       // Don't define the same adapter twice
@@ -370,13 +375,20 @@ final class PaperParcelWriter {
         continue;
       }
       scoped.add(adapter.typeName());
+
       if (!adapter.singletonInstance().isPresent()) {
-        Adapter.ConstructorInfo constructorInfo = adapter.constructorInfo().get();
+        ConstructorInfo constructorInfo = adapter.constructorInfo().get();
 
         // Add dependencies, then create and add the current adapter
-        if (constructorInfo.adapterDependencies().size() > 0) {
+        List<Adapter> adapterDependencies = new ArrayList<>();
+        for (ConstructorInfo.Param param : constructorInfo.constructorParameters()) {
+          if (param instanceof ConstructorInfo.AdapterParam) {
+            adapterDependencies.add(((ConstructorInfo.AdapterParam) param).adapter);
+          }
+        }
+        if (adapterDependencies.size() > 0) {
           adapterFields.addAll(
-              adapterDependenciesInternal(constructorInfo.adapterDependencies().values(), scoped));
+              adapterDependenciesInternal(adapterDependencies, scoped));
         }
 
         // Construct the single instance of this type adapter
@@ -385,12 +397,13 @@ final class PaperParcelWriter {
         ParameterizedTypeName adapterInterfaceType =
             ParameterizedTypeName.get(TYPE_ADAPTER, adapter.adaptedTypeName());
 
-        FieldSpec.Builder adapterSpec =
+        adapterFields.add(
             FieldSpec.builder(adapterInterfaceType, adapterName, STATIC, FINAL)
-                .initializer(CodeBlock.of("new $T($L)", adapter.typeName(), parameters));
-        adapterFields.add(adapterSpec.build());
+                .initializer(CodeBlock.of("new $T($L)", adapter.typeName(), parameters))
+                .build());
       }
     }
+
     return adapterFields.build();
   }
 
@@ -398,30 +411,35 @@ final class PaperParcelWriter {
    * Returns a comma-separated {@link CodeBlock} for all of the constructor parameter
    * {@code dependencies} of an adapter.
    */
-  private CodeBlock getAdapterParameterList(final Adapter.ConstructorInfo constructorInfo) {
-    return CodeBlocks.join(FluentIterable.from(constructorInfo.constructorParameterNames())
-        .transform(new Function<String, CodeBlock>() {
-          @Override public CodeBlock apply(String parameterName) {
-            Adapter adapter = constructorInfo.adapterDependencies().get(parameterName);
-            if (adapter != null) {
-              if (adapter.nullSafe()) {
-                return adapterInstance(adapter);
-              } else {
-                return CodeBlock.of("$T.nullSafeClone($L)", UTILS, adapterInstance(adapter));
-              }
-            } else {
-              TypeName classDependencyTypeName =
-                  constructorInfo.classDependencies().get(parameterName);
-              if (classDependencyTypeName instanceof ParameterizedTypeName) {
-                ParameterizedTypeName cast = (ParameterizedTypeName) classDependencyTypeName;
-                return CodeBlock.of("($1T<$2T>)($1T<?>) $3T.class", Class.class, cast, cast.rawType);
-              } else {
-                return CodeBlock.of("$T.class", classDependencyTypeName);
-              }
-            }
-          }
-        })
-        .toList(), ", ");
+  private CodeBlock getAdapterParameterList(ConstructorInfo constructorInfo) {
+    List<CodeBlock> blocks = new ArrayList<>();
+    for (ConstructorInfo.Param param : constructorInfo.constructorParameters()) {
+
+      if (param instanceof ConstructorInfo.AdapterParam) {
+        ConstructorInfo.AdapterParam cast = (ConstructorInfo.AdapterParam) param;
+        if (cast.adapter.nullSafe()) {
+          blocks.add(adapterInstance(cast.adapter));
+        } else {
+          blocks.add(CodeBlock.of("$T.nullSafeClone($L)", UTILS, adapterInstance(cast.adapter)));
+        }
+
+      } else if (param instanceof ConstructorInfo.ClassParam) {
+        ConstructorInfo.ClassParam cast = (ConstructorInfo.ClassParam) param;
+        if (cast.className instanceof ParameterizedTypeName) {
+          ParameterizedTypeName parameterizedName = (ParameterizedTypeName) cast.className;
+          blocks.add(CodeBlock.of("($1T<$2T>)($1T<?>) $3T.class", Class.class, parameterizedName,
+              parameterizedName.rawType));
+        } else {
+          blocks.add(CodeBlock.of("$T.class", cast.className));
+        }
+
+      } else if (param instanceof ConstructorInfo.CreatorParam) {
+        ConstructorInfo.CreatorParam cast = (ConstructorInfo.CreatorParam) param;
+        blocks.add(cast.creatorInstance);
+      }
+    }
+
+    return CodeBlocks.join(blocks, ", ");
   }
 
   private TypeName rawTypeFrom(TypeMirror typeMirror) {

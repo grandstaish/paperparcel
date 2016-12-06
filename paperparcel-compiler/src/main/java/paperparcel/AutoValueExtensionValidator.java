@@ -16,18 +16,16 @@
 
 package paperparcel;
 
+import android.support.annotation.Nullable;
 import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
-import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableSet;
 import java.util.List;
-import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 
@@ -44,22 +42,22 @@ final class AutoValueExtensionValidator {
 
   ValidationReport<TypeElement> validate(TypeElement subject) {
     ValidationReport.Builder<TypeElement> report = ValidationReport.about(subject);
-    Optional<ExecutableElement> writeToParcel = findWriteToParcel(subject);
-    if (writeToParcel.isPresent()) {
+    ExecutableElement writeToParcel = findWriteToParcel(subject);
+    if (writeToParcel != null) {
       report.addError(String.format(
           ErrorMessages.MANUAL_IMPLEMENTATION_OF_WRITE_TO_PARCEL, subject.getQualifiedName()),
-          writeToParcel.get());
+          writeToParcel);
     }
-    Optional<VariableElement> creator = findCreator(subject);
-    if (creator.isPresent()) {
+    VariableElement creator = Utils.findCreator(elements, types, subject);
+    if (creator != null) {
       report.addError(String.format(
           ErrorMessages.MANUAL_IMPLEMENTATION_OF_CREATOR, subject.getQualifiedName()),
-          creator.get());
+          creator);
     }
     return report.build();
   }
 
-  private Optional<ExecutableElement> findWriteToParcel(TypeElement subject) {
+  @Nullable private ExecutableElement findWriteToParcel(TypeElement subject) {
     TypeMirror parcel = elements.getTypeElement("android.os.Parcel").asType();
     ImmutableSet<ExecutableElement> methods =
         MoreElements.getLocalAndInheritedMethods(subject, types, elements);
@@ -71,25 +69,10 @@ final class AutoValueExtensionValidator {
         if (parameters.size() == 2
             && types.isSameType(parcel, parameters.get(0).asType())
             && MoreTypes.isTypeOf(int.class, parameters.get(1).asType())) {
-          return Optional.of(element);
+          return element;
         }
       }
     }
-    return Optional.absent();
-  }
-
-  private Optional<VariableElement> findCreator(TypeElement subject) {
-    TypeMirror creatorType = types.getDeclaredType(
-        elements.getTypeElement("android.os.Parcelable.Creator"),
-        types.getWildcardType(null, null));
-    List<? extends Element> members = elements.getAllMembers(subject);
-    for (VariableElement field : ElementFilter.fieldsIn(members)) {
-      if (field.getSimpleName().contentEquals("CREATOR")
-          && types.isAssignable(field.asType(), creatorType)
-          && field.getModifiers().contains(Modifier.STATIC)) {
-        return Optional.of(field);
-      }
-    }
-    return Optional.absent();
+    return null;
   }
 }
