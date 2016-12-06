@@ -181,23 +181,6 @@ final class Utils {
         .build();
   }
 
-  /**
-   * Returns a list of all non-private local and inherited methods (excluding methods
-   * defined in {@link Object})
-   */
-  static ImmutableList<ExecutableElement> getLocalAndInheritedMethods(
-      Elements elements, Types types, TypeElement element) {
-    return FluentIterable.from(MoreElements.getLocalAndInheritedMethods(element, types, elements))
-        .filter(new Predicate<ExecutableElement>() {
-          @Override public boolean apply(ExecutableElement method) {
-            // Filter out any methods defined in java.lang.Object as they are just
-            // wasted cycles
-            return !isJavaLangObject(method.getEnclosingElement().asType());
-          }
-        })
-        .toList();
-  }
-
   /** Returns true if {@code type} is {@link Object}. */
   static boolean isJavaLangObject(TypeMirror type) {
     if (type.getKind() != TypeKind.DECLARED) {
@@ -619,14 +602,14 @@ final class Utils {
   }
 
   private static boolean excludeViaModifiers(
-      final VariableElement variableElement, List<Set<Modifier>> modifiers) {
-    return FluentIterable.from(modifiers)
-        .firstMatch(new Predicate<Set<Modifier>>() {
-          @Override public boolean apply(Set<Modifier> input) {
-            return variableElement.getModifiers().containsAll(input);
-          }
-        })
-        .isPresent();
+      VariableElement variableElement, List<Set<Modifier>> modifiers) {
+    Set<Modifier> fieldModifiers = variableElement.getModifiers();
+    for (Set<Modifier> excludeModifiers : modifiers) {
+      if (fieldModifiers.containsAll(excludeModifiers)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static ImmutableList<Set<Modifier>> getExcludeModifiers(AnnotationMirror mirror) {

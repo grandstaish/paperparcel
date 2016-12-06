@@ -100,7 +100,7 @@ abstract class WriteInfo {
 
     WriteInfo create(
         ImmutableList<VariableElement> fields,
-        ImmutableList<ExecutableElement> methods,
+        ImmutableSet<ExecutableElement> methods,
         ImmutableList<ExecutableElement> constructors,
         ImmutableList<String> reflectAnnotations)
         throws NonWritableFieldsException {
@@ -195,7 +195,7 @@ abstract class WriteInfo {
      * 3. Parameter type equivalent to the current fields type
      */
     private Optional<ExecutableElement> getSetterMethod(
-        VariableElement field, ImmutableList<ExecutableElement> allMethods) {
+        VariableElement field, ImmutableSet<ExecutableElement> allMethods) {
       String fieldName = field.getSimpleName().toString();
       ImmutableSet<String> possibleSetterNames = possibleSetterNames(fieldName);
       TypeMirror fieldType = Utils.replaceTypeVariablesWithUpperBounds(types, field.asType());
