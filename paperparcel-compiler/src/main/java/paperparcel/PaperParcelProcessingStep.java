@@ -72,7 +72,7 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
           printMessages(e, paperParcelElement);
         } catch (UnknownTypeException e) {
           messager.printMessage(Diagnostic.Kind.ERROR,
-              String.format(ErrorMessages.MISSING_TYPE_ADAPTER,
+              String.format(ErrorMessages.FIELD_MISSING_TYPE_ADAPTER,
                   e.getUnknownType().toString(),
                   ErrorMessages.SITE_URL + "#typeadapters"),
               (Element) e.getArgument());
