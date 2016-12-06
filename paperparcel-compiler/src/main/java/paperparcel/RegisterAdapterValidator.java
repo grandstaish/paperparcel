@@ -23,17 +23,15 @@ import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import java.util.Set;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.ArrayType;
-import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
-import javax.lang.model.type.WildcardType;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
@@ -79,7 +77,7 @@ final class RegisterAdapterValidator {
     if (adaptedType != null) {
       if (Utils.isJavaLangObject(adaptedType)) {
         builder.addError(ErrorMessages.REGISTERADAPTER_ON_RAW_TYPE_ADAPTER);
-      } else if (containsWildcards(adaptedType)) {
+      } else if (Utils.containsWildcards(adaptedType)) {
         builder.addError(String.format(ErrorMessages.WILDCARD_IN_ADAPTED_TYPE,
             element.getSimpleName(), adaptedType));
       } else if (!hasValidTypeParameters(element, adaptedType)) {
@@ -125,26 +123,6 @@ final class RegisterAdapterValidator {
     return constructorReport.build();
   }
 
-  /** Returns true if {@code typeMirror} contains any wildcards. */
-  private boolean containsWildcards(TypeMirror typeMirror) {
-    return typeMirror.accept(new SimpleTypeVisitor6<Boolean, Void>(false) {
-      @Override public Boolean visitArray(ArrayType type, Void p) {
-        return type.getComponentType().accept(this, p);
-      }
-
-      @Override public Boolean visitDeclared(DeclaredType type, Void p) {
-        for (TypeMirror arg : type.getTypeArguments()) {
-          if (arg.accept(this, p)) return true;
-        }
-        return false;
-      }
-
-      @Override public Boolean visitWildcard(WildcardType type, Void p) {
-        return true;
-      }
-    }, null);
-  }
-
   /**
    * Ensure that the adapter's type arguments are all passed to the adapted type so that we
    * can use a field's type to resolve the adapter's type arguments at compile time.
@@ -160,39 +138,7 @@ final class RegisterAdapterValidator {
     }
 
     // Collect all of the unique type variables used in the adapted type
-    ImmutableSet.Builder<String> adaptedTypeArguments = ImmutableSet.builder();
-    adaptedType.accept(new SimpleTypeVisitor6<Void, ImmutableSet.Builder<String>>() {
-      @Override
-      public Void visitTypeVariable(TypeVariable type, ImmutableSet.Builder<String> set) {
-        set.add(type.toString());
-        return null;
-      }
-
-      @Override
-      public Void visitArray(ArrayType type, ImmutableSet.Builder<String> set) {
-        type.getComponentType().accept(this, set);
-        return null;
-      }
-
-      @Override
-      public Void visitDeclared(DeclaredType type, ImmutableSet.Builder<String> set) {
-        for (TypeMirror arg : type.getTypeArguments()) {
-          arg.accept(this, set);
-        }
-        return null;
-      }
-
-      @Override
-      public Void visitWildcard(WildcardType type, ImmutableSet.Builder<String> set) {
-        if (type.getSuperBound() != null) {
-          type.getSuperBound().accept(this, set);
-        }
-        if (type.getExtendsBound() != null) {
-          type.getExtendsBound().accept(this, set);
-        }
-        return null;
-      }
-    }, adaptedTypeArguments);
+    Set<String> adaptedTypeArguments = Utils.getTypeVariableNames(adaptedType);
 
     // Get a set of all of the adapter's type parameter names
     ImmutableSet<String> adapterParameters = FluentIterable.from(element.getTypeParameters())
@@ -205,7 +151,7 @@ final class RegisterAdapterValidator {
 
     // Verify the type parameters on the adapter are all passed to the adapted type by getting
     // the difference between the two sets and verifying it is empty.
-    return Sets.difference(adapterParameters, adaptedTypeArguments.build()).size() == 0;
+    return Sets.difference(adapterParameters, adaptedTypeArguments).size() == 0;
   }
 
   /**

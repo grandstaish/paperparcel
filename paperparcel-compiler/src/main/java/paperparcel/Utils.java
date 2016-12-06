@@ -31,6 +31,7 @@ import com.google.common.primitives.Ints;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import javax.lang.model.element.AnnotationMirror;
@@ -55,7 +56,6 @@ import javax.lang.model.util.SimpleAnnotationValueVisitor6;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
 
-import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
 import static javax.lang.model.util.ElementFilter.fieldsIn;
@@ -78,6 +78,61 @@ final class Utils {
       new Predicate<ExecutableElement>() {
         @Override public boolean apply(ExecutableElement executableElement) {
           return Visibility.ofElement(executableElement) != Visibility.PRIVATE;
+        }
+      };
+
+  private static final AnnotationValueVisitor<List<Integer>, Void> INT_ARRAY_VISITOR =
+      new SimpleAnnotationValueVisitor6<List<Integer>, Void>() {
+        @Override public List<Integer> visitArray(List<? extends AnnotationValue> list, Void p) {
+          ImmutableList.Builder<Integer> modifiers = ImmutableList.builder();
+          for (AnnotationValue annotationValue : list) {
+            modifiers.add(annotationValue.accept(TO_INT, null));
+          }
+          return modifiers.build();
+        }
+      };
+
+  private static final AnnotationValueVisitor<Integer, Void> TO_INT =
+      new SimpleAnnotationValueVisitor6<Integer, Void>() {
+        @Override public Integer visitInt(int value, Void p) {
+          return value;
+        }
+
+        @Override protected Integer defaultAction(Object ignore, Void p) {
+          throw new IllegalArgumentException();
+        }
+      };
+
+  private static final AnnotationValueVisitor<ImmutableList<String>, Void> TYPE_NAME_ARRAY_VISITOR =
+      new SimpleAnnotationValueVisitor6<ImmutableList<String>, Void>() {
+        @Override public ImmutableList<String> visitArray(List<? extends AnnotationValue> list, Void p) {
+          ImmutableList.Builder<String> modifiers = ImmutableList.builder();
+          for (AnnotationValue annotationValue : list) {
+            modifiers.add(annotationValue.accept(TO_TYPE, null).toString());
+          }
+          return modifiers.build();
+        }
+      };
+
+  private static final AnnotationValueVisitor<TypeMirror, Void> TO_TYPE =
+      new SimpleAnnotationValueVisitor6<TypeMirror, Void>() {
+        @Override public TypeMirror visitType(TypeMirror type, Void p) {
+          return type;
+        }
+
+        @Override protected TypeMirror defaultAction(Object ignore, Void p) {
+          throw new IllegalArgumentException();
+        }
+      };
+
+  private static final AnnotationValueVisitor<Boolean, Void> BOOLEAN_VISITOR =
+      new SimpleAnnotationValueVisitor6<Boolean, Void>() {
+        @Override public Boolean visitBoolean(boolean value, Void p) {
+          return value;
+        }
+
+        @Override protected Boolean defaultAction(Object ignore, Void p) {
+          throw new IllegalArgumentException();
         }
       };
 
@@ -280,6 +335,269 @@ final class Utils {
     return options;
   }
 
+  static boolean usesAnyAnnotationsFrom(Element element, List<String> annotationNames) {
+    for (String annotationName : annotationNames) {
+      for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
+        String elementAnnotationName = annotationMirror.getAnnotationType().toString();
+        if (elementAnnotationName.equals(annotationName)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /** Returns true if a type implements Parcelable */
+  static boolean isParcelable(Elements elements, Types types, TypeMirror type) {
+    TypeMirror parcelableType = elements.getTypeElement(PARCELABLE_CLASS_NAME).asType();
+    return types.isAssignable(type, parcelableType);
+  }
+
+  /** Returns true if {@code typeMirror} is a raw type. */
+  static boolean isRawType(TypeMirror typeMirror) {
+    Set<TypeParameterElement> visited = new HashSet<>();
+    return typeMirror.accept(CheckRawTypesVisitor.INSTANCE, visited);
+  }
+
+  private static class CheckRawTypesVisitor
+      extends SimpleTypeVisitor6<Boolean, Set<TypeParameterElement>> {
+    private static final CheckRawTypesVisitor INSTANCE = new CheckRawTypesVisitor();
+
+    @Override public Boolean visitDeclared(DeclaredType t, Set<TypeParameterElement> visited) {
+      int expected = MoreElements.asType(t.asElement()).getTypeParameters().size();
+      int actual = t.getTypeArguments().size();
+      boolean raw = expected != actual;
+      if (!raw) {
+        for (int i = 0; i < t.getTypeArguments().size(); i++) {
+          raw = t.getTypeArguments().get(i).accept(this, visited);
+          if (raw) break;
+        }
+      }
+      return raw;
+    }
+
+    @Override public Boolean visitArray(ArrayType t, Set<TypeParameterElement> visited) {
+      return t.getComponentType().accept(this, visited);
+    }
+
+    @Override public Boolean visitTypeVariable(TypeVariable t, Set<TypeParameterElement> visited) {
+      TypeParameterElement element = (TypeParameterElement) t.asElement();
+      if (visited.contains(element)) return false;
+      visited.add(element);
+      for (TypeMirror bound : element.getBounds()) {
+        if (bound.accept(this, visited)) return true;
+      }
+      return false;
+    }
+
+    @Override protected Boolean defaultAction(TypeMirror t, Set<TypeParameterElement> visited) {
+      return false;
+    }
+  }
+
+  /**
+   * <p>Use this when you want a field's type that can be used from a static context (e.g. where
+   * the type vars are no longer available).</p>
+   *
+   * <p>Must never be called on types that have recursive type arguments, e.g.
+   * {@literal T extends Comparable<T>}.</p>
+   */
+  static TypeMirror replaceTypeVariablesWithUpperBounds(Types types, TypeMirror type) {
+    return type.accept(UpperBoundSubstitutingVisitor.INSTANCE, types);
+  }
+
+  private static class UpperBoundSubstitutingVisitor
+      extends SimpleTypeVisitor6<TypeMirror, Types> {
+    private static final UpperBoundSubstitutingVisitor INSTANCE = new UpperBoundSubstitutingVisitor();
+
+    @Override public TypeMirror visitTypeVariable(TypeVariable type, Types types) {
+      return type.getUpperBound().accept(this, types);
+    }
+
+    @Override public TypeMirror visitWildcard(WildcardType type, Types types) {
+      return type.getExtendsBound().accept(this, types);
+    }
+
+    @Override public TypeMirror visitArray(ArrayType type, Types types) {
+      return types.getArrayType(type.getComponentType().accept(this, types));
+    }
+
+    @Override public TypeMirror visitDeclared(DeclaredType type, Types types) {
+      TypeElement element = MoreTypes.asTypeElement(type);
+      List<? extends TypeMirror> args = type.getTypeArguments();
+      TypeMirror[] strippedArgs = new TypeMirror[args.size()];
+      for (int i = 0; i < args.size(); i++) {
+        TypeMirror arg = args.get(i);
+        strippedArgs[i] = arg.accept(this, types);
+      }
+      return types.getDeclaredType(element, strippedArgs);
+    }
+
+    @Override public TypeMirror visitPrimitive(PrimitiveType type, Types types) {
+      return type;
+    }
+
+    @Override protected TypeMirror defaultAction(TypeMirror type, Types types) {
+      throw new IllegalArgumentException("Unexpected type: " + type);
+    }
+  }
+
+  /** Returns the complete set of type variable names used in {@code type}. */
+  static Set<String> getTypeVariableNames(TypeMirror type) {
+    Set<String> names = new HashSet<>();
+    type.accept(TypeVariableNameVisitor.INSTANCE, names);
+    return names;
+  }
+
+  private static class TypeVariableNameVisitor extends SimpleTypeVisitor6<Void, Set<String>> {
+    private static final TypeVariableNameVisitor INSTANCE = new TypeVariableNameVisitor();
+
+    @Override public Void visitTypeVariable(TypeVariable type, Set<String> visited) {
+      if (visited.contains(type.toString())) return null;
+      visited.add(type.toString());
+      TypeParameterElement element = (TypeParameterElement) type.asElement();
+      for (TypeMirror bound : element.getBounds()) {
+        bound.accept(this, visited);
+      }
+      return null;
+    }
+
+    @Override public Void visitArray(ArrayType type, Set<String> visited) {
+      type.getComponentType().accept(this, visited);
+      return null;
+    }
+
+    @Override public Void visitDeclared(DeclaredType type, Set<String> visited) {
+      for (TypeMirror arg : type.getTypeArguments()) {
+        arg.accept(this, visited);
+      }
+      return null;
+    }
+
+    @Override public Void defaultAction(TypeMirror type, Set<String> visited) {
+      throw new IllegalArgumentException("Unexpected type: " + type);
+    }
+  }
+
+  /** Returns true if {@code typeMirror} contains any wildcards. */
+  static boolean containsWildcards(TypeMirror typeMirror) {
+    Set<TypeParameterElement> visited = new HashSet<>();
+    return typeMirror.accept(CheckWildcardsVisitor.INSTANCE, visited);
+  }
+
+  private static class CheckWildcardsVisitor
+      extends SimpleTypeVisitor6<Boolean, Set<TypeParameterElement>> {
+    private static final CheckWildcardsVisitor INSTANCE = new CheckWildcardsVisitor();
+
+    @Override public Boolean visitArray(ArrayType type, Set<TypeParameterElement> visited) {
+      return type.getComponentType().accept(this, visited);
+    }
+
+    @Override public Boolean visitDeclared(DeclaredType type, Set<TypeParameterElement> visited) {
+      for (TypeMirror arg : type.getTypeArguments()) {
+        if (arg.accept(this, visited)) return true;
+      }
+      return false;
+    }
+
+    @Override public Boolean visitTypeVariable(TypeVariable t, Set<TypeParameterElement> visited) {
+      TypeParameterElement element = (TypeParameterElement) t.asElement();
+      if (visited.contains(element)) return false;
+      visited.add(element);
+      for (TypeMirror mirror : element.getBounds()) {
+        if (mirror.accept(this, visited)) return true;
+      }
+      return false;
+    }
+
+    @Override public Boolean visitWildcard(WildcardType t, Set<TypeParameterElement> visited) {
+      return true;
+    }
+
+    @Override protected Boolean defaultAction(TypeMirror t, Set<TypeParameterElement> visited) {
+      return false;
+    }
+  }
+
+  /** Returns true if {@code typeMirror} contains any intersection types. */
+  static boolean containsIntersection(TypeMirror typeMirror) {
+    return typeMirror.accept(CheckIntersectionVisitor.INSTANCE, null);
+  }
+
+  private static class CheckIntersectionVisitor extends SimpleTypeVisitor6<Boolean, Void> {
+    private static final CheckIntersectionVisitor INSTANCE = new CheckIntersectionVisitor();
+
+    @Override public Boolean visitArray(ArrayType type, Void p) {
+      return type.getComponentType().accept(this, p);
+    }
+
+    @Override public Boolean visitDeclared(DeclaredType type, Void p) {
+      for (TypeMirror arg : type.getTypeArguments()) {
+        if (arg.accept(this, p)) return true;
+      }
+      return false;
+    }
+
+    @Override public Boolean visitTypeVariable(TypeVariable t, Void p) {
+      return t.getUpperBound() != null
+          && t.getUpperBound().getKind().name().equals("INTERSECTION");
+    }
+
+    @Override protected Boolean defaultAction(TypeMirror t, Void p) {
+      return false;
+    }
+  }
+
+  /**
+   * Returns {@code true} if {@code typeMirror} has recursive type arguments, e.g.
+   * {@literal T extends Comparable<T>}.
+   */
+  static boolean hasRecursiveTypeParameter(TypeMirror typeMirror) {
+    Set<TypeParameterElement> visited = new HashSet<>();
+    return typeMirror.accept(CheckRecursiveTypeVisitor.INSTANCE, visited);
+  }
+
+  private static class CheckRecursiveTypeVisitor
+      extends SimpleTypeVisitor6<Boolean, Set<TypeParameterElement>> {
+    private static final CheckRecursiveTypeVisitor INSTANCE = new CheckRecursiveTypeVisitor();
+
+    @Override public Boolean visitArray(ArrayType type, Set<TypeParameterElement> visited) {
+      return type.getComponentType().accept(this, visited);
+    }
+
+    @Override public Boolean visitDeclared(DeclaredType type, Set<TypeParameterElement> visited) {
+      for (TypeMirror arg : type.getTypeArguments()) {
+        if (arg.accept(this, visited)) return true;
+      }
+      return false;
+    }
+
+    @Override public Boolean visitTypeVariable(TypeVariable t, Set<TypeParameterElement> visited) {
+      TypeParameterElement element = (TypeParameterElement) t.asElement();
+      if (visited.contains(element)) return true;
+      visited.add(element);
+      for (TypeMirror mirror : element.getBounds()) {
+        if (mirror.accept(this, visited)) return true;
+      }
+      return false;
+    }
+
+    @Override protected Boolean defaultAction(TypeMirror t, Set<TypeParameterElement> visited) {
+      return false;
+    }
+  }
+
+  /** Finds an annotation with the given name on the given element, or null if not found. */
+  @Nullable static AnnotationMirror getAnnotationWithSimpleName(Element element, String name) {
+    for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
+      String annotationName = mirror.getAnnotationType().asElement().getSimpleName().toString();
+      if (name.equals(annotationName)) {
+        return mirror;
+      }
+    }
+    return null;
+  }
+
   private static Optional<AnnotationMirror> findOptionsMirror(TypeElement element) {
     Optional<AnnotationMirror> options = optionsOnElement(element);
     if (options.isPresent()) return options;
@@ -311,18 +629,6 @@ final class Utils {
         .isPresent();
   }
 
-  static boolean usesAnyAnnotationsFrom(Element element, List<String> annotationNames) {
-    for (String annotationName : annotationNames) {
-      for (AnnotationMirror annotationMirror : element.getAnnotationMirrors()) {
-        String elementAnnotationName = annotationMirror.getAnnotationType().toString();
-        if (elementAnnotationName.equals(annotationName)) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
   private static ImmutableList<Set<Modifier>> getExcludeModifiers(AnnotationMirror mirror) {
     AnnotationValue excludeFieldsWithModifiers =
         AnnotationMirrors.getAnnotationValue(mirror, "excludeModifiers");
@@ -349,28 +655,6 @@ final class Utils {
     return result.build();
   }
 
-  private static final AnnotationValueVisitor<List<Integer>, Void> INT_ARRAY_VISITOR =
-      new SimpleAnnotationValueVisitor6<List<Integer>, Void>() {
-        @Override public List<Integer> visitArray(List<? extends AnnotationValue> list, Void p) {
-          ImmutableList.Builder<Integer> modifiers = ImmutableList.builder();
-          for (AnnotationValue annotationValue : list) {
-            modifiers.add(annotationValue.accept(TO_INT, null));
-          }
-          return modifiers.build();
-        }
-      };
-
-  private static final AnnotationValueVisitor<Integer, Void> TO_INT =
-      new SimpleAnnotationValueVisitor6<Integer, Void>() {
-        @Override public Integer visitInt(int value, Void p) {
-          return value;
-        }
-
-        @Override protected Integer defaultAction(Object ignore, Void p) {
-          throw new IllegalArgumentException();
-        }
-      };
-
   private static ImmutableList<String> getExcludeAnnotations(AnnotationMirror mirror) {
     AnnotationValue excludeAnnotationNames =
         AnnotationMirrors.getAnnotationValue(mirror, "excludeAnnotations");
@@ -393,88 +677,6 @@ final class Utils {
     AnnotationValue exposeAnnotationNames =
         AnnotationMirrors.getAnnotationValue(mirror, "reflectAnnotations");
     return exposeAnnotationNames.accept(TYPE_NAME_ARRAY_VISITOR, null);
-  }
-
-  private static final AnnotationValueVisitor<ImmutableList<String>, Void> TYPE_NAME_ARRAY_VISITOR =
-      new SimpleAnnotationValueVisitor6<ImmutableList<String>, Void>() {
-        @Override public ImmutableList<String> visitArray(List<? extends AnnotationValue> list, Void p) {
-          ImmutableList.Builder<String> modifiers = ImmutableList.builder();
-          for (AnnotationValue annotationValue : list) {
-            modifiers.add(annotationValue.accept(TO_TYPE, null).toString());
-          }
-          return modifiers.build();
-        }
-      };
-
-  private static final AnnotationValueVisitor<TypeMirror, Void> TO_TYPE =
-      new SimpleAnnotationValueVisitor6<TypeMirror, Void>() {
-        @Override public TypeMirror visitType(TypeMirror type, Void p) {
-          return type;
-        }
-
-        @Override protected TypeMirror defaultAction(Object ignore, Void p) {
-          throw new IllegalArgumentException();
-        }
-      };
-
-  private static final AnnotationValueVisitor<Boolean, Void> BOOLEAN_VISITOR =
-      new SimpleAnnotationValueVisitor6<Boolean, Void>() {
-        @Override public Boolean visitBoolean(boolean value, Void p) {
-          return value;
-        }
-
-        @Override protected Boolean defaultAction(Object ignore, Void p) {
-          throw new IllegalArgumentException();
-        }
-      };
-
-  /** Returns true if a type implements Parcelable */
-  static boolean isParcelable(Elements elements, Types types, TypeMirror type) {
-    TypeMirror parcelableType = elements.getTypeElement(PARCELABLE_CLASS_NAME).asType();
-    return types.isAssignable(type, parcelableType);
-  }
-
-  /** Replaces any type variables with their upper bounds. */
-  static TypeMirror eraseTypeVariables(Types types, TypeMirror type) {
-    return type.accept(new SimpleTypeVisitor6<TypeMirror, Types>() {
-      @Override public TypeMirror visitArray(ArrayType type, Types types) {
-        return types.getArrayType(type.getComponentType().accept(this, types));
-      }
-
-      @Override public TypeMirror visitDeclared(DeclaredType type, Types types) {
-        TypeElement element = MoreTypes.asTypeElement(type);
-        List<? extends TypeMirror> args = type.getTypeArguments();
-        TypeMirror[] strippedArgs = new TypeMirror[args.size()];
-        for (int i = 0; i < args.size(); i++) {
-          TypeMirror arg = args.get(i);
-          strippedArgs[i] = arg.accept(this, types);
-        }
-        return types.getDeclaredType(element, strippedArgs);
-      }
-
-      @Override public TypeMirror visitWildcard(WildcardType type, Types types) {
-        return types.getWildcardType(type.getExtendsBound().accept(this, types), null);
-      }
-
-      @Override public TypeMirror visitPrimitive(PrimitiveType type, Types types) {
-        return type;
-      }
-
-      @Override public TypeMirror visitTypeVariable(TypeVariable type, Types types) {
-        return type.getUpperBound().accept(this, types);
-      }
-    }, types);
-  }
-
-  /** Finds an annotation with the given name on the given element, or null if not found. */
-  @Nullable static AnnotationMirror getAnnotationWithSimpleName(Element element, String name) {
-    for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
-      String annotationName = mirror.getAnnotationType().asElement().getSimpleName().toString();
-      if (name.equals(annotationName)) {
-        return mirror;
-      }
-    }
-    return null;
   }
 
   private Utils() {}

@@ -16,7 +16,6 @@
 
 package paperparcel;
 
-import com.google.auto.common.MoreTypes;
 import com.google.auto.common.Visibility;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Optional;
@@ -29,15 +28,8 @@ import java.util.Map;
 import java.util.Set;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
-import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.ArrayType;
-import javax.lang.model.type.DeclaredType;
-import javax.lang.model.type.PrimitiveType;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.type.TypeVariable;
-import javax.lang.model.type.WildcardType;
-import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
 
 /**
@@ -136,10 +128,12 @@ abstract class WriteInfo {
           // All wildcards need to be stripped from the parameter type as a work around
           // for kotlin data classes generating non-assignable constructor parameters
           // with generic types.
-          TypeMirror parameterType = stripWildcardsType(parameter.asType());
+          TypeMirror parameterType =
+              Utils.replaceTypeVariablesWithUpperBounds(types, parameter.asType());
           VariableElement fieldOrNull = fieldNamesToField.get(parameterName);
           if (fieldOrNull != null
-              && types.isAssignable(parameterType, stripWildcardsType(fieldOrNull.asType()))) {
+              && types.isAssignable(parameterType, Utils.replaceTypeVariablesWithUpperBounds(
+              types, fieldOrNull.asType()))) {
             nonConstructorFieldsMap.remove(parameterName);
             constructorFieldDescriptorsBuilder.add(fieldDescriptorFactory.create(fieldOrNull));
           } else {
@@ -204,12 +198,13 @@ abstract class WriteInfo {
         VariableElement field, ImmutableList<ExecutableElement> allMethods) {
       String fieldName = field.getSimpleName().toString();
       ImmutableSet<String> possibleSetterNames = possibleSetterNames(fieldName);
-      TypeMirror fieldType = stripWildcardsType(field.asType());
+      TypeMirror fieldType = Utils.replaceTypeVariablesWithUpperBounds(types, field.asType());
       for (ExecutableElement method : allMethods) {
         List<? extends VariableElement> parameters = method.getParameters();
         if (parameters.size() == 1
             && possibleSetterNames.contains(method.getSimpleName().toString())
-            && types.isAssignable(stripWildcardsType(parameters.get(0).asType()), fieldType)) {
+            && types.isAssignable(Utils.replaceTypeVariablesWithUpperBounds(
+            types, parameters.get(0).asType()), fieldType)) {
           return Optional.of(method);
         }
       }
@@ -229,37 +224,6 @@ abstract class WriteInfo {
       Set<Modifier> fieldModifiers = field.getModifiers();
       return !fieldModifiers.contains(Modifier.PRIVATE)
           && !fieldModifiers.contains(Modifier.FINAL);
-    }
-
-    private TypeMirror stripWildcardsType(TypeMirror type) {
-      return type.accept(new SimpleTypeVisitor6<TypeMirror, Types>() {
-        @Override public TypeMirror visitArray(ArrayType type, Types types) {
-          return types.getArrayType(type.getComponentType().accept(this, types));
-        }
-
-        @Override public TypeMirror visitDeclared(DeclaredType type, Types types) {
-          TypeElement element = MoreTypes.asTypeElement(type);
-          List<? extends TypeMirror> args = type.getTypeArguments();
-          TypeMirror[] strippedArgs = new TypeMirror[args.size()];
-          for (int i = 0; i < args.size(); i++) {
-            TypeMirror arg = args.get(i);
-            strippedArgs[i] = arg.accept(this, types);
-          }
-          return types.getDeclaredType(element, strippedArgs);
-        }
-
-        @Override public TypeMirror visitWildcard(WildcardType type, Types types) {
-          return type.getExtendsBound().accept(this, types);
-        }
-
-        @Override public TypeMirror visitPrimitive(PrimitiveType type, Types types) {
-          return type;
-        }
-
-        @Override public TypeMirror visitTypeVariable(TypeVariable type, Types types) {
-          return type.getUpperBound().accept(this, types);
-        }
-      }, types);
     }
   }
 

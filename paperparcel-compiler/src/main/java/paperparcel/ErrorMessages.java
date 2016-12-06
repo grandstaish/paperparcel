@@ -83,11 +83,15 @@ final class ErrorMessages {
   static final String FIELD_NOT_WRITABLE =
       "Field %1$s.%2$s not writable when constructing an instance of %1$s using the constructor "
           + "%3$s. See %4$s for more info.";
-  static final String MISSING_TYPE_ADAPTER =
+  static final String FIELD_MISSING_TYPE_ADAPTER =
       "Unknown type %1$s. Define a TypeAdapter to handle custom types. For more info, "
           + "see %2$s.";
-  static final String RAW_FIELD =
-      "Field type argument must be specified (%1$s.%2$s).";
+  static final String FIELD_MISSING_TYPE_ARGUMENTS =
+      "All field type arguments must be specified.";
+  static final String FIELD_TYPE_IS_RECURSIVE =
+      "PaperParcel does not support recursive generic field types.";
+  static final String FIELD_TYPE_IS_INTERSECTION_TYPE =
+      "PaperParcel does not support intersection field types.";
 
   /* AutoValue Extension errors */
   static final String MANUAL_IMPLEMENTATION_OF_CREATOR =
