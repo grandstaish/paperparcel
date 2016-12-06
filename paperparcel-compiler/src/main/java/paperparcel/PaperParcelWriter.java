@@ -94,7 +94,7 @@ final class PaperParcelWriter {
       createFromParcel.addStatement("return $T.INSTANCE", className);
     } else {
       // Read the fields from the parcel
-      ImmutableMap<FieldDescriptor, FieldSpec> fieldMap = readFields(in, readNames);
+      ImmutableMap<String, FieldSpec> fieldMap = readFields(in, readNames);
       for (FieldSpec field : fieldMap.values()) {
         createFromParcel.addStatement("$T $N = $L", field.type, field.name, field.initializer);
       }
@@ -124,12 +124,12 @@ final class PaperParcelWriter {
         .build();
   }
 
-  private ImmutableMap<FieldDescriptor, FieldSpec> readFields(
+  private ImmutableMap<String, FieldSpec> readFields(
       ParameterSpec in, UniqueNameSet readNames) {
     ReadInfo readInfo = descriptor.readInfo();
     Preconditions.checkNotNull(readInfo);
 
-    ImmutableMap.Builder<FieldDescriptor, FieldSpec> result = ImmutableMap.builder();
+    ImmutableMap.Builder<String, FieldSpec> result = ImmutableMap.builder();
 
     // Read the fields in the exact same order that they were written to the Parcel. Currently
     // directly readable fields first, then all fields that are read via getters, and finally
@@ -141,7 +141,7 @@ final class PaperParcelWriter {
 
     for (FieldDescriptor field : combined) {
       String fieldName = readNames.getUniqueName(field.name());
-      result.put(field, readField(fieldName, field, in));
+      result.put(field.name(), readField(fieldName, field, in));
     }
 
     return result.build();
@@ -189,7 +189,7 @@ final class PaperParcelWriter {
   private FieldSpec initModel(
       final ClassName className,
       final UniqueNameSet readNames,
-      final ImmutableMap<FieldDescriptor, FieldSpec> fieldMap) {
+      final ImmutableMap<String, FieldSpec> fieldMap) {
 
     WriteInfo writeInfo = descriptor.writeInfo();
     Preconditions.checkNotNull(writeInfo);
@@ -198,7 +198,7 @@ final class PaperParcelWriter {
     CodeBlock constructorParameterList = CodeBlocks.join(FluentIterable.from(constructorFields)
         .transform(new Function<FieldDescriptor, CodeBlock>() {
           @Override public CodeBlock apply(FieldDescriptor field) {
-            return CodeBlock.of("$N", fieldMap.get(field));
+            return CodeBlock.of("$N", fieldMap.get(field.name()));
           }
         }), ", ");
 
@@ -222,7 +222,7 @@ final class PaperParcelWriter {
         .build();
   }
 
-  private CodeBlock setFields(FieldSpec model, ImmutableMap<FieldDescriptor, FieldSpec> fieldMap) {
+  private CodeBlock setFields(FieldSpec model, ImmutableMap<String, FieldSpec> fieldMap) {
     CodeBlock.Builder block = CodeBlock.builder();
 
     WriteInfo writeInfo = descriptor.writeInfo();
@@ -231,12 +231,12 @@ final class PaperParcelWriter {
     // Write directly
     for (FieldDescriptor field : writeInfo.writableFields()) {
       if (field.isVisible()) {
-        block.addStatement("$N.$N = $N", model.name, field.name(), fieldMap.get(field));
+        block.addStatement("$N.$N = $N", model.name, field.name(), fieldMap.get(field.name()));
       } else {
         // Field isn't visible, write via reflection
         TypeName enclosingClass = rawTypeFrom(field.element().getEnclosingElement().asType());
         block.addStatement("$T.writeField($N, $T.class, $N, $S)",
-            UTILS, fieldMap.get(field), enclosingClass, model.name, field.name());
+            UTILS, fieldMap.get(field.name()), enclosingClass, model.name, field.name());
       }
     }
 
@@ -246,7 +246,7 @@ final class PaperParcelWriter {
     for (Map.Entry<FieldDescriptor, ExecutableElement> fieldSetterEntry : fieldSetterEntries) {
       Name setterName = fieldSetterEntry.getValue().getSimpleName();
       FieldDescriptor field = fieldSetterEntry.getKey();
-      block.addStatement("$N.$N($N)", model.name, setterName, fieldMap.get(field));
+      block.addStatement("$N.$N($N)", model.name, setterName, fieldMap.get(field.name()));
     }
 
     return block.build();
@@ -355,21 +355,21 @@ final class PaperParcelWriter {
   }
 
   private ImmutableList<FieldSpec> adapterDependencies(ImmutableCollection<Adapter> adapters) {
-    Set<Adapter> emptySet = Sets.newLinkedHashSet();
+    Set<TypeName> emptySet = Sets.newLinkedHashSet();
     return adapterDependenciesInternal(adapters, emptySet);
   }
 
   /** Returns a list of all of the {@link FieldSpec}s that define the required TypeAdapters */
   @SuppressWarnings("OptionalGetWithoutIsPresent") // Previous validation ensures this is fine.
   private ImmutableList<FieldSpec> adapterDependenciesInternal(
-      ImmutableCollection<Adapter> adapters, Set<Adapter> scoped) {
+      ImmutableCollection<Adapter> adapters, Set<TypeName> scoped) {
     ImmutableList.Builder<FieldSpec> adapterFields = new ImmutableList.Builder<>();
     for (Adapter adapter : adapters) {
       // Don't define the same adapter twice
-      if (scoped.contains(adapter)) {
+      if (scoped.contains(adapter.typeName())) {
         continue;
       }
-      scoped.add(adapter);
+      scoped.add(adapter.typeName());
       if (!adapter.singletonInstance().isPresent()) {
         Adapter.ConstructorInfo constructorInfo = adapter.constructorInfo().get();
 

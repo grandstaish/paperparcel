@@ -17,10 +17,12 @@
 package paperparcel;
 
 import android.support.annotation.Nullable;
+import com.google.auto.common.MoreElements;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
@@ -80,8 +82,8 @@ abstract class PaperParcelDescriptor {
       Options options = Utils.getOptions(element);
 
       ImmutableList<VariableElement> fields = Utils.getFieldsToParcel(types, element, options);
-      ImmutableList<ExecutableElement> methods =
-          Utils.getLocalAndInheritedMethods(elements, types, element);
+      ImmutableSet<ExecutableElement> methods =
+          MoreElements.getLocalAndInheritedMethods(element, types, elements);
       ImmutableList<ExecutableElement> constructors =
           Utils.orderedConstructorsIn(element, options.reflectAnnotations());
 

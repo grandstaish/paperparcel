@@ -16,6 +16,7 @@
 
 package paperparcel;
 
+import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
 import com.google.auto.service.AutoService;
 import com.google.auto.value.extension.AutoValueExtension;
@@ -159,30 +160,31 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
   }
 
   private MethodSpec constructor(Context context) {
-    final Types types = context.processingEnvironment().getTypeUtils();
-    final DeclaredType declaredValueType = MoreTypes.asDeclared(context.autoValueClass().asType());
-    ImmutableList<ParameterSpec> parameters = FluentIterable.from(context.properties().entrySet())
-        .transform(new Function<Map.Entry<String, ExecutableElement>, ParameterSpec>() {
-          @Override public ParameterSpec apply(Map.Entry<String, ExecutableElement> entry) {
-            ExecutableType resolvedExecutableType =
-                MoreTypes.asExecutable(types.asMemberOf(declaredValueType, entry.getValue()));
-            TypeName typeName = TypeName.get(resolvedExecutableType.getReturnType());
-            ParameterSpec.Builder spec = ParameterSpec.builder(typeName, entry.getKey());
-            AnnotationMirror nullableAnnotation =
-                Utils.getAnnotationWithSimpleName(entry.getValue(), NULLABLE_ANNOTATION_NAME);
-            if (nullableAnnotation != null) {
-              spec.addAnnotation(AnnotationSpec.get(nullableAnnotation));
-            }
-            return spec.build();
-          }
-        })
-        .toList();
+    Types types = context.processingEnvironment().getTypeUtils();
+    DeclaredType declaredValueType = MoreTypes.asDeclared(context.autoValueClass().asType());
+
+    ImmutableList.Builder<ParameterSpec> parameterBuilder = ImmutableList.builder();
+    for (Map.Entry<String, ExecutableElement> entry : context.properties().entrySet()) {
+      ExecutableType resolvedExecutableType =
+          MoreTypes.asExecutable(types.asMemberOf(declaredValueType, entry.getValue()));
+      TypeName typeName = TypeName.get(resolvedExecutableType.getReturnType());
+      ParameterSpec.Builder spec = ParameterSpec.builder(typeName, entry.getKey());
+      AnnotationMirror nullableAnnotation =
+          Utils.getAnnotationWithSimpleName(entry.getValue(), NULLABLE_ANNOTATION_NAME);
+      if (nullableAnnotation != null) {
+        spec.addAnnotation(AnnotationSpec.get(nullableAnnotation));
+      }
+      parameterBuilder.add(spec.build());
+    }
+
+    ImmutableList<ParameterSpec> parameters = parameterBuilder.build();
     CodeBlock parameterList = CodeBlocks.join(FluentIterable.from(parameters)
         .transform(new Function<ParameterSpec, CodeBlock>() {
           @Override public CodeBlock apply(ParameterSpec parameterSpec) {
             return CodeBlock.of("$N", parameterSpec.name);
           }
         }), ", ");
+
     return MethodSpec.constructorBuilder()
         .addParameters(parameters)
         .addStatement("super($L)", parameterList)
@@ -194,8 +196,8 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
     TypeElement autoValueTypeElement = context.autoValueClass();
     Elements elements = env.getElementUtils();
     Types types = env.getTypeUtils();
-    ImmutableList<ExecutableElement> methods =
-        Utils.getLocalAndInheritedMethods(elements, types, autoValueTypeElement);
+    ImmutableSet<ExecutableElement> methods =
+        MoreElements.getLocalAndInheritedMethods(autoValueTypeElement, types, elements);
     for (ExecutableElement element : methods) {
       if (element.getSimpleName().contentEquals("describeContents")
           && MoreTypes.isTypeOf(int.class, element.getReturnType())

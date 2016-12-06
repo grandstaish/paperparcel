@@ -68,7 +68,7 @@ abstract class ReadInfo {
 
     ReadInfo create(
         ImmutableList<VariableElement> fields,
-        ImmutableList<ExecutableElement> methods,
+        ImmutableSet<ExecutableElement> methods,
         ImmutableList<String> reflectAnnotations
     ) throws NonReadableFieldsException {
 
@@ -109,7 +109,7 @@ abstract class ReadInfo {
      * 3. Return type equivalent to the current fields type
      */
     private Optional<ExecutableElement> getAccessorMethod(
-        VariableElement field, ImmutableList<ExecutableElement> methods) {
+        VariableElement field, ImmutableSet<ExecutableElement> methods) {
       String fieldName = field.getSimpleName().toString();
       ImmutableSet<String> possibleGetterNames = possibleGetterNames(fieldName);
       TypeMirror fieldType = field.asType();
