@@ -64,6 +64,7 @@ import static javax.lang.model.util.ElementFilter.fieldsIn;
 final class Utils {
   private static final String TYPE_ADAPTER_CLASS_NAME = "paperparcel.TypeAdapter";
   private static final String PARCELABLE_CLASS_NAME = "android.os.Parcelable";
+  private static final String PARCELABLE_CREATOR_CLASS_NAME = "android.os.Parcelable.Creator";
 
   private static final Ordering<ExecutableElement> PARAMETER_COUNT_ORDER =
       new Ordering<ExecutableElement>() {
@@ -191,7 +192,7 @@ final class Utils {
     return typeElement.getQualifiedName().contentEquals("java.lang.Object");
   }
 
-  /** Returns true if {@code element} is a TypeAdapter type */
+  /** Returns true if {@code element} is a {@code TypeAdapter} type. */
   static boolean isAdapterType(Element element, Elements elements, Types types) {
     TypeMirror typeAdapterType = types.getDeclaredType(
         elements.getTypeElement(TYPE_ADAPTER_CLASS_NAME),
@@ -199,16 +200,24 @@ final class Utils {
     return types.isAssignable(element.asType(), typeAdapterType);
   }
 
-  /** Returns true if {@code element} is a TypeAdapter type */
+  /** Returns true if {@code element} is a {@code Parcelable.Creator} type. */
+  static boolean isCreatorType(Element element, Elements elements, Types types) {
+    TypeMirror creatorType = types.getDeclaredType(
+        elements.getTypeElement(PARCELABLE_CREATOR_CLASS_NAME),
+        types.getWildcardType(null, null));
+    return types.isAssignable(element.asType(), creatorType);
+  }
+
+  /** Returns true if {@code element} is a {@link Class} type. */
   static boolean isClassType(Element element, Elements elements, Types types) {
-    TypeMirror typeAdapterType = types.getDeclaredType(
+    TypeMirror classType = types.getDeclaredType(
         elements.getTypeElement(Class.class.getName()),
         types.getWildcardType(null, null));
-    return types.isAssignable(element.asType(), typeAdapterType);
+    return types.isAssignable(element.asType(), classType);
   }
 
   /**
-   * Returns the {@link TypeMirror} argument found in a given TypeAdapter type
+   * Returns the {@link TypeMirror} argument found in a given {@code TypeAdapter} type.
    */
   static TypeMirror getAdaptedType(Elements elements, Types types, DeclaredType adapterType) {
     TypeElement typeAdapterElement = elements.getTypeElement(TYPE_ADAPTER_CLASS_NAME);
@@ -221,16 +230,61 @@ final class Utils {
   }
 
   /**
-   * Returns the {@link TypeMirror} argument found in a given Class type
+   * Returns the {@link TypeMirror} argument found in a given {@code Parcelable.Creator} type.
    */
-  static TypeMirror getClassType(Elements elements, Types types, DeclaredType adapterType) {
-    TypeElement typeAdapterElement = elements.getTypeElement(Class.class.getName());
-    TypeParameterElement param = typeAdapterElement.getTypeParameters().get(0);
+  static TypeMirror getCreatorArg(Elements elements, Types types, DeclaredType adapterType) {
+    TypeElement creatorElement = elements.getTypeElement(PARCELABLE_CREATOR_CLASS_NAME);
+    TypeParameterElement param = creatorElement.getTypeParameters().get(0);
     try {
       return types.asMemberOf(adapterType, param);
     } catch (IllegalArgumentException e) {
       return null;
     }
+  }
+
+  /**
+   * Returns the {@link TypeMirror} argument found in a given {@link Class} type.
+   */
+  static TypeMirror getClassArg(Elements elements, Types types, DeclaredType adapterType) {
+    TypeElement classElement = elements.getTypeElement(Class.class.getName());
+    TypeParameterElement param = classElement.getTypeParameters().get(0);
+    try {
+      return types.asMemberOf(adapterType, param);
+    } catch (IllegalArgumentException e) {
+      return null;
+    }
+  }
+
+  /** If {@code type} has a {@code Parcelable.Creator} field instance, return it. */
+  @Nullable static VariableElement findCreator(
+      Elements elements, Types types, TypeMirror type) {
+    if (type.getKind() != TypeKind.DECLARED) {
+      return null;
+    }
+    DeclaredType declaredType = (DeclaredType) type;
+    TypeElement typeElement = (TypeElement) declaredType.asElement();
+    return findCreator(elements, types, typeElement);
+  }
+
+  /** If {@code subject} has a {@code Parcelable.Creator} field instance, return it. */
+  @Nullable static VariableElement findCreator(
+      Elements elements, Types types, TypeElement subject) {
+
+    TypeMirror creatorType = types.getDeclaredType(
+        elements.getTypeElement(PARCELABLE_CREATOR_CLASS_NAME),
+        types.getWildcardType(null, null));
+
+    List<? extends Element> members = elements.getAllMembers(subject);
+    for (VariableElement field : ElementFilter.fieldsIn(members)) {
+      if (field.getSimpleName().contentEquals("CREATOR")
+          && types.isAssignable(field.asType(), creatorType)
+          && field.getModifiers().contains(Modifier.STATIC)
+          && field.getModifiers().contains(Modifier.PUBLIC)) {
+        return field;
+      }
+    }
+
+    return null;
   }
 
   /**

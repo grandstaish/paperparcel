@@ -14,7 +14,7 @@ import static com.google.common.truth.Truth.assertThat;
 @Config(manifest = Config.NONE)
 public class ParcelableAdapterTests {
   @Test public void parcelablesAreCorrectlyParcelled() {
-    TypeAdapter<TestParcelable> adapter = new ParcelableAdapter<>();
+    TypeAdapter<TestParcelable> adapter = new ParcelableAdapter<>(TestParcelable.CREATOR);
     TestParcelable expected = new TestParcelable(42);
     TestParcelable result = TestUtils.writeThenRead(adapter, expected);
     assertThat(result).isEqualTo(expected);

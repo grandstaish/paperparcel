@@ -21,8 +21,8 @@ import com.google.auto.common.MoreTypes;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.squareup.javapoet.ClassName;
+import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import java.util.HashMap;
@@ -70,30 +70,38 @@ abstract class Adapter {
 
   @AutoValue
   static abstract class ConstructorInfo {
+    static abstract class Param {
+    }
 
-    /** The ordered parameter names of the primary constructor. */
-    abstract ImmutableList<String> constructorParameterNames();
+    static class AdapterParam extends Param {
+      final Adapter adapter;
 
-    /**
-     * All adapter dependencies required to instantiate this adapter indexed by its constructor
-     * parameter name.
-     */
-    abstract ImmutableMap<String, Adapter> adapterDependencies();
+      AdapterParam(Adapter adapter) {
+        this.adapter = adapter;
+      }
+    }
 
-    /**
-     * All class dependencies required to instantiate this adapter indexed by its constructor
-     * parameter name.
-     */
-    abstract ImmutableMap<String, TypeName> classDependencies();
+    static class ClassParam extends Param {
+      final TypeName className;
 
-    public static ConstructorInfo create(
-        ImmutableList<String> constructorParameterNames,
-        ImmutableMap<String, Adapter> adapterDependencies,
-        ImmutableMap<String, TypeName> classDependencies) {
-      return new AutoValue_Adapter_ConstructorInfo(
-          constructorParameterNames,
-          adapterDependencies,
-          classDependencies);
+      ClassParam(TypeName className) {
+        this.className = className;
+      }
+    }
+
+    static class CreatorParam extends Param {
+      final CodeBlock creatorInstance;
+
+      CreatorParam(CodeBlock creatorInstance) {
+        this.creatorInstance = creatorInstance;
+      }
+    }
+
+    /** The ordered parameters of the primary constructor. */
+    abstract ImmutableList<Param> constructorParameters();
+
+    public static ConstructorInfo create(ImmutableList<Param> constructorParameters) {
+      return new AutoValue_Adapter_ConstructorInfo(constructorParameters);
     }
   }
 
@@ -192,12 +200,10 @@ abstract class Adapter {
     private Optional<ConstructorInfo> getConstructorInfo(
         TypeElement adapterElement, DeclaredType resolvedAdapterType) {
 
-      ImmutableList.Builder<String> parameterNames = ImmutableList.builder();
-      ImmutableMap.Builder<String, Adapter> adapterDependencies = new ImmutableMap.Builder<>();
-      ImmutableMap.Builder<String, TypeName> classDependencies = new ImmutableMap.Builder<>();
-
       Optional<ExecutableElement> mainConstructor = Utils.findLargestConstructor(adapterElement);
       if (!mainConstructor.isPresent()) return Optional.absent();
+
+      ImmutableList.Builder<ConstructorInfo.Param> parameterBuilder = ImmutableList.builder();
 
       ExecutableType resolvedConstructorType =
           MoreTypes.asExecutable(types.asMemberOf(resolvedAdapterType, mainConstructor.get()));
@@ -207,28 +213,37 @@ abstract class Adapter {
       for (int i = 0; i < parameters.size(); i++) {
         VariableElement dependencyElement = parameters.get(i);
         TypeMirror resolvedDependencyType = resolveParameterList.get(i);
-        String parameterName = dependencyElement.getSimpleName().toString();
-        parameterNames.add(parameterName);
 
         if (Utils.isAdapterType(dependencyElement, elements, types)) {
           TypeMirror dependencyAdaptedType =
               Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(resolvedDependencyType));
           Adapter adapterDependency = create(dependencyAdaptedType);
-          if (adapterDependency == null) return Optional.absent();
-          adapterDependencies.put(parameterName, adapterDependency);
+          if (adapterDependency == null) {
+            return Optional.absent();
+          }
+          parameterBuilder.add(new ConstructorInfo.AdapterParam(adapterDependency));
+
+        } else if (Utils.isCreatorType(dependencyElement, elements, types)) {
+          TypeMirror creatorArg =
+              Utils.getCreatorArg(elements, types, MoreTypes.asDeclared(resolvedDependencyType));
+          VariableElement creator = Utils.findCreator(elements, types, creatorArg);
+          CodeBlock result;
+          if (creator == null) {
+            result = CodeBlock.of("null");
+          } else {
+            result = CodeBlock.of("$T.$N", creator.getEnclosingElement(), creator.getSimpleName());
+          }
+          parameterBuilder.add(new ConstructorInfo.CreatorParam(result));
 
         } else {
-          TypeMirror dependencyClassType =
-              Utils.getClassType(elements, types, MoreTypes.asDeclared(resolvedDependencyType));
-          TypeName dependencyClassTypeName = TypeName.get(dependencyClassType);
-          classDependencies.put(parameterName, dependencyClassTypeName);
+          TypeMirror classArg =
+              Utils.getClassArg(elements, types, MoreTypes.asDeclared(resolvedDependencyType));
+          TypeName classTypeName = TypeName.get(classArg);
+          parameterBuilder.add(new ConstructorInfo.ClassParam(classTypeName));
         }
       }
 
-      return Optional.of(ConstructorInfo.create(
-          parameterNames.build(),
-          adapterDependencies.build(),
-          classDependencies.build()));
+      return Optional.of(ConstructorInfo.create(parameterBuilder.build()));
     }
 
     private TypeMirror[] argumentsAsArray(
