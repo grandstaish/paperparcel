@@ -416,26 +416,30 @@ final class PaperParcelWriter {
     for (ConstructorInfo.Param param : constructorInfo.constructorParameters()) {
 
       if (param instanceof ConstructorInfo.AdapterParam) {
-        ConstructorInfo.AdapterParam cast = (ConstructorInfo.AdapterParam) param;
-        if (cast.adapter.nullSafe()) {
-          blocks.add(adapterInstance(cast.adapter));
+        ConstructorInfo.AdapterParam adapterParam = (ConstructorInfo.AdapterParam) param;
+        if (adapterParam.adapter.nullSafe()) {
+          blocks.add(adapterInstance(adapterParam.adapter));
         } else {
-          blocks.add(CodeBlock.of("$T.nullSafeClone($L)", UTILS, adapterInstance(cast.adapter)));
+          blocks.add(CodeBlock.of("$T.nullSafeClone($L)", UTILS, adapterInstance(adapterParam.adapter)));
         }
 
       } else if (param instanceof ConstructorInfo.ClassParam) {
-        ConstructorInfo.ClassParam cast = (ConstructorInfo.ClassParam) param;
-        if (cast.className instanceof ParameterizedTypeName) {
-          ParameterizedTypeName parameterizedName = (ParameterizedTypeName) cast.className;
+        ConstructorInfo.ClassParam classParam = (ConstructorInfo.ClassParam) param;
+        if (classParam.className instanceof ParameterizedTypeName) {
+          ParameterizedTypeName parameterizedName = (ParameterizedTypeName) classParam.className;
           blocks.add(CodeBlock.of("($1T<$2T>)($1T<?>) $3T.class", Class.class, parameterizedName,
               parameterizedName.rawType));
         } else {
-          blocks.add(CodeBlock.of("$T.class", cast.className));
+          blocks.add(CodeBlock.of("$T.class", classParam.className));
         }
 
       } else if (param instanceof ConstructorInfo.CreatorParam) {
-        ConstructorInfo.CreatorParam cast = (ConstructorInfo.CreatorParam) param;
-        blocks.add(cast.creatorInstance);
+        ConstructorInfo.CreatorParam creatorParam = (ConstructorInfo.CreatorParam) param;
+        if (creatorParam.creatorOwner == null) {
+          blocks.add(CodeBlock.of("null"));
+        } else {
+          blocks.add(CodeBlock.of("$T.$N", creatorParam.creatorOwner, "CREATOR"));
+        }
       }
     }
 
