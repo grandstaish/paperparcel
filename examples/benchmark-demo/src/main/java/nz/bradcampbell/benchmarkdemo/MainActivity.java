@@ -17,8 +17,9 @@ import nz.bradcampbell.benchmarkdemo.model.autovalueparcel.AutoValueParcelRespon
 import nz.bradcampbell.benchmarkdemo.model.autovalueparcel.GsonAdapterFactory;
 import nz.bradcampbell.benchmarkdemo.model.paperparcel.PaperParcelResponse;
 import nz.bradcampbell.benchmarkdemo.model.parceler.ParcelerResponse;
+import nz.bradcampbell.benchmarkdemo.model.serializable.SerializableResponse;
 import nz.bradcampbell.benchmarkdemo.parceltasks.AutoValueParcelTask;
-import nz.bradcampbell.benchmarkdemo.parceltasks.GsonTask;
+import nz.bradcampbell.benchmarkdemo.parceltasks.SerializableTask;
 import nz.bradcampbell.benchmarkdemo.parceltasks.PaperParcelTask;
 import nz.bradcampbell.benchmarkdemo.parceltasks.ParcelResult;
 import nz.bradcampbell.benchmarkdemo.parceltasks.ParcelTask;
@@ -35,7 +36,8 @@ public class MainActivity extends AppCompatActivity {
 
   private List<PaperParcelResponse> paperParcelModels = new ArrayList<>(RESPONSES);
   private List<ParcelerResponse> parcelerModels = new ArrayList<>(RESPONSES);
-  private List<AutoValueParcelResponse> autoParcelModels = new ArrayList<>(RESPONSES);
+  private List<AutoValueParcelResponse> autoValueParcelModels = new ArrayList<>(RESPONSES);
+  private List<SerializableResponse> serializableModels = new ArrayList<>(RESPONSES);
 
   private final PaperParcelTask.ParcelListener parcelListener = new ParcelTask.ParcelListener() {
     @Override public void onComplete(ParcelTask parcelTask, ParcelResult parcelResult) {
@@ -58,7 +60,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     barChart = (BarChart)findViewById(R.id.bar_chart);
-    barChart.setColumnTitles(new String[] { "Gson", "AutoValue Parcel", "Parceler", "PaperParcel" });
+    barChart.setColumnTitles(new String[] { "Serializable", "AutoValue Parcel", "Parceler", "PaperParcel" });
 
     findViewById(R.id.btn_start).setOnClickListener(new View.OnClickListener() {
       @Override
@@ -78,10 +80,8 @@ public class MainActivity extends AppCompatActivity {
       for (int iteration = 0; iteration < ITERATIONS; iteration++) {
         parcelTasks.add(new ParcelerTask(parcelListener, parcelerModels.get(response)));
         parcelTasks.add(new PaperParcelTask(parcelListener, paperParcelModels.get(response)));
-        parcelTasks.add(new AutoValueParcelTask(parcelListener, autoParcelModels.get(response)));
-        // can just re-use the parceler models here as gson will serialize to a string anyway
-        // (ie. not use parcelable at all)
-        parcelTasks.add(new GsonTask(gson, parcelListener, parcelerModels.get(response)));
+        parcelTasks.add(new AutoValueParcelTask(parcelListener, autoValueParcelModels.get(response)));
+        parcelTasks.add(new SerializableTask(parcelListener, serializableModels.get(response)));
       }
     }
 
@@ -116,7 +116,7 @@ public class MainActivity extends AppCompatActivity {
       barChart.addTiming(section, 2, parcelResult.runDuration / 1000f);
     } else if (parcelTask instanceof AutoValueParcelTask) {
       barChart.addTiming(section, 1, parcelResult.runDuration / 1000f);
-    } else if (parcelTask instanceof GsonTask) {
+    } else if (parcelTask instanceof SerializableTask) {
       barChart.addTiming(section, 0, parcelResult.runDuration / 1000f);
     }
   }
@@ -137,10 +137,15 @@ public class MainActivity extends AppCompatActivity {
     parcelerModels.add(gson.fromJson(smallJson, ParcelerResponse.class));
     parcelerModels.add(gson.fromJson(tinyJson, ParcelerResponse.class));
 
-    autoParcelModels.add(AutoValueParcelResponse.typeAdapter(gson).fromJson(largeJson));
-    autoParcelModels.add(AutoValueParcelResponse.typeAdapter(gson).fromJson(mediumJson));
-    autoParcelModels.add(AutoValueParcelResponse.typeAdapter(gson).fromJson(smallJson));
-    autoParcelModels.add(AutoValueParcelResponse.typeAdapter(gson).fromJson(tinyJson));
+    autoValueParcelModels.add(gson.fromJson(largeJson, AutoValueParcelResponse.class));
+    autoValueParcelModels.add(gson.fromJson(mediumJson, AutoValueParcelResponse.class));
+    autoValueParcelModels.add(gson.fromJson(smallJson, AutoValueParcelResponse.class));
+    autoValueParcelModels.add(gson.fromJson(tinyJson, AutoValueParcelResponse.class));
+
+    serializableModels.add(gson.fromJson(largeJson, SerializableResponse.class));
+    serializableModels.add(gson.fromJson(mediumJson, SerializableResponse.class));
+    serializableModels.add(gson.fromJson(smallJson, SerializableResponse.class));
+    serializableModels.add(gson.fromJson(tinyJson, SerializableResponse.class));
   }
 
   private String readFile(String filename) {
