@@ -1,0 +1,68 @@
+apply plugin: 'com.android.application'
+
+android {
+  compileSdkVersion rootProject.ext.compileSdkVersion
+  buildToolsVersion rootProject.ext.buildToolsVersion
+
+  defaultConfig {
+    applicationId "nz.bradcampbell.benchmarkdemo"
+    minSdkVersion 11
+    targetSdkVersion rootProject.ext.targetSdkVersion
+    versionCode 1
+    versionName "1.0"
+  }
+
+  buildTypes {
+    release {
+      signingConfig signingConfigs.debug
+      minifyEnabled true
+      proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
+    }
+  }
+
+  compileOptions {
+    sourceCompatibility rootProject.ext.sourceCompatibilityVersion
+    targetCompatibility rootProject.ext.targetCompatibilityVersion
+  }
+}
+
+repositories {
+  mavenCentral()
+  jcenter()
+  maven { url "https://clojars.org/repo/" }
+}
+
+dependencies {
+  compile deps.supportAnnotations
+  compile deps.appCompat
+
+  // PaperParcel
+  compile project(':paperparcel')
+  // The PaperParcel processor with the AutoValueExtension removed so that it can be compared with
+  // other AutoValue extensions that set "mustBeFinal" to true.
+  annotationProcessor files('libs/paperparcel-compiler-no-autovalue.jar')
+  // Missing transitive dependencies from the no-autovalue jar.
+  annotationProcessor deps.javaFormat
+  annotationProcessor deps.autocommon
+
+  // Gson for parsing json (can't use LoganSquare because we need to parse auto-value objects)
+  compile 'com.google.code.gson:gson:2.8.0'
+  annotationProcessor 'com.ryanharter.auto.value:auto-value-gson:0.4.4'
+  provided 'com.ryanharter.auto.value:auto-value-gson:0.4.4'
+
+  // Parceler for comparison
+  compile 'org.parceler:parceler-api:1.1.6'
+  annotationProcessor 'org.parceler:parceler:1.1.6'
+
+  // AutoValue for AutoValue extension based libraries
+  provided deps.autovalue
+  annotationProcessor deps.autovalue
+
+  // AutoValue: Parcel Extension for comparison
+  annotationProcessor 'com.ryanharter.auto.value:auto-value-parcel:0.2.5'
+
+  // Can't compare with AutoParcel because that isn't even up to date with AutoValue =/
+  // If it ever gets updated, I'll have to comment out ryan harter's version to test it as
+  // they both set "mustBeFinal" to true.
+  // annotationProcessor 'frankiesardo:auto-parcel:1.0.3'
+}
