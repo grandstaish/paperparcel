@@ -1,6 +1,6 @@
 # Benchmark-demo
 
-This is a benchmark app that demonstrates that [PaperParcel](http://grandstaish.github.io/paperparcel/) is the fastest and lightest parcelling library available. Although other parcelling libraries aren't necessarily *that* slow, it's nice to know that PaperParcel *is* really fast! 
+This is a benchmark app that demonstrates that [PaperParcel](http://grandstaish.github.io/paperparcel/) is the fastest and lightest parcelling library available. 
 
 This demo also uses separate packages for the model classes for each processor so that the total number of generated method references can be easily compared. The results are as follows:
 - [AutoValue: Parcel Extension](https://github.com/rharter/auto-value-parcel) (216<sup>1</sup> + 0 library method references<sup>2</sup>)
