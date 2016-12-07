@@ -4,7 +4,7 @@ This is a benchmark app that demonstrates that [PaperParcel](http://grandstaish.
 
 This demo also uses separate packages for the model classes for each processor so that the total number of generated method references can be easily compared. The results are as follows:
 - [AutoValue: Parcel Extension](https://github.com/rharter/auto-value-parcel) (216<sup>1</sup> + 0 library method references<sup>2</sup>)
-- [Parceler](http://parceler.org/) (70 methods + 607 base library references<sup>2</sup>)
+- [Parceler](http://parceler.org/) (70 methods + 607 library method references<sup>2</sup>)
 - [PaperParcel](http://grandstaish.github.io/paperparcel/) (60 methods + 187 library method references<sup>2</sup>)
 
 The code in this demonstration is mostly copied from [LoganSquare](https://github.com/bluelinelabs/LoganSquare/)'s benchmark demo app — so shout-out to [bluelinelabs](http://bluelinelabs.com/) for the code!
