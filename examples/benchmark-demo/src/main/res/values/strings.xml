@@ -1,0 +1,5 @@
+<resources>
+  <string name="app_name">PaperParcel Benchmark</string>
+  <string name="value_prop">Welcome to the PaperParcel benchmark test! Just hit the start button to see how PaperParcel stacks up against the library you\'re probably using now.</string>
+  <string name="start">Start</string>
+</resources>

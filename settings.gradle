@@ -7,8 +7,10 @@ include ':kotlin-example'
 include ':java7-example'
 include ':autovalue-example'
 include ':realm-example'
+include ':benchmark-demo'
 
 project(':kotlin-example').projectDir = new File("examples/kotlin-example")
 project(':java7-example').projectDir = new File("examples/java7-example")
 project(':autovalue-example').projectDir = new File("examples/autovalue-example")
 project(':realm-example').projectDir = new File("examples/realm-example")
+project(':benchmark-demo').projectDir = new File("examples/benchmark-demo")
