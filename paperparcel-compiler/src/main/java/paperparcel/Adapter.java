@@ -22,7 +22,6 @@ import com.google.auto.value.AutoValue;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.squareup.javapoet.ClassName;
-import com.squareup.javapoet.CodeBlock;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import java.util.HashMap;
@@ -90,10 +89,10 @@ abstract class Adapter {
     }
 
     static class CreatorParam extends Param {
-      final CodeBlock creatorInstance;
+      @Nullable final ClassName creatorOwner;
 
-      CreatorParam(CodeBlock creatorInstance) {
-        this.creatorInstance = creatorInstance;
+      CreatorParam(@Nullable ClassName creatorOwner) {
+        this.creatorOwner = creatorOwner;
       }
     }
 
@@ -227,13 +226,11 @@ abstract class Adapter {
           TypeMirror creatorArg =
               Utils.getCreatorArg(elements, types, MoreTypes.asDeclared(resolvedDependencyType));
           VariableElement creator = Utils.findCreator(elements, types, creatorArg);
-          CodeBlock result;
-          if (creator == null) {
-            result = CodeBlock.of("null");
-          } else {
-            result = CodeBlock.of("$T.$N", creator.getEnclosingElement(), creator.getSimpleName());
+          ClassName creatorOwner = null;
+          if (creator != null) {
+            creatorOwner = ClassName.get((TypeElement) creator.getEnclosingElement());
           }
-          parameterBuilder.add(new ConstructorInfo.CreatorParam(result));
+          parameterBuilder.add(new ConstructorInfo.CreatorParam(creatorOwner));
 
         } else {
           TypeMirror classArg =
