@@ -199,15 +199,15 @@ abstract class Adapter {
     private Optional<ConstructorInfo> getConstructorInfo(
         TypeElement adapterElement, DeclaredType resolvedAdapterType) {
 
-      Optional<ExecutableElement> mainConstructor = Utils.findLargestConstructor(adapterElement);
-      if (!mainConstructor.isPresent()) return Optional.absent();
+      ExecutableElement mainConstructor = Utils.findLargestPublicConstructor(adapterElement);
+      if (mainConstructor == null) return Optional.absent();
 
       ImmutableList.Builder<ConstructorInfo.Param> parameterBuilder = ImmutableList.builder();
 
       ExecutableType resolvedConstructorType =
-          MoreTypes.asExecutable(types.asMemberOf(resolvedAdapterType, mainConstructor.get()));
+          MoreTypes.asExecutable(types.asMemberOf(resolvedAdapterType, mainConstructor));
       List<? extends TypeMirror> resolveParameterList = resolvedConstructorType.getParameterTypes();
-      List<? extends VariableElement> parameters = mainConstructor.get().getParameters();
+      List<? extends VariableElement> parameters = mainConstructor.getParameters();
 
       for (int i = 0; i < parameters.size(); i++) {
         VariableElement dependencyElement = parameters.get(i);

@@ -19,7 +19,6 @@ package paperparcel;
 import com.google.auto.common.MoreTypes;
 import com.google.auto.common.Visibility;
 import com.google.common.base.Function;
-import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
@@ -61,14 +60,14 @@ final class RegisterAdapterValidator {
       builder.addError(ErrorMessages.REGISTERADAPTER_ON_ABSTRACT_CLASS);
     }
     if (Visibility.ofElement(element) != Visibility.PUBLIC) {
-      builder.addError(ErrorMessages.REGISTER_ADAPTER_ON_NON_PUBLIC_CLASS);
+      builder.addError(ErrorMessages.REGISTERADAPTER_ON_NON_PUBLIC_CLASS);
     } else if (Visibility.effectiveVisibilityOfElement(element) != Visibility.PUBLIC) {
-      builder.addError(ErrorMessages.REGISTER_ADAPTER_NOT_VISIBLE);
+      builder.addError(ErrorMessages.REGISTERADAPTER_NOT_VISIBLE);
     }
     ElementKind enclosingKind = element.getEnclosingElement().getKind();
     if (enclosingKind.isClass() || enclosingKind.isInterface()) {
       if (!element.getModifiers().contains(Modifier.STATIC)) {
-        builder.addError(ErrorMessages.REGISTER_ADAPTER_ON_NON_STATIC_INNER_CLASS);
+        builder.addError(ErrorMessages.REGISTERADAPTER_ON_NON_STATIC_INNER_CLASS);
       }
     }
 
@@ -85,12 +84,12 @@ final class RegisterAdapterValidator {
       }
     }
 
-    Optional<ExecutableElement> mainConstructor = Utils.findLargestConstructor(element);
-    if (mainConstructor.isPresent()) {
-      builder.addSubreport(validateConstructor(mainConstructor.get()));
+    ExecutableElement mainConstructor = Utils.findLargestPublicConstructor(element);
+    if (mainConstructor != null) {
+      builder.addSubreport(validateConstructor(mainConstructor));
     } else if (adaptedType != null) {
       if (!Utils.isSingletonAdapter(elements, types, element, adaptedType)) {
-        builder.addError(ErrorMessages.NO_VISIBLE_CONSTRUCTOR);
+        builder.addError(ErrorMessages.REGISTERADAPTER_NO_PUBLIC_CONSTRUCTOR);
       }
     }
 
