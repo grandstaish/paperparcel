@@ -20,10 +20,6 @@ package paperparcel;
 final class ErrorMessages {
   static final String SITE_URL = "http://grandstaish.github.io/paperparcel";
 
-  /* Shared */
-  static final String NO_VISIBLE_CONSTRUCTOR =
-      "No visible constructor found.";
-
   /* @RegisterAdapter errors */
   static final String REGISTERADAPTER_ON_NON_TYPE_ADAPTER =
       "@RegisterAdapter must be applied to a class that implements TypeAdapter<T>.";
@@ -45,12 +41,14 @@ final class ErrorMessages {
   static final String WILDCARD_IN_ADAPTED_TYPE =
       "%s is adapting a type containing one or more wildcards: %s. Wildcard types are not "
           + "supported.";
-  static final String REGISTER_ADAPTER_ON_NON_PUBLIC_CLASS =
+  static final String REGISTERADAPTER_ON_NON_PUBLIC_CLASS =
       "@RegisterAdapter classes must be public.";
-  static final String REGISTER_ADAPTER_NOT_VISIBLE =
+  static final String REGISTERADAPTER_NOT_VISIBLE =
       "@RegisterAdapter classes cannot be enclosed in non-public types.";
-  static final String REGISTER_ADAPTER_ON_NON_STATIC_INNER_CLASS =
+  static final String REGISTERADAPTER_ON_NON_STATIC_INNER_CLASS =
       "Nested @RegisterAdapter class must be static.";
+  static final String REGISTERADAPTER_NO_PUBLIC_CONSTRUCTOR =
+      "@RegisterAdapter classes must have a public constructor.";
 
   /* @PaperParcel errors */
   static final String PAPERPARCEL_ON_NON_CLASS =
@@ -72,6 +70,8 @@ final class ErrorMessages {
       "@PaperParcel class must not be private.";
   static final String PAPERPARCEL_ON_NON_STATIC_INNER_CLASS =
       "Nested @PaperParcel class must be static.";
+  static final String PAPERPARCEL_NO_VISIBLE_CONSTRUCTOR =
+      "No visible constructor found.";
 
   /* @PaperParcel.Options errors */
   static final String OPTIONS_NO_EXPOSE_ANNOTATIONS =

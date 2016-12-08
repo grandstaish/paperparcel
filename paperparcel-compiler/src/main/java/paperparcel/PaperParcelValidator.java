@@ -80,7 +80,7 @@ final class PaperParcelValidator {
       ImmutableList<ExecutableElement> constructors =
           Utils.orderedConstructorsIn(element, options.reflectAnnotations());
       if (constructors.size() == 0) {
-        builder.addError(ErrorMessages.NO_VISIBLE_CONSTRUCTOR);
+        builder.addError(ErrorMessages.PAPERPARCEL_NO_VISIBLE_CONSTRUCTOR);
       }
 
       ImmutableList<VariableElement> fields = Utils.getFieldsToParcel(types, element, options);

@@ -11,7 +11,7 @@ import paperparcel.TypeAdapter;
 public class RealmListTypeAdapter<T extends RealmModel> implements TypeAdapter<RealmList<T>> {
   private final TypeAdapter<T> itemAdapter;
 
-  RealmListTypeAdapter(TypeAdapter<T> itemAdapter) {
+  public RealmListTypeAdapter(TypeAdapter<T> itemAdapter) {
     this.itemAdapter = itemAdapter;
   }
 
