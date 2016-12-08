@@ -3335,7 +3335,7 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.REGISTER_ADAPTER_ON_NON_STATIC_INNER_CLASS)
+        .withErrorContaining(ErrorMessages.REGISTERADAPTER_ON_NON_STATIC_INNER_CLASS)
         .in(source)
         .onLine(7);
   }
@@ -3362,7 +3362,7 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.REGISTER_ADAPTER_NOT_VISIBLE)
+        .withErrorContaining(ErrorMessages.REGISTERADAPTER_NOT_VISIBLE)
         .in(source)
         .onLine(7);
   }
@@ -3387,7 +3387,7 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.REGISTER_ADAPTER_ON_NON_PUBLIC_CLASS)
+        .withErrorContaining(ErrorMessages.REGISTERADAPTER_ON_NON_PUBLIC_CLASS)
         .in(source)
         .onLine(6);
   }
@@ -4168,6 +4168,32 @@ public class PaperParcelProcessorTests {
         .compilesWithoutError()
         .and()
         .generatesSources(expected);
+  }
+
+  @Test public void failIfNonSingletonTypeAdapterConstructorIsNonPublic() {
+    JavaFileObject typeAdapter =
+        JavaFileObjects.forSourceString("test.MyTypeAdapter", Joiner.on('\n').join(
+            "package test;",
+            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.TypeAdapter;",
+            "import android.os.Parcel;",
+            "@RegisterAdapter",
+            "public class MyTypeAdapter implements TypeAdapter<Integer> {",
+            "  MyTypeAdapter() {}",
+            "  public Integer readFromParcel(Parcel in) {",
+            "    return null;",
+            "  }",
+            "  public void writeToParcel(Integer value, Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(typeAdapter)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(ErrorMessages.REGISTERADAPTER_NO_PUBLIC_CONSTRUCTOR)
+        .in(typeAdapter)
+        .onLine(6);
   }
 
 }

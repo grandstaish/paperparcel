@@ -75,10 +75,10 @@ final class Utils {
         }
       };
 
-  private static final Predicate<ExecutableElement> NOT_PRIVATE =
+  private static final Predicate<ExecutableElement> FILTER_NON_PUBLIC =
       new Predicate<ExecutableElement>() {
         @Override public boolean apply(ExecutableElement executableElement) {
-          return Visibility.ofElement(executableElement) != Visibility.PRIVATE;
+          return Visibility.ofElement(executableElement) == Visibility.PUBLIC;
         }
       };
 
@@ -137,18 +137,21 @@ final class Utils {
         }
       };
 
-  /** Returns the constructor in a given class with the largest number of arguments */
-  static Optional<ExecutableElement> findLargestConstructor(TypeElement typeElement) {
+  /**
+   * Returns the public constructor in a given class with the largest number of arguments, or
+   * null if there are no public constructors.
+   */
+  @Nullable static ExecutableElement findLargestPublicConstructor(TypeElement typeElement) {
     List<ExecutableElement> constructors =
         FluentIterable.from(ElementFilter.constructorsIn(typeElement.getEnclosedElements()))
-            .filter(NOT_PRIVATE)
+            .filter(FILTER_NON_PUBLIC)
             .toList();
 
     if (constructors.size() == 0) {
-      return Optional.absent();
+      return null;
     }
 
-    return Optional.of(PARAMETER_COUNT_ORDER.max(constructors));
+    return PARAMETER_COUNT_ORDER.max(constructors);
   }
 
   /** Returns all of the constructors in a {@link TypeElement} that PaperParcel can use. */
