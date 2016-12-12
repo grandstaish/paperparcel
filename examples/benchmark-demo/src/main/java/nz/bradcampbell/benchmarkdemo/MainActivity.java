@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity {
   private void performTests() {
     barChart.clear();
     barChart.setSections(new String[] {
-        "Parcel 60 items", "Parcel 20 items", "Parcel 7 items", "Parcel 2 items" });
+        "Parcel 2 items", "Parcel 7 items", "Parcel 20 items", "Parcel 60 items" });
 
     List<ParcelTask> parcelTasks = new ArrayList<>();
     for (int response = 0; response < RESPONSES; response++) {
@@ -93,16 +93,16 @@ public class MainActivity extends AppCompatActivity {
   private void addBarData(ParcelTask parcelTask, ParcelResult parcelResult) {
     int section;
     switch (parcelResult.objectsParcelled) {
-      case 60:
+      case 2:
         section = 0;
         break;
-      case 20:
+      case 7:
         section = 1;
         break;
-      case 7:
+      case 20:
         section = 2;
         break;
-      case 2:
+      case 60:
         section = 3;
         break;
       default:
@@ -122,30 +122,30 @@ public class MainActivity extends AppCompatActivity {
   }
 
   private void readJsonFromFiles() throws IOException {
-    String largeJson = readFile("largesample.json");
-    String mediumJson = readFile("mediumsample.json");
-    String smallJson = readFile("smallsample.json");
     String tinyJson = readFile("tinysample.json");
+    String smallJson = readFile("smallsample.json");
+    String mediumJson = readFile("mediumsample.json");
+    String largeJson = readFile("largesample.json");
 
-    paperParcelModels.add(gson.fromJson(largeJson, PaperParcelResponse.class));
-    paperParcelModels.add(gson.fromJson(mediumJson, PaperParcelResponse.class));
-    paperParcelModels.add(gson.fromJson(smallJson, PaperParcelResponse.class));
     paperParcelModels.add(gson.fromJson(tinyJson, PaperParcelResponse.class));
+    paperParcelModels.add(gson.fromJson(smallJson, PaperParcelResponse.class));
+    paperParcelModels.add(gson.fromJson(mediumJson, PaperParcelResponse.class));
+    paperParcelModels.add(gson.fromJson(largeJson, PaperParcelResponse.class));
 
-    parcelerModels.add(gson.fromJson(largeJson, ParcelerResponse.class));
-    parcelerModels.add(gson.fromJson(mediumJson, ParcelerResponse.class));
-    parcelerModels.add(gson.fromJson(smallJson, ParcelerResponse.class));
     parcelerModels.add(gson.fromJson(tinyJson, ParcelerResponse.class));
+    parcelerModels.add(gson.fromJson(smallJson, ParcelerResponse.class));
+    parcelerModels.add(gson.fromJson(mediumJson, ParcelerResponse.class));
+    parcelerModels.add(gson.fromJson(largeJson, ParcelerResponse.class));
 
-    autoValueParcelModels.add(gson.fromJson(largeJson, AutoValueParcelResponse.class));
-    autoValueParcelModels.add(gson.fromJson(mediumJson, AutoValueParcelResponse.class));
-    autoValueParcelModels.add(gson.fromJson(smallJson, AutoValueParcelResponse.class));
     autoValueParcelModels.add(gson.fromJson(tinyJson, AutoValueParcelResponse.class));
+    autoValueParcelModels.add(gson.fromJson(smallJson, AutoValueParcelResponse.class));
+    autoValueParcelModels.add(gson.fromJson(mediumJson, AutoValueParcelResponse.class));
+    autoValueParcelModels.add(gson.fromJson(largeJson, AutoValueParcelResponse.class));
 
-    serializableModels.add(gson.fromJson(largeJson, SerializableResponse.class));
-    serializableModels.add(gson.fromJson(mediumJson, SerializableResponse.class));
-    serializableModels.add(gson.fromJson(smallJson, SerializableResponse.class));
     serializableModels.add(gson.fromJson(tinyJson, SerializableResponse.class));
+    serializableModels.add(gson.fromJson(smallJson, SerializableResponse.class));
+    serializableModels.add(gson.fromJson(mediumJson, SerializableResponse.class));
+    serializableModels.add(gson.fromJson(largeJson, SerializableResponse.class));
   }
 
   private String readFile(String filename) {

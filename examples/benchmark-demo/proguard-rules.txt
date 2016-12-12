@@ -7,11 +7,13 @@
 -keep class * implements com.google.gson.JsonSerializer
 -keep class * implements com.google.gson.JsonDeserializer
 
-# Need to keep the model classes so that gson can parse the json
+# Need to keep the model classes so that gson can parse the json (not required for
+# auto-value-parcel because of the auto-generated gson type adapters)
 -keep interface paperparcel.PaperParcel
 -keep @paperparcel.PaperParcel class * { *; }
-
-# Parceler library
+-keep public class nz.bradcampbell.benchmarkdemo.model.serializable.* { *; }
 -keep interface org.parceler.Parcel
 -keep @org.parceler.Parcel class * { *; }
+
+# Parceler library
 -keep class **$$Parcelable { *; }
