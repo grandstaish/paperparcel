@@ -455,7 +455,11 @@ final class Utils {
     }
 
     @Override public TypeMirror visitWildcard(WildcardType type, Types types) {
-      return type.getExtendsBound().accept(this, types);
+      if (type.getExtendsBound() != null) {
+        return type.getExtendsBound().accept(this, types);
+      } else {
+        return type.getSuperBound().accept(this, types);
+      }
     }
 
     @Override public TypeMirror visitArray(ArrayType type, Types types) {
