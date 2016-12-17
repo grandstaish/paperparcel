@@ -82,8 +82,9 @@ abstract class PaperParcelDescriptor {
       Options options = Utils.getOptions(element);
 
       ImmutableList<VariableElement> fields = Utils.getFieldsToParcel(types, element, options);
+      @SuppressWarnings("deprecation") // Support for kapt2
       ImmutableSet<ExecutableElement> methods =
-          MoreElements.getLocalAndInheritedMethods(element, types, elements);
+          MoreElements.getLocalAndInheritedMethods(element, elements);
       ImmutableList<ExecutableElement> constructors =
           Utils.orderedConstructorsIn(element, options.reflectAnnotations());
 
