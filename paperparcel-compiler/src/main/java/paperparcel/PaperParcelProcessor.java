@@ -26,6 +26,7 @@ import javax.annotation.processing.Processor;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+import javax.tools.Diagnostic;
 
 /**
  * The annotation processor responsible for generating the classes that drive the PaperParcel
@@ -33,6 +34,10 @@ import javax.lang.model.util.Types;
  */
 @AutoService(Processor.class)
 public class PaperParcelProcessor extends BasicAnnotationProcessor {
+  private static final String KAPT1_GENERATED_OPTION = "kapt.kotlin.generated";
+  private static final String KAPT2_PROCESSING_ENVIRONMENT =
+      "org.jetbrains.kotlin.annotation.processing.impl.KotlinProcessingEnvironment";
+
   @Override public SourceVersion getSupportedSourceVersion() {
     return SourceVersion.latestSupported();
   }
@@ -42,6 +47,20 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
     Types types = processingEnv.getTypeUtils();
     Elements elements = processingEnv.getElementUtils();
     Filer filer = new FormattingFiler(processingEnv.getFiler());
+
+    boolean kapt1 = processingEnv.getOptions().get(KAPT1_GENERATED_OPTION) != null;
+    boolean kapt2 = processingEnv.getClass().getName().equals(KAPT2_PROCESSING_ENVIRONMENT);
+    if (kapt1) {
+      messager.printMessage(Diagnostic.Kind.ERROR, "PaperParcel is not compatible with legacy "
+          + "kapt. Please upgrade to kotlin 1.0.5 (or greater) and apply the 'kotlin-kapt' gradle "
+          + "plugin.");
+      return ImmutableList.of();
+    }
+    if (kapt2) {
+      messager.printMessage(Diagnostic.Kind.WARNING, "kapt2 has been replaced with a newer "
+          + "version in kotlin 1.0.6 that is a lot more stable. It is highly recommended that you "
+          + "upgrade.");
+    }
 
     AdapterRegistry adapterRegistry = new AdapterRegistry(elements, types);
 
