@@ -24,6 +24,10 @@ import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.Processor;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.TypeElement;
+import javax.lang.model.element.TypeParameterElement;
+import javax.lang.model.type.DeclaredType;
+import javax.lang.model.type.TypeKind;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
@@ -48,6 +52,9 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
     Elements elements = processingEnv.getElementUtils();
     Filer filer = new FormattingFiler(processingEnv.getFiler());
 
+    // Older kapt versions had a lot of bugs that prevent PaperParcel from working. Try to
+    // detect these here and show a helpful message to the user informing them they need to
+    // upgrade their kotlin version.
     boolean kapt1 = processingEnv.getOptions().get(KAPT1_GENERATED_OPTION) != null;
     boolean kapt2 = processingEnv.getClass().getName().equals(KAPT2_PROCESSING_ENVIRONMENT);
     if (kapt1) {
@@ -57,9 +64,15 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
       return ImmutableList.of();
     }
     if (kapt2) {
-      messager.printMessage(Diagnostic.Kind.WARNING, "kapt2 has been replaced with a newer "
-          + "version in kotlin 1.0.6 that is a lot more stable. It is highly recommended that you "
-          + "upgrade.");
+      if (hasKt13804()) {
+        messager.printMessage(Diagnostic.Kind.ERROR, "PaperParcel is not compatible kotlin 1.0.4. "
+            + "Please upgrade to kotlin 1.0.5 (or greater).");
+        return ImmutableList.of();
+      } else {
+        messager.printMessage(Diagnostic.Kind.WARNING, "kapt2 has been replaced with a newer "
+            + "version in kotlin 1.0.6 that is a lot more stable. It is highly recommended that you "
+            + "upgrade.");
+      }
     }
 
     AdapterRegistry adapterRegistry = new AdapterRegistry(elements, types);
@@ -93,5 +106,15 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
             paperParcelValidator,
             paperParcelDescriptorFactory,
             paperParcelGenerator));
+  }
+
+  private boolean hasKt13804() {
+    // Checks for KT-13804. This affects only kotlin 1.0.4.
+    Elements elements = processingEnv.getElementUtils();
+    Types types = processingEnv.getTypeUtils();
+    TypeElement comparable = elements.getTypeElement("java.lang.Comparable");
+    TypeParameterElement comparableParam = comparable.getTypeParameters().get(0);
+    DeclaredType integerType = (DeclaredType) elements.getTypeElement("java.lang.Integer").asType();
+    return types.asMemberOf(integerType, comparableParam).getKind() == TypeKind.TYPEVAR;
   }
 }
