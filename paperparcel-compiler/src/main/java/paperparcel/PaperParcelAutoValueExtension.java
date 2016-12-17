@@ -195,9 +195,9 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
     ProcessingEnvironment env = context.processingEnvironment();
     TypeElement autoValueTypeElement = context.autoValueClass();
     Elements elements = env.getElementUtils();
-    Types types = env.getTypeUtils();
+    @SuppressWarnings("deprecation") // Support for kapt2
     ImmutableSet<ExecutableElement> methods =
-        MoreElements.getLocalAndInheritedMethods(autoValueTypeElement, types, elements);
+        MoreElements.getLocalAndInheritedMethods(autoValueTypeElement, elements);
     for (ExecutableElement element : methods) {
       if (element.getSimpleName().contentEquals("describeContents")
           && MoreTypes.isTypeOf(int.class, element.getReturnType())
