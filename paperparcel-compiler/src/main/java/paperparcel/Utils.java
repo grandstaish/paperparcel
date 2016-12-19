@@ -225,11 +225,7 @@ final class Utils {
   static TypeMirror getAdaptedType(Elements elements, Types types, DeclaredType adapterType) {
     TypeElement typeAdapterElement = elements.getTypeElement(TYPE_ADAPTER_CLASS_NAME);
     TypeParameterElement param = typeAdapterElement.getTypeParameters().get(0);
-    try {
-      return types.asMemberOf(adapterType, param);
-    } catch (IllegalArgumentException e) {
-      return null;
-    }
+    return types.asMemberOf(adapterType, param);
   }
 
   /**
@@ -238,11 +234,7 @@ final class Utils {
   static TypeMirror getCreatorArg(Elements elements, Types types, DeclaredType adapterType) {
     TypeElement creatorElement = elements.getTypeElement(PARCELABLE_CREATOR_CLASS_NAME);
     TypeParameterElement param = creatorElement.getTypeParameters().get(0);
-    try {
-      return types.asMemberOf(adapterType, param);
-    } catch (IllegalArgumentException e) {
-      return null;
-    }
+    return types.asMemberOf(adapterType, param);
   }
 
   /**
@@ -251,11 +243,7 @@ final class Utils {
   static TypeMirror getClassArg(Elements elements, Types types, DeclaredType adapterType) {
     TypeElement classElement = elements.getTypeElement(Class.class.getName());
     TypeParameterElement param = classElement.getTypeParameters().get(0);
-    try {
-      return types.asMemberOf(adapterType, param);
-    } catch (IllegalArgumentException e) {
-      return null;
-    }
+    return types.asMemberOf(adapterType, param);
   }
 
   /** If {@code type} has a {@code Parcelable.Creator} field instance, return it. */

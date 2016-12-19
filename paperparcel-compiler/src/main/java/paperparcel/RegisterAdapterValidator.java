@@ -50,7 +50,8 @@ final class RegisterAdapterValidator {
   ValidationReport<TypeElement> validate(TypeElement element) {
     ValidationReport.Builder<TypeElement> builder = ValidationReport.about(element);
 
-    if (!Utils.isAdapterType(element, elements, types)) {
+    boolean isAdapter = Utils.isAdapterType(element, elements, types);
+    if (!isAdapter) {
       builder.addError(ErrorMessages.REGISTERADAPTER_ON_NON_TYPE_ADAPTER);
     }
     if (element.getKind() != ElementKind.CLASS) {
@@ -71,8 +72,9 @@ final class RegisterAdapterValidator {
       }
     }
 
-    TypeMirror adaptedType =
-        Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(element.asType()));
+    TypeMirror adaptedType = isAdapter
+        ? Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(element.asType()))
+        : null;
     if (adaptedType != null) {
       if (Utils.isJavaLangObject(adaptedType)) {
         builder.addError(ErrorMessages.REGISTERADAPTER_ON_RAW_TYPE_ADAPTER);
