@@ -80,7 +80,7 @@ public final class Utils {
 
   /**
    * Returns a type adapter equal to this type adapter, but with support for reading and writing
-   * nulls.
+   * {@code null} values.
    */
   public static <T> TypeAdapter<T> nullSafeClone(@NonNull final TypeAdapter<T> delegate) {
     return new TypeAdapter<T>() {
@@ -95,8 +95,9 @@ public final class Utils {
   }
 
   /**
-   * Returns a type adapter equal to this type adapter, but with support for reading and writing
-   * nulls.
+   * Reads a {@code T} instance from {@code source} using {@code adapter}. This method can handle
+   * {@code null} values. It should be used for reading objects that were written using
+   * {@link #writeNullable(Object, Parcel, int, TypeAdapter)}.
    */
   @Nullable public static <T> T readNullable(
       @NonNull Parcel source, @NonNull TypeAdapter<T> adapter) {
@@ -108,8 +109,9 @@ public final class Utils {
   }
 
   /**
-   * Returns a type adapter equal to this type adapter, but with support for reading and writing
-   * nulls.
+   * Writes a {@code T} instance to {@code dest} using {@code adapter}. This method can handle
+   * {@code null} values. When reading this type out of the parcel later, you should use
+   * {@link #readNullable(Parcel, TypeAdapter)}.
    */
   public static <T> void writeNullable(
       @Nullable T value, @NonNull Parcel dest, int flags, @NonNull TypeAdapter<T> adapter) {
