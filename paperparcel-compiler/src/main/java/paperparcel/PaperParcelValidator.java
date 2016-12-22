@@ -20,6 +20,7 @@ import com.google.auto.common.MoreElements;
 import com.google.auto.common.Visibility;
 import com.google.common.collect.ImmutableList;
 import java.lang.annotation.Annotation;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
@@ -32,6 +33,9 @@ import javax.lang.model.util.Types;
 
 /** A validator for any {@link PaperParcel} annotated {@link TypeElement} */
 final class PaperParcelValidator {
+  private static final String KAPT2_TYPES =
+      "org.jetbrains.kotlin.annotation.processing.impl.KotlinTypes";
+
   private final Elements elements;
   private final Types types;
 
@@ -83,8 +87,11 @@ final class PaperParcelValidator {
         builder.addError(ErrorMessages.PAPERPARCEL_NO_VISIBLE_CONSTRUCTOR);
       }
 
+      boolean kapt2 = KAPT2_TYPES.equals(types.getClass().getName());
+
       ImmutableList<VariableElement> fields = Utils.getFieldsToParcel(types, element, options);
       for (VariableElement field : fields) {
+        String fieldName = field.getSimpleName().toString();
         if (Utils.containsWildcards(field.asType())) {
           builder.addError(ErrorMessages.WILDCARD_IN_FIELD_TYPE, field);
         } else if (Utils.isRawType(field.asType())) {
@@ -93,6 +100,12 @@ final class PaperParcelValidator {
           builder.addError(ErrorMessages.FIELD_TYPE_IS_RECURSIVE, field);
         } else if (Utils.containsIntersection(field.asType())) {
           builder.addError(ErrorMessages.FIELD_TYPE_IS_INTERSECTION_TYPE, field);
+        } if (kapt2 && SourceVersion.isKeyword(fieldName)) {
+          // This is due to a subtle bug in kapt2 with java keywords as variable. The constructor
+          // arguments end up being named differently than the field itself (e.g. "p"), meaning
+          // PaperParcel can no longer pair them to the associated fields. The issue is resolved
+          // in kapt3, so this error message just asks the user to update their kotlin version.
+          builder.addError(String.format(ErrorMessages.KAPT2_INVALID_FIELD_NAME, fieldName), field);
         }
       }
     }
