@@ -52,27 +52,8 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
     Elements elements = processingEnv.getElementUtils();
     Filer filer = new FormattingFiler(processingEnv.getFiler());
 
-    // Older kapt versions had a lot of bugs that prevent PaperParcel from working. Try to
-    // detect these here and show a helpful message to the user informing them they need to
-    // upgrade their kotlin version.
-    boolean kapt1 = processingEnv.getOptions().get(KAPT1_GENERATED_OPTION) != null;
-    boolean kapt2 = processingEnv.getClass().getName().equals(KAPT2_PROCESSING_ENVIRONMENT);
-    if (kapt1) {
-      messager.printMessage(Diagnostic.Kind.ERROR, "PaperParcel is not compatible with legacy "
-          + "kapt. Please upgrade to kotlin 1.0.5 (or greater) and apply the 'kotlin-kapt' gradle "
-          + "plugin.");
+    if (!checkKaptVersion(messager)) {
       return ImmutableList.of();
-    }
-    if (kapt2) {
-      if (hasKt13804()) {
-        messager.printMessage(Diagnostic.Kind.ERROR, "PaperParcel is not compatible kotlin 1.0.4. "
-            + "Please upgrade to kotlin 1.0.5 (or greater).");
-        return ImmutableList.of();
-      } else {
-        messager.printMessage(Diagnostic.Kind.WARNING, "kapt2 has been replaced with a newer "
-            + "version in kotlin 1.0.6 that is a lot more stable. It is highly recommended that you "
-            + "upgrade.");
-      }
     }
 
     AdapterRegistry adapterRegistry = new AdapterRegistry(elements, types);
@@ -106,6 +87,27 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
             paperParcelValidator,
             paperParcelDescriptorFactory,
             paperParcelGenerator));
+  }
+
+  private boolean checkKaptVersion(Messager messager) {
+    // Older kapt versions had a lot of bugs that prevent PaperParcel from working. Try to
+    // detect these here and show a helpful message to the user informing them they need to
+    // upgrade their kotlin version.
+    boolean kapt1 = processingEnv.getOptions().get(KAPT1_GENERATED_OPTION) != null;
+    boolean kapt2 = processingEnv.getClass().getName().equals(KAPT2_PROCESSING_ENVIRONMENT);
+    if (kapt1) {
+      messager.printMessage(Diagnostic.Kind.ERROR, ErrorMessages.KAPT1_INCOMPATIBLE);
+      return false;
+    }
+    if (kapt2) {
+      if (hasKt13804()) {
+        messager.printMessage(Diagnostic.Kind.ERROR, ErrorMessages.KAPT2_KT_13804);
+        return false;
+      } else {
+        messager.printMessage(Diagnostic.Kind.WARNING, ErrorMessages.KAPT2_UNSTABLE_WARNING);
+      }
+    }
+    return true;
   }
 
   private boolean hasKt13804() {

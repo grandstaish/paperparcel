@@ -19,9 +19,11 @@ package paperparcel;
 
 import com.google.common.collect.Sets;
 import java.util.Set;
+import javax.lang.model.SourceVersion;
 
 /**
- * A collector for names to be used in the same namespace that should not conflict.
+ * A collector for names to be used in the same namespace that should not conflict. This class
+ * also ensures that the names are not Java keywords.
  */
 final class UniqueNameSet {
   private final Set<String> uniqueNames = Sets.newLinkedHashSet();
@@ -37,14 +39,19 @@ final class UniqueNameSet {
   }
 
   /**
-   * Generates a unique name using {@code base}. If {@code base} has not yet been added, it will be
-   * returned as-is. If your {@code base} is healthy, this will always return {@code base}.
+   * Generates a unique and valid name using {@code base}. If {@code base} has not yet been added,
+   * and is not a Java keyword; it will be returned as-is, otherwise it will have a differentiator
+   * appended.
    */
   String getUniqueName(CharSequence base) {
     String name = base.toString();
-    for (int differentiator = 1; !uniqueNames.add(name); differentiator++) {
+    for (int differentiator = 1; isInvalidName(name); differentiator++) {
       name = base.toString() + separator + differentiator;
     }
     return name;
+  }
+
+  private boolean isInvalidName(String name) {
+    return !uniqueNames.add(name) || SourceVersion.isKeyword(name);
   }
 }
