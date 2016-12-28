@@ -19,7 +19,6 @@ package paperparcel;
 import android.support.annotation.NonNull;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
@@ -130,17 +129,14 @@ final class PaperParcelWriter {
 
   private ImmutableMap<String, FieldSpec> readFields(
       ParameterSpec in, UniqueNameSet readNames) {
-    ReadInfo readInfo = descriptor.readInfo();
-    Preconditions.checkNotNull(readInfo);
-
     ImmutableMap.Builder<String, FieldSpec> result = ImmutableMap.builder();
 
     // Read the fields in the exact same order that they were written to the Parcel. Currently
     // directly readable fields first, then all fields that are read via getters, and finally
     // all fields that require reflection.
     ImmutableList<FieldDescriptor> combined = ImmutableList.<FieldDescriptor>builder()
-        .addAll(readInfo.readableFields())
-        .addAll(readInfo.getterMethodMap().keySet())
+        .addAll(descriptor.readableFields())
+        .addAll(descriptor.getterMethodMap().keySet())
         .build();
 
     for (FieldDescriptor field : combined) {
@@ -195,10 +191,7 @@ final class PaperParcelWriter {
       final UniqueNameSet readNames,
       final ImmutableMap<String, FieldSpec> fieldMap) {
 
-    WriteInfo writeInfo = descriptor.writeInfo();
-    Preconditions.checkNotNull(writeInfo);
-
-    ImmutableList<FieldDescriptor> constructorFields = writeInfo.constructorFields();
+    ImmutableList<FieldDescriptor> constructorFields = descriptor.constructorFields();
     CodeBlock constructorParameterList = CodeBlocks.join(FluentIterable.from(constructorFields)
         .transform(new Function<FieldDescriptor, CodeBlock>() {
           @Override public CodeBlock apply(FieldDescriptor field) {
@@ -207,7 +200,7 @@ final class PaperParcelWriter {
         }), ", ");
 
     CodeBlock initializer;
-    if (writeInfo.isConstructorVisible()) {
+    if (descriptor.isConstructorVisible()) {
       initializer = CodeBlock.of("new $T($L)", className, constructorParameterList);
     } else {
       // Constructor is private, init via reflection
@@ -229,11 +222,8 @@ final class PaperParcelWriter {
   private CodeBlock setFields(FieldSpec model, ImmutableMap<String, FieldSpec> fieldMap) {
     CodeBlock.Builder block = CodeBlock.builder();
 
-    WriteInfo writeInfo = descriptor.writeInfo();
-    Preconditions.checkNotNull(writeInfo);
-
     // Write directly
-    for (FieldDescriptor field : writeInfo.writableFields()) {
+    for (FieldDescriptor field : descriptor.writableFields()) {
       if (field.isVisible()) {
         block.addStatement("$N.$N = $N", model.name, field.name(), fieldMap.get(field.name()));
       } else {
@@ -246,7 +236,7 @@ final class PaperParcelWriter {
 
     // Write via setters
     ImmutableSet<Map.Entry<FieldDescriptor, ExecutableElement>> fieldSetterEntries =
-        writeInfo.setterMethodMap().entrySet();
+        descriptor.setterMethodMap().entrySet();
     for (Map.Entry<FieldDescriptor, ExecutableElement> fieldSetterEntry : fieldSetterEntries) {
       Name setterName = fieldSetterEntry.getValue().getSimpleName();
       FieldDescriptor field = fieldSetterEntry.getKey();
@@ -275,10 +265,7 @@ final class PaperParcelWriter {
         .addParameter(flags);
 
     if (!descriptor.isSingleton()) {
-      ReadInfo readInfo = descriptor.readInfo();
-      Preconditions.checkNotNull(readInfo);
-
-      ImmutableList<FieldDescriptor> readableFields = readInfo.readableFields();
+      ImmutableList<FieldDescriptor> readableFields = descriptor.readableFields();
       for (FieldDescriptor field : readableFields) {
         if (field.isVisible()) {
           CodeBlock accessorBlock = CodeBlock.of("$N.$N", data, field.name());
@@ -294,7 +281,7 @@ final class PaperParcelWriter {
       }
 
       ImmutableSet<Map.Entry<FieldDescriptor, ExecutableElement>> fieldGetterEntries =
-          readInfo.getterMethodMap().entrySet();
+          descriptor.getterMethodMap().entrySet();
       for (Map.Entry<FieldDescriptor, ExecutableElement> fieldGetterEntry : fieldGetterEntries) {
         FieldDescriptor field = fieldGetterEntry.getKey();
         Name accessorMethodName = fieldGetterEntry.getValue().getSimpleName();

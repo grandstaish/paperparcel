@@ -64,16 +64,13 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
         new PaperParcelValidator(elements, types);
 
     FieldDescriptor.Factory fieldDescriptorFactory = new FieldDescriptor.Factory(types);
-    WriteInfo.Factory writeInfoFactory = new WriteInfo.Factory(types, fieldDescriptorFactory);
-    ReadInfo.Factory readInfoFactory = new ReadInfo.Factory(types, fieldDescriptorFactory);
     AdapterDescriptor.Factory adapterFactory = new AdapterDescriptor.Factory(elements, types, adapterRegistry);
     PaperParcelDescriptor.Factory paperParcelDescriptorFactory =
         new PaperParcelDescriptor.Factory(
             elements,
             types,
             adapterFactory,
-            writeInfoFactory,
-            readInfoFactory);
+            fieldDescriptorFactory);
 
     PaperParcelGenerator paperParcelGenerator = new PaperParcelGenerator(filer);
 
