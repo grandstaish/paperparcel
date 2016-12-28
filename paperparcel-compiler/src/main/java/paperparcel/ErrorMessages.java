@@ -20,35 +20,41 @@ package paperparcel;
 final class ErrorMessages {
   static final String SITE_URL = "http://grandstaish.github.io/paperparcel";
 
-  /* @RegisterAdapter errors */
-  static final String REGISTERADAPTER_ON_NON_TYPE_ADAPTER =
-      "@RegisterAdapter must be applied to a class that implements TypeAdapter<T>.";
-  static final String REGISTERADAPTER_ON_NON_CLASS =
-      "@RegisterAdapter only applies to classes.";
-  static final String REGISTERADAPTER_ON_ABSTRACT_CLASS =
-      "@RegisterAdapter cannot be applied to an abstract class.";
-  static final String INVALID_TYPE_ADAPTER_CONSTRUCTOR =
-      "TypeAdapter constructors can only have 'paperparcel.TypeAdapter' or 'java.lang.Class' "
+  /* @Adapter errors */
+  static final String ADAPTER_MUST_IMPLEMENT_TYPE_ADAPTER_INTERFACE =
+      "%s must implement paperparcel.TypeAdapter.";
+  static final String ADAPTER_MUST_BE_CLASS =
+      "Type adapters can only be classes.";
+  static final String ADAPTER_IS_ABSTRACT =
+      "Type adapters cannot be abstract.";
+  static final String ADAPTER_INVALID_CONSTRUCTOR =
+      "Type adapter constructors can only have 'paperparcel.TypeAdapter' or 'java.lang.Class' "
           + "parameters.";
-  static final String REGISTERADAPTER_ON_RAW_TYPE_ADAPTER =
-      "TypeAdapter type argument must be specified.";
-  static final String RAW_TYPE_ADAPTER_IN_CONSTRUCTOR =
-      "TypeAdapter type argument must be specified.";
-  static final String RAW_CLASS_TYPE_IN_CONSTRUCTOR =
-      "Class type argument must be specified.";
-  static final String INCOMPATIBLE_TYPE_PARAMETERS =
-      "TypeAdapter defined with incompatible type parameters.";
-  static final String WILDCARD_IN_ADAPTED_TYPE =
+  static final String ADAPTER_TYPE_ARGUMENT_IS_MISSING =
+      "Type adapter argument must be specified.";
+  static final String TYPE_ADAPTER_CONSTRUCTOR_PARAMETER_TYPE_ARGUMENT_MISSING =
+      "Constructor parameter type adapter type argument must be specified.";
+  static final String CLASS_CONSTRUCTOR_PARAMETER_TYPE_ARGUMENT_MISSING =
+      "Constructor parameter class type argument must be specified.";
+  static final String ADAPTER_INCOMPATIBLE_TYPE_PARAMETERS =
+      "Type adapter defined with incompatible type parameters.";
+  static final String ADAPTER_ADAPTED_TYPE_HAS_WILDCARDS =
       "%s is adapting a type containing one or more wildcards: %s. Wildcard types are not "
           + "supported.";
-  static final String REGISTERADAPTER_ON_NON_PUBLIC_CLASS =
-      "@RegisterAdapter classes must be public.";
-  static final String REGISTERADAPTER_NOT_VISIBLE =
-      "@RegisterAdapter classes cannot be enclosed in non-public types.";
-  static final String REGISTERADAPTER_ON_NON_STATIC_INNER_CLASS =
-      "Nested @RegisterAdapter class must be static.";
-  static final String REGISTERADAPTER_NO_PUBLIC_CONSTRUCTOR =
-      "@RegisterAdapter classes must have a public constructor.";
+  static final String ADAPTER_MUST_BE_PUBLIC =
+      "Type adapter classes must be public.";
+  static final String ADAPTER_VISIBILITY_RESTRICTED =
+      "Type adapter classes cannot be enclosed in non-public types.";
+  static final String NESTED_ADAPTER_MUST_BE_STATIC =
+      "Nested type adapters must be static.";
+  static final String ADAPTER_MUST_HAVE_PUBLIC_CONSTRUCTOR =
+      "Type adapter classes must have a public constructor.";
+
+  /* @ProcessorConfig errors */
+  static final String MULTIPLE_PROCESSOR_CONFIGS =
+      "Multiple @ProcessorConfig annotations found within a single module.";
+  static final String NO_EXPOSE_ANNOTATIONS_DEFINED =
+      "No expose annotations returned from exposeAnnotations().";
 
   /* @PaperParcel errors */
   static final String PAPERPARCEL_ON_NON_CLASS =
@@ -72,10 +78,6 @@ final class ErrorMessages {
       "Nested @PaperParcel class must be static.";
   static final String PAPERPARCEL_NO_VISIBLE_CONSTRUCTOR =
       "No visible constructor found.";
-
-  /* @PaperParcel.Options errors */
-  static final String OPTIONS_NO_EXPOSE_ANNOTATIONS =
-      "No expose annotations returned from exposeAnnotations().";
 
   /* FieldDescriptor errors */
   static final String FIELD_NOT_ACCESSIBLE =

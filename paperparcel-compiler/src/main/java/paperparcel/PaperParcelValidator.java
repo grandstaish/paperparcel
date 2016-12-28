@@ -46,7 +46,7 @@ final class PaperParcelValidator {
     this.types = types;
   }
 
-  ValidationReport<TypeElement> validate(TypeElement element) {
+  ValidationReport<TypeElement> validate(TypeElement element, OptionsDescriptor options) {
     ValidationReport.Builder<TypeElement> builder = ValidationReport.about(element);
 
     if (element.getKind() != ElementKind.CLASS) {
@@ -74,10 +74,9 @@ final class PaperParcelValidator {
       }
     }
 
-    Options options = Utils.getOptions(element);
     if (options.excludeNonExposedFields()
         && options.exposeAnnotationNames().isEmpty()) {
-      builder.addError(ErrorMessages.OPTIONS_NO_EXPOSE_ANNOTATIONS, element, options.mirror());
+      builder.addError(ErrorMessages.NO_EXPOSE_ANNOTATIONS_DEFINED, element, options.mirror());
     }
 
     if (!Utils.isSingleton(types, element)) {

@@ -43,7 +43,7 @@ import java.util.Set;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
 import javax.lang.model.type.TypeMirror;
-import paperparcel.Adapter.ConstructorInfo;
+import paperparcel.AdapterDescriptor.ConstructorInfo;
 
 import static javax.lang.model.element.Modifier.FINAL;
 import static javax.lang.model.element.Modifier.PRIVATE;
@@ -178,7 +178,7 @@ final class PaperParcelWriter {
         throw new IllegalArgumentException("Unknown primitive type: " + fieldTypeName);
       }
     } else {
-      Adapter adapter = descriptor.adapters().get(field);
+      AdapterDescriptor adapter = descriptor.adapters().get(field);
       CodeBlock adapterInstance = adapterInstance(adapter);
       if (field.isNullable() && !adapter.nullSafe()) {
         builder.initializer("$T.readNullable($N, $L)", UTILS, in, adapterInstance);
@@ -335,7 +335,7 @@ final class PaperParcelWriter {
         throw new IllegalArgumentException("Unknown primitive type: " + fieldTypeName);
       }
     } else {
-      Adapter adapter = descriptor.adapters().get(field);
+      AdapterDescriptor adapter = descriptor.adapters().get(field);
       CodeBlock adapterInstance = adapterInstance(adapter);
       if (field.isNullable() && !adapter.nullSafe()) {
         builder.addStatement("$T.writeNullable($L, $N, $N, $L)",
@@ -347,7 +347,7 @@ final class PaperParcelWriter {
     }
   }
 
-  private CodeBlock adapterInstance(Adapter adapter) {
+  private CodeBlock adapterInstance(AdapterDescriptor adapter) {
     CodeBlock adapterInstance;
     Optional<String> singletonInstance = adapter.singletonInstance();
     if (singletonInstance.isPresent()) {
@@ -358,7 +358,8 @@ final class PaperParcelWriter {
     return adapterInstance;
   }
 
-  private ImmutableList<FieldSpec> adapterDependencies(ImmutableCollection<Adapter> adapters) {
+  private ImmutableList<FieldSpec> adapterDependencies(
+      ImmutableCollection<AdapterDescriptor> adapters) {
     Set<TypeName> emptySet = Sets.newLinkedHashSet();
     return adapterDependenciesInternal(adapters, emptySet);
   }
@@ -366,10 +367,10 @@ final class PaperParcelWriter {
   /** Returns a list of all of the {@link FieldSpec}s that define the required TypeAdapters */
   @SuppressWarnings("OptionalGetWithoutIsPresent") // Previous validation ensures this is fine.
   private ImmutableList<FieldSpec> adapterDependenciesInternal(
-      Collection<Adapter> adapters, Set<TypeName> scoped) {
+      Collection<AdapterDescriptor> adapters, Set<TypeName> scoped) {
 
     ImmutableList.Builder<FieldSpec> adapterFields = new ImmutableList.Builder<>();
-    for (Adapter adapter : adapters) {
+    for (AdapterDescriptor adapter : adapters) {
       // Don't define the same adapter twice
       if (scoped.contains(adapter.typeName())) {
         continue;
@@ -380,15 +381,14 @@ final class PaperParcelWriter {
         ConstructorInfo constructorInfo = adapter.constructorInfo().get();
 
         // Add dependencies, then create and add the current adapter
-        List<Adapter> adapterDependencies = new ArrayList<>();
+        List<AdapterDescriptor> adapterDependencies = new ArrayList<>();
         for (ConstructorInfo.Param param : constructorInfo.constructorParameters()) {
           if (param instanceof ConstructorInfo.AdapterParam) {
             adapterDependencies.add(((ConstructorInfo.AdapterParam) param).adapter);
           }
         }
         if (adapterDependencies.size() > 0) {
-          adapterFields.addAll(
-              adapterDependenciesInternal(adapterDependencies, scoped));
+          adapterFields.addAll(adapterDependenciesInternal(adapterDependencies, scoped));
         }
 
         // Construct the single instance of this type adapter
@@ -420,7 +420,8 @@ final class PaperParcelWriter {
         if (adapterParam.adapter.nullSafe()) {
           blocks.add(adapterInstance(adapterParam.adapter));
         } else {
-          blocks.add(CodeBlock.of("$T.nullSafeClone($L)", UTILS, adapterInstance(adapterParam.adapter)));
+          blocks.add(CodeBlock.of("$T.nullSafeClone($L)",
+              UTILS, adapterInstance(adapterParam.adapter)));
         }
 
       } else if (param instanceof ConstructorInfo.ClassParam) {

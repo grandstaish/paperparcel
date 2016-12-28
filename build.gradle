@@ -3,19 +3,17 @@ subprojects { project ->
   version = VERSION_NAME
 }
 
-ext.kotlin_version = '1.0.6-eap-112'
+ext.kotlin_version = '1.0.6'
 
 allprojects {
   repositories {
     jcenter()
-    maven { url "https://dl.bintray.com/kotlin/kotlin-eap" }
   }
 
   buildscript {
     repositories {
       jcenter()
       maven { url "https://plugins.gradle.org/m2/" }
-      maven { url "https://dl.bintray.com/kotlin/kotlin-eap" }
     }
 
     dependencies {
@@ -66,6 +64,7 @@ project.plugins.whenPluginAdded { plugin ->
 def androidSupportVersion = '25.0.1'
 
 ext.deps = [
+    android            : 'com.google.android:android:4.1.1.4',
     supportAnnotations : "com.android.support:support-annotations:$androidSupportVersion",
     appCompat          : "com.android.support:appcompat-v7:$androidSupportVersion",
     design             : "com.android.support:design:$androidSupportVersion",

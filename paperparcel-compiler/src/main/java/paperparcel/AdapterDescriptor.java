@@ -40,12 +40,12 @@ import javax.lang.model.util.Types;
 
 /**
  * Describes the TypeAdapter required for a particular field, and all of its
- * dependencies. Instances of {@link Adapter} are cached across processing rounds, so must
+ * dependencies. Instances of {@code AdapterDescriptor} are cached across processing rounds, so must
  * never contain {@link TypeMirror}s or {@link Element}s as these types are not comparable
  * across different processing rounds.
  */
 @AutoValue
-abstract class Adapter {
+abstract class AdapterDescriptor {
   /**
    * The ordered parameter names of the primary constructor, or null if this adapter has a
    * singleton instance (defined by {@link #singletonInstance()}.
@@ -58,13 +58,13 @@ abstract class Adapter {
    */
   abstract Optional<String> singletonInstance();
 
-  /** TypeName for this Adapter. May be a {@link ClassName} or {@link ParameterizedTypeName} */
+  /** The type of this adapter. May be a {@link ClassName} or {@link ParameterizedTypeName} */
   abstract TypeName typeName();
 
-  /** TypeName for the type that this adapter is handling. */
+  /** The type of this adapters adapted type. */
   abstract TypeName adaptedTypeName();
 
-  /** Returns true if this type adapter handles null values. */
+  /** Returns true if this adapter handles null values. */
   abstract boolean nullSafe();
 
   @AutoValue
@@ -73,9 +73,9 @@ abstract class Adapter {
     }
 
     static class AdapterParam extends Param {
-      final Adapter adapter;
+      final AdapterDescriptor adapter;
 
-      AdapterParam(Adapter adapter) {
+      AdapterParam(AdapterDescriptor adapter) {
         this.adapter = adapter;
       }
     }
@@ -100,7 +100,7 @@ abstract class Adapter {
     abstract ImmutableList<Param> constructorParameters();
 
     public static ConstructorInfo create(ImmutableList<Param> constructorParameters) {
-      return new AutoValue_Adapter_ConstructorInfo(constructorParameters);
+      return new AutoValue_AdapterDescriptor_ConstructorInfo(constructorParameters);
     }
   }
 
@@ -119,17 +119,18 @@ abstract class Adapter {
     }
 
     /**
-     * Factory for creating an Adapter instance for {@code fieldType}. {@code fieldType} must not
-     * be a primitive type. If {@code fieldType} is an unknown type, this method returns null.
+     * Factory for creating an {@code AdapterDescriptor} instance for {@code fieldType}.
+     * {@code fieldType} must not be a primitive type. If {@code fieldType} is an unknown type,
+     * this method returns {@code null}.
      */
     @SuppressWarnings("ConstantConditions") // Already validated
-    @Nullable Adapter create(TypeMirror fieldType) {
+    @Nullable AdapterDescriptor create(TypeMirror fieldType) {
       if (fieldType.getKind().isPrimitive()) {
         throw new IllegalArgumentException("Primitive types do not need a TypeAdapter.");
       }
 
       TypeName fieldTypeName = TypeName.get(fieldType);
-      final Optional<Adapter> cached = adapterRegistry.getAdapterFor(fieldTypeName);
+      final Optional<AdapterDescriptor> cached = adapterRegistry.getAdapterFor(fieldTypeName);
       if (cached.isPresent()) {
         return cached.get();
       }
@@ -184,7 +185,7 @@ abstract class Adapter {
           }
 
           // Create and cache the adapter
-          Adapter adapter = new AutoValue_Adapter(
+          AdapterDescriptor adapter = new AutoValue_AdapterDescriptor(
               constructorInfo, singletonInstance, typeName, adaptedTypeName, entry.nullSafe());
           adapterRegistry.registerAdapterFor(fieldTypeName, adapter);
 
@@ -216,7 +217,7 @@ abstract class Adapter {
         if (Utils.isAdapterType(dependencyElement, elements, types)) {
           TypeMirror dependencyAdaptedType =
               Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(resolvedDependencyType));
-          Adapter adapterDependency = create(dependencyAdaptedType);
+          AdapterDescriptor adapterDependency = create(dependencyAdaptedType);
           if (adapterDependency == null) {
             return Optional.absent();
           }

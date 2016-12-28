@@ -17,7 +17,7 @@ android {
 }
 
 dependencies {
-  compile project(':paperparcel-annotations')
+  compile project(':paperparcel-api')
 
   testCompile deps.junit
   testCompile deps.truth

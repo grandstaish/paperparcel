@@ -37,16 +37,19 @@ import javax.tools.Diagnostic;
  */
 final class PaperParcelProcessingStep implements BasicAnnotationProcessor.ProcessingStep {
   private final Messager messager;
+  private final OptionsHolder optionsHolder;
   private final PaperParcelValidator paperParcelValidator;
   private final PaperParcelDescriptor.Factory paperParcelDescriptorFactory;
   private final PaperParcelGenerator paperParcelGenerator;
 
   PaperParcelProcessingStep(
       Messager messager,
+      OptionsHolder optionsHolder,
       PaperParcelValidator paperParcelValidator,
       PaperParcelDescriptor.Factory paperParcelDescriptorFactory,
       PaperParcelGenerator paperParcelGenerator) {
     this.messager = messager;
+    this.optionsHolder = optionsHolder;
     this.paperParcelValidator = paperParcelValidator;
     this.paperParcelDescriptorFactory = paperParcelDescriptorFactory;
     this.paperParcelGenerator = paperParcelGenerator;
@@ -60,12 +63,19 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
       SetMultimap<Class<? extends Annotation>, Element> elementsByAnnotation) {
     for (Element element : elementsByAnnotation.get(PaperParcel.class)) {
       TypeElement paperParcelElement = MoreElements.asType(element);
+      OptionsDescriptor options;
+      // TODO(brad): always use optionsHolder.getOptions() when PaperParcel.Options is deleted.
+      if (optionsHolder.isOptionsApplied()) {
+        options = optionsHolder.getOptions();
+      } else {
+        options = Utils.getOptions(paperParcelElement);
+      }
       ValidationReport<TypeElement> validationReport =
-          paperParcelValidator.validate(paperParcelElement);
+          paperParcelValidator.validate(paperParcelElement, options);
       validationReport.printMessagesTo(messager);
       if (validationReport.isClean()) {
         try {
-          generatePaperParcel(paperParcelDescriptorFactory.create(paperParcelElement));
+          generatePaperParcel(paperParcelDescriptorFactory.create(paperParcelElement, options));
         } catch (WriteInfo.NonWritableFieldsException e) {
           printMessages(e, paperParcelElement);
         } catch (ReadInfo.NonReadableFieldsException e) {

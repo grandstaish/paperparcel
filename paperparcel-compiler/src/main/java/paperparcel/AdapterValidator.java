@@ -16,7 +16,6 @@
 
 package paperparcel;
 
-import com.google.auto.common.MoreTypes;
 import com.google.auto.common.Visibility;
 import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
@@ -35,12 +34,14 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
 
-/** A validator for custom adapters annotated with {@link RegisterAdapter} */
-final class RegisterAdapterValidator {
+import static com.google.auto.common.MoreTypes.asDeclared;
+
+/** A validator for custom adapters */
+final class AdapterValidator {
   private final Elements elements;
   private final Types types;
 
-  RegisterAdapterValidator(
+  AdapterValidator(
       Elements elements,
       Types types) {
     this.elements = elements;
@@ -50,39 +51,42 @@ final class RegisterAdapterValidator {
   ValidationReport<TypeElement> validate(TypeElement element) {
     ValidationReport.Builder<TypeElement> builder = ValidationReport.about(element);
 
+    // TODO(brad): remove this after @RegisterAdapter is deleted
     boolean isAdapter = Utils.isAdapterType(element, elements, types);
     if (!isAdapter) {
-      builder.addError(ErrorMessages.REGISTERADAPTER_ON_NON_TYPE_ADAPTER);
+      builder.addError(String.format(
+          ErrorMessages.ADAPTER_MUST_IMPLEMENT_TYPE_ADAPTER_INTERFACE,
+          element.getQualifiedName().toString()));
     }
     if (element.getKind() != ElementKind.CLASS) {
-      builder.addError(ErrorMessages.REGISTERADAPTER_ON_NON_CLASS);
+      builder.addError(ErrorMessages.ADAPTER_MUST_BE_CLASS);
     }
     if (element.getModifiers().contains(Modifier.ABSTRACT)) {
-      builder.addError(ErrorMessages.REGISTERADAPTER_ON_ABSTRACT_CLASS);
+      builder.addError(ErrorMessages.ADAPTER_IS_ABSTRACT);
     }
     if (Visibility.ofElement(element) != Visibility.PUBLIC) {
-      builder.addError(ErrorMessages.REGISTERADAPTER_ON_NON_PUBLIC_CLASS);
+      builder.addError(ErrorMessages.ADAPTER_MUST_BE_PUBLIC);
     } else if (Visibility.effectiveVisibilityOfElement(element) != Visibility.PUBLIC) {
-      builder.addError(ErrorMessages.REGISTERADAPTER_NOT_VISIBLE);
+      builder.addError(ErrorMessages.ADAPTER_VISIBILITY_RESTRICTED);
     }
     ElementKind enclosingKind = element.getEnclosingElement().getKind();
     if (enclosingKind.isClass() || enclosingKind.isInterface()) {
       if (!element.getModifiers().contains(Modifier.STATIC)) {
-        builder.addError(ErrorMessages.REGISTERADAPTER_ON_NON_STATIC_INNER_CLASS);
+        builder.addError(ErrorMessages.NESTED_ADAPTER_MUST_BE_STATIC);
       }
     }
 
     TypeMirror adaptedType = isAdapter
-        ? Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(element.asType()))
+        ? Utils.getAdaptedType(elements, types, asDeclared(element.asType()))
         : null;
     if (adaptedType != null) {
       if (Utils.isJavaLangObject(adaptedType)) {
-        builder.addError(ErrorMessages.REGISTERADAPTER_ON_RAW_TYPE_ADAPTER);
+        builder.addError(ErrorMessages.ADAPTER_TYPE_ARGUMENT_IS_MISSING);
       } else if (Utils.containsWildcards(adaptedType)) {
-        builder.addError(String.format(ErrorMessages.WILDCARD_IN_ADAPTED_TYPE,
+        builder.addError(String.format(ErrorMessages.ADAPTER_ADAPTED_TYPE_HAS_WILDCARDS,
             element.getSimpleName(), adaptedType));
       } else if (!hasValidTypeParameters(element, adaptedType)) {
-        builder.addError(ErrorMessages.INCOMPATIBLE_TYPE_PARAMETERS);
+        builder.addError(ErrorMessages.ADAPTER_INCOMPATIBLE_TYPE_PARAMETERS);
       }
     }
 
@@ -91,7 +95,7 @@ final class RegisterAdapterValidator {
       builder.addSubreport(validateConstructor(mainConstructor));
     } else if (adaptedType != null) {
       if (!Utils.isSingletonAdapter(elements, types, element, adaptedType)) {
-        builder.addError(ErrorMessages.REGISTERADAPTER_NO_PUBLIC_CONSTRUCTOR);
+        builder.addError(ErrorMessages.ADAPTER_MUST_HAVE_PUBLIC_CONSTRUCTOR);
       }
     }
 
@@ -106,19 +110,21 @@ final class RegisterAdapterValidator {
       boolean isCreator = Utils.isCreatorType(parameter, elements, types);
       boolean isClass = Utils.isClassType(parameter, elements, types);
       if (!isClass && !isCreator && !isAdapter) {
-        constructorReport.addError(ErrorMessages.INVALID_TYPE_ADAPTER_CONSTRUCTOR);
+        constructorReport.addError(ErrorMessages.ADAPTER_INVALID_CONSTRUCTOR);
       }
       TypeMirror parameterType = parameter.asType();
       if (isAdapter) {
-        TypeMirror adaptedType = Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(parameterType));
+        TypeMirror adaptedType = Utils.getAdaptedType(elements, types, asDeclared(parameterType));
         if (Utils.isJavaLangObject(adaptedType)) {
-          constructorReport.addError(ErrorMessages.RAW_TYPE_ADAPTER_IN_CONSTRUCTOR, parameter);
+          constructorReport.addError(
+              ErrorMessages.TYPE_ADAPTER_CONSTRUCTOR_PARAMETER_TYPE_ARGUMENT_MISSING, parameter);
         }
       }
       if (isClass) {
-        TypeMirror classType = Utils.getClassArg(elements, types, MoreTypes.asDeclared(parameterType));
+        TypeMirror classType = Utils.getClassArg(elements, types, asDeclared(parameterType));
         if (Utils.isJavaLangObject(classType)) {
-          constructorReport.addError(ErrorMessages.RAW_CLASS_TYPE_IN_CONSTRUCTOR, parameter);
+          constructorReport.addError(
+              ErrorMessages.CLASS_CONSTRUCTOR_PARAMETER_TYPE_ARGUMENT_MISSING, parameter);
         }
       }
     }

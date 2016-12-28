@@ -12,6 +12,7 @@ sourceCompatibility = rootProject.ext.sourceCompatibilityVersion
 targetCompatibility = rootProject.ext.targetCompatibilityVersion
 
 dependencies {
+  compileOnly deps.android
   compile deps.supportAnnotations
 }
 

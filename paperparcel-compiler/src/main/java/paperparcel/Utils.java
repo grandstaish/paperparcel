@@ -115,7 +115,7 @@ final class Utils {
         }
       };
 
-  private static final AnnotationValueVisitor<TypeMirror, Void> TO_TYPE =
+  static final AnnotationValueVisitor<TypeMirror, Void> TO_TYPE =
       new SimpleAnnotationValueVisitor6<TypeMirror, Void>() {
         @Override public TypeMirror visitType(TypeMirror type, Void p) {
           return type;
@@ -126,7 +126,18 @@ final class Utils {
         }
       };
 
-  private static final AnnotationValueVisitor<Boolean, Void> BOOLEAN_VISITOR =
+  static final AnnotationValueVisitor<AnnotationMirror, Void> TO_ANNOTATION =
+      new SimpleAnnotationValueVisitor6<AnnotationMirror, Void>() {
+        @Override public AnnotationMirror visitAnnotation(AnnotationMirror annotation, Void p) {
+          return annotation;
+        }
+
+        @Override protected AnnotationMirror defaultAction(Object ignore, Void p) {
+          throw new IllegalArgumentException();
+        }
+      };
+
+  static final AnnotationValueVisitor<Boolean, Void> TO_BOOLEAN =
       new SimpleAnnotationValueVisitor6<Boolean, Void>() {
         @Override public Boolean visitBoolean(boolean value, Void p) {
           return value;
@@ -311,7 +322,7 @@ final class Utils {
 
   /** Returns all non-excluded fields on a {@link PaperParcel} annotated {@link TypeElement}. */
   static ImmutableList<VariableElement> getFieldsToParcel(
-      Types types, TypeElement element, Options options) {
+      Types types, TypeElement element, OptionsDescriptor options) {
     Optional<AnnotationMirror> paperParcelMirror =
         MoreElements.getAnnotationMirror(element, PaperParcel.class);
     if (paperParcelMirror.isPresent()) {
@@ -326,7 +337,7 @@ final class Utils {
   private static void getFieldsToParcelInner(
       Types types,
       TypeElement element,
-      Options options,
+      OptionsDescriptor options,
       ImmutableList.Builder<VariableElement> fields) {
     for (VariableElement variable : fieldsIn(element.getEnclosedElements())) {
       if (!excludeViaModifiers(variable, options.excludeModifiers())
@@ -343,16 +354,17 @@ final class Utils {
     }
   }
 
-  static Options getOptions(TypeElement element) {
+  @Deprecated
+  static OptionsDescriptor getOptions(TypeElement element) {
     Optional<AnnotationMirror> optionsMirror = findOptionsMirror(element);
-    Options options = Options.DEFAULT;
+    OptionsDescriptor options = OptionsDescriptor.DEFAULT;
     if (optionsMirror.isPresent()) {
       ImmutableList<Set<Modifier>> excludeModifiers = getExcludeModifiers(optionsMirror.get());
       ImmutableList<String> excludeAnnotationNames = getExcludeAnnotations(optionsMirror.get());
       ImmutableList<String> exposeAnnotationNames = getExposeAnnotations(optionsMirror.get());
       boolean excludeNonExposedFields = getExcludeNonExposedFields(optionsMirror.get());
       ImmutableList<String> reflectAnnotations = getReflectAnnotations(optionsMirror.get());
-      options = Options.create(
+      options = OptionsDescriptor.create(
           optionsMirror.get(),
           excludeModifiers,
           excludeAnnotationNames,
@@ -361,6 +373,21 @@ final class Utils {
           reflectAnnotations);
     }
     return options;
+  }
+
+  static OptionsDescriptor getModuleOptions(AnnotationMirror processorConfig) {
+    ImmutableList<Set<Modifier>> excludeModifiers = getExcludeModifiers(processorConfig);
+    ImmutableList<String> excludeAnnotationNames = getExcludeAnnotations(processorConfig);
+    ImmutableList<String> exposeAnnotationNames = getExposeAnnotations(processorConfig);
+    boolean excludeNonExposedFields = getExcludeNonExposedFields(processorConfig);
+    ImmutableList<String> reflectAnnotations = getReflectAnnotations(processorConfig);
+    return OptionsDescriptor.create(
+        processorConfig,
+        excludeModifiers,
+        excludeAnnotationNames,
+        exposeAnnotationNames,
+        excludeNonExposedFields,
+        reflectAnnotations);
   }
 
   static boolean usesAnyAnnotationsFrom(Element element, List<String> annotationNames) {
@@ -630,6 +657,7 @@ final class Utils {
     return null;
   }
 
+  @Deprecated
   private static Optional<AnnotationMirror> findOptionsMirror(TypeElement element) {
     Optional<AnnotationMirror> options = optionsOnElement(element);
     if (options.isPresent()) return options;
@@ -702,7 +730,7 @@ final class Utils {
   private static boolean getExcludeNonExposedFields(AnnotationMirror mirror) {
     AnnotationValue excludeNonExposedFields =
         AnnotationMirrors.getAnnotationValue(mirror, "excludeNonExposedFields");
-    return excludeNonExposedFields.accept(BOOLEAN_VISITOR, null);
+    return excludeNonExposedFields.accept(TO_BOOLEAN, null);
   }
 
   private static ImmutableList<String> getReflectAnnotations(AnnotationMirror mirror) {
