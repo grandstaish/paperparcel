@@ -48,7 +48,7 @@ abstract class PaperParcelDescriptor {
    * Returns all of the adapters required for each field in the annotated class, indexed by the
    * field they are required for
    */
-  abstract ImmutableMap<FieldDescriptor, Adapter> adapters();
+  abstract ImmutableMap<FieldDescriptor, AdapterDescriptor> adapters();
 
   /**
    * Returns true if this class is a singleton. Singletons are defined as per
@@ -59,14 +59,14 @@ abstract class PaperParcelDescriptor {
   static final class Factory {
     private final Elements elements;
     private final Types types;
-    private final Adapter.Factory adapterFactory;
+    private final AdapterDescriptor.Factory adapterFactory;
     private final WriteInfo.Factory writeInfoFactory;
     private final ReadInfo.Factory readInfoFactory;
 
     Factory(
         Elements elements,
         Types types,
-        Adapter.Factory adapterFactory,
+        AdapterDescriptor.Factory adapterFactory,
         WriteInfo.Factory writeInfoFactory,
         ReadInfo.Factory readInfoFactory) {
       this.elements = elements;
@@ -76,10 +76,8 @@ abstract class PaperParcelDescriptor {
       this.readInfoFactory = readInfoFactory;
     }
 
-    PaperParcelDescriptor create(TypeElement element)
+    PaperParcelDescriptor create(TypeElement element, OptionsDescriptor options)
         throws WriteInfo.NonWritableFieldsException, ReadInfo.NonReadableFieldsException {
-
-      Options options = Utils.getOptions(element);
 
       ImmutableList<VariableElement> fields = Utils.getFieldsToParcel(types, element, options);
       @SuppressWarnings("deprecation") // Support for kapt2
@@ -98,13 +96,13 @@ abstract class PaperParcelDescriptor {
         readInfo = readInfoFactory.create(fields, methods, options.reflectAnnotations());
       }
 
-      ImmutableMap<FieldDescriptor, Adapter> adapters = getAdapterMap(readInfo);
+      ImmutableMap<FieldDescriptor, AdapterDescriptor> adapters = getAdapterMap(readInfo);
 
       return new AutoValue_PaperParcelDescriptor(element, writeInfo, readInfo, adapters, singleton);
     }
 
-    private ImmutableMap<FieldDescriptor, Adapter> getAdapterMap(ReadInfo readInfo) {
-      ImmutableMap.Builder<FieldDescriptor, Adapter> fieldAdapterMap = ImmutableMap.builder();
+    private ImmutableMap<FieldDescriptor, AdapterDescriptor> getAdapterMap(ReadInfo readInfo) {
+      ImmutableMap.Builder<FieldDescriptor, AdapterDescriptor> fieldAdapterMap = ImmutableMap.builder();
       if (readInfo != null) {
         for (FieldDescriptor field : readInfo.readableFields()) {
           addAdapterForField(fieldAdapterMap, field);
@@ -117,11 +115,11 @@ abstract class PaperParcelDescriptor {
     }
 
     private void addAdapterForField(
-        ImmutableMap.Builder<FieldDescriptor, Adapter> fieldAdapterMap, FieldDescriptor field) {
+        ImmutableMap.Builder<FieldDescriptor, AdapterDescriptor> fieldAdapterMap, FieldDescriptor field) {
       TypeMirror fieldType = field.type().get();
       Preconditions.checkNotNull(fieldType);
       if (!fieldType.getKind().isPrimitive()) {
-        Adapter adapter = adapterFactory.create(fieldType);
+        AdapterDescriptor adapter = adapterFactory.create(fieldType);
         if (adapter != null) {
           fieldAdapterMap.put(field, adapter);
         } else {

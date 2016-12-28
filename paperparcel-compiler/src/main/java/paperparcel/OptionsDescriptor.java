@@ -27,10 +27,10 @@ import javax.lang.model.element.Modifier;
 import static javax.lang.model.element.Modifier.STATIC;
 import static javax.lang.model.element.Modifier.TRANSIENT;
 
-/** A representation of {@link PaperParcel.Options} */
+/** Describes the options relevant to parsing a {@link PaperParcel} class. */
 @AutoValue
-abstract class Options {
-  static final Options DEFAULT = create(
+abstract class OptionsDescriptor {
+  static final OptionsDescriptor DEFAULT = create(
       null,
       ImmutableList.<Set<Modifier>>of(ImmutableSet.of(STATIC), ImmutableSet.of(TRANSIENT)),
       ImmutableList.<String>of(),
@@ -50,14 +50,14 @@ abstract class Options {
 
   abstract ImmutableList<String> reflectAnnotations();
 
-  static Options create(
+  static OptionsDescriptor create(
       AnnotationMirror mirror,
       ImmutableList<Set<Modifier>> excludeModifiers,
       ImmutableList<String> excludeAnnotationNames,
       ImmutableList<String> exposeAnnotationNames,
       boolean excludeNonExposedFields,
       ImmutableList<String> reflectAnnotations) {
-    return new AutoValue_Options(
+    return new AutoValue_OptionsDescriptor(
         mirror,
         excludeModifiers,
         excludeAnnotationNames,

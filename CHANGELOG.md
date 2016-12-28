@@ -15,8 +15,9 @@ Version 2.0.0-beta1 *(2016-11-27)*
  * Removed support for `Serializable` out of the box. Users can opt-in to using `Serializable` via
    explicit `TypeAdapter`s
  * Removed `AccessorName` API
- * Renamed `DefaultAdapter` to `RegisterAdapter` and removed all other types of adapter scoping
-   (field and class scopes) as they served no purpose
+ * Added `ProcessorConfig` API for adding custom `TypeAdapter`s and configuring other options in
+   the processor.
+ * Removed `DefaultAdapter` and `TypeAdapters` APIs in favour of the `ProcessorConfig` API.
  * Force annotated classes to implement `Parcelable` as wrappers have been removed
  * Greatly improve usage from Java 
  * Add a more powerful abstraction for excluding fields

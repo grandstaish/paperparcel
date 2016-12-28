@@ -101,7 +101,10 @@ public @interface PaperParcel {
    *    // ...
    *  }
    * </code></pre></p>
+   *
+   * @deprecated Use {@link ProcessorConfig} instead.
    */
+  @Deprecated
   @Documented
   @Retention(SOURCE)
   @Target({ ANNOTATION_TYPE, TYPE })

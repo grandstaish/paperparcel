@@ -34,7 +34,7 @@ import paperparcel.TypeKey.*;
 
 /**
  * Responsible for caching the qualified class names of all of the TypeAdapters discovered across
- * the various processing rounds and also cache {@link Adapter} instances as these can be
+ * the various processing rounds and also cache {@link AdapterDescriptor} instances as these can be
  * expensive to create.
  */
 final class AdapterRegistry {
@@ -162,7 +162,7 @@ final class AdapterRegistry {
       ClassEntry.create("paperparcel.internal.EnumAdapter", ENUM, false));
 
   private final List<Entry> entries = Lists.newArrayList(BUILT_IN_ADAPTER_ENTRIES);
-  private final Map<TypeName, Adapter> adapters = Maps.newLinkedHashMap();
+  private final Map<TypeName, AdapterDescriptor> adapters = Maps.newLinkedHashMap();
 
   private final Elements elements;
   private final Types types;
@@ -187,15 +187,26 @@ final class AdapterRegistry {
     entries.add(i, entry);
   }
 
+  boolean contains(TypeElement element) {
+    for (Entry entry : entries) {
+      if (entry instanceof ClassEntry) {
+        if (element.getQualifiedName().contentEquals(((ClassEntry) entry).qualifiedName())) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   List<Entry> getEntries() {
     return entries;
   }
 
-  void registerAdapterFor(TypeName fieldType, Adapter adapter) {
+  void registerAdapterFor(TypeName fieldType, AdapterDescriptor adapter) {
     adapters.put(fieldType, adapter);
   }
 
-  Optional<Adapter> getAdapterFor(TypeName fieldType) {
+  Optional<AdapterDescriptor> getAdapterFor(TypeName fieldType) {
     return Optional.fromNullable(adapters.get(fieldType));
   }
 }

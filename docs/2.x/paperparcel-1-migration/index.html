@@ -31,31 +31,31 @@
 <p>PaperParcel used to have a concept of Parcelable wrappers. These no longer exist in 2.x. There are several reasons for removing them:</p>
 
 <ul>
-    <li>They require reflection and runtime class lookups, which can be costly on Android (especially when parcelling a lot of model objects at the same time). <code>Parcelable</code> is intended to be performant!</li>
-    <li>They don't play well with other libraries that require <code>Parcelable</code>s. Examples include <a href="https://github.com/f2prateek/dart">Dart</a>, <a href="https://github.com/frankiesardo/icepick">IcePick</a>, and <a href="https://github.com/sockeqwe/fragmentargs">FragmentArgs</a>. Some of these libraries have APIs for allowing wrapper objects, but it's better practice to just have objects that are <i>actually</i> <code>Parcelable</code> instead.</li>
+    <li>They require reflection and runtime class lookups, which can be costly on Android (especially when parcelling a lot of model objects at the same time). <code><span class="pl-en">Parcelable</span></code> is intended to be performant!</li>
+    <li>They don't play well with other libraries that require <code><span class="pl-en">Parcelable</span></code>s. Examples include <a href="https://github.com/f2prateek/dart">Dart</a>, <a href="https://github.com/frankiesardo/icepick">IcePick</a>, and <a href="https://github.com/sockeqwe/fragmentargs">FragmentArgs</a>. Some of these libraries have APIs for allowing wrapper objects, but it's better practice to just have objects that are <i>actually</i> <code><span class="pl-en">Parcelable</span></code> instead.</li>
     <li>Removing them means having fewer method references.</li>
     <li>There were complications with library projects and multi-module projects.</li>
     <li>Wrappers make it harder to opt out of using a library because the wrapping code is usually scattered around both UI and model classes.</li>
 </ul>
 
-<p>Instead, PaperParcel 2.x just generates the <code>CREATOR</code> and <code>writeToParcel(...)</code> implementations for you. Then you can simply make your model objects implement <code>Parcelable</code> and use/call the generated code from your model.</p>
+<p>Instead, PaperParcel 2.x just generates the <code><span class="pl-en">CREATOR</span></code> and <code><span class="pl-en">writeToParcel(...)</span></code> implementations for you. Then you can simply make your model objects implement <code>Parcelable</code> and use/call the generated code from your model.</p>
 
 <p>Here's a list of things you need to do to remove all of the old wrapper-based code:</p> 
 
 <ul>
-  <li>Ensure that all of your <code>@PaperParcel</code> classes also implement <code>Parcelable</code>. Override the required methods, but leave them blank for now.</li>
-  <li>If you have references to <code>PaperParcels</code>, delete them next. This class no longer exists as it was only used for wrapping and unwrapping types.</li>
-  <li>If you have references to <code>TypedParcelable</code>, you need to delete those too. This interface no longer exists.</li>
-  <li>If you have references to <code>PaperParcelable.Creator</code>, you need to delete those too. This was removed in favour of the newly generated <code>CREATOR</code>s that don't rely on wrappers.</li>
+  <li>Ensure that all of your <code><span class="pl-k">@PaperParcel</span></code> classes also implement <code><span class="pl-en">Parcelable</span></code>. Override the required methods, but leave them blank for now.</li>
+  <li>If you have references to <code><span class="pl-en">PaperParcels</span></code>, delete them next. This class no longer exists as it was only used for wrapping and unwrapping types.</li>
+  <li>If you have references to <code><span class="pl-en">TypedParcelable</span></code>, you need to delete those too. This interface no longer exists.</li>
+  <li>If you have references to <code><span class="pl-en">PaperParcelable.Creator</span></code>, you need to delete those too. This was removed in favour of the newly generated <code><span class="pl-en">CREATOR</span></code>s that don't rely on wrappers.</li>
   <li>Build and then use the generated code in your models as shown in the <a href="../../#usage">Usage</a> section of the website.</li>
 </ul>
 
 <h2>
 <a id="type-adapters" class="anchor" href="#type-adapters" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Type Adapters</h2>
 
-<p>The <code>TypeAdapter</code> API hasn't changed, but the API for registering them has. There isn't really a good reason for having a TypeAdapter with a limited scope. For this reason, PaperParcel has removed the <code>@TypeAdapters</code> API. Additionally, <code>@DefaultAdapter</code> has been renamed to <code>@RegisterAdapter</code>.</p>
+<p>The <code><span class="pl-en">TypeAdapter</span></code> API hasn't changed, but the API for adding them has. See <a href="../../#processor-config">Processor Configuration</a> from the website to find out how to add your existing <code><span class="pl-en">TypeAdapter</span></code>s.</p>
 
-<p>While the API is exactly the same, <code>TypeAdapter</code>s have actually gained some new tricks. See <a href="../../#typeadapters">Type Adapters</a> from the website to find out more.</p>
+<p>While the API is exactly the same, <code><span class="pl-en">TypeAdapter</span></code>s have actually gained some new tricks. See <a href="../../#typeadapters">Type Adapters</a> from the website to find out more.</p>
         
 <h2>
 <a id="proguard" class="anchor" href="#proguard" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Proguard</h2>

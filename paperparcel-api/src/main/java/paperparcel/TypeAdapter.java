@@ -25,11 +25,11 @@ import android.support.annotation.NonNull;
  * <p>When defining a {@code TypeAdapter}, you may choose to handle {@code null} values or not. If
  * you choose not to, PaperParcel will handle the null-safety for you automatically. If you choose
  * to handle {@code null} values (or the adapted type can never be {@code null}), then you should
- * set {@link RegisterAdapter#nullSafe()} to {@code true}.</p>
+ * set {@link Adapter#nullSafe()} to {@code true}.</p>
  *
  * @param <T> The Type to override the default reading/writing functionality for
  *
- * @see RegisterAdapter#nullSafe()
+ * @see Adapter#nullSafe()
  */
 public interface TypeAdapter<T> {
 

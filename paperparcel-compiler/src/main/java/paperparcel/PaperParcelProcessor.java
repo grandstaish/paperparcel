@@ -57,16 +57,16 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
     }
 
     AdapterRegistry adapterRegistry = new AdapterRegistry(elements, types);
+    OptionsHolder optionsHolder = new OptionsHolder();
 
-    RegisterAdapterValidator registerAdapterValidator =
-        new RegisterAdapterValidator(elements, types);
+    AdapterValidator adapterValidator = new AdapterValidator(elements, types);
     PaperParcelValidator paperParcelValidator =
         new PaperParcelValidator(elements, types);
 
     FieldDescriptor.Factory fieldDescriptorFactory = new FieldDescriptor.Factory(types);
     WriteInfo.Factory writeInfoFactory = new WriteInfo.Factory(types, fieldDescriptorFactory);
     ReadInfo.Factory readInfoFactory = new ReadInfo.Factory(types, fieldDescriptorFactory);
-    Adapter.Factory adapterFactory = new Adapter.Factory(elements, types, adapterRegistry);
+    AdapterDescriptor.Factory adapterFactory = new AdapterDescriptor.Factory(elements, types, adapterRegistry);
     PaperParcelDescriptor.Factory paperParcelDescriptorFactory =
         new PaperParcelDescriptor.Factory(
             elements,
@@ -78,12 +78,16 @@ public class PaperParcelProcessor extends BasicAnnotationProcessor {
     PaperParcelGenerator paperParcelGenerator = new PaperParcelGenerator(filer);
 
     return ImmutableList.of(
-        new RegisterAdapterProcessingStep(
+        new OptionsProcessingStep(
             messager,
-            registerAdapterValidator,
+            optionsHolder),
+        new AdapterProcessingStep(
+            messager,
+            adapterValidator,
             adapterRegistry),
         new PaperParcelProcessingStep(
             messager,
+            optionsHolder,
             paperParcelValidator,
             paperParcelDescriptorFactory,
             paperParcelGenerator));

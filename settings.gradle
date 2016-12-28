@@ -1,6 +1,6 @@
 include ':paperparcel'
 include ':paperparcel-kotlin'
-include ':paperparcel-annotations'
+include ':paperparcel-api'
 include ':paperparcel-compiler'
 
 include ':kotlin-example'

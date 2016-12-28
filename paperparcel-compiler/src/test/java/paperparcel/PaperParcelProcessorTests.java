@@ -349,18 +349,20 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.REGISTERADAPTER_ON_NON_TYPE_ADAPTER)
+        .withErrorContaining(String.format(
+            ErrorMessages.ADAPTER_MUST_IMPLEMENT_TYPE_ADAPTER_INTERFACE, "test.Test"))
         .in(source)
         .onLine(5);
   }
 
-  @Test public void failIfRegisterAdapterClassIsAnInterfaceTest() {
+  @Test public void failIfAdapterIsAnInterfaceTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.Adapter;",
+            "import paperparcel.ProcessorConfig;",
             "import paperparcel.TypeAdapter;",
-            "@RegisterAdapter",
+            "@ProcessorConfig(adapters = @Adapter(Test.class))",
             "public interface Test extends TypeAdapter<Integer> {",
             "}"
         ));
@@ -368,18 +370,19 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.REGISTERADAPTER_ON_NON_CLASS)
+        .withErrorContaining(ErrorMessages.ADAPTER_MUST_BE_CLASS)
         .in(source)
-        .onLine(5);
+        .onLine(6);
   }
 
-  @Test public void failIfRegisterAdapterClassIsAbstractTest() {
+  @Test public void failIfAdapterIsAbstractTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.Adapter;",
+            "import paperparcel.ProcessorConfig;",
             "import paperparcel.TypeAdapter;",
-            "@RegisterAdapter",
+            "@ProcessorConfig(adapters = @Adapter(Test.class))",
             "public abstract class Test implements TypeAdapter<Integer> {",
             "}"
         ));
@@ -387,9 +390,9 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.REGISTERADAPTER_ON_ABSTRACT_CLASS)
+        .withErrorContaining(ErrorMessages.ADAPTER_IS_ABSTRACT)
         .in(source)
-        .onLine(5);
+        .onLine(6);
   }
 
   @Test public void failIfFieldIsInaccessibleTest() {
@@ -570,14 +573,15 @@ public class PaperParcelProcessorTests {
         .generatesSources(expectedSource);
   }
 
-  @Test public void failIfTypeAdapterIsRaw() {
+  @Test public void failIfAdapterTypeArgumentIsNotSpecified() {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.RawTypeAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.Adapter;",
+            "import paperparcel.ProcessorConfig;",
             "import paperparcel.TypeAdapter;",
             "import android.os.Parcel;",
-            "@RegisterAdapter",
+            "@ProcessorConfig(adapters = @Adapter(RawTypeAdapter.class))",
             "public class RawTypeAdapter<T> implements TypeAdapter {",
             "  public Object readFromParcel(Parcel in) {",
             "    return null;",
@@ -590,20 +594,21 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(typeAdapter)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.REGISTERADAPTER_ON_RAW_TYPE_ADAPTER)
+        .withErrorContaining(ErrorMessages.ADAPTER_TYPE_ARGUMENT_IS_MISSING)
         .in(typeAdapter)
-        .onLine(6);
+        .onLine(7);
   }
 
-  @Test public void failIfConstructorHasRawTypeParameter() {
+  @Test public void failIfAdapterConstructorHasRawTypeAdapterParameter() {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.ListTypeAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.Adapter;",
+            "import paperparcel.ProcessorConfig;",
             "import paperparcel.TypeAdapter;",
             "import java.util.List;",
             "import android.os.Parcel;",
-            "@RegisterAdapter",
+            "@ProcessorConfig(adapters = @Adapter(ListTypeAdapter.class))",
             "public class ListTypeAdapter<T> implements TypeAdapter<List<T>> {",
             "  public ListTypeAdapter(TypeAdapter ta) {",
             "  }",
@@ -618,9 +623,9 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(typeAdapter)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.RAW_TYPE_ADAPTER_IN_CONSTRUCTOR)
+        .withErrorContaining(ErrorMessages.TYPE_ADAPTER_CONSTRUCTOR_PARAMETER_TYPE_ARGUMENT_MISSING)
         .in(typeAdapter)
-        .onLine(8);
+        .onLine(9);
   }
 
   @Test public void failIfThereAreNoVisibleConstructorsTest() {
@@ -1041,13 +1046,11 @@ public class PaperParcelProcessorTests {
     JavaFileObject reallySpecificAdapter =
         JavaFileObjects.forSourceString("test.ReallySpecificTypeAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import java.util.HashMap;",
             "import java.util.Map;",
             "import java.util.List;",
             "import android.os.Parcel;",
-            "@RegisterAdapter",
             "public class ReallySpecificTypeAdapter<T1, T2> implements TypeAdapter<HashMap<List<T1>[], Map<T1, T2>>> {",
             "  public HashMap<List<T1>[], Map<T1, T2>> readFromParcel(Parcel in) {",
             "    return null;",
@@ -1062,10 +1065,13 @@ public class PaperParcelProcessorTests {
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
+            "import paperparcel.Adapter;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
             "import java.util.HashMap;",
             "import java.util.List;",
             "import java.util.Map;",
+            "@ProcessorConfig(adapters = @Adapter(ReallySpecificTypeAdapter.class))",
             "@PaperParcel",
             "public class Test implements Parcelable {",
             "  public HashMap<List<Integer>[], Map<Integer, Boolean>> field1;",
@@ -1173,8 +1179,9 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcelable;",
             "import java.util.List;",
             "import paperparcel.TypeAdapter;",
-            "import paperparcel.RegisterAdapter;",
-            "@RegisterAdapter",
+            "import paperparcel.Adapter;",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(adapters = @Adapter(WildcardAdapter.class))",
             "public class WildcardAdapter implements TypeAdapter<List<? extends Integer>> {",
             "  @Override public List<? extends Integer> readFromParcel(Parcel source) { return null; }",
             "  @Override public void writeToParcel(List<? extends Integer> value, Parcel dest, int flags) {}",
@@ -1184,10 +1191,10 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(wildcardAdapter)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(String.format(ErrorMessages.WILDCARD_IN_ADAPTED_TYPE,
+        .withErrorContaining(String.format(ErrorMessages.ADAPTER_ADAPTED_TYPE_HAS_WILDCARDS,
             "WildcardAdapter", "java.util.List<? extends java.lang.Integer>"))
         .in(wildcardAdapter)
-        .onLine(8);
+        .onLine(9);
   }
 
   @Test public void failWhenFieldIsWildcardTypeTest() {
@@ -1349,11 +1356,9 @@ public class PaperParcelProcessorTests {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.MyAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
-            "@RegisterAdapter",
             "public class MyAdapter<T extends Comparable<T>> implements TypeAdapter<T> {",
             "  public T readFromParcel(Parcel in) {",
             "    return null;",
@@ -1368,8 +1373,11 @@ public class PaperParcelProcessorTests {
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
+            "import paperparcel.Adapter;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
             "import java.util.Date;",
+            "@ProcessorConfig(adapters = @Adapter(MyAdapter.class))",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  public Date value;",
@@ -1481,8 +1489,9 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
             "import java.lang.reflect.Modifier;",
-            "@PaperParcel.Options(excludeModifiers = { Modifier.STATIC | Modifier.FINAL, Modifier.TRANSIENT })",
+            "@ProcessorConfig(excludeModifiers = { Modifier.STATIC | Modifier.FINAL, Modifier.TRANSIENT })",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  static final long field1 = 0;",
@@ -1549,7 +1558,8 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
-            "@PaperParcel.Options(excludeAnnotations = Exclude.class)",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(excludeAnnotations = Exclude.class)",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  public int value;",
@@ -1611,7 +1621,8 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
-            "@PaperParcel.Options(",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(",
             "  excludeNonExposedFields = true,",
             "  exposeAnnotations = Expose.class",
             ")",
@@ -1676,7 +1687,8 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
-            "@PaperParcel.Options(",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(",
             "  excludeNonExposedFields = true,",
             "  exposeAnnotations = Expose.class",
             ")",
@@ -1748,7 +1760,8 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
-            "@PaperParcel.Options(excludeAnnotations = Exclude.class)",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(excludeAnnotations = Exclude.class)",
             "@PaperParcel",
             "public final class Test extends BaseTest implements Parcelable {",
             "  public int value;",
@@ -1804,12 +1817,12 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void sharedOptionsAnnotationTest() {
+  @Test public void globalConfigTest() {
     JavaFileObject sharedOptions =
         JavaFileObjects.forSourceString("test.SharedOptions", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.PaperParcel;",
-            "@PaperParcel.Options(excludeModifiers = {})",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(excludeModifiers = {})",
             "public @interface SharedOptions {}"
         ));
 
@@ -1819,7 +1832,6 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
-            "@SharedOptions",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  public transient int value;",
@@ -1880,7 +1892,8 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
-            "@PaperParcel.Options(",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(",
             "  excludeNonExposedFields = false,",
             "  exposeAnnotations = Expose.class",
             ")",
@@ -1942,7 +1955,8 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
-            "@PaperParcel.Options(excludeNonExposedFields = true)",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(excludeNonExposedFields = true)",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  public int value;",
@@ -1957,9 +1971,9 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.OPTIONS_NO_EXPOSE_ANNOTATIONS)
+        .withErrorContaining(ErrorMessages.NO_EXPOSE_ANNOTATIONS_DEFINED)
         .in(source)
-        .onLine(5);
+        .onLine(6);
   }
 
   @Test public void primitiveArrayAsTypeParameterTest() {
@@ -2049,10 +2063,8 @@ public class PaperParcelProcessorTests {
     JavaFileObject myClassAdapter =
         JavaFileObjects.forSourceString("test.MyClassAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import android.os.Parcel;",
-            "@RegisterAdapter",
             "public class MyClassAdapter implements TypeAdapter<test.MyClass> {",
             "  public test.MyClass readFromParcel(Parcel in) {",
             "    return null;",
@@ -2065,10 +2077,8 @@ public class PaperParcelProcessorTests {
     JavaFileObject yetAnotherMyClassAdapter =
         JavaFileObjects.forSourceString("test.clash.MyClassAdapter", Joiner.on('\n').join(
             "package test.clash;",
-            "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import android.os.Parcel;",
-            "@RegisterAdapter",
             "public class MyClassAdapter implements TypeAdapter<test.clash.MyClass> {",
             "  public test.clash.MyClass readFromParcel(Parcel in) {",
             "    return null;",
@@ -2083,7 +2093,13 @@ public class PaperParcelProcessorTests {
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
+            "import paperparcel.Adapter;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(adapters = {",
+            "    @Adapter(test.MyClassAdapter.class),",
+            "    @Adapter(test.clash.MyClassAdapter.class)",
+            "})",
             "@PaperParcel",
             "public class Test implements Parcelable {",
             "  private test.MyClass value1;",
@@ -2160,10 +2176,8 @@ public class PaperParcelProcessorTests {
     JavaFileObject myClassAdapter =
         JavaFileObjects.forSourceString("test.MyClassAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import android.os.Parcel;",
-            "@RegisterAdapter",
             "public class MyClassAdapter implements TypeAdapter<test.MyClass> {",
             "  public test.MyClass readFromParcel(Parcel in) {",
             "    return null;",
@@ -2178,7 +2192,10 @@ public class PaperParcelProcessorTests {
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
+            "import paperparcel.Adapter;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(adapters = @Adapter(MyClassAdapter.class))",
             "@PaperParcel",
             "public class Test implements Parcelable {",
             "  int in;",
@@ -2260,7 +2277,8 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
-            "@PaperParcel.Options(reflectAnnotations = Reflect.class)",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(reflectAnnotations = Reflect.class)",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  @Reflect private int reflectIt;",
@@ -2322,8 +2340,9 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
             "import java.util.List;",
-            "@PaperParcel.Options(reflectAnnotations = Reflect.class)",
+            "@ProcessorConfig(reflectAnnotations = Reflect.class)",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  @Reflect private List<Integer> reflectIt;",
@@ -2393,8 +2412,9 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
             "import java.util.List;",
-            "@PaperParcel.Options(reflectAnnotations = Reflect.class)",
+            "@ProcessorConfig(reflectAnnotations = Reflect.class)",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  @Reflect private List<Integer> reflectIt;",
@@ -2465,8 +2485,9 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
             "import java.util.List;",
-            "@PaperParcel.Options(reflectAnnotations = Reflect.class)",
+            "@ProcessorConfig(reflectAnnotations = Reflect.class)",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  @Reflect private List<Integer> reflectIt;",
@@ -2538,8 +2559,9 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
             "import java.util.List;",
-            "@PaperParcel.Options(reflectAnnotations = Reflect.class)",
+            "@ProcessorConfig(reflectAnnotations = Reflect.class)",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  @Reflect private List<Integer> reflectIt;",
@@ -2612,8 +2634,9 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
             "import java.util.List;",
-            "@PaperParcel.Options(reflectAnnotations = Reflect.class)",
+            "@ProcessorConfig(reflectAnnotations = Reflect.class)",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  @Reflect List<Integer> value;",
@@ -2681,8 +2704,9 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
             "import java.util.List;",
-            "@PaperParcel.Options(reflectAnnotations = Reflect.class)",
+            "@ProcessorConfig(reflectAnnotations = Reflect.class)",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  private List<Integer> value;",
@@ -2754,8 +2778,9 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
             "import java.util.List;",
-            "@PaperParcel.Options(reflectAnnotations = Reflect.class)",
+            "@ProcessorConfig(reflectAnnotations = Reflect.class)",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  private int value1;",
@@ -2895,11 +2920,9 @@ public class PaperParcelProcessorTests {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.MyTypeAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import android.os.Parcel;",
             "import java.util.Date;",
-            "@RegisterAdapter(nullSafe = true)",
             "public class MyTypeAdapter implements TypeAdapter<Date> {",
             "  public Date readFromParcel(Parcel in) {",
             "    return null;",
@@ -2914,8 +2937,11 @@ public class PaperParcelProcessorTests {
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
+            "import paperparcel.Adapter;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
             "import java.util.Date;",
+            "@ProcessorConfig(adapters = @Adapter(value = MyTypeAdapter.class, nullSafe = true))",
             "@PaperParcel",
             "public class Test implements Parcelable {",
             "  public Date value;",
@@ -2972,11 +2998,9 @@ public class PaperParcelProcessorTests {
     JavaFileObject myTypeAdapter =
         JavaFileObjects.forSourceString("test.MyTypeAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import java.util.HashMap;",
             "import android.os.Parcel;",
-            "@RegisterAdapter",
             "public class MyTypeAdapter<K, V> implements TypeAdapter<HashMap<K, V>> {",
             "  public MyTypeAdapter(",
             "      TypeAdapter<K> keyAdapter, ",
@@ -2997,8 +3021,11 @@ public class PaperParcelProcessorTests {
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
+            "import paperparcel.Adapter;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
             "import java.util.HashMap;",
+            "@ProcessorConfig(adapters = @Adapter(MyTypeAdapter.class))",
             "@PaperParcel",
             "public class Test implements Parcelable {",
             "  public HashMap<Integer, Boolean> value;",
@@ -3063,10 +3090,11 @@ public class PaperParcelProcessorTests {
     JavaFileObject myTypeAdapter =
         JavaFileObjects.forSourceString("test.MyTypeAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.Adapter;",
+            "import paperparcel.ProcessorConfig;",
             "import paperparcel.TypeAdapter;",
             "import android.os.Parcel;",
-            "@RegisterAdapter",
+            "@ProcessorConfig(adapters = @Adapter(MyTypeAdapter.class))",
             "public class MyTypeAdapter implements TypeAdapter<Integer> {",
             "  public MyTypeAdapter(Class myClass) {",
             "  }",
@@ -3081,21 +3109,19 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(myTypeAdapter)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.RAW_CLASS_TYPE_IN_CONSTRUCTOR)
+        .withErrorContaining(ErrorMessages.CLASS_CONSTRUCTOR_PARAMETER_TYPE_ARGUMENT_MISSING)
         .in(myTypeAdapter)
-        .onLine(7);
+        .onLine(8);
   }
 
   @Test public void genericTypeAdapterClassDependencyTest() {
     JavaFileObject myTypeAdapter =
         JavaFileObjects.forSourceString("test.MyTypeAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import android.os.Parcel;",
             "import java.util.ArrayList;",
             "import java.util.List;",
-            "@RegisterAdapter",
             "public class MyTypeAdapter<T> implements TypeAdapter<ArrayList<T>> {",
             "  public MyTypeAdapter(Class<T> myClass) {",
             "  }",
@@ -3112,9 +3138,12 @@ public class PaperParcelProcessorTests {
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
+            "import paperparcel.Adapter;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
             "import java.util.ArrayList;",
             "import java.util.List;",
+            "@ProcessorConfig(adapters = @Adapter(MyTypeAdapter.class))",
             "@PaperParcel",
             "public class Test implements Parcelable {",
             "  public ArrayList<List<Integer>> value;",
@@ -3313,15 +3342,16 @@ public class PaperParcelProcessorTests {
         .onLine(7);
   }
 
-  @Test public void failIfRegisterAdapterIsOnNonStaticNestedClass() {
+  @Test public void failIfNestedAdapterIsNotStatic() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.TestOuter", Joiner.on('\n').join(
             "package test;",
             "import android.os.Parcel;",
-            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.Adapter;",
+            "import paperparcel.ProcessorConfig;",
             "import paperparcel.TypeAdapter;",
             "public class TestOuter {",
-            "  @RegisterAdapter",
+            "  @ProcessorConfig(adapters = @Adapter(TestInner.class))",
             "  public class TestInner implements TypeAdapter<Integer> {",
             "    public Integer readFromParcel(Parcel in) {",
             "      return null;",
@@ -3335,20 +3365,21 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.REGISTERADAPTER_ON_NON_STATIC_INNER_CLASS)
+        .withErrorContaining(ErrorMessages.NESTED_ADAPTER_MUST_BE_STATIC)
         .in(source)
-        .onLine(7);
+        .onLine(8);
   }
 
-  @Test public void failIfRegisterAdapterClassIsEnclosedInNonPublicClass() {
+  @Test public void failIfNestedAdapterIsEnclosedInNonPublicClass() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.TestOuter", Joiner.on('\n').join(
             "package test;",
             "import android.os.Parcel;",
-            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.Adapter;",
+            "import paperparcel.ProcessorConfig;",
             "import paperparcel.TypeAdapter;",
             "class TestOuter {",
-            "  @RegisterAdapter",
+            "  @ProcessorConfig(adapters = @Adapter(TestInner.class))",
             "  public class TestInner implements TypeAdapter<Integer> {",
             "    public Integer readFromParcel(Parcel in) {",
             "      return null;",
@@ -3362,19 +3393,20 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.REGISTERADAPTER_NOT_VISIBLE)
+        .withErrorContaining(ErrorMessages.ADAPTER_VISIBILITY_RESTRICTED)
         .in(source)
-        .onLine(7);
+        .onLine(8);
   }
 
-  @Test public void failIfRegisterAdapterIsOnNonPublicClass() {
+  @Test public void failIfAdapterIsNonPublic() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.TestOuter", Joiner.on('\n').join(
             "package test;",
             "import android.os.Parcel;",
-            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.Adapter;",
+            "import paperparcel.ProcessorConfig;",
             "import paperparcel.TypeAdapter;",
-            "@RegisterAdapter",
+            "@ProcessorConfig(adapters = @Adapter(TestOuter.class))",
             "class TestOuter implements TypeAdapter<Integer> {",
             "  public Integer readFromParcel(Parcel in) {",
             "    return null;",
@@ -3387,20 +3419,18 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.REGISTERADAPTER_ON_NON_PUBLIC_CLASS)
+        .withErrorContaining(ErrorMessages.ADAPTER_MUST_BE_PUBLIC)
         .in(source)
-        .onLine(6);
+        .onLine(7);
   }
 
   @Test public void overrideDefaultAdapterTest() {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.MyIntegerAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import android.os.Parcel;",
             "import paperparcel.internal.Utils;",
-            "@RegisterAdapter(priority = RegisterAdapter.Priority.HIGH)",
             "public class MyIntegerAdapter implements TypeAdapter<Integer> {",
             "  public Integer readFromParcel(Parcel in) {",
             "    return null;",
@@ -3415,7 +3445,10 @@ public class PaperParcelProcessorTests {
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
+            "import paperparcel.Adapter;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(adapters = @Adapter(value = MyIntegerAdapter.class, priority = Adapter.Priority.HIGH))",
             "@PaperParcel",
             "public class Test implements Parcelable {",
             "  public Integer value;",
@@ -3472,11 +3505,9 @@ public class PaperParcelProcessorTests {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.MyIntegerAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import android.os.Parcel;",
             "import paperparcel.internal.Utils;",
-            "@RegisterAdapter",
             "public class MyIntegerAdapter implements TypeAdapter<Integer> {",
             "  public Integer readFromParcel(Parcel in) {",
             "    return null;",
@@ -3491,7 +3522,10 @@ public class PaperParcelProcessorTests {
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
+            "import paperparcel.Adapter;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(adapters = @Adapter(MyIntegerAdapter.class))",
             "@PaperParcel",
             "public class Test implements Parcelable {",
             "  public Integer value;",
@@ -3547,12 +3581,10 @@ public class PaperParcelProcessorTests {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.MixedAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import java.io.Serializable;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
-            "@RegisterAdapter(priority = RegisterAdapter.Priority.HIGH)",
             "public class MixedAdapter<T extends Parcelable & Serializable> ",
             "    implements TypeAdapter<T> {",
             "  public T readFromParcel(Parcel in) {",
@@ -3577,7 +3609,10 @@ public class PaperParcelProcessorTests {
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
+            "import paperparcel.Adapter;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(adapters = @Adapter(value = MixedAdapter.class, priority = Adapter.Priority.HIGH))",
             "@PaperParcel",
             "public class Test implements Parcelable {",
             "  public MyClass value1;",
@@ -3646,10 +3681,8 @@ public class PaperParcelProcessorTests {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.MixedAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import android.os.Parcel;",
-            "@RegisterAdapter",
             "public class MixedAdapter<T extends Comparable<Integer>> implements TypeAdapter<T> {",
             "  public T readFromParcel(Parcel in) {",
             "    return null;",
@@ -3665,7 +3698,10 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import java.util.Date;",
+            "import paperparcel.Adapter;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(adapters = @Adapter(MixedAdapter.class))",
             "@PaperParcel",
             "public class Test implements Parcelable {",
             "  public Date value;",
@@ -3685,19 +3721,17 @@ public class PaperParcelProcessorTests {
         .withErrorContaining(String.format(ErrorMessages.FIELD_MISSING_TYPE_ADAPTER,
             "java.util.Date", ErrorMessages.SITE_URL + "#typeadapters"))
         .in(source)
-        .onLine(8);
+        .onLine(11);
   }
 
   @Test public void typeParameterContainedInTypeArgumentTest() {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.MixedAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import java.io.Serializable;",
             "import java.util.Date;",
             "import android.os.Parcel;",
-            "@RegisterAdapter",
             "public class MixedAdapter<D extends Serializable & Comparable<Date>, T extends Comparable<D>> ",
             "    implements TypeAdapter<T> {",
             "  public T readFromParcel(Parcel in) {",
@@ -3714,7 +3748,10 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import java.util.Date;",
+            "import paperparcel.Adapter;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(adapters = @Adapter(MixedAdapter.class))",
             "@PaperParcel",
             "public class Test implements Parcelable {",
             "  public Date value;",
@@ -3772,12 +3809,10 @@ public class PaperParcelProcessorTests {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.MixedAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import java.io.Serializable;",
             "import java.util.Date;",
             "import android.os.Parcel;",
-            "@RegisterAdapter",
             "public class MixedAdapter<D extends Serializable & Comparable<Date>, T extends Comparable<D> & Serializable> ",
             "    implements TypeAdapter<T> {",
             "  public T readFromParcel(Parcel in) {",
@@ -3794,7 +3829,10 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import java.util.Date;",
+            "import paperparcel.Adapter;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(adapters = @Adapter(MixedAdapter.class))",
             "@PaperParcel",
             "public class Test implements Parcelable {",
             "  public Date value;",
@@ -3852,13 +3890,11 @@ public class PaperParcelProcessorTests {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.MixedAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import java.io.Serializable;",
             "import java.util.Date;",
             "import java.util.Map;",
             "import android.os.Parcel;",
-            "@RegisterAdapter",
             "public class MixedAdapter<D extends Serializable & Comparable<Date>, T extends Map<D, D>> ",
             "    implements TypeAdapter<T> {",
             "  public T readFromParcel(Parcel in) {",
@@ -3876,7 +3912,10 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcelable;",
             "import java.util.Date;",
             "import java.util.Map;",
+            "import paperparcel.Adapter;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(adapters = @Adapter(MixedAdapter.class))",
             "@PaperParcel",
             "public class Test implements Parcelable {",
             "  public Map<Date, Date> value;",
@@ -3937,12 +3976,10 @@ public class PaperParcelProcessorTests {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.MixedAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
             "import paperparcel.TypeAdapter;",
             "import java.io.Serializable;",
             "import java.util.Date;",
             "import android.os.Parcel;",
-            "@RegisterAdapter",
             "public class MixedAdapter<D extends Serializable & Comparable<Date>, T extends D> ",
             "    implements TypeAdapter<T> {",
             "  public T readFromParcel(Parcel in) {",
@@ -3959,7 +3996,10 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
             "import java.util.Date;",
+            "import paperparcel.Adapter;",
             "import paperparcel.PaperParcel;",
+            "import paperparcel.ProcessorConfig;",
+            "@ProcessorConfig(adapters = @Adapter(MixedAdapter.class))",
             "@PaperParcel",
             "public class Test implements Parcelable {",
             "  public Date value;",
@@ -4174,10 +4214,11 @@ public class PaperParcelProcessorTests {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.MyTypeAdapter", Joiner.on('\n').join(
             "package test;",
-            "import paperparcel.RegisterAdapter;",
+            "import paperparcel.Adapter;",
+            "import paperparcel.ProcessorConfig;",
             "import paperparcel.TypeAdapter;",
             "import android.os.Parcel;",
-            "@RegisterAdapter",
+            "@ProcessorConfig(adapters = @Adapter(MyTypeAdapter.class))",
             "public class MyTypeAdapter implements TypeAdapter<Integer> {",
             "  MyTypeAdapter() {}",
             "  public Integer readFromParcel(Parcel in) {",
@@ -4191,9 +4232,9 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(typeAdapter)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.REGISTERADAPTER_NO_PUBLIC_CONSTRUCTOR)
+        .withErrorContaining(ErrorMessages.ADAPTER_MUST_HAVE_PUBLIC_CONSTRUCTOR)
         .in(typeAdapter)
-        .onLine(6);
+        .onLine(7);
   }
 
 }
