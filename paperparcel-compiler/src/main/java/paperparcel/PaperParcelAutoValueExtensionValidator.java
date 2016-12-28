@@ -29,11 +29,11 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 
-final class AutoValueExtensionValidator {
+final class PaperParcelAutoValueExtensionValidator {
   private final Elements elements;
   private final Types types;
 
-  AutoValueExtensionValidator(
+  PaperParcelAutoValueExtensionValidator(
       Elements elements,
       Types types) {
     this.elements = elements;

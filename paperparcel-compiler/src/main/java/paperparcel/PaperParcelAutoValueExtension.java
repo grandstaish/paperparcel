@@ -66,8 +66,8 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
     TypeMirror parcelable = elements.getTypeElement(PARCELABLE_CLASS_NAME).asType();
     TypeElement autoValueTypeElement = context.autoValueClass();
     if (types.isAssignable(autoValueTypeElement.asType(), parcelable)) {
-      AutoValueExtensionValidator extensionValidator =
-          new AutoValueExtensionValidator(elements, types);
+      PaperParcelAutoValueExtensionValidator extensionValidator =
+          new PaperParcelAutoValueExtensionValidator(elements, types);
       ValidationReport<TypeElement> report = extensionValidator.validate(autoValueTypeElement);
       report.printMessagesTo(messager);
       return report.isClean();

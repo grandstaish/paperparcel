@@ -76,9 +76,9 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
       if (validationReport.isClean()) {
         try {
           generatePaperParcel(paperParcelDescriptorFactory.create(paperParcelElement, options));
-        } catch (WriteInfo.NonWritableFieldsException e) {
+        } catch (PaperParcelDescriptor.NonWritableFieldsException e) {
           printMessages(e, paperParcelElement);
-        } catch (ReadInfo.NonReadableFieldsException e) {
+        } catch (PaperParcelDescriptor.NonReadableFieldsException e) {
           printMessages(e, paperParcelElement);
         } catch (UnknownTypeException e) {
           messager.printMessage(Diagnostic.Kind.ERROR,
@@ -100,7 +100,7 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
     }
   }
 
-  private void printMessages(WriteInfo.NonWritableFieldsException e, TypeElement element) {
+  private void printMessages(PaperParcelDescriptor.NonWritableFieldsException e, TypeElement element) {
     ImmutableSet<ExecutableElement> validConstructors = e.allNonWritableFieldsMap().keySet();
     ImmutableSet<ExecutableElement> invalidConstructors =
         e.unassignableConstructorParameterMap().keySet();
@@ -137,7 +137,7 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
     }
   }
 
-  private void printMessages(ReadInfo.NonReadableFieldsException e, TypeElement element) {
+  private void printMessages(PaperParcelDescriptor.NonReadableFieldsException e, TypeElement element) {
     for (VariableElement nonReadableField : e.nonReadableFields()) {
       String fieldName = nonReadableField.getSimpleName().toString();
       messager.printMessage(Diagnostic.Kind.ERROR,
