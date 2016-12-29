@@ -1,7 +1,7 @@
 Change Log
 ==========
 
-Version 2.0.0-beta2 *(TBD)*
+Version 2.0.0-beta2 *(2016-12-29)*
 ----------------------------
 
 * Added `ProcessorConfig` API for adding custom `TypeAdapter`s and configuring other options in
@@ -9,6 +9,12 @@ Version 2.0.0-beta2 *(TBD)*
 * Deprecated `RegisterAdapter` API in favour of `ProcessorConfig`
 * Deprecated `PaperParcel.Options` API in favour of `ProcessorConfig`
 * Re-added `Serializable` support
+* Performance improvements in the compiler and in the generated code
+* FIX: allow use of "new" as a variable name in kotlin (as it isn't a kotlin keyword)
+* Validate kapt version and give a helpful error message if the wrong version is being used
+* FIX: allow use of contravariant generic types
+* Greatly improve type matching system. This allows for adapters to handle complex generic types,
+  including intersection types.
 
 Version 2.0.0-beta1 *(2016-11-27)*
 ----------------------------
