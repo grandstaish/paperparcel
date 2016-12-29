@@ -122,7 +122,7 @@
 
 <p>Out of the box PaperParcel supports all of the types that are supported by the <a href="https://developer.android.com/reference/android/os/Parcel.html">Parcel</a> class, including a few minor additions (e.g. <code><span class="pl-en">java.util.Set</span></code>). Support for any other type can be added using a custom <code><span class="pl-en">TypeAdapter</span></code>.</p>
 
-<p><code><span class="pl-en">TypeAdapter</span></code> also allows you to define custom parcelling logic for a type if the built-in behaviour does not meet your needs. An example for when you might want to do this is with <code><span class="pl-en">java.util.Date</span></code> objects, which by default is parcelled using serialization. Instead, you can simply define and a <code><span class="pl-en">TypeAdapter</span></code> that just writes/reads a single <code><span class="pl-k">long</span></code> value:</p>
+<p><code><span class="pl-en">TypeAdapter</span></code> allows you to define custom parcelling logic for a type. An example for when you might want this is with <code><span class="pl-en">java.util.Date</span></code> objects, which by default are parcelled using the built-in <code><span class="pl-en">SerializationAdapter</span></code>. A much more performant adapter could be defined as follows:</p>
 
 <div class="highlight highlight-source-java"><pre>
 <span class="pl-k">public</span> <span class="pl-k">final</span> <span class="pl-k">class</span> <span class="pl-en">DateAdapter</span> <span class="pl-k">implements</span> <span class="pl-e">TypeAdapter&lt;<span class="pl-smi">Date</span>&gt;</span> {
