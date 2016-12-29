@@ -16,14 +16,12 @@
 
 package paperparcel;
 
-import android.support.annotation.NonNull;
 import com.google.auto.common.MoreTypes;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Optional;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.google.common.primitives.Ints;
 import com.squareup.javapoet.TypeName;
 import java.util.List;
 import java.util.Map;
@@ -78,10 +76,10 @@ final class AdapterRegistry {
   private static final TypeKey ENUM =
       BoundedKey.get("T", asList(
           ParameterizedKey.get(ClassKey.get("java.lang.Enum"), asList(AnyKey.get("T")))));
+  private static final TypeKey SERIALIZABLE =
+      BoundedKey.get("T", asList(ClassKey.get("java.io.Serializable")));
 
   private static final String STATIC_ADAPTERS = "paperparcel.internal.StaticAdapters";
-
-  private static final int DEFAULT_PRIORITY = 150; // Between Priority.HIGH and Priority.LOW.
 
   private static ImmutableList<TypeKey> asList(TypeKey... keys) {
     ImmutableList.Builder<TypeKey> builder = ImmutableList.builder();
@@ -91,27 +89,18 @@ final class AdapterRegistry {
     return builder.build();
   }
 
-  static abstract class Entry implements Comparable<Entry> {
+  static abstract class Entry {
     abstract TypeKey typeKey();
-    abstract int priority();
     abstract boolean nullSafe();
-
-    @Override public int compareTo(@NonNull Entry entry) {
-      return Ints.compare(priority(), entry.priority());
-    }
   }
 
   @AutoValue
   static abstract class ClassEntry extends Entry {
     abstract String qualifiedName();
 
-    static ClassEntry create(String qualifiedName, TypeKey key, boolean nullSafe) {
-      return create(qualifiedName, key, DEFAULT_PRIORITY, nullSafe);
-    }
-
     static ClassEntry create(
-        String qualifiedName, TypeKey key, int priority, boolean nullSafe) {
-      return new AutoValue_AdapterRegistry_ClassEntry(key, priority, nullSafe, qualifiedName);
+        String qualifiedName, TypeKey key, boolean nullSafe) {
+      return new AutoValue_AdapterRegistry_ClassEntry(key, nullSafe, qualifiedName);
     }
   }
 
@@ -122,8 +111,7 @@ final class AdapterRegistry {
 
     static FieldEntry create(
         String enclosingClass, String fieldName, TypeKey key, boolean nullSafe) {
-      return new AutoValue_AdapterRegistry_FieldEntry(
-          key, DEFAULT_PRIORITY, nullSafe, enclosingClass, fieldName);
+      return new AutoValue_AdapterRegistry_FieldEntry(key, nullSafe, enclosingClass, fieldName);
     }
   }
 
@@ -153,13 +141,15 @@ final class AdapterRegistry {
       FieldEntry.create(STATIC_ADAPTERS, "DOUBLE_ARRAY_ADAPTER", DOUBLE_ARRAY, true),
       FieldEntry.create(STATIC_ADAPTERS, "SPARSE_BOOLEAN_ARRAY_ADAPTER", SPARSE_BOOLEAN_ARRAY, true),
       ClassEntry.create("paperparcel.internal.CollectionAdapter", COLLECTION, false),
-      ClassEntry.create("paperparcel.internal.ArrayAdapter", OBJECT_ARRAY, false),
       ClassEntry.create("paperparcel.internal.SetAdapter", SET, false),
       FieldEntry.create(STATIC_ADAPTERS, "CHAR_ARRAY_ADAPTER", CHAR_ARRAY, true),
       FieldEntry.create(STATIC_ADAPTERS, "FLOAT_ARRAY_ADAPTER", FLOAT_ARRAY, true),
       FieldEntry.create(STATIC_ADAPTERS, "SHORT_ARRAY_ADAPTER", SHORT_ARRAY, false),
       FieldEntry.create(STATIC_ADAPTERS, "CHARACTER_ADAPTER", CHARACTER, false),
-      ClassEntry.create("paperparcel.internal.EnumAdapter", ENUM, false));
+      ClassEntry.create("paperparcel.internal.EnumAdapter", ENUM, false),
+      ClassEntry.create("paperparcel.internal.ArrayAdapter", OBJECT_ARRAY, false),
+      // Serializable must be last.
+      ClassEntry.create("paperparcel.internal.SerializableAdapter", SERIALIZABLE, false));
 
   private final List<Entry> entries = Lists.newArrayList(BUILT_IN_ADAPTER_ENTRIES);
   private final Map<TypeName, AdapterDescriptor> adapters = Maps.newLinkedHashMap();
@@ -174,17 +164,12 @@ final class AdapterRegistry {
     this.types = types;
   }
 
-  void addClassEntry(TypeElement element, int priority, boolean nullSafe) {
+  void addClassEntry(TypeElement element, boolean nullSafe) {
     String qualifiedName = element.getQualifiedName().toString();
     TypeKey key = TypeKey.get(
         Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(element.asType())));
-    Entry entry = ClassEntry.create(qualifiedName, key, priority, nullSafe);
-    int size = entries.size();
-    int i = 0;
-    while (i < size && entries.get(i).compareTo(entry) > 0) {
-      i++;
-    }
-    entries.add(i, entry);
+    Entry entry = ClassEntry.create(qualifiedName, key, nullSafe);
+    entries.add(0, entry);
   }
 
   boolean contains(TypeElement element) {

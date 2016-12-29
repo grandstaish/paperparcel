@@ -29,7 +29,6 @@ import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.AnnotationValueVisitor;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
 import javax.lang.model.util.SimpleAnnotationValueVisitor6;
 import javax.tools.Diagnostic;
 
@@ -51,18 +50,6 @@ final class AdapterProcessingStep implements BasicAnnotationProcessor.Processing
             modifiers.add(annotationValue.accept(Utils.TO_ANNOTATION, null));
           }
           return modifiers.build();
-        }
-      };
-
-  private static final AnnotationValueVisitor<Adapter.Priority, Void> TO_PRIORITY =
-      new SimpleAnnotationValueVisitor6<Adapter.Priority, Void>() {
-        @Override
-        public Adapter.Priority visitEnumConstant(VariableElement enumConstant, Void p) {
-          return Adapter.Priority.valueOf(enumConstant.getSimpleName().toString());
-        }
-
-        @Override protected Adapter.Priority defaultAction(Object ignore, Void p) {
-          throw new IllegalArgumentException();
         }
       };
 
@@ -105,10 +92,7 @@ final class AdapterProcessingStep implements BasicAnnotationProcessor.Processing
           if (report.isClean()) {
             boolean nullSafe = getAnnotationValue(adapterMirror, "nullSafe")
                 .accept(Utils.TO_BOOLEAN, null);
-            int priority = getAnnotationValue(adapterMirror, "priority")
-                .accept(TO_PRIORITY, null)
-                .value;
-            adapterRegistry.addClassEntry(adapterElement, priority, nullSafe);
+            adapterRegistry.addClassEntry(adapterElement, nullSafe);
           }
         }
       }
@@ -122,8 +106,7 @@ final class AdapterProcessingStep implements BasicAnnotationProcessor.Processing
         report.printMessagesTo(messager);
         if (report.isClean()) {
           RegisterAdapter registerAdapter = element.getAnnotation(RegisterAdapter.class);
-          adapterRegistry.addClassEntry(adapterElement, registerAdapter.priority().value,
-              registerAdapter.nullSafe());
+          adapterRegistry.addClassEntry(adapterElement, registerAdapter.nullSafe());
         }
       }
     }

@@ -24,8 +24,6 @@
 
 <p>PaperParcel is an annotation processor that automatically generates the <code><span class="pl-en">CREATOR</span></code> and <code><span class="pl-en">writeToParcel(...)</span></code> implementations for you when writing <a href="http://developer.android.com/intl/es/reference/android/os/Parcelable.html">Parcelable</a> objects. PaperParcel fully supports both Java and Kotlin (including <a href="https://kotlinlang.org/docs/reference/data-classes.html">Kotlin Data Classes</a>). Additionally, PaperParcel supports Google's <a href="https://github.com/google/auto/tree/master/value">AutoValue</a> via an <a href="http://jakewharton.com/presentation/2016-03-08-ny-android-meetup/">AutoValue Extension</a>.</p>
 
-<p>Out of the box, PaperParcel supports all of the types that are supported by the <a href="https://developer.android.com/reference/android/os/Parcel.html">Parcel</a> class, including a few minor additions (e.g. <code><span class="pl-en">java.util.Set</span></code>). Support for any other types can be added using custom <a href="#typeadapters">Type Adapters</a>.</p>
-
 <h2>
 <a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
 
@@ -122,7 +120,9 @@
 <h2>
 <a id="typeadapters" class="anchor" href="#typeadapters" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Type Adapters</h2>
 
-<p>PaperParcel keeps it built-in <code><span class="pl-en">TypeAdapter</span></code>s list minimal to ensure the library is as small as possible. If you want to extend the type system, you can do this by creating your own custom <code><span class="pl-en">TypeAdapter</span></code>. Creating a custom <code><span class="pl-en">TypeAdapter</span></code> is simple, let's look at an example that adds support for the <code><span class="pl-en">java.util.Date</span></code> class:</p>
+<p>Out of the box PaperParcel supports all of the types that are supported by the <a href="https://developer.android.com/reference/android/os/Parcel.html">Parcel</a> class, including a few minor additions (e.g. <code><span class="pl-en">java.util.Set</span></code>). Support for any other type can be added using a custom <code><span class="pl-en">TypeAdapter</span></code>.</p>
+
+<p><code><span class="pl-en">TypeAdapter</span></code> also allows you to define custom parcelling logic for a type if the built-in behaviour does not meet your needs. An example for when you might want to do this is with <code><span class="pl-en">java.util.Date</span></code> objects, which by default is parcelled using serialization. Instead, you can simply define and a <code><span class="pl-en">TypeAdapter</span></code> that just writes/reads a single <code><span class="pl-k">long</span></code> value:</p>
 
 <div class="highlight highlight-source-java"><pre>
 <span class="pl-k">public</span> <span class="pl-k">final</span> <span class="pl-k">class</span> <span class="pl-en">DateAdapter</span> <span class="pl-k">implements</span> <span class="pl-e">TypeAdapter&lt;<span class="pl-smi">Date</span>&gt;</span> {

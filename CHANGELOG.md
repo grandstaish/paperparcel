@@ -1,13 +1,22 @@
 Change Log
 ==========
 
+Version 2.0.0-beta2 *(TBD)*
+----------------------------
+
+* Added `ProcessorConfig` API for adding custom `TypeAdapter`s and configuring other options in
+  the processor.
+* Deprecated `RegisterAdapter` API in favour of `ProcessorConfig`
+* Deprecated `PaperParcel.Options` API in favour of `ProcessorConfig`
+* Re-added `Serializable` support
+
 Version 2.0.0-beta1 *(2016-11-27)*
 ----------------------------
 
  * Change package name from `nz.bradcampbell.paperparcel` to just `paperparcel`
  * `TypeAdapter`s can now list other `TypeAdapter`s or `Class`es as constructor parameters to allow
-   for adding proper support for non-standard container and types (and more). 
- * Removed "wrapper" types. Each wrapper is replaced with a `Parcelable.Creator` and a `writeToParcel` 
+   for adding proper support for non-standard container and types (and more).
+ * Removed "wrapper" types. Each wrapper is replaced with a `Parcelable.Creator` and a `writeToParcel`
    implementation for classes to manually use/call in their model objects.
  * Removed the `TypedParcelable` interface as wrappers no longer exist
  * Removed `PaperParcels` class and all reflection calls
@@ -15,15 +24,14 @@ Version 2.0.0-beta1 *(2016-11-27)*
  * Removed support for `Serializable` out of the box. Users can opt-in to using `Serializable` via
    explicit `TypeAdapter`s
  * Removed `AccessorName` API
- * Added `ProcessorConfig` API for adding custom `TypeAdapter`s and configuring other options in
-   the processor.
- * Removed `DefaultAdapter` and `TypeAdapters` APIs in favour of the `ProcessorConfig` API.
+ * Renamed `DefaultAdapter` to `RegisterAdapter` and removed all other types of adapter scoping
+   (field and class scopes) as they served no purpose
  * Force annotated classes to implement `Parcelable` as wrappers have been removed
- * Greatly improve usage from Java 
+ * Greatly improve usage from Java
  * Add a more powerful abstraction for excluding fields
  * Package paperparcel as an AAR (includes proguard rules)
- * Adapter instances are defined as static constants to reduce the amount of allocations when 
-   parcelling. All built-in `TypeAdapter`s are singleton instances where they can be. 
+ * Adapter instances are defined as static constants to reduce the amount of allocations when
+   parcelling. All built-in `TypeAdapter`s are singleton instances where they can be.
  * Method count of output greatly reduced (as well as output being cleaner and easier to understand)
  * Improved error messaging
  * Fix: multi module builds
