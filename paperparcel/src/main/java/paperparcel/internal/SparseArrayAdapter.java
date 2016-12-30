@@ -39,8 +39,9 @@ public final class SparseArrayAdapter<T> implements TypeAdapter<SparseArray<T>> 
   }
 
   @Override public void writeToParcel(@NonNull SparseArray<T> value, @NonNull Parcel dest, int flags) {
-    dest.writeInt(value.size());
-    for (int i = 0; i < value.size(); i++) {
+    int size = value.size();
+    dest.writeInt(size);
+    for (int i = 0; i < size; i++) {
       int key = value.keyAt(i);
       dest.writeInt(key);
       itemAdapter.writeToParcel(value.get(key), dest, flags);
