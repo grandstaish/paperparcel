@@ -46,8 +46,9 @@ public final class ArrayAdapter<T> implements TypeAdapter<T[]> {
   @Override
   @SuppressWarnings("ForLoopReplaceableByForEach") // No allocations.
   public void writeToParcel(@NonNull T[] value, @NonNull Parcel dest, int flags) {
-    dest.writeInt(value.length);
-    for (int i = 0; i < value.length; i++) {
+    int size = value.length;
+    dest.writeInt(size);
+    for (int i = 0; i < size; i++) {
       componentAdapter.writeToParcel(value[i], dest, flags);
     }
   }
