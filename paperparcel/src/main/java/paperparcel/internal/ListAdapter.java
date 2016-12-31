@@ -41,8 +41,9 @@ public final class ListAdapter<T> implements TypeAdapter<List<T>> {
 
   @Override
   public void writeToParcel(@NonNull List<T> value, @NonNull Parcel dest, int flags) {
-    dest.writeInt(value.size());
-    for (int i = 0; i < value.size(); i++) {
+    int size = value.size();
+    dest.writeInt(size);
+    for (int i = 0; i < size; i++) {
       T item = value.get(i);
       itemAdapter.writeToParcel(item, dest, flags);
     }
