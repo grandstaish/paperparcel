@@ -18,8 +18,6 @@ package paperparcel;
 
 /** The collection of error messages to be reported back to users. */
 final class ErrorMessages {
-  static final String SITE_URL = "http://grandstaish.github.io/paperparcel";
-
   /* @Adapter errors */
   static final String ADAPTER_MUST_IMPLEMENT_TYPE_ADAPTER_INTERFACE =
       "%s must implement paperparcel.TypeAdapter.";
@@ -80,14 +78,21 @@ final class ErrorMessages {
       "No visible constructor found.";
 
   /* FieldDescriptor errors */
-  static final String FIELD_NOT_ACCESSIBLE =
-      "Field %1$s.%2$s not accessible. See %3$s for more info.";
+  static final String FIELD_NOT_READABLE =
+      "Field %1$s.%2$s is private and PaperParcel cannot find an accessor method for it. "
+          + "PaperParcel will search for accessor methods using the conventions defined at "
+          + "http://grandstaish.github.io/paperparcel/#model-conventions\n\nIf this field should "
+          + "be excluded by PaperParcel then you can do this by:\n%3$s\nNote: exclude rules can "
+          + "be customized using the @ProcessorConfig API.";
   static final String FIELD_NOT_WRITABLE =
-      "Field %1$s.%2$s not writable when constructing an instance of %1$s using the constructor "
-          + "%3$s. See %4$s for more info.";
+      "Field %1$s.%2$s is private and PaperParcel cannot find a constructor parameter or setter "
+          + "method for it (using constructor %3$s). PaperParcel will search for setter methods "
+          + "and constructor parameters using the conventions defined at "
+          + "http://grandstaish.github.io/paperparcel/#model-conventions\n\nIf this field should "
+          + "be excluded by PaperParcel then you can do this by:\n%4$s\nNote: exclude rules can "
+          + "be customized using the @ProcessorConfig API.";
   static final String FIELD_MISSING_TYPE_ADAPTER =
-      "Unknown type %1$s. Define a TypeAdapter to handle custom types. For more info, "
-          + "see %2$s.";
+      "Unknown type %1$s. You can define a custom type adapter to handle unknown types.";
   static final String FIELD_MISSING_TYPE_ARGUMENTS =
       "All field type arguments must be specified.";
   static final String FIELD_TYPE_IS_RECURSIVE =

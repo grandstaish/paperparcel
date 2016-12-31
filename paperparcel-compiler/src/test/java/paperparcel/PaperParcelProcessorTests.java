@@ -419,8 +419,11 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(String.format(ErrorMessages.FIELD_NOT_ACCESSIBLE,
-            "test.Test", "child", ErrorMessages.SITE_URL + "#model-conventions"))
+        // There is some issue with testing error messages that contain newlines, so I'm just
+        // verifying the first part of the error message matches.
+        .withErrorContaining("Field test.Test.child is private and PaperParcel cannot find an "
+            + "accessor method for it. PaperParcel will search for accessor methods using the "
+            + "conventions defined at http://grandstaish.github.io/paperparcel/#model-conventions")
         .in(source)
         .onLine(7);
   }
@@ -449,8 +452,12 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSource()).that(source)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(String.format(ErrorMessages.FIELD_NOT_WRITABLE,
-            "test.Test", "child", "Test()", ErrorMessages.SITE_URL + "#model-conventions"))
+        // There is some issue with testing error messages that contain newlines, so I'm just
+        // verifying the first part of the error message matches.
+        .withErrorContaining("Field test.Test.child is private and PaperParcel cannot find a "
+            + "constructor parameter or setter method for it (using constructor Test()). "
+            + "PaperParcel will search for setter methods and constructor parameters using the "
+            + "conventions defined at http://grandstaish.github.io/paperparcel/#model-conventions")
         .in(source)
         .onLine(7);
   }
@@ -1171,8 +1178,7 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSources()).that(Arrays.asList(source, unknownClass))
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(String.format(ErrorMessages.FIELD_MISSING_TYPE_ADAPTER,
-            "test.UnknownClass", ErrorMessages.SITE_URL + "#typeadapters"))
+        .withErrorContaining(String.format(ErrorMessages.FIELD_MISSING_TYPE_ADAPTER, "test.UnknownClass"))
         .in(source)
         .onLine(7);
   }
@@ -3654,8 +3660,7 @@ public class PaperParcelProcessorTests {
     assertAbout(javaSources()).that(Arrays.asList(typeAdapter, source, unknownClass))
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(String.format(ErrorMessages.FIELD_MISSING_TYPE_ADAPTER,
-            "test.UnknownClass", ErrorMessages.SITE_URL + "#typeadapters"))
+        .withErrorContaining(String.format(ErrorMessages.FIELD_MISSING_TYPE_ADAPTER, "test.UnknownClass"))
         .in(source)
         .onLine(10);
   }

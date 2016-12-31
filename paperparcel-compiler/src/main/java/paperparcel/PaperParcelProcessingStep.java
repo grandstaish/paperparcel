@@ -17,7 +17,6 @@
 package paperparcel;
 
 import com.google.auto.common.BasicAnnotationProcessor;
-import com.google.auto.common.MoreElements;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.SetMultimap;
@@ -26,10 +25,13 @@ import java.util.Set;
 import javax.annotation.processing.Messager;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.UnknownTypeException;
 import javax.tools.Diagnostic;
+
+import static com.google.auto.common.MoreElements.asType;
 
 /**
  * A {@link BasicAnnotationProcessor.ProcessingStep} that is responsible for dealing with all
@@ -62,7 +64,7 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
   @Override public Set<Element> process(
       SetMultimap<Class<? extends Annotation>, Element> elementsByAnnotation) {
     for (Element element : elementsByAnnotation.get(PaperParcel.class)) {
-      TypeElement paperParcelElement = MoreElements.asType(element);
+      TypeElement paperParcelElement = asType(element);
       OptionsDescriptor options;
       // TODO(brad): always use optionsHolder.getOptions() when PaperParcel.Options is deleted.
       if (optionsHolder.isOptionsApplied()) {
@@ -77,14 +79,13 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
         try {
           generatePaperParcel(paperParcelDescriptorFactory.create(paperParcelElement, options));
         } catch (PaperParcelDescriptor.NonWritableFieldsException e) {
-          printMessages(e, paperParcelElement);
+          printMessages(e);
         } catch (PaperParcelDescriptor.NonReadableFieldsException e) {
-          printMessages(e, paperParcelElement);
+          printMessages(e);
         } catch (UnknownTypeException e) {
           messager.printMessage(Diagnostic.Kind.ERROR,
               String.format(ErrorMessages.FIELD_MISSING_TYPE_ADAPTER,
-                  e.getUnknownType().toString(),
-                  ErrorMessages.SITE_URL + "#typeadapters"),
+                  e.getUnknownType().toString()),
               (Element) e.getArgument());
         }
       }
@@ -100,10 +101,11 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
     }
   }
 
-  private void printMessages(PaperParcelDescriptor.NonWritableFieldsException e, TypeElement element) {
+  private void printMessages(PaperParcelDescriptor.NonWritableFieldsException e) {
     ImmutableSet<ExecutableElement> validConstructors = e.allNonWritableFieldsMap().keySet();
     ImmutableSet<ExecutableElement> invalidConstructors =
         e.unassignableConstructorParameterMap().keySet();
+
     if (validConstructors.size() > 0) {
       // Log errors for each non-writable field in each valid constructor
       for (ExecutableElement validConstructor : validConstructors) {
@@ -113,13 +115,14 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
           String fieldName = nonWritableField.getSimpleName().toString();
           messager.printMessage(Diagnostic.Kind.ERROR,
               String.format(ErrorMessages.FIELD_NOT_WRITABLE,
-                  element.getQualifiedName(),
+                  asType(nonWritableField.getEnclosingElement()).getQualifiedName(),
                   fieldName,
                   validConstructor.toString(),
-                  ErrorMessages.SITE_URL + "#model-conventions"),
+                  buildExcludeRulesChecklist()),
                   nonWritableField);
         }
       }
+
     } else {
       // Log errors for unassignable parameters in each invalid constructor
       for (ExecutableElement invalidConstructor : invalidConstructors) {
@@ -130,22 +133,54 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
           messager.printMessage(Diagnostic.Kind.ERROR,
               String.format(ErrorMessages.UNMATCHED_CONSTRUCTOR_PARAMETER,
                   fieldName,
-                  element.getQualifiedName()),
+                  asType(invalidConstructor.getEnclosingElement()).getQualifiedName()),
               invalidConstructor);
         }
       }
     }
   }
 
-  private void printMessages(PaperParcelDescriptor.NonReadableFieldsException e, TypeElement element) {
+  private void printMessages(PaperParcelDescriptor.NonReadableFieldsException e) {
     for (VariableElement nonReadableField : e.nonReadableFields()) {
       String fieldName = nonReadableField.getSimpleName().toString();
       messager.printMessage(Diagnostic.Kind.ERROR,
-          String.format(ErrorMessages.FIELD_NOT_ACCESSIBLE,
-              element.getQualifiedName(),
+          String.format(ErrorMessages.FIELD_NOT_READABLE,
+              asType(nonReadableField.getEnclosingElement()).getQualifiedName(),
               fieldName,
-              ErrorMessages.SITE_URL + "#model-conventions"),
+              buildExcludeRulesChecklist()),
           nonReadableField);
     }
+  }
+
+  private String buildExcludeRulesChecklist() {
+    StringBuilder sb = new StringBuilder();
+    OptionsDescriptor options = optionsHolder.getOptions();
+
+    for (Set<Modifier> modifiers : options.excludeModifiers()) {
+      sb.append("- Adding the ");
+      for (Modifier modifier : modifiers) {
+        sb.append(modifier.toString());
+        sb.append(" ");
+      }
+      sb.append(modifiers.size() == 1 ? "modifier\n" : "modifiers\n");
+    }
+
+    ImmutableList<String> excludeAnnotations = options.excludeAnnotationNames();
+    for (String excludeAnnotation : excludeAnnotations) {
+      sb.append("- Adding @");
+      sb.append(excludeAnnotation);
+      sb.append('\n');
+    }
+
+    if (options.excludeNonExposedFields()) {
+      ImmutableList<String> exposeAnnotations = options.exposeAnnotationNames();
+      for (String exposeAnnotation : exposeAnnotations) {
+        sb.append("- Removing @");
+        sb.append(exposeAnnotation);
+        sb.append('\n');
+      }
+    }
+
+    return sb.toString();
   }
 }
