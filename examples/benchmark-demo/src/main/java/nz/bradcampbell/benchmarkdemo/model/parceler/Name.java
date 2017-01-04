@@ -17,9 +17,26 @@
 package nz.bradcampbell.benchmarkdemo.model.parceler;
 
 import org.parceler.Parcel;
+import org.parceler.ParcelConstructor;
 
-@Parcel
-public class Name {
-  public String first;
-  public String last;
+@Parcel(Parcel.Serialization.BEAN)
+public final class Name {
+  private final String first;
+  private final String last;
+
+  @ParcelConstructor
+  public Name(
+      String first,
+      String last) {
+    this.first = first;
+    this.last = last;
+  }
+
+  public String getFirst() {
+    return first;
+  }
+
+  public String getLast() {
+    return last;
+  }
 }

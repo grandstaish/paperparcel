@@ -16,7 +16,6 @@
 
 package paperparcel;
 
-import com.google.auto.common.MoreElements;
 import com.google.auto.common.Visibility;
 import com.google.common.collect.ImmutableList;
 import java.lang.annotation.Annotation;
@@ -26,7 +25,6 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import javax.lang.model.type.TypeKind;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
@@ -57,9 +55,6 @@ final class PaperParcelValidator {
     }
     if (!Utils.isParcelable(elements, types, element.asType())) {
       builder.addError(ErrorMessages.PAPERPARCEL_ON_NON_PARCELABLE);
-    }
-    if (ancestorIsPaperParcel(types, element)) {
-      builder.addError(ErrorMessages.PAPERPARCEL_EXTENDS_PAPERPARCEL);
     }
     if (implementsAnnotation(elements, types, element)) {
       builder.addError(ErrorMessages.PAPERPARCEL_ON_ANNOTATION);
@@ -115,19 +110,5 @@ final class PaperParcelValidator {
   private boolean implementsAnnotation(Elements elements, Types types, TypeElement type) {
     TypeMirror annotationType = elements.getTypeElement(Annotation.class.getName()).asType();
     return types.isAssignable(type.asType(), annotationType);
-  }
-
-  private boolean ancestorIsPaperParcel(Types types, TypeElement type) {
-    while (true) {
-      TypeMirror parentMirror = type.getSuperclass();
-      if (parentMirror.getKind() == TypeKind.NONE) {
-        return false;
-      }
-      TypeElement parentElement = (TypeElement) types.asElement(parentMirror);
-      if (MoreElements.isAnnotationPresent(parentElement, PaperParcel.class)) {
-        return true;
-      }
-      type = parentElement;
-    }
   }
 }

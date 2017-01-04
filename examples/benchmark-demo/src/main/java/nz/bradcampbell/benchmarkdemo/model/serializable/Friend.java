@@ -18,7 +18,22 @@ package nz.bradcampbell.benchmarkdemo.model.serializable;
 
 import java.io.Serializable;
 
-public class Friend implements Serializable {
-  public int id;
-  public String name;
+public final class Friend implements Serializable {
+  private final int id;
+  private final String name;
+
+  public Friend(
+      int id,
+      String name) {
+    this.id = id;
+    this.name = name;
+  }
+
+  public int getId() {
+    return id;
+  }
+
+  public String getName() {
+    return name;
+  }
 }

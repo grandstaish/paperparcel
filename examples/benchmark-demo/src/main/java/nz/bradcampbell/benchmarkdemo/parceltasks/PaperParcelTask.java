@@ -28,6 +28,6 @@ public class PaperParcelTask extends ParcelTask<PaperParcelResponse> {
     parcel.writeParcelable(response, 0);
     parcel.setDataPosition(0);
     PaperParcelResponse out = parcel.readParcelable(PaperParcelResponse.class.getClassLoader());
-    return out.users.size();
+    return out.getUsers().size();
   }
 }

@@ -28,6 +28,6 @@ public class SerializableTask extends ParcelTask<SerializableResponse> {
     parcel.writeSerializable(response);
     parcel.setDataPosition(0);
     SerializableResponse out = (SerializableResponse) parcel.readSerializable();
-    return out.users.size();
+    return out.getUsers().size();
   }
 }

@@ -18,7 +18,22 @@ package nz.bradcampbell.benchmarkdemo.model.serializable;
 
 import java.io.Serializable;
 
-public class Name implements Serializable {
-  public String first;
-  public String last;
+public final class Name implements Serializable {
+  private final String first;
+  private final String last;
+
+  public Name(
+      String first,
+      String last) {
+    this.first = first;
+    this.last = last;
+  }
+
+  public String getFirst() {
+    return first;
+  }
+
+  public String getLast() {
+    return last;
+  }
 }

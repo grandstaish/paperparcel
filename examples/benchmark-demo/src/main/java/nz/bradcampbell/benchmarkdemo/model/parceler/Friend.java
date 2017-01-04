@@ -17,9 +17,26 @@
 package nz.bradcampbell.benchmarkdemo.model.parceler;
 
 import org.parceler.Parcel;
+import org.parceler.ParcelConstructor;
 
-@Parcel
-public class Friend {
-  public int id;
-  public String name;
+@Parcel(Parcel.Serialization.BEAN)
+public final class Friend {
+  private final int id;
+  private final String name;
+
+  @ParcelConstructor
+  public Friend(
+      int id,
+      String name) {
+    this.id = id;
+    this.name = name;
+  }
+
+  public int getId() {
+    return id;
+  }
+
+  public String getName() {
+    return name;
+  }
 }

@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
@@ -99,7 +100,7 @@ abstract class AdapterDescriptor {
     /** The ordered parameters of the primary constructor. */
     abstract ImmutableList<Param> constructorParameters();
 
-    public static ConstructorInfo create(ImmutableList<Param> constructorParameters) {
+    static ConstructorInfo create(ImmutableList<Param> constructorParameters) {
       return new AutoValue_AdapterDescriptor_ConstructorInfo(constructorParameters);
     }
   }
@@ -229,7 +230,16 @@ abstract class AdapterDescriptor {
           VariableElement creator = Utils.findCreator(elements, types, creatorArg);
           ClassName creatorOwner = null;
           if (creator != null) {
-            creatorOwner = ClassName.get((TypeElement) creator.getEnclosingElement());
+            TypeElement creatorOwnerElement = (TypeElement) creator.getEnclosingElement();
+            // Must only pass the CREATOR directly if the Parcelable element is final. Otherwise
+            // we need to use Parcel.readParcelable to read Parcelables because it supports
+            // polymorphic types. The reason why we pass the CREATOR at all is because it is a
+            // lot faster (no runtime reflection involved). This optimisation will occur in most
+            // cases in kotlin (as classes are final by default, and will always occur when using
+            // the AutoValueExtension).
+            if (creatorOwnerElement.getModifiers().contains(Modifier.FINAL)) {
+              creatorOwner = ClassName.get(creatorOwnerElement);
+            }
           }
           parameterBuilder.add(new ConstructorInfo.CreatorParam(creatorOwner));
 

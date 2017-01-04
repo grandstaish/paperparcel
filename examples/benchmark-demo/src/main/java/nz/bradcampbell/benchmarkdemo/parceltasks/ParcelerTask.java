@@ -29,6 +29,6 @@ public class ParcelerTask extends ParcelTask<ParcelerResponse> {
     parcel.writeParcelable(Parcels.wrap(response), 0);
     parcel.setDataPosition(0);
     ParcelerResponse out = Parcels.unwrap(parcel.readParcelable(ParcelerResponse.class.getClassLoader()));
-    return out.users.size();
+    return out.getUsers().size();
   }
 }

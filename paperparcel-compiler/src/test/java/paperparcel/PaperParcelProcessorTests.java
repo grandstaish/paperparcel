@@ -3212,15 +3212,14 @@ public class PaperParcelProcessorTests {
         .generatesSources(expected);
   }
 
-  @Test public void failIfPaperParcelClassExtendsAnotherPaperParcelClass() {
-    JavaFileObject subclass =
-        JavaFileObjects.forSourceString("test.BaseTest", Joiner.on('\n').join(
+  @Test public void nonFinalPaperParcelIsParcelledWithoutUsingCreatorDirectly() {
+    JavaFileObject nonFinalParcelable =
+        JavaFileObjects.forSourceString("test.NonFinal", Joiner.on('\n').join(
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
-            "import paperparcel.PaperParcel;",
-            "@PaperParcel",
-            "public class BaseTest implements Parcelable {",
+            "public class NonFinal implements Parcelable {",
+            "  public static final Parcelable.Creator<Test> CREATOR = null;",
             "  public int describeContents() {",
             "    return 0;",
             "  }",
@@ -3236,7 +3235,8 @@ public class PaperParcelProcessorTests {
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
             "@PaperParcel",
-            "public class Test extends BaseTest {",
+            "public final class Test implements Parcelable {",
+            "  NonFinal test;",
             "  public int describeContents() {",
             "    return 0;",
             "  }",
@@ -3245,12 +3245,44 @@ public class PaperParcelProcessorTests {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(subclass, source))
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import paperparcel.TypeAdapter;",
+            "import paperparcel.internal.ParcelableAdapter;",
+            "final class PaperParcelTest {",
+            "  static final TypeAdapter<NonFinal> NON_FINAL_PARCELABLE_ADAPTER = ",
+            "      new ParcelableAdapter<NonFinal>(null);",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      NonFinal test = PaperParcelTest.NON_FINAL_PARCELABLE_ADAPTER.readFromParcel(in);",
+            "      Test data = new Test();",
+            "      data.test = test;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    PaperParcelTest.NON_FINAL_PARCELABLE_ADAPTER.writeToParcel(data.test, dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(source, nonFinalParcelable))
         .processedWith(new PaperParcelProcessor())
-        .failsToCompile()
-        .withErrorContaining(ErrorMessages.PAPERPARCEL_EXTENDS_PAPERPARCEL)
-        .in(source)
-        .onLine(6);
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
   }
 
   @Test public void failIfPaperParcelDoesNotImplementParcelable() {
@@ -4000,7 +4032,7 @@ public class PaperParcelProcessorTests {
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
-            "public class TestParcelable implements Parcelable {",
+            "public final class TestParcelable implements Parcelable {",
             "  public static final Parcelable.Creator<TestParcelable> CREATOR = null;",
             "  @Override",
             "  public int describeContents() {",
@@ -4083,7 +4115,7 @@ public class PaperParcelProcessorTests {
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
-            "public class TestParcelable implements Parcelable {",
+            "public final class TestParcelable implements Parcelable {",
             "  public static final Zza CREATOR = null;",
             "  @Override",
             "  public int describeContents() {",

@@ -19,30 +19,173 @@ package nz.bradcampbell.benchmarkdemo.model.parceler;
 import com.google.gson.annotations.SerializedName;
 import java.util.List;
 import org.parceler.Parcel;
+import org.parceler.ParcelConstructor;
 
-@Parcel
-public class User {
-  public String id;
-  public int index;
-  public String guid;
-  @SerializedName("is_active") public boolean isActive;
-  public String balance;
-  @SerializedName("picture") public String pictureUrl;
-  public int age;
-  public Name name;
-  public String company;
-  public String email;
-  public String address;
-  public String about;
-  public String registered;
-  public double latitude;
-  public double longitude;
-  public List<String> tags;
-  public List<Integer> range;
-  public List<Friend> friends;
-  public List<Image> images;
-  public String greeting;
-  @SerializedName("favorite_fruit") public String favoriteFruit;
-  @SerializedName("eye_color") public String eyeColor;
-  public String phone;
+@Parcel(Parcel.Serialization.BEAN)
+public final class User {
+  private final String id;
+  private final int index;
+  private final String guid;
+  @SerializedName("is_active") private final boolean isActive;
+  private final String balance;
+  @SerializedName("picture") private final String pictureUrl;
+  private final int age;
+  private final Name name;
+  private final String company;
+  private final String email;
+  private final String address;
+  private final String about;
+  private final String registered;
+  private final double latitude;
+  private final double longitude;
+  private final List<String> tags;
+  private final List<Integer> range;
+  private final List<Friend> friends;
+  private final List<Image> images;
+  private final String greeting;
+  @SerializedName("favorite_fruit") private final String favoriteFruit;
+  @SerializedName("eye_color") private final String eyeColor;
+  private final String phone;
+
+  @ParcelConstructor
+  public User(
+      String id,
+      int index,
+      String guid,
+      boolean isActive,
+      String balance,
+      String pictureUrl,
+      int age,
+      Name name,
+      String company,
+      String email,
+      String address,
+      String about,
+      String registered,
+      double latitude,
+      double longitude,
+      List<String> tags,
+      List<Integer> range,
+      List<Friend> friends,
+      List<Image> images,
+      String greeting,
+      String favoriteFruit,
+      String eyeColor,
+      String phone) {
+    this.id = id;
+    this.index = index;
+    this.guid = guid;
+    this.isActive = isActive;
+    this.balance = balance;
+    this.pictureUrl = pictureUrl;
+    this.age = age;
+    this.name = name;
+    this.company = company;
+    this.email = email;
+    this.address = address;
+    this.about = about;
+    this.registered = registered;
+    this.latitude = latitude;
+    this.longitude = longitude;
+    this.tags = tags;
+    this.range = range;
+    this.friends = friends;
+    this.images = images;
+    this.greeting = greeting;
+    this.favoriteFruit = favoriteFruit;
+    this.eyeColor = eyeColor;
+    this.phone = phone;
+  }
+
+  public String getId() {
+    return id;
+  }
+
+  public int getIndex() {
+    return index;
+  }
+
+  public String getGuid() {
+    return guid;
+  }
+
+  public boolean isIsActive() {
+    return isActive;
+  }
+
+  public String getBalance() {
+    return balance;
+  }
+
+  public String getPictureUrl() {
+    return pictureUrl;
+  }
+
+  public int getAge() {
+    return age;
+  }
+
+  public Name getName() {
+    return name;
+  }
+
+  public String getCompany() {
+    return company;
+  }
+
+  public String getEmail() {
+    return email;
+  }
+
+  public String getAddress() {
+    return address;
+  }
+
+  public String getAbout() {
+    return about;
+  }
+
+  public String getRegistered() {
+    return registered;
+  }
+
+  public double getLatitude() {
+    return latitude;
+  }
+
+  public double getLongitude() {
+    return longitude;
+  }
+
+  public List<String> getTags() {
+    return tags;
+  }
+
+  public List<Integer> getRange() {
+    return range;
+  }
+
+  public List<Friend> getFriends() {
+    return friends;
+  }
+
+  public List<Image> getImages() {
+    return images;
+  }
+
+  public String getGreeting() {
+    return greeting;
+  }
+
+  public String getFavoriteFruit() {
+    return favoriteFruit;
+  }
+
+  public String getEyeColor() {
+    return eyeColor;
+  }
+
+  public String getPhone() {
+    return phone;
+  }
 }
