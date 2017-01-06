@@ -30,7 +30,7 @@
 <p>Using PaperParcel is easy, the API is extemely minimal. Let's look at an example:</p>
 
 <div class="highlight highlight-source-java"><pre><span class="pl-k">@PaperParcel</span> <span class="pl-c">// (1)</span>
-<span class="pl-k">public</span> <span class="pl-k">class</span> <span class="pl-en">User</span> <span class="pl-k">implements</span> <span class="pl-e">Parcelable</span> {
+<span class="pl-k">public</span> <span class="pl-k">final</span> <span class="pl-k">class</span> <span class="pl-en">User</span> <span class="pl-k">implements</span> <span class="pl-e">Parcelable</span> {
   <span class="pl-k">public</span> <span class="pl-k">static</span> <span class="pl-k">final</span> <span class="pl-k">Creator&lt;<span class="pl-smi">User</span>&gt;</span> <span class="pl-c1">CREATOR</span> <span class="pl-k">=</span> <span class="pl-smi">PaperParcelUser</span><span class="pl-c1"><span class="pl-k">.</span>CREATOR</span>; <span class="pl-c">// (2)</span>
 
   <span class="pl-k">long</span> id; <span class="pl-c">// (3)</span>

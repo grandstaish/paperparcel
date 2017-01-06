@@ -24,12 +24,33 @@ import java.util.List;
 import paperparcel.PaperParcel;
 
 @PaperParcel
-public class PaperParcelResponse implements Parcelable {
+public final class PaperParcelResponse implements Parcelable {
   public static final Creator<PaperParcelResponse> CREATOR = PaperParcelPaperParcelResponse.CREATOR;
 
-  public List<User> users;
-  public String status;
-  @SerializedName("is_real_json") public boolean isRealJson;
+  private final List<User> users;
+  private final String status;
+  @SerializedName("is_real_json") private final boolean isRealJson;
+
+  public PaperParcelResponse(
+      List<User> users,
+      String status,
+      boolean isRealJson) {
+    this.users = users;
+    this.status = status;
+    this.isRealJson = isRealJson;
+  }
+
+  public List<User> getUsers() {
+    return users;
+  }
+
+  public String getStatus() {
+    return status;
+  }
+
+  public boolean isRealJson() {
+    return isRealJson;
+  }
 
   @Override public int describeContents() {
     return 0;

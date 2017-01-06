@@ -17,11 +17,40 @@
 package nz.bradcampbell.benchmarkdemo.model.parceler;
 
 import org.parceler.Parcel;
+import org.parceler.ParcelConstructor;
 
-@Parcel
-public class Image {
-  public String id;
-  public String format;
-  public String url;
-  public String description;
+@Parcel(Parcel.Serialization.BEAN)
+public final class Image {
+  private final String id;
+  private final String format;
+  private final String url;
+  private final String description;
+
+  @ParcelConstructor
+  public Image(
+      String id,
+      String format,
+      String url,
+      String description) {
+    this.id = id;
+    this.format = format;
+    this.url = url;
+    this.description = description;
+  }
+
+  public String getId() {
+    return id;
+  }
+
+  public String getFormat() {
+    return format;
+  }
+
+  public String getUrl() {
+    return url;
+  }
+
+  public String getDescription() {
+    return description;
+  }
 }

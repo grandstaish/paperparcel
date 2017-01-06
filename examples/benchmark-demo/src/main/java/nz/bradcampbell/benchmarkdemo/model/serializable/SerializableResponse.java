@@ -20,8 +20,29 @@ import com.google.gson.annotations.SerializedName;
 import java.io.Serializable;
 import java.util.List;
 
-public class SerializableResponse implements Serializable {
-  public List<User> users;
-  public String status;
-  @SerializedName("is_real_json") public boolean isRealJson;
+public final class SerializableResponse implements Serializable {
+  private final List<User> users;
+  private final String status;
+  @SerializedName("is_real_json") private final boolean isRealJson;
+
+  public SerializableResponse(
+      List<User> users,
+      String status,
+      boolean isRealJson) {
+    this.users = users;
+    this.status = status;
+    this.isRealJson = isRealJson;
+  }
+
+  public List<User> getUsers() {
+    return users;
+  }
+
+  public String getStatus() {
+    return status;
+  }
+
+  public boolean isRealJson() {
+    return isRealJson;
+  }
 }

@@ -21,11 +21,26 @@ import android.os.Parcelable;
 import paperparcel.PaperParcel;
 
 @PaperParcel
-public class Friend implements Parcelable {
+public final class Friend implements Parcelable {
   public static final Parcelable.Creator<Friend> CREATOR = PaperParcelFriend.CREATOR;
 
-  public int id;
-  public String name;
+  private final int id;
+  private final String name;
+
+  public Friend(
+      int id,
+      String name) {
+    this.id = id;
+    this.name = name;
+  }
+
+  public int getId() {
+    return id;
+  }
+
+  public String getName() {
+    return name;
+  }
 
   @Override public int describeContents() {
     return 0;

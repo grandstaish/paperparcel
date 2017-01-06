@@ -21,11 +21,26 @@ import android.os.Parcelable;
 import paperparcel.PaperParcel;
 
 @PaperParcel
-public class Name implements Parcelable {
+public final class Name implements Parcelable {
   public static final Parcelable.Creator<Name> CREATOR = PaperParcelName.CREATOR;
 
-  public String first;
-  public String last;
+  public final String first;
+  public final String last;
+
+  public Name(
+      String first,
+      String last) {
+    this.first = first;
+    this.last = last;
+  }
+
+  public String getFirst() {
+    return first;
+  }
+
+  public String getLast() {
+    return last;
+  }
 
   @Override public int describeContents() {
     return 0;

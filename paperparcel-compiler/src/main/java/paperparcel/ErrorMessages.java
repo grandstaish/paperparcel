@@ -66,8 +66,6 @@ final class ErrorMessages {
           + "arguments are matched with fields via their name and type.";
   static final String WILDCARD_IN_FIELD_TYPE =
       "Wildcard field types are not supported.";
-  static final String PAPERPARCEL_EXTENDS_PAPERPARCEL =
-      "One @PaperParcel class may not extend another.";
   static final String PAPERPARCEL_ON_ANNOTATION =
       "@PaperParcel may not be used to implement an annotation interface.";
   static final String PAPERPARCEL_ON_PRIVATE_CLASS =

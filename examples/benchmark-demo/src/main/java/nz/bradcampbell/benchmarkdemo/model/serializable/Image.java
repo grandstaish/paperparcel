@@ -18,9 +18,36 @@ package nz.bradcampbell.benchmarkdemo.model.serializable;
 
 import java.io.Serializable;
 
-public class Image implements Serializable {
-  public String id;
-  public String format;
-  public String url;
-  public String description;
+public final class Image implements Serializable {
+  private final String id;
+  private final String format;
+  private final String url;
+  private final String description;
+
+  public Image(
+      String id,
+      String format,
+      String url,
+      String description) {
+    this.id = id;
+    this.format = format;
+    this.url = url;
+    this.description = description;
+  }
+
+  public String getId() {
+    return id;
+  }
+
+  public String getFormat() {
+    return format;
+  }
+
+  public String getUrl() {
+    return url;
+  }
+
+  public String getDescription() {
+    return description;
+  }
 }
