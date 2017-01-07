@@ -13,6 +13,7 @@ jdk:
   - oraclejdk8
 
 before_script:
+  - android list targets
   - echo no | android create avd --force -n test -t "android-24" --abi "armeabi-v7a"
   - emulator -avd test -no-audio -no-window &
   - android-wait-for-emulator
