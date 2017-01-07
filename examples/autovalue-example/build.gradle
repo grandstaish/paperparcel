@@ -21,7 +21,6 @@ android {
 dependencies {
     compile deps.supportAnnotations
     compile deps.appCompat
-    compile deps.design
 
     provided deps.autovalue
     annotationProcessor deps.autovalue

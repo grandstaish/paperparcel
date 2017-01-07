@@ -64,7 +64,7 @@ public final class Utils {
   public static <T> T init(
       @NonNull Class<T> type, @NonNull Class[] argClasses, @NonNull Object[] args) {
     try {
-      Constructor<T> constructor = type.getConstructor(argClasses);
+      Constructor<T> constructor = type.getDeclaredConstructor(argClasses);
       constructor.setAccessible(true);
       return constructor.newInstance(args);
     } catch (NoSuchMethodException e) {

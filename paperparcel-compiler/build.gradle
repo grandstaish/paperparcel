@@ -12,18 +12,6 @@ for (File file : sdkHandler.sdkLoader.repositories) {
 sourceCompatibility = rootProject.ext.sourceCompatibilityVersion
 targetCompatibility = rootProject.ext.targetCompatibilityVersion
 
-task fatJar(type: Jar) {
-  baseName = project.name + '-all'
-  from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
-  with jar
-}
-
-test {
-  testLogging {
-    events "passed", "skipped", "failed", "standardOut", "standardError"
-  }
-}
-
 dependencies {
   compile project(':paperparcel-api')
   compile deps.autovalue
@@ -31,18 +19,6 @@ dependencies {
   compile deps.autocommon
   compile deps.javapoet
   compile deps.javaFormat
-
-  testCompile files('libs/android.jar')
-  testCompile deps.junit
-  testCompile deps.truth
-  testCompile deps.compiletesting
-  testCompile files(org.gradle.internal.jvm.Jvm.current().getToolsJar())
-}
-
-tasks.withType(Test) {
-  testLogging {
-    events "passed", "skipped", "failed"
-  }
 }
 
 apply from: rootProject.file('gradle/bintray.gradle')
