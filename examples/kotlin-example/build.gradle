@@ -35,7 +35,6 @@ android {
 
 dependencies {
   compile deps.appCompat
-  compile deps.design
 
   compile project(':paperparcel')
   compile project(':paperparcel-kotlin')
