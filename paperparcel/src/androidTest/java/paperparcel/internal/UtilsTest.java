@@ -5,8 +5,10 @@ import android.os.Parcelable;
 import org.junit.Test;
 import paperparcel.PaperParcel;
 import paperparcel.ProcessorConfig;
+import paperparcel.TypeAdapter;
 
 import static com.google.common.truth.Truth.assertThat;
+import static org.junit.Assert.fail;
 
 @ProcessorConfig(reflectAnnotations = UtilsTest.Reflect.class)
 public class UtilsTest {
@@ -29,8 +31,39 @@ public class UtilsTest {
     Utils.init(PrivateConstructor.class, new Class[] {}, new Object[] {});
   }
 
+  @SuppressWarnings("ConstantConditions")
   @Test public void nullSafeClone() {
-    // TODO(brad): ...
+    Integer expected = null;
+    Parcel parcel = Parcel.obtain();
+    try {
+      StaticAdapters.INTEGER_ADAPTER.writeToParcel(expected, parcel, 0);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+    TypeAdapter<Integer> nullSafeIntAdapter = Utils.nullSafeClone(StaticAdapters.INTEGER_ADAPTER);
+    nullSafeIntAdapter.writeToParcel(expected, parcel, 0);
+    parcel.setDataPosition(0);
+    Integer actual = nullSafeIntAdapter.readFromParcel(parcel);
+    parcel.recycle();
+    assertThat(expected).isNull();
+    assertThat(actual).isNull();
+  }
+
+  @SuppressWarnings("ConstantConditions")
+  @Test public void inlineWriteAndReadNullable() {
+    Integer expected = null;
+    Parcel parcel = Parcel.obtain();
+    try {
+      StaticAdapters.INTEGER_ADAPTER.writeToParcel(expected, parcel, 0);
+      fail();
+    } catch (NullPointerException ignore) {
+    }
+    Utils.writeNullable(expected, parcel, 0, StaticAdapters.INTEGER_ADAPTER);
+    parcel.setDataPosition(0);
+    Integer actual = Utils.readNullable(parcel, StaticAdapters.INTEGER_ADAPTER);
+    parcel.recycle();
+    assertThat(expected).isNull();
+    assertThat(actual).isNull();
   }
 
   @interface Reflect {}
