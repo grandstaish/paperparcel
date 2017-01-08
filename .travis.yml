@@ -1,9 +1,5 @@
 language: android
 
-env:
-  global:
-    - GRADLE_OPTS="-XX:+UseCompressedOops -Djava.awt.headless=true"
-
 android:
   components:
     - tools
