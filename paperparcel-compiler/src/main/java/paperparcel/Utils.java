@@ -233,33 +233,67 @@ final class Utils {
   /**
    * Returns the {@link TypeMirror} argument found in a given {@code TypeAdapter} type.
    */
-  static TypeMirror getAdaptedType(Elements elements, Types types, DeclaredType adapterType) {
+  @Nullable static TypeMirror getAdaptedType(Elements elements, Types types, DeclaredType adapterType) {
     TypeElement typeAdapterElement = elements.getTypeElement(TYPE_ADAPTER_CLASS_NAME);
     TypeParameterElement param = typeAdapterElement.getTypeParameters().get(0);
-    return types.asMemberOf(adapterType, param);
+    return paramAsMemberOf(types, adapterType, param);
   }
 
   /**
    * Returns the {@link TypeMirror} argument found in a given {@code Parcelable.Creator} type.
    */
-  static TypeMirror getCreatorArg(Elements elements, Types types, DeclaredType adapterType) {
+  @Nullable static TypeMirror getCreatorArg(Elements elements, Types types, DeclaredType creatorType) {
     TypeElement creatorElement = elements.getTypeElement(PARCELABLE_CREATOR_CLASS_NAME);
     TypeParameterElement param = creatorElement.getTypeParameters().get(0);
-    return types.asMemberOf(adapterType, param);
+    return paramAsMemberOf(types, creatorType, param);
   }
 
   /**
    * Returns the {@link TypeMirror} argument found in a given {@link Class} type.
    */
-  static TypeMirror getClassArg(Elements elements, Types types, DeclaredType adapterType) {
+  @Nullable static TypeMirror getClassArg(Elements elements, Types types, DeclaredType classType) {
     TypeElement classElement = elements.getTypeElement(Class.class.getName());
     TypeParameterElement param = classElement.getTypeParameters().get(0);
-    return types.asMemberOf(adapterType, param);
+    return paramAsMemberOf(types, classType, param);
+  }
+
+  /**
+   * A custom implementation for getting the resolved value of a {@link TypeParameterElement}
+   * from a {@link DeclaredType}.
+   *
+   * Usually this can be resolved using {@link Types#asMemberOf(DeclaredType, Element)}, but the
+   * Jack compiler implementation currently does not work with {@link TypeParameterElement}s.
+   * See https://code.google.com/p/android/issues/detail?id=231164.
+   */
+  @Nullable private static TypeMirror paramAsMemberOf(
+      Types types, DeclaredType type, TypeParameterElement param) {
+    TypeElement paramEnclosingElement = (TypeElement) param.getEnclosingElement();
+    TypeElement typeAsElement = (TypeElement) type.asElement();
+    if (paramEnclosingElement.equals(typeAsElement)) {
+      List<? extends TypeParameterElement> typeParamElements = typeAsElement.getTypeParameters();
+      for (int i = 0; i < typeParamElements.size(); i++) {
+        TypeParameterElement typeParamElement = typeParamElements.get(i);
+        if (typeParamElement.equals(param)) {
+          List<? extends TypeMirror> typeArguments = type.getTypeArguments();
+          if (typeArguments.isEmpty()) return null;
+          else return type.getTypeArguments().get(i);
+        }
+      }
+    }
+    List<? extends TypeMirror> superTypes = types.directSupertypes(type);
+    for (TypeMirror superType : superTypes) {
+      if (superType.getKind() == TypeKind.DECLARED) {
+        TypeMirror result = paramAsMemberOf(types, (DeclaredType) superType, param);
+        if (result != null) {
+          return result;
+        }
+      }
+    }
+    return null;
   }
 
   /** If {@code type} has a {@code Parcelable.Creator} field instance, return it. */
-  @Nullable static VariableElement findCreator(
-      Elements elements, Types types, TypeMirror type) {
+  @Nullable static VariableElement findCreator(Elements elements, Types types, TypeMirror type) {
     if (type.getKind() != TypeKind.DECLARED) {
       return null;
     }

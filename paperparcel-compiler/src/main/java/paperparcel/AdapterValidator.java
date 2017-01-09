@@ -76,11 +76,9 @@ final class AdapterValidator {
       }
     }
 
-    TypeMirror adaptedType = isAdapter
-        ? Utils.getAdaptedType(elements, types, asDeclared(element.asType()))
-        : null;
-    if (adaptedType != null) {
-      if (Utils.isJavaLangObject(adaptedType)) {
+    TypeMirror adaptedType = Utils.getAdaptedType(elements, types, asDeclared(element.asType()));
+    if (isAdapter) {
+      if (adaptedType == null || Utils.isJavaLangObject(adaptedType)) {
         builder.addError(ErrorMessages.ADAPTER_TYPE_ARGUMENT_IS_MISSING);
       } else if (Utils.containsWildcards(adaptedType)) {
         builder.addError(String.format(ErrorMessages.ADAPTER_ADAPTED_TYPE_HAS_WILDCARDS,
@@ -115,14 +113,14 @@ final class AdapterValidator {
       TypeMirror parameterType = parameter.asType();
       if (isAdapter) {
         TypeMirror adaptedType = Utils.getAdaptedType(elements, types, asDeclared(parameterType));
-        if (Utils.isJavaLangObject(adaptedType)) {
+        if (adaptedType == null || Utils.isJavaLangObject(adaptedType)) {
           constructorReport.addError(
               ErrorMessages.TYPE_ADAPTER_CONSTRUCTOR_PARAMETER_TYPE_ARGUMENT_MISSING, parameter);
         }
       }
       if (isClass) {
         TypeMirror classType = Utils.getClassArg(elements, types, asDeclared(parameterType));
-        if (Utils.isJavaLangObject(classType)) {
+        if (classType == null || Utils.isJavaLangObject(classType)) {
           constructorReport.addError(
               ErrorMessages.CLASS_CONSTRUCTOR_PARAMETER_TYPE_ARGUMENT_MISSING, parameter);
         }
