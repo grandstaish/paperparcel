@@ -26,19 +26,17 @@ final class ErrorMessages {
   static final String ADAPTER_IS_ABSTRACT =
       "Type adapters cannot be abstract.";
   static final String ADAPTER_INVALID_CONSTRUCTOR =
-      "Type adapter constructors can only have 'paperparcel.TypeAdapter' or 'java.lang.Class' "
-          + "parameters.";
-  static final String ADAPTER_TYPE_ARGUMENT_IS_MISSING =
-      "Type adapter argument must be specified.";
-  static final String TYPE_ADAPTER_CONSTRUCTOR_PARAMETER_TYPE_ARGUMENT_MISSING =
-      "Constructor parameter type adapter type argument must be specified.";
-  static final String CLASS_CONSTRUCTOR_PARAMETER_TYPE_ARGUMENT_MISSING =
-      "Constructor parameter class type argument must be specified.";
+      "Type adapter constructors can only have 'paperparcel.TypeAdapter' or 'java.lang.Class' parameters.";
+  static final String ADAPTER_TYPE_ARGUMENT_HAS_RAW_TYPE =
+      "Type adapter argument must not contain raw types.";
+  static final String ADAPTER_TYPE_ARGUMENT_HAS_WILDCARDS =
+      "Type adapter argument must not contain wildcards.";
+  static final String CONSTRUCTOR_PARAMETER_HAS_RAW_TYPE =
+      "Type adapter constructor parameter must not contain raw types.";
+  static final String CONSTRUCTOR_PARAMETER_HAS_WILDCARD =
+      "Type adapter constructor parameter must not contain wildcards.";
   static final String ADAPTER_INCOMPATIBLE_TYPE_PARAMETERS =
       "Type adapter defined with incompatible type parameters.";
-  static final String ADAPTER_ADAPTED_TYPE_HAS_WILDCARDS =
-      "%s is adapting a type containing one or more wildcards: %s. Wildcard types are not "
-          + "supported.";
   static final String ADAPTER_MUST_BE_PUBLIC =
       "Type adapter classes must be public.";
   static final String ADAPTER_VISIBILITY_RESTRICTED =
@@ -109,8 +107,7 @@ final class ErrorMessages {
       "PaperParcel is not compatible kotlin 1.0.4. Please upgrade to kotlin 1.0.5 (or greater)";
   static final String KAPT2_INVALID_FIELD_NAME =
       "Due to a bug in kapt, '%s' is not an allowable variable name. This bug is resolved in "
-          + "kotlin version 1.0.6. Please upgrade your kotlin version, or change this variable "
-          + "name.";
+          + "kotlin version 1.0.6. Please upgrade your kotlin version, or change this variable name.";
 
   /* AutoValue Extension errors */
   static final String MANUAL_IMPLEMENTATION_OF_CREATOR =

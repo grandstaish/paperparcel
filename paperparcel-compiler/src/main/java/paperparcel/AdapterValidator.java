@@ -78,11 +78,10 @@ final class AdapterValidator {
 
     if (isAdapter) {
       TypeMirror adaptedType = Utils.getAdaptedType(elements, types, asDeclared(element.asType()));
-      if (Utils.isJavaLangObject(adaptedType)) {
-        builder.addError(ErrorMessages.ADAPTER_TYPE_ARGUMENT_IS_MISSING);
+      if (Utils.isRawType(adaptedType)) {
+        builder.addError(ErrorMessages.ADAPTER_TYPE_ARGUMENT_HAS_RAW_TYPE);
       } else if (Utils.containsWildcards(adaptedType)) {
-        builder.addError(String.format(ErrorMessages.ADAPTER_ADAPTED_TYPE_HAS_WILDCARDS,
-            element.getSimpleName(), adaptedType));
+        builder.addError(ErrorMessages.ADAPTER_TYPE_ARGUMENT_HAS_WILDCARDS);
       } else if (!hasValidTypeParameters(element, adaptedType)) {
         builder.addError(ErrorMessages.ADAPTER_INCOMPATIBLE_TYPE_PARAMETERS);
       }
@@ -111,19 +110,12 @@ final class AdapterValidator {
         constructorReport.addError(ErrorMessages.ADAPTER_INVALID_CONSTRUCTOR);
       }
       TypeMirror parameterType = parameter.asType();
-      if (isAdapter) {
-        TypeMirror adaptedType = Utils.getAdaptedType(elements, types, asDeclared(parameterType));
-        if (Utils.isJavaLangObject(adaptedType)) {
-          constructorReport.addError(
-              ErrorMessages.TYPE_ADAPTER_CONSTRUCTOR_PARAMETER_TYPE_ARGUMENT_MISSING, parameter);
-        }
-      }
-      if (isClass) {
-        TypeMirror classType = Utils.getClassArg(elements, types, asDeclared(parameterType));
-        if (Utils.isJavaLangObject(classType)) {
-          constructorReport.addError(
-              ErrorMessages.CLASS_CONSTRUCTOR_PARAMETER_TYPE_ARGUMENT_MISSING, parameter);
-        }
+      if (Utils.containsWildcards(parameterType)) {
+        constructorReport.addError(
+            ErrorMessages.CONSTRUCTOR_PARAMETER_HAS_WILDCARD, parameter);
+      } else if (Utils.isRawType(parameterType)) {
+        constructorReport.addError(
+            ErrorMessages.CONSTRUCTOR_PARAMETER_HAS_RAW_TYPE, parameter);
       }
     }
     return constructorReport.build();
