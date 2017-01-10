@@ -197,16 +197,6 @@ final class Utils {
         .build();
   }
 
-  /** Returns true if {@code type} is {@link Object}. */
-  static boolean isJavaLangObject(TypeMirror type) {
-    if (type.getKind() != TypeKind.DECLARED) {
-      return false;
-    }
-    DeclaredType declaredType = (DeclaredType) type;
-    TypeElement typeElement = (TypeElement) declaredType.asElement();
-    return typeElement.getQualifiedName().contentEquals("java.lang.Object");
-  }
-
   /** Returns true if {@code element} is a {@code TypeAdapter} type. */
   static boolean isAdapterType(Element element, Elements elements, Types types) {
     TypeMirror typeAdapterType = types.getDeclaredType(
@@ -399,35 +389,32 @@ final class Utils {
     }
   }
 
-  @Deprecated
-  static OptionsDescriptor getOptions(TypeElement element) {
+  static Optional<OptionsDescriptor> getOptions(TypeElement element) {
     Optional<AnnotationMirror> optionsMirror = findOptionsMirror(element);
-    OptionsDescriptor options = OptionsDescriptor.DEFAULT;
+    Optional<OptionsDescriptor> result;
     if (optionsMirror.isPresent()) {
-      ImmutableList<Set<Modifier>> excludeModifiers = getExcludeModifiers(optionsMirror.get());
-      ImmutableList<String> excludeAnnotationNames = getExcludeAnnotations(optionsMirror.get());
-      ImmutableList<String> exposeAnnotationNames = getExposeAnnotations(optionsMirror.get());
-      boolean excludeNonExposedFields = getExcludeNonExposedFields(optionsMirror.get());
-      ImmutableList<String> reflectAnnotations = getReflectAnnotations(optionsMirror.get());
-      options = OptionsDescriptor.create(
-          optionsMirror.get(),
-          excludeModifiers,
-          excludeAnnotationNames,
-          exposeAnnotationNames,
-          excludeNonExposedFields,
-          reflectAnnotations);
+      result = Optional.of(parseOptions(optionsMirror.get()));
+    } else {
+      result = Optional.absent();
     }
-    return options;
+    return result;
   }
 
   static OptionsDescriptor getModuleOptions(AnnotationMirror processorConfig) {
-    ImmutableList<Set<Modifier>> excludeModifiers = getExcludeModifiers(processorConfig);
-    ImmutableList<String> excludeAnnotationNames = getExcludeAnnotations(processorConfig);
-    ImmutableList<String> exposeAnnotationNames = getExposeAnnotations(processorConfig);
-    boolean excludeNonExposedFields = getExcludeNonExposedFields(processorConfig);
-    ImmutableList<String> reflectAnnotations = getReflectAnnotations(processorConfig);
+    AnnotationValue optionsAnnotationValue =
+        AnnotationMirrors.getAnnotationValue(processorConfig, "options");
+    AnnotationMirror optionsMirror = optionsAnnotationValue.accept(TO_ANNOTATION, null);
+    return parseOptions(optionsMirror);
+  }
+
+  private static OptionsDescriptor parseOptions(AnnotationMirror optionsMirror) {
+    ImmutableList<Set<Modifier>> excludeModifiers = getExcludeModifiers(optionsMirror);
+    ImmutableList<String> excludeAnnotationNames = getExcludeAnnotations(optionsMirror);
+    ImmutableList<String> exposeAnnotationNames = getExposeAnnotations(optionsMirror);
+    boolean excludeNonExposedFields = getExcludeNonExposedFields(optionsMirror);
+    ImmutableList<String> reflectAnnotations = getReflectAnnotations(optionsMirror);
     return OptionsDescriptor.create(
-        processorConfig,
+        optionsMirror,
         excludeModifiers,
         excludeAnnotationNames,
         exposeAnnotationNames,
@@ -702,7 +689,6 @@ final class Utils {
     return null;
   }
 
-  @Deprecated
   private static Optional<AnnotationMirror> findOptionsMirror(TypeElement element) {
     Optional<AnnotationMirror> options = optionsOnElement(element);
     if (options.isPresent()) return options;

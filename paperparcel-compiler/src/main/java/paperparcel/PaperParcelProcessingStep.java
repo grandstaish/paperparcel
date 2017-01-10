@@ -65,13 +65,9 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
       SetMultimap<Class<? extends Annotation>, Element> elementsByAnnotation) {
     for (Element element : elementsByAnnotation.get(PaperParcel.class)) {
       TypeElement paperParcelElement = asType(element);
-      OptionsDescriptor options;
-      // TODO(brad): always use optionsHolder.getOptions() when PaperParcel.Options is deleted.
-      if (optionsHolder.isOptionsApplied()) {
-        options = optionsHolder.getOptions();
-      } else {
-        options = Utils.getOptions(paperParcelElement);
-      }
+      OptionsDescriptor options =
+          Utils.getOptions(paperParcelElement)
+              .or(optionsHolder.getOptions());
       ValidationReport<TypeElement> validationReport =
           paperParcelValidator.validate(paperParcelElement, options);
       validationReport.printMessagesTo(messager);

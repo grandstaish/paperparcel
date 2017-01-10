@@ -53,7 +53,6 @@ final class OptionsProcessingStep implements BasicAnnotationProcessor.Processing
       messager.printMessage(Diagnostic.Kind.ERROR, ErrorMessages.MULTIPLE_PROCESSOR_CONFIGS);
     } else if (processorConfigElements.size() == 1) {
       Element configElement = processorConfigElements.iterator().next();
-      //noinspection OptionalGetWithoutIsPresent
       AnnotationMirror config = getAnnotationMirror(configElement, ProcessorConfig.class).get();
       optionsHolder.setOptions(Utils.getModuleOptions(config));
     }
