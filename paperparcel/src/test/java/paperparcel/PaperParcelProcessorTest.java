@@ -580,7 +580,7 @@ public class PaperParcelProcessorTest {
         .generatesSources(expectedSource);
   }
 
-  @Test public void failIfAdapterTypeArgumentIsNotSpecified() {
+  @Test public void failIfAdapterTypeArgumentHasRawType() {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.RawTypeAdapter", Joiner.on('\n').join(
             "package test;",
@@ -588,12 +588,13 @@ public class PaperParcelProcessorTest {
             "import paperparcel.ProcessorConfig;",
             "import paperparcel.TypeAdapter;",
             "import android.os.Parcel;",
+            "import java.util.List;",
             "@ProcessorConfig(adapters = @Adapter(RawTypeAdapter.class))",
-            "public class RawTypeAdapter<T> implements TypeAdapter {",
-            "  public Object readFromParcel(Parcel in) {",
+            "public class RawTypeAdapter<T> implements TypeAdapter<List> {",
+            "  public List readFromParcel(Parcel in) {",
             "    return null;",
             "  }",
-            "  public void writeToParcel(Object value, Parcel dest, int flags) {",
+            "  public void writeToParcel(List value, Parcel dest, int flags) {",
             "  }",
             "}"
         ));
@@ -601,12 +602,39 @@ public class PaperParcelProcessorTest {
     assertAbout(javaSource()).that(typeAdapter)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.ADAPTER_TYPE_ARGUMENT_IS_MISSING)
+        .withErrorContaining(ErrorMessages.ADAPTER_TYPE_ARGUMENT_HAS_RAW_TYPE)
         .in(typeAdapter)
-        .onLine(7);
+        .onLine(8);
   }
 
-  @Test public void failIfAdapterConstructorHasRawTypeAdapterParameter() {
+  @Test public void failIfAdapterTypeArgumentMissingParameter() {
+    JavaFileObject typeAdapter =
+        JavaFileObjects.forSourceString("test.MyTypeAdapter", Joiner.on('\n').join(
+            "package test;",
+            "import paperparcel.Adapter;",
+            "import paperparcel.ProcessorConfig;",
+            "import paperparcel.TypeAdapter;",
+            "import android.os.Parcel;",
+            "import java.util.List;",
+            "@ProcessorConfig(adapters = @Adapter(MyTypeAdapter.class))",
+            "public class MyTypeAdapter<T1, T2> implements TypeAdapter<List<T1>> {",
+            "  public List<T1> readFromParcel(Parcel in) {",
+            "    return null;",
+            "  }",
+            "  public void writeToParcel(List<T1> value, Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(typeAdapter)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(String.format(ErrorMessages.ADAPTER_TYPE_ARGUMENT_MISSING_PARAMETER, "T2"))
+        .in(typeAdapter)
+        .onLine(8);
+  }
+
+  @Test public void failIfAdapterConstructorParameterHasRawType() {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.ListTypeAdapter", Joiner.on('\n').join(
             "package test;",
@@ -630,9 +658,37 @@ public class PaperParcelProcessorTest {
     assertAbout(javaSource()).that(typeAdapter)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.TYPE_ADAPTER_CONSTRUCTOR_PARAMETER_TYPE_ARGUMENT_MISSING)
+        .withErrorContaining(ErrorMessages.ADAPTER_CONSTRUCTOR_PARAMETER_HAS_RAW_TYPE)
         .in(typeAdapter)
         .onLine(9);
+  }
+
+  @Test public void failIfAdapterConstructorParameterHasWildcard() {
+    JavaFileObject myTypeAdapter =
+        JavaFileObjects.forSourceString("test.MyTypeAdapter", Joiner.on('\n').join(
+            "package test;",
+            "import paperparcel.Adapter;",
+            "import paperparcel.ProcessorConfig;",
+            "import paperparcel.TypeAdapter;",
+            "import android.os.Parcel;",
+            "@ProcessorConfig(adapters = @Adapter(MyTypeAdapter.class))",
+            "public class MyTypeAdapter implements TypeAdapter<Integer> {",
+            "  public MyTypeAdapter(Class<?> myClass) {",
+            "  }",
+            "  public Integer readFromParcel(Parcel in) {",
+            "    return null;",
+            "  }",
+            "  public void writeToParcel(Integer value, Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(myTypeAdapter)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(ErrorMessages.ADAPTER_CONSTRUCTOR_PARAMETER_HAS_WILDCARD)
+        .in(myTypeAdapter)
+        .onLine(8);
   }
 
   @Test public void failIfThereAreNoVisibleConstructorsTest() {
@@ -1203,8 +1259,7 @@ public class PaperParcelProcessorTest {
     assertAbout(javaSource()).that(wildcardAdapter)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(String.format(ErrorMessages.ADAPTER_ADAPTED_TYPE_HAS_WILDCARDS,
-            "WildcardAdapter", "java.util.List<? extends java.lang.Integer>"))
+        .withErrorContaining(ErrorMessages.ADAPTER_TYPE_ARGUMENT_HAS_WILDCARDS)
         .in(wildcardAdapter)
         .onLine(9);
   }
@@ -3096,34 +3151,6 @@ public class PaperParcelProcessorTest {
         .compilesWithoutError()
         .and()
         .generatesSources(expected);
-  }
-
-  @Test public void failWhenTypeAdapterClassDependencyIsRawTest() {
-    JavaFileObject myTypeAdapter =
-        JavaFileObjects.forSourceString("test.MyTypeAdapter", Joiner.on('\n').join(
-            "package test;",
-            "import paperparcel.Adapter;",
-            "import paperparcel.ProcessorConfig;",
-            "import paperparcel.TypeAdapter;",
-            "import android.os.Parcel;",
-            "@ProcessorConfig(adapters = @Adapter(MyTypeAdapter.class))",
-            "public class MyTypeAdapter implements TypeAdapter<Integer> {",
-            "  public MyTypeAdapter(Class myClass) {",
-            "  }",
-            "  public Integer readFromParcel(Parcel in) {",
-            "    return null;",
-            "  }",
-            "  public void writeToParcel(Integer value, Parcel dest, int flags) {",
-            "  }",
-            "}"
-        ));
-
-    assertAbout(javaSource()).that(myTypeAdapter)
-        .processedWith(new PaperParcelProcessor())
-        .failsToCompile()
-        .withErrorContaining(ErrorMessages.CLASS_CONSTRUCTOR_PARAMETER_TYPE_ARGUMENT_MISSING)
-        .in(myTypeAdapter)
-        .onLine(8);
   }
 
   @Test public void genericTypeAdapterClassDependencyTest() {
