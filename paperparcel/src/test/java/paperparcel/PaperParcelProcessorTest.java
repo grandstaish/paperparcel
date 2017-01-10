@@ -607,6 +607,33 @@ public class PaperParcelProcessorTest {
         .onLine(8);
   }
 
+  @Test public void failIfAdapterTypeArgumentMissingParameter() {
+    JavaFileObject typeAdapter =
+        JavaFileObjects.forSourceString("test.RawTypeAdapter", Joiner.on('\n').join(
+            "package test;",
+            "import paperparcel.Adapter;",
+            "import paperparcel.ProcessorConfig;",
+            "import paperparcel.TypeAdapter;",
+            "import android.os.Parcel;",
+            "import java.util.List;",
+            "@ProcessorConfig(adapters = @Adapter(RawTypeAdapter.class))",
+            "public class RawTypeAdapter<T1, T2> implements TypeAdapter<List<T1>> {",
+            "  public List<T1> readFromParcel(Parcel in) {",
+            "    return null;",
+            "  }",
+            "  public void writeToParcel(List<T1> value, Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(typeAdapter)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(String.format(ErrorMessages.ADAPTER_TYPE_ARGUMENT_MISSING_PARAMETER, "T2"))
+        .in(typeAdapter)
+        .onLine(8);
+  }
+
   @Test public void failIfAdapterConstructorParameterHasRawType() {
     JavaFileObject typeAdapter =
         JavaFileObjects.forSourceString("test.ListTypeAdapter", Joiner.on('\n').join(
@@ -631,7 +658,7 @@ public class PaperParcelProcessorTest {
     assertAbout(javaSource()).that(typeAdapter)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.CONSTRUCTOR_PARAMETER_HAS_RAW_TYPE)
+        .withErrorContaining(ErrorMessages.ADAPTER_CONSTRUCTOR_PARAMETER_HAS_RAW_TYPE)
         .in(typeAdapter)
         .onLine(9);
   }
@@ -659,7 +686,7 @@ public class PaperParcelProcessorTest {
     assertAbout(javaSource()).that(myTypeAdapter)
         .processedWith(new PaperParcelProcessor())
         .failsToCompile()
-        .withErrorContaining(ErrorMessages.CONSTRUCTOR_PARAMETER_HAS_WILDCARD)
+        .withErrorContaining(ErrorMessages.ADAPTER_CONSTRUCTOR_PARAMETER_HAS_WILDCARD)
         .in(myTypeAdapter)
         .onLine(8);
   }

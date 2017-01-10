@@ -21,6 +21,8 @@ import com.google.common.base.Function;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
@@ -31,7 +33,6 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.util.Elements;
-import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
 
 import static com.google.auto.common.MoreTypes.asDeclared;
@@ -82,8 +83,15 @@ final class AdapterValidator {
         builder.addError(ErrorMessages.ADAPTER_TYPE_ARGUMENT_HAS_RAW_TYPE);
       } else if (Utils.containsWildcards(adaptedType)) {
         builder.addError(ErrorMessages.ADAPTER_TYPE_ARGUMENT_HAS_WILDCARDS);
-      } else if (!hasValidTypeParameters(element, adaptedType)) {
-        builder.addError(ErrorMessages.ADAPTER_INCOMPATIBLE_TYPE_PARAMETERS);
+      } else {
+        List<TypeParameterElement> missingParameters = findMissingParameters(element, adaptedType);
+        for (TypeParameterElement missingParameter : missingParameters) {
+          builder.addError(
+              String.format(
+                  ErrorMessages.ADAPTER_TYPE_ARGUMENT_MISSING_PARAMETER,
+                  missingParameter.getSimpleName().toString()),
+              missingParameter);
+        }
       }
 
       ExecutableElement mainConstructor = Utils.findLargestPublicConstructor(element);
@@ -107,60 +115,29 @@ final class AdapterValidator {
       boolean isCreator = Utils.isCreatorType(parameter, elements, types);
       boolean isClass = Utils.isClassType(parameter, elements, types);
       if (!isClass && !isCreator && !isAdapter) {
-        constructorReport.addError(ErrorMessages.ADAPTER_INVALID_CONSTRUCTOR);
+        constructorReport.addError(ErrorMessages.ADAPTER_CONSTRUCTOR_INVALID);
       }
       TypeMirror parameterType = parameter.asType();
       if (Utils.containsWildcards(parameterType)) {
         constructorReport.addError(
-            ErrorMessages.CONSTRUCTOR_PARAMETER_HAS_WILDCARD, parameter);
+            ErrorMessages.ADAPTER_CONSTRUCTOR_PARAMETER_HAS_WILDCARD, parameter);
       } else if (Utils.isRawType(parameterType)) {
         constructorReport.addError(
-            ErrorMessages.CONSTRUCTOR_PARAMETER_HAS_RAW_TYPE, parameter);
+            ErrorMessages.ADAPTER_CONSTRUCTOR_PARAMETER_HAS_RAW_TYPE, parameter);
       }
     }
     return constructorReport.build();
   }
 
-  /**
-   * Ensure that the adapter's type arguments are all passed to the adapted type so that we
-   * can use a field's type to resolve the adapter's type arguments at compile time.
-   */
-  private boolean hasValidTypeParameters(TypeElement element, TypeMirror adaptedType) {
-    TypeVariable maybeTypeVariable = asTypeVariableSafe(adaptedType);
-    if (maybeTypeVariable != null) {
-      // For this type variable to have any meaning, it must have an extends bounds
-      TypeMirror erasedTypeVariable = types.erasure(maybeTypeVariable);
-      if (Utils.isJavaLangObject(erasedTypeVariable)) {
-        return false;
+  private List<TypeParameterElement> findMissingParameters(TypeElement element, TypeMirror adapted) {
+    List<TypeParameterElement> result = new ArrayList<>();
+    Set<String> adaptedTypeArguments = Utils.getTypeVariableNames(adapted);
+    List<? extends TypeParameterElement> parameters = element.getTypeParameters();
+    for (TypeParameterElement parameter : parameters) {
+      if (!adaptedTypeArguments.contains(parameter.getSimpleName().toString())) {
+        result.add(parameter);
       }
     }
-
-    // Collect all of the unique type variables used in the adapted type
-    Set<String> adaptedTypeArguments = Utils.getTypeVariableNames(adaptedType);
-
-    // Get a set of all of the adapter's type parameter names
-    ImmutableSet<String> adapterParameters = FluentIterable.from(element.getTypeParameters())
-        .transform(new Function<TypeParameterElement, String>() {
-          @Override public String apply(TypeParameterElement input) {
-            return input.getSimpleName().toString();
-          }
-        })
-        .toSet();
-
-    // Verify the type parameters on the adapter are all passed to the adapted type by getting
-    // the difference between the two sets and verifying it is empty.
-    return Sets.difference(adapterParameters, adaptedTypeArguments).size() == 0;
-  }
-
-  /**
-   * Returns a {@link TypeVariable} if the {@link TypeMirror} represents a type variable
-   * or null if not.
-   */
-  private static TypeVariable asTypeVariableSafe(TypeMirror maybeTypeVariable) {
-    return maybeTypeVariable.accept(new SimpleTypeVisitor6<TypeVariable, Void>() {
-      @Override public TypeVariable visitTypeVariable(TypeVariable type, Void p) {
-        return type;
-      }
-    }, null);
+    return result;
   }
 }

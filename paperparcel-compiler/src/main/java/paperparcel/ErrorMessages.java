@@ -25,18 +25,18 @@ final class ErrorMessages {
       "Type adapters can only be classes.";
   static final String ADAPTER_IS_ABSTRACT =
       "Type adapters cannot be abstract.";
-  static final String ADAPTER_INVALID_CONSTRUCTOR =
-      "Type adapter constructors can only have 'paperparcel.TypeAdapter' or 'java.lang.Class' parameters.";
+  static final String ADAPTER_TYPE_ARGUMENT_MISSING_PARAMETER =
+      "Type adapter argument must contain type parameter '%s.'";
   static final String ADAPTER_TYPE_ARGUMENT_HAS_RAW_TYPE =
       "Type adapter argument must not contain raw types.";
   static final String ADAPTER_TYPE_ARGUMENT_HAS_WILDCARDS =
       "Type adapter argument must not contain wildcards.";
-  static final String CONSTRUCTOR_PARAMETER_HAS_RAW_TYPE =
+  static final String ADAPTER_CONSTRUCTOR_INVALID =
+      "Type adapter constructors can only have 'paperparcel.TypeAdapter' or 'java.lang.Class' parameters.";
+  static final String ADAPTER_CONSTRUCTOR_PARAMETER_HAS_RAW_TYPE =
       "Type adapter constructor parameter must not contain raw types.";
-  static final String CONSTRUCTOR_PARAMETER_HAS_WILDCARD =
+  static final String ADAPTER_CONSTRUCTOR_PARAMETER_HAS_WILDCARD =
       "Type adapter constructor parameter must not contain wildcards.";
-  static final String ADAPTER_INCOMPATIBLE_TYPE_PARAMETERS =
-      "Type adapter defined with incompatible type parameters.";
   static final String ADAPTER_MUST_BE_PUBLIC =
       "Type adapter classes must be public.";
   static final String ADAPTER_VISIBILITY_RESTRICTED =
