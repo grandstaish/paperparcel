@@ -76,10 +76,8 @@ final class AdapterValidator {
       }
     }
 
-    TypeMirror adaptedType = isAdapter
-        ? Utils.getAdaptedType(elements, types, asDeclared(element.asType()))
-        : null;
-    if (adaptedType != null) {
+    if (isAdapter) {
+      TypeMirror adaptedType = Utils.getAdaptedType(elements, types, asDeclared(element.asType()));
       if (Utils.isJavaLangObject(adaptedType)) {
         builder.addError(ErrorMessages.ADAPTER_TYPE_ARGUMENT_IS_MISSING);
       } else if (Utils.containsWildcards(adaptedType)) {
@@ -88,14 +86,14 @@ final class AdapterValidator {
       } else if (!hasValidTypeParameters(element, adaptedType)) {
         builder.addError(ErrorMessages.ADAPTER_INCOMPATIBLE_TYPE_PARAMETERS);
       }
-    }
 
-    ExecutableElement mainConstructor = Utils.findLargestPublicConstructor(element);
-    if (mainConstructor != null) {
-      builder.addSubreport(validateConstructor(mainConstructor));
-    } else if (adaptedType != null) {
-      if (!Utils.isSingletonAdapter(elements, types, element, adaptedType)) {
-        builder.addError(ErrorMessages.ADAPTER_MUST_HAVE_PUBLIC_CONSTRUCTOR);
+      ExecutableElement mainConstructor = Utils.findLargestPublicConstructor(element);
+      if (mainConstructor != null) {
+        builder.addSubreport(validateConstructor(mainConstructor));
+      } else if (adaptedType != null) {
+        if (!Utils.isSingletonAdapter(elements, types, element, adaptedType)) {
+          builder.addError(ErrorMessages.ADAPTER_MUST_HAVE_PUBLIC_CONSTRUCTOR);
+        }
       }
     }
 
