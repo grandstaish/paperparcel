@@ -335,26 +335,6 @@ public class PaperParcelProcessorTest {
         .onLine(5);
   }
 
-  @Test public void failIfRegisterAdapterClassIsNotATypeAdapter() {
-    JavaFileObject source =
-        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
-            "package test;",
-            "import paperparcel.RegisterAdapter;",
-            "import paperparcel.TypeAdapter;",
-            "@RegisterAdapter",
-            "public interface Test {",
-            "}"
-        ));
-
-    assertAbout(javaSource()).that(source)
-        .processedWith(new PaperParcelProcessor())
-        .failsToCompile()
-        .withErrorContaining(String.format(
-            ErrorMessages.ADAPTER_MUST_IMPLEMENT_TYPE_ADAPTER_INTERFACE, "test.Test"))
-        .in(source)
-        .onLine(5);
-  }
-
   @Test public void failIfAdapterIsAnInterfaceTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(

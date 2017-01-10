@@ -19,8 +19,6 @@ package paperparcel;
 /** The collection of error messages to be reported back to users. */
 final class ErrorMessages {
   /* @Adapter errors */
-  static final String ADAPTER_MUST_IMPLEMENT_TYPE_ADAPTER_INTERFACE =
-      "%s must implement paperparcel.TypeAdapter.";
   static final String ADAPTER_MUST_BE_CLASS =
       "Type adapters can only be classes.";
   static final String ADAPTER_IS_ABSTRACT =
