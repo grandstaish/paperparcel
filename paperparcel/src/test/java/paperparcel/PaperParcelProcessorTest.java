@@ -609,15 +609,15 @@ public class PaperParcelProcessorTest {
 
   @Test public void failIfAdapterTypeArgumentMissingParameter() {
     JavaFileObject typeAdapter =
-        JavaFileObjects.forSourceString("test.RawTypeAdapter", Joiner.on('\n').join(
+        JavaFileObjects.forSourceString("test.MyTypeAdapter", Joiner.on('\n').join(
             "package test;",
             "import paperparcel.Adapter;",
             "import paperparcel.ProcessorConfig;",
             "import paperparcel.TypeAdapter;",
             "import android.os.Parcel;",
             "import java.util.List;",
-            "@ProcessorConfig(adapters = @Adapter(RawTypeAdapter.class))",
-            "public class RawTypeAdapter<T1, T2> implements TypeAdapter<List<T1>> {",
+            "@ProcessorConfig(adapters = @Adapter(MyTypeAdapter.class))",
+            "public class MyTypeAdapter<T1, T2> implements TypeAdapter<List<T1>> {",
             "  public List<T1> readFromParcel(Parcel in) {",
             "    return null;",
             "  }",
