@@ -86,7 +86,7 @@ public @interface PaperParcel {
    * {@literal @}PaperParcel.Options(...)
    * {@literal @}Retention(RetentionPolicy.SOURCE)
    * {@literal @}Target(ElementType.TYPE)
-   *  public {@literal @}interface MyOptions {
+   *  public{@literal @}interface MyOptions {
    *  }
    * </code></pre></p>
    *
