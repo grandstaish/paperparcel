@@ -434,4 +434,171 @@ public class PaperParcelAutoValueExtensionTest {
         .generatesSources(autoValueSubclass);
   }
 
+  @Test public void paperParcelOptionsAutoValueTest() throws Exception {
+    JavaFileObject excludeAnnotation =
+        JavaFileObjects.forSourceString("test.Exclude", Joiner.on('\n').join(
+            "package test;",
+            "public @interface Exclude {}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import com.google.auto.value.AutoValue;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel.Options(excludeAnnotations = Exclude.class)",
+            "@AutoValue",
+            "public abstract class Test implements Parcelable {",
+            "  @Exclude private int excludeMe;",
+            "  public abstract int count();",
+            "}"
+        ));
+
+    JavaFileObject autoValueSubclass =
+        JavaFileObjects.forSourceString("test/AutoValue_Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import java.lang.Override;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "final class AutoValue_Test extends $AutoValue_Test {",
+            "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = PaperParcelAutoValue_Test.CREATOR;",
+            "  AutoValue_Test(int count) {",
+            "    super(count);",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "    PaperParcelAutoValue_Test.writeToParcel(this, dest, flags);",
+            "  }",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject paperParcelOutput =
+        JavaFileObjects.forSourceString("test/PaperParcelAutoValue_Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "final class PaperParcelAutoValue_Test {",
+            "  @NonNull",
+            "  static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {",
+            "    @Override",
+            "    public AutoValue_Test createFromParcel(Parcel in) {",
+            "      int count = in.readInt();",
+            "      AutoValue_Test data = new AutoValue_Test(count);",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public AutoValue_Test[] newArray(int size) {",
+            "      return new AutoValue_Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelAutoValue_Test() {",
+            "  }",
+            "  static void writeToParcel(@NonNull AutoValue_Test data, @NonNull Parcel dest, int flags) {",
+            "    dest.writeInt(data.count());",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+        .processedWith(new AutoValueProcessor(), new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(autoValueSubclass, paperParcelOutput);
+  }
+
+  @Test public void paperParcelOptionsAutoValueTest2() throws Exception {
+    JavaFileObject excludeAnnotation =
+        JavaFileObjects.forSourceString("test.Exclude", Joiner.on('\n').join(
+            "package test;",
+            "public @interface Exclude {}"
+        ));
+
+    JavaFileObject myOptions =
+        JavaFileObjects.forSourceString("test.MyOptions", Joiner.on('\n').join(
+            "package test;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel.Options(excludeAnnotations = Exclude.class)",
+            "public @interface MyOptions {}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import com.google.auto.value.AutoValue;",
+            "import android.os.Parcelable;",
+            "@MyOptions",
+            "@AutoValue",
+            "public abstract class Test implements Parcelable {",
+            "  @Exclude private int excludeMe;",
+            "  public abstract int count();",
+            "}"
+        ));
+
+    JavaFileObject autoValueSubclass =
+        JavaFileObjects.forSourceString("test/AutoValue_Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import java.lang.Override;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "final class AutoValue_Test extends $AutoValue_Test {",
+            "  public static final Parcelable.Creator<AutoValue_Test> CREATOR = PaperParcelAutoValue_Test.CREATOR;",
+            "  AutoValue_Test(int count) {",
+            "    super(count);",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "    PaperParcelAutoValue_Test.writeToParcel(this, dest, flags);",
+            "  }",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject paperParcelOutput =
+        JavaFileObjects.forSourceString("test/PaperParcelAutoValue_Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "final class PaperParcelAutoValue_Test {",
+            "  @NonNull",
+            "  static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {",
+            "    @Override",
+            "    public AutoValue_Test createFromParcel(Parcel in) {",
+            "      int count = in.readInt();",
+            "      AutoValue_Test data = new AutoValue_Test(count);",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public AutoValue_Test[] newArray(int size) {",
+            "      return new AutoValue_Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelAutoValue_Test() {",
+            "  }",
+            "  static void writeToParcel(@NonNull AutoValue_Test data, @NonNull Parcel dest, int flags) {",
+            "    dest.writeInt(data.count());",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(source, myOptions, excludeAnnotation))
+        .processedWith(new AutoValueProcessor(), new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(autoValueSubclass, paperParcelOutput);
+  }
+
 }

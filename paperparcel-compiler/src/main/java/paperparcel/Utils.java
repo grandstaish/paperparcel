@@ -56,6 +56,8 @@ import javax.lang.model.util.SimpleAnnotationValueVisitor6;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
 
+import static com.google.auto.common.MoreElements.asType;
+import static com.google.auto.common.MoreTypes.asDeclared;
 import static com.google.common.base.Preconditions.checkState;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
@@ -357,20 +359,19 @@ final class Utils {
 
   /** Returns all non-excluded fields on a {@link PaperParcel} annotated {@link TypeElement}. */
   static ImmutableList<VariableElement> getFieldsToParcel(
-      Types types, TypeElement element, OptionsDescriptor options) {
+      TypeElement element, OptionsDescriptor options) {
     Optional<AnnotationMirror> paperParcelMirror =
         MoreElements.getAnnotationMirror(element, PaperParcel.class);
     if (paperParcelMirror.isPresent()) {
       ImmutableList.Builder<VariableElement> fields = ImmutableList.builder();
-      getFieldsToParcelInner(types, element, options, fields);
+      getFieldsToParcelImpl(element, options, fields);
       return fields.build();
     } else {
       throw new IllegalArgumentException("element must be annotated with @PaperParcel");
     }
   }
 
-  private static void getFieldsToParcelInner(
-      Types types,
+  private static void getFieldsToParcelImpl(
       TypeElement element,
       OptionsDescriptor options,
       ImmutableList.Builder<VariableElement> fields) {
@@ -384,8 +385,8 @@ final class Utils {
     }
     TypeMirror superType = element.getSuperclass();
     if (superType.getKind() != TypeKind.NONE) {
-      TypeElement superElement = MoreElements.asType(types.asElement(superType));
-      getFieldsToParcelInner(types, superElement, options, fields);
+      TypeElement superElement = asType(asDeclared(superType).asElement());
+      getFieldsToParcelImpl(superElement, options, fields);
     }
   }
 
@@ -451,7 +452,7 @@ final class Utils {
     private static final CheckRawTypesVisitor INSTANCE = new CheckRawTypesVisitor();
 
     @Override public Boolean visitDeclared(DeclaredType t, Set<TypeParameterElement> visited) {
-      int expected = MoreElements.asType(t.asElement()).getTypeParameters().size();
+      int expected = asType(t.asElement()).getTypeParameters().size();
       int actual = t.getTypeArguments().size();
       boolean raw = expected != actual;
       if (!raw) {
@@ -690,23 +691,26 @@ final class Utils {
   }
 
   private static Optional<AnnotationMirror> findOptionsMirror(TypeElement element) {
-    Optional<AnnotationMirror> options = optionsOnElement(element);
-    if (options.isPresent()) return options;
-    // Find all annotations on this element that are annotated themselves with @PaperParcel.Options
-    // instead.
-    ImmutableSet<? extends AnnotationMirror> annotatedAnnotations =
-        AnnotationMirrors.getAnnotatedAnnotations(element, PaperParcel.Options.class);
-    if (annotatedAnnotations.size() > 1) {
-      throw new IllegalStateException("PaperParcel options applied twice.");
-    } else if (annotatedAnnotations.size() == 1) {
-      AnnotationMirror optionsMirror = annotatedAnnotations.iterator().next();
-      return optionsOnElement(optionsMirror.getAnnotationType().asElement());
+    Optional<AnnotationMirror> result =
+        MoreElements.getAnnotationMirror(element, PaperParcel.Options.class);
+    if (!result.isPresent()) {
+      ImmutableSet<? extends AnnotationMirror> annotatedAnnotations =
+          AnnotationMirrors.getAnnotatedAnnotations(element, PaperParcel.Options.class);
+      if (annotatedAnnotations.size() > 1) {
+        throw new IllegalStateException("PaperParcel options applied twice.");
+      } else if (annotatedAnnotations.size() == 1) {
+        AnnotationMirror annotatedAnnotation = annotatedAnnotations.iterator().next();
+        result = MoreElements.getAnnotationMirror(
+            annotatedAnnotation.getAnnotationType().asElement(), PaperParcel.Options.class);
+      } else {
+        TypeMirror superType = element.getSuperclass();
+        if (superType.getKind() != TypeKind.NONE) {
+          TypeElement superElement = asType(asDeclared(superType).asElement());
+          result = findOptionsMirror(superElement);
+        }
+      }
     }
-    return Optional.absent();
-  }
-
-  private static Optional<AnnotationMirror> optionsOnElement(Element element) {
-    return MoreElements.getAnnotationMirror(element, PaperParcel.Options.class);
+    return result;
   }
 
   private static boolean excludeViaModifiers(

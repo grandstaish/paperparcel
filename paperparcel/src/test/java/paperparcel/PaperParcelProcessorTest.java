@@ -2315,7 +2315,7 @@ public class PaperParcelProcessorTest {
   }
 
   @Test public void basicReflectAnnotationsTest() {
-    JavaFileObject excludeAnnotation =
+    JavaFileObject reflectAnnotation =
         JavaFileObjects.forSourceString("test.Reflect", Joiner.on('\n').join(
             "package test;",
             "public @interface Reflect {}"
@@ -2370,7 +2370,7 @@ public class PaperParcelProcessorTest {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+    assertAbout(javaSources()).that(Arrays.asList(source, reflectAnnotation))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
@@ -2378,7 +2378,7 @@ public class PaperParcelProcessorTest {
   }
 
   @Test public void parameterizedTypeReflectAnnotationsTest() {
-    JavaFileObject excludeAnnotation =
+    JavaFileObject reflectAnnotation =
         JavaFileObjects.forSourceString("test.Reflect", Joiner.on('\n').join(
             "package test;",
             "public @interface Reflect {}"
@@ -2442,7 +2442,7 @@ public class PaperParcelProcessorTest {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+    assertAbout(javaSources()).that(Arrays.asList(source, reflectAnnotation))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
@@ -2450,7 +2450,7 @@ public class PaperParcelProcessorTest {
   }
 
   @Test public void preferValidAccessorMethodOverReflectionTest() {
-    JavaFileObject excludeAnnotation =
+    JavaFileObject reflectAnnotation =
         JavaFileObjects.forSourceString("test.Reflect", Joiner.on('\n').join(
             "package test;",
             "public @interface Reflect {}"
@@ -2515,7 +2515,7 @@ public class PaperParcelProcessorTest {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+    assertAbout(javaSources()).that(Arrays.asList(source, reflectAnnotation))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
@@ -2523,7 +2523,7 @@ public class PaperParcelProcessorTest {
   }
 
   @Test public void preferValidConstructorArgOverReflectionTest() {
-    JavaFileObject excludeAnnotation =
+    JavaFileObject reflectAnnotation =
         JavaFileObjects.forSourceString("test.Reflect", Joiner.on('\n').join(
             "package test;",
             "public @interface Reflect {}"
@@ -2589,7 +2589,7 @@ public class PaperParcelProcessorTest {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+    assertAbout(javaSources()).that(Arrays.asList(source, reflectAnnotation))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
@@ -2597,7 +2597,7 @@ public class PaperParcelProcessorTest {
   }
 
   @Test public void preferValidSetterMethodOverReflectionTest() {
-    JavaFileObject excludeAnnotation =
+    JavaFileObject reflectAnnotation =
         JavaFileObjects.forSourceString("test.Reflect", Joiner.on('\n').join(
             "package test;",
             "public @interface Reflect {}"
@@ -2664,7 +2664,7 @@ public class PaperParcelProcessorTest {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+    assertAbout(javaSources()).that(Arrays.asList(source, reflectAnnotation))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
@@ -2672,7 +2672,7 @@ public class PaperParcelProcessorTest {
   }
 
   @Test public void preferDirectAccessOverReflectionTest() {
-    JavaFileObject excludeAnnotation =
+    JavaFileObject reflectAnnotation =
         JavaFileObjects.forSourceString("test.Reflect", Joiner.on('\n').join(
             "package test;",
             "public @interface Reflect {}"
@@ -2734,7 +2734,7 @@ public class PaperParcelProcessorTest {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+    assertAbout(javaSources()).that(Arrays.asList(source, reflectAnnotation))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
@@ -2742,7 +2742,7 @@ public class PaperParcelProcessorTest {
   }
 
   @Test public void constructorReflectionTest() {
-    JavaFileObject excludeAnnotation =
+    JavaFileObject reflectAnnotation =
         JavaFileObjects.forSourceString("test.Reflect", Joiner.on('\n').join(
             "package test;",
             "public @interface Reflect {}"
@@ -2808,7 +2808,7 @@ public class PaperParcelProcessorTest {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+    assertAbout(javaSources()).that(Arrays.asList(source, reflectAnnotation))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
@@ -2816,7 +2816,7 @@ public class PaperParcelProcessorTest {
   }
 
   @Test public void preferVisibleConstructorOverReflectionTest() {
-    JavaFileObject excludeAnnotation =
+    JavaFileObject reflectAnnotation =
         JavaFileObjects.forSourceString("test.Reflect", Joiner.on('\n').join(
             "package test;",
             "public @interface Reflect {}"
@@ -2886,7 +2886,7 @@ public class PaperParcelProcessorTest {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+    assertAbout(javaSources()).that(Arrays.asList(source, reflectAnnotation))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()

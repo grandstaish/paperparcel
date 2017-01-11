@@ -83,7 +83,7 @@ final class PaperParcelValidator {
 
       boolean kapt2 = KAPT2_TYPES.equals(types.getClass().getName());
 
-      ImmutableList<VariableElement> fields = Utils.getFieldsToParcel(types, element, options);
+      ImmutableList<VariableElement> fields = Utils.getFieldsToParcel(element, options);
       for (VariableElement field : fields) {
         String fieldName = field.getSimpleName().toString();
         if (Utils.containsWildcards(field.asType())) {
