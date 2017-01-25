@@ -39,6 +39,10 @@ import javax.lang.model.util.Types;
 /** Represents a {@link PaperParcel} annotated object */
 @AutoValue
 abstract class PaperParcelDescriptor {
+  private static final String GET_PREFIX = "get";
+  private static final String IS_PREFIX  = "is";
+  private static final String HAS_PREFIX = "has";
+  private static final String SET_PREFIX = "set";
 
   /** The original {@link TypeElement} that this class is describing */
   abstract TypeElement element();
@@ -82,17 +86,32 @@ abstract class PaperParcelDescriptor {
   private static ImmutableSet<String> possibleGetterNames(String name) {
     ImmutableSet.Builder<String> possibleGetterNames = new ImmutableSet.Builder<>();
     possibleGetterNames.add(name);
-    possibleGetterNames.add("is" + Strings.capitalizeFirstCharacter(name));
-    possibleGetterNames.add("has" + Strings.capitalizeFirstCharacter(name));
-    possibleGetterNames.add("get" + Strings.capitalizeFirstCharacter(name));
+    possibleGetterNames.add(IS_PREFIX + Strings.capitalizeAsciiOnly(name));
+    possibleGetterNames.add(HAS_PREFIX + Strings.capitalizeAsciiOnly(name));
+    possibleGetterNames.add(GET_PREFIX + Strings.capitalizeAsciiOnly(name));
+    possibleGetterNames.add(GET_PREFIX + Strings.capitalizeFirstWordAsciiOnly(name));
     return possibleGetterNames.build();
   }
 
   private static ImmutableSet<String> possibleSetterNames(String name) {
-    ImmutableSet.Builder<String> possibleGetterNames = new ImmutableSet.Builder<>();
-    possibleGetterNames.add(name);
-    possibleGetterNames.add("set" + Strings.capitalizeFirstCharacter(name));
-    return possibleGetterNames.build();
+    ImmutableSet.Builder<String> possibleSetterNames = new ImmutableSet.Builder<>();
+    if (startsWithPrefix(IS_PREFIX, name)) {
+      possibleSetterNames.add(SET_PREFIX + name.substring(IS_PREFIX.length()));
+    }
+    if (startsWithPrefix(HAS_PREFIX, name)) {
+      possibleSetterNames.add(SET_PREFIX + name.substring(HAS_PREFIX.length()));
+    }
+    possibleSetterNames.add(name);
+    possibleSetterNames.add(SET_PREFIX + Strings.capitalizeAsciiOnly(name));
+    possibleSetterNames.add(SET_PREFIX + Strings.capitalizeFirstWordAsciiOnly(name));
+    return possibleSetterNames.build();
+  }
+
+  private static boolean startsWithPrefix(String prefix, String name) {
+    if (!name.startsWith(prefix)) return false;
+    if (name.length() == prefix.length()) return false;
+    char c = name.charAt(prefix.length());
+    return !('a' <= c && c <= 'z');
   }
 
   @AutoValue
@@ -369,6 +388,7 @@ abstract class PaperParcelDescriptor {
         List<? extends VariableElement> parameters = method.getParameters();
         if (parameters.size() == 1
             && possibleSetterNames.contains(method.getSimpleName().toString())
+            && method.getTypeParameters().size() == 0
             && types.isAssignable(Utils.replaceTypeVariablesWithUpperBounds(
             types, parameters.get(0).asType()), fieldType)) {
           return Optional.of(method);
@@ -455,6 +475,7 @@ abstract class PaperParcelDescriptor {
       for (ExecutableElement method : methods) {
         if (method.getParameters().size() == 0
             && possibleGetterNames.contains(method.getSimpleName().toString())
+            && method.getTypeParameters().size() == 0
             && types.isAssignable(method.getReturnType(), fieldType)) {
           return Optional.of(method);
         }
