@@ -125,7 +125,7 @@ abstract class AdapterDescriptor {
      * this method returns {@code null}.
      */
     @SuppressWarnings("ConstantConditions") // Already validated
-    @Nullable AdapterDescriptor create(TypeMirror fieldType) {
+    @Nullable AdapterDescriptor create(TypeMirror fieldType, boolean allowSerializable) {
       if (fieldType.getKind().isPrimitive()) {
         throw new IllegalArgumentException("Primitive types do not need a TypeAdapter.");
       }
@@ -136,7 +136,7 @@ abstract class AdapterDescriptor {
         return cached.get();
       }
 
-      List<AdapterRegistry.Entry> adapterEntries = adapterRegistry.getEntries();
+      List<AdapterRegistry.Entry> adapterEntries = adapterRegistry.getEntries(allowSerializable);
       for (AdapterRegistry.Entry entry : adapterEntries) {
         if (entry.typeKey().isMatch(types, fieldType)) {
 
@@ -174,7 +174,7 @@ abstract class AdapterDescriptor {
                 : Optional.<String>absent();
             constructorInfo = singletonInstance.isPresent()
                 ? Optional.<ConstructorInfo>absent()
-                : getConstructorInfo(adapterElement, resolvedAdapterType);
+                : getConstructorInfo(adapterElement, resolvedAdapterType, allowSerializable);
             // Ensure we can construct this adapter. If not, continue the search.
             if (!singletonInstance.isPresent()
                 && !constructorInfo.isPresent()) continue;
@@ -199,7 +199,7 @@ abstract class AdapterDescriptor {
 
     @SuppressWarnings("ConstantConditions") // Already validated
     private Optional<ConstructorInfo> getConstructorInfo(
-        TypeElement adapterElement, DeclaredType resolvedAdapterType) {
+        TypeElement adapterElement, DeclaredType resolvedAdapterType, boolean allowSerializable) {
 
       ExecutableElement mainConstructor = Utils.findLargestPublicConstructor(adapterElement);
       if (mainConstructor == null) return Optional.absent();
@@ -218,7 +218,7 @@ abstract class AdapterDescriptor {
         if (Utils.isAdapterType(dependencyElement, elements, types)) {
           TypeMirror dependencyAdaptedType =
               Utils.getAdaptedType(elements, types, MoreTypes.asDeclared(resolvedDependencyType));
-          AdapterDescriptor adapterDependency = create(dependencyAdaptedType);
+          AdapterDescriptor adapterDependency = create(dependencyAdaptedType, allowSerializable);
           if (adapterDependency == null) {
             return Optional.absent();
           }

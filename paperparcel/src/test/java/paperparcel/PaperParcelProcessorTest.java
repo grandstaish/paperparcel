@@ -4220,4 +4220,33 @@ public class PaperParcelProcessorTest {
         .onLine(7);
   }
 
+  @Test public void canExcludeSerializable() {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "import java.util.Date;",
+            "@PaperParcel.Options(",
+            "  allowSerializable = false",
+            ")",
+            "@PaperParcel",
+            "public final class Test implements Parcelable {",
+            "  Date field;",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(String.format(ErrorMessages.FIELD_MISSING_TYPE_ADAPTER, "java.util.Date"))
+        .in(source)
+        .onLine(11);
+  }
 }

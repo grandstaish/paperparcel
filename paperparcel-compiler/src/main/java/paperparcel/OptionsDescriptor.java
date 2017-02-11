@@ -36,7 +36,8 @@ abstract class OptionsDescriptor {
       ImmutableList.<String>of(),
       ImmutableList.<String>of(),
       false,
-      ImmutableList.<String>of());
+      ImmutableList.<String>of(),
+      true);
 
   @Nullable abstract AnnotationMirror mirror();
 
@@ -50,19 +51,23 @@ abstract class OptionsDescriptor {
 
   abstract ImmutableList<String> reflectAnnotations();
 
+  abstract boolean allowSerializable();
+
   static OptionsDescriptor create(
       AnnotationMirror mirror,
       ImmutableList<Set<Modifier>> excludeModifiers,
       ImmutableList<String> excludeAnnotationNames,
       ImmutableList<String> exposeAnnotationNames,
       boolean excludeNonExposedFields,
-      ImmutableList<String> reflectAnnotations) {
+      ImmutableList<String> reflectAnnotations,
+      boolean allowSerializable) {
     return new AutoValue_OptionsDescriptor(
         mirror,
         excludeModifiers,
         excludeAnnotationNames,
         exposeAnnotationNames,
         excludeNonExposedFields,
-        reflectAnnotations);
+        reflectAnnotations,
+        allowSerializable);
   }
 }

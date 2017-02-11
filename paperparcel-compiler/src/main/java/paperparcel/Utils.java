@@ -414,13 +414,9 @@ final class Utils {
     ImmutableList<String> exposeAnnotationNames = getExposeAnnotations(optionsMirror);
     boolean excludeNonExposedFields = getExcludeNonExposedFields(optionsMirror);
     ImmutableList<String> reflectAnnotations = getReflectAnnotations(optionsMirror);
-    return OptionsDescriptor.create(
-        optionsMirror,
-        excludeModifiers,
-        excludeAnnotationNames,
-        exposeAnnotationNames,
-        excludeNonExposedFields,
-        reflectAnnotations);
+    boolean allowSerializable = getAllowSerializable(optionsMirror);
+    return OptionsDescriptor.create(optionsMirror, excludeModifiers, excludeAnnotationNames,
+        exposeAnnotationNames, excludeNonExposedFields, reflectAnnotations, allowSerializable);
   }
 
   static boolean usesAnyAnnotationsFrom(Element element, List<String> annotationNames) {
@@ -772,6 +768,12 @@ final class Utils {
     AnnotationValue exposeAnnotationNames =
         AnnotationMirrors.getAnnotationValue(mirror, "reflectAnnotations");
     return exposeAnnotationNames.accept(TYPE_NAME_ARRAY_VISITOR, null);
+  }
+
+  private static boolean getAllowSerializable(AnnotationMirror mirror) {
+    AnnotationValue allowSerializable =
+        AnnotationMirrors.getAnnotationValue(mirror, "allowSerializable");
+    return allowSerializable.accept(TO_BOOLEAN, null);
   }
 
   private Utils() {}
