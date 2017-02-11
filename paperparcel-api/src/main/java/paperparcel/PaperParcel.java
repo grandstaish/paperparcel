@@ -63,8 +63,8 @@ import static java.lang.annotation.RetentionPolicy.SOURCE;
 @Target(TYPE)
 public @interface PaperParcel {
   /**
-   * <p>Options for configuring how the {@code PaperParcelProcessor} should handle parsing the
-   * annotated class.</p>
+   * <p>Options for configuring how the {@code PaperParcelProcessor} should handle parsing
+   * {@code @PaperParcel} classes.</p>
    *
    * <p>This annotation can be applied directly to an {@code PaperParcel}-annotated class like so:
    * <pre><code>
@@ -78,15 +78,15 @@ public @interface PaperParcel {
    * </code></pre></p>
    *
    * <p>Defining {@code Options} in this manner can become tedious if you want to apply the same
-   * options to many (or all) of your model objects. For a more reusable strategy, you may wish to
-   * create a custom annotation which will define all of the rules you wish to apply; then use your
-   * custom annotation on your {@code PaperParcel} classes instead. Here's an example of a custom
+   * options to many of your model objects. For a more reusable strategy, you may wish to create a
+   * custom annotation which will define all of the rules you wish to apply; then use your custom
+   * annotation on your {@code PaperParcel} classes instead. Here's an example of a custom
    * annotation that has {@code Options} applied to it:
    * <pre><code>
    * {@literal @}PaperParcel.Options(...)
    * {@literal @}Retention(RetentionPolicy.SOURCE)
    * {@literal @}Target(ElementType.TYPE)
-   *  public {@literal @}interface MyOptions {
+   *  public{@literal @}interface MyOptions {
    *  }
    * </code></pre></p>
    *
@@ -102,22 +102,24 @@ public @interface PaperParcel {
    *  }
    * </code></pre></p>
    *
-   * @deprecated Use {@link ProcessorConfig} instead.
+   * <p>This annotation can also be applied globally via {@link ProcessorConfig#options()}. Note
+   * that any rules applied directly to a class will override the global rules.</p>
+   *
+   * @see ProcessorConfig
    */
-  @Deprecated
   @Documented
   @Retention(SOURCE)
   @Target({ ANNOTATION_TYPE, TYPE })
   @interface Options {
     /**
-     * Configures PaperParcel to exclude any field in the annotated class that is annotated with
-     * any of the given annotations.
+     * Configures PaperParcel to exclude any field that is annotated with any of the given
+     * annotations.
      */
     Class<? extends Annotation>[] excludeAnnotations() default {};
 
     /**
-     * <p>Configures PaperParcel to only include fields in the annotated class that are annotated with
-     * any of the given annotations.</p>
+     * <p>Configures PaperParcel to only include fields that are annotated with any of the given
+     * annotations.</p>
      *
      * <p>This API only works when returning {@code true} from {@link #excludeNonExposedFields()}.</p>
      *
@@ -136,9 +138,10 @@ public @interface PaperParcel {
     boolean excludeNonExposedFields() default false;
 
     /**
-     * <p>Configures PaperParcel to exclude any field in the annotated class that has specific
-     * modifiers or combinations of modifiers. The int values returned by this method must be
-     * {@link Modifier} constants.</p>
+     * <p>Configures PaperParcel to exclude any field that has the given modifiers. The
+     * {@code int} values returned by this method must be {@link Modifier} constants. Modifiers
+     * can be combined using the bitwise OR operator if you want to exclude specific combinations
+     * of modifiers.</p>
      *
      * <p>By default any {@code transient} or {@code static} field is excluded.</p>
      */

@@ -56,6 +56,8 @@ import javax.lang.model.util.SimpleAnnotationValueVisitor6;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
 
+import static com.google.auto.common.MoreElements.asType;
+import static com.google.auto.common.MoreTypes.asDeclared;
 import static com.google.common.base.Preconditions.checkState;
 import static javax.lang.model.element.Modifier.PUBLIC;
 import static javax.lang.model.element.Modifier.STATIC;
@@ -195,16 +197,6 @@ final class Utils {
         .addAll(visibleConstructors)
         .addAll(reflectConstructors)
         .build();
-  }
-
-  /** Returns true if {@code type} is {@link Object}. */
-  static boolean isJavaLangObject(TypeMirror type) {
-    if (type.getKind() != TypeKind.DECLARED) {
-      return false;
-    }
-    DeclaredType declaredType = (DeclaredType) type;
-    TypeElement typeElement = (TypeElement) declaredType.asElement();
-    return typeElement.getQualifiedName().contentEquals("java.lang.Object");
   }
 
   /** Returns true if {@code element} is a {@code TypeAdapter} type. */
@@ -367,20 +359,19 @@ final class Utils {
 
   /** Returns all non-excluded fields on a {@link PaperParcel} annotated {@link TypeElement}. */
   static ImmutableList<VariableElement> getFieldsToParcel(
-      Types types, TypeElement element, OptionsDescriptor options) {
+      TypeElement element, OptionsDescriptor options) {
     Optional<AnnotationMirror> paperParcelMirror =
         MoreElements.getAnnotationMirror(element, PaperParcel.class);
     if (paperParcelMirror.isPresent()) {
       ImmutableList.Builder<VariableElement> fields = ImmutableList.builder();
-      getFieldsToParcelInner(types, element, options, fields);
+      getFieldsToParcelImpl(element, options, fields);
       return fields.build();
     } else {
       throw new IllegalArgumentException("element must be annotated with @PaperParcel");
     }
   }
 
-  private static void getFieldsToParcelInner(
-      Types types,
+  private static void getFieldsToParcelImpl(
       TypeElement element,
       OptionsDescriptor options,
       ImmutableList.Builder<VariableElement> fields) {
@@ -394,40 +385,37 @@ final class Utils {
     }
     TypeMirror superType = element.getSuperclass();
     if (superType.getKind() != TypeKind.NONE) {
-      TypeElement superElement = MoreElements.asType(types.asElement(superType));
-      getFieldsToParcelInner(types, superElement, options, fields);
+      TypeElement superElement = asType(asDeclared(superType).asElement());
+      getFieldsToParcelImpl(superElement, options, fields);
     }
   }
 
-  @Deprecated
-  static OptionsDescriptor getOptions(TypeElement element) {
+  static Optional<OptionsDescriptor> getOptions(TypeElement element) {
     Optional<AnnotationMirror> optionsMirror = findOptionsMirror(element);
-    OptionsDescriptor options = OptionsDescriptor.DEFAULT;
+    Optional<OptionsDescriptor> result;
     if (optionsMirror.isPresent()) {
-      ImmutableList<Set<Modifier>> excludeModifiers = getExcludeModifiers(optionsMirror.get());
-      ImmutableList<String> excludeAnnotationNames = getExcludeAnnotations(optionsMirror.get());
-      ImmutableList<String> exposeAnnotationNames = getExposeAnnotations(optionsMirror.get());
-      boolean excludeNonExposedFields = getExcludeNonExposedFields(optionsMirror.get());
-      ImmutableList<String> reflectAnnotations = getReflectAnnotations(optionsMirror.get());
-      options = OptionsDescriptor.create(
-          optionsMirror.get(),
-          excludeModifiers,
-          excludeAnnotationNames,
-          exposeAnnotationNames,
-          excludeNonExposedFields,
-          reflectAnnotations);
+      result = Optional.of(parseOptions(optionsMirror.get()));
+    } else {
+      result = Optional.absent();
     }
-    return options;
+    return result;
   }
 
   static OptionsDescriptor getModuleOptions(AnnotationMirror processorConfig) {
-    ImmutableList<Set<Modifier>> excludeModifiers = getExcludeModifiers(processorConfig);
-    ImmutableList<String> excludeAnnotationNames = getExcludeAnnotations(processorConfig);
-    ImmutableList<String> exposeAnnotationNames = getExposeAnnotations(processorConfig);
-    boolean excludeNonExposedFields = getExcludeNonExposedFields(processorConfig);
-    ImmutableList<String> reflectAnnotations = getReflectAnnotations(processorConfig);
+    AnnotationValue optionsAnnotationValue =
+        AnnotationMirrors.getAnnotationValue(processorConfig, "options");
+    AnnotationMirror optionsMirror = optionsAnnotationValue.accept(TO_ANNOTATION, null);
+    return parseOptions(optionsMirror);
+  }
+
+  private static OptionsDescriptor parseOptions(AnnotationMirror optionsMirror) {
+    ImmutableList<Set<Modifier>> excludeModifiers = getExcludeModifiers(optionsMirror);
+    ImmutableList<String> excludeAnnotationNames = getExcludeAnnotations(optionsMirror);
+    ImmutableList<String> exposeAnnotationNames = getExposeAnnotations(optionsMirror);
+    boolean excludeNonExposedFields = getExcludeNonExposedFields(optionsMirror);
+    ImmutableList<String> reflectAnnotations = getReflectAnnotations(optionsMirror);
     return OptionsDescriptor.create(
-        processorConfig,
+        optionsMirror,
         excludeModifiers,
         excludeAnnotationNames,
         exposeAnnotationNames,
@@ -464,7 +452,7 @@ final class Utils {
     private static final CheckRawTypesVisitor INSTANCE = new CheckRawTypesVisitor();
 
     @Override public Boolean visitDeclared(DeclaredType t, Set<TypeParameterElement> visited) {
-      int expected = MoreElements.asType(t.asElement()).getTypeParameters().size();
+      int expected = asType(t.asElement()).getTypeParameters().size();
       int actual = t.getTypeArguments().size();
       boolean raw = expected != actual;
       if (!raw) {
@@ -702,25 +690,27 @@ final class Utils {
     return null;
   }
 
-  @Deprecated
   private static Optional<AnnotationMirror> findOptionsMirror(TypeElement element) {
-    Optional<AnnotationMirror> options = optionsOnElement(element);
-    if (options.isPresent()) return options;
-    // Find all annotations on this element that are annotated themselves with @PaperParcel.Options
-    // instead.
-    ImmutableSet<? extends AnnotationMirror> annotatedAnnotations =
-        AnnotationMirrors.getAnnotatedAnnotations(element, PaperParcel.Options.class);
-    if (annotatedAnnotations.size() > 1) {
-      throw new IllegalStateException("PaperParcel options applied twice.");
-    } else if (annotatedAnnotations.size() == 1) {
-      AnnotationMirror optionsMirror = annotatedAnnotations.iterator().next();
-      return optionsOnElement(optionsMirror.getAnnotationType().asElement());
+    Optional<AnnotationMirror> result =
+        MoreElements.getAnnotationMirror(element, PaperParcel.Options.class);
+    if (!result.isPresent()) {
+      ImmutableSet<? extends AnnotationMirror> annotatedAnnotations =
+          AnnotationMirrors.getAnnotatedAnnotations(element, PaperParcel.Options.class);
+      if (annotatedAnnotations.size() > 1) {
+        throw new IllegalStateException("PaperParcel options applied twice.");
+      } else if (annotatedAnnotations.size() == 1) {
+        AnnotationMirror annotatedAnnotation = annotatedAnnotations.iterator().next();
+        result = MoreElements.getAnnotationMirror(
+            annotatedAnnotation.getAnnotationType().asElement(), PaperParcel.Options.class);
+      } else {
+        TypeMirror superType = element.getSuperclass();
+        if (superType.getKind() != TypeKind.NONE) {
+          TypeElement superElement = asType(asDeclared(superType).asElement());
+          result = findOptionsMirror(superElement);
+        }
+      }
     }
-    return Optional.absent();
-  }
-
-  private static Optional<AnnotationMirror> optionsOnElement(Element element) {
-    return MoreElements.getAnnotationMirror(element, PaperParcel.Options.class);
+    return result;
   }
 
   private static boolean excludeViaModifiers(

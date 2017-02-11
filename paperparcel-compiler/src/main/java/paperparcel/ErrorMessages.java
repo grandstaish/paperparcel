@@ -19,8 +19,6 @@ package paperparcel;
 /** The collection of error messages to be reported back to users. */
 final class ErrorMessages {
   /* @Adapter errors */
-  static final String ADAPTER_MUST_IMPLEMENT_TYPE_ADAPTER_INTERFACE =
-      "%s must implement paperparcel.TypeAdapter.";
   static final String ADAPTER_MUST_BE_CLASS =
       "Type adapters can only be classes.";
   static final String ADAPTER_IS_ABSTRACT =
@@ -79,14 +77,14 @@ final class ErrorMessages {
           + "PaperParcel will search for accessor methods using the conventions defined at "
           + "http://grandstaish.github.io/paperparcel/#model-conventions\n\nIf this field should "
           + "be excluded by PaperParcel then you can do this by:\n%3$s\nNote: exclude rules can "
-          + "be customized using the @ProcessorConfig API.";
+          + "be customized using the @PaperParcel.Options API.";
   static final String FIELD_NOT_WRITABLE =
       "Field %1$s.%2$s is private and PaperParcel cannot find a constructor parameter or setter "
           + "method for it (using constructor %3$s). PaperParcel will search for setter methods "
           + "and constructor parameters using the conventions defined at "
           + "http://grandstaish.github.io/paperparcel/#model-conventions\n\nIf this field should "
           + "be excluded by PaperParcel then you can do this by:\n%4$s\nNote: exclude rules can "
-          + "be customized using the @ProcessorConfig API.";
+          + "be customized using the @PaperParcel.Options API.";
   static final String FIELD_MISSING_TYPE_ADAPTER =
       "Unknown type %1$s. You can define a custom type adapter to handle unknown types.";
   static final String FIELD_MISSING_TYPE_ARGUMENTS =

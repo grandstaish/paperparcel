@@ -178,7 +178,7 @@ abstract class PaperParcelDescriptor {
     PaperParcelDescriptor create(TypeElement element, OptionsDescriptor options)
         throws NonWritableFieldsException, NonReadableFieldsException {
 
-      ImmutableList<VariableElement> fields = Utils.getFieldsToParcel(types, element, options);
+      ImmutableList<VariableElement> fields = Utils.getFieldsToParcel(element, options);
       //noinspection deprecation: Support for kapt2
       ImmutableSet<ExecutableElement> methods =
           MoreElements.getLocalAndInheritedMethods(element, elements);

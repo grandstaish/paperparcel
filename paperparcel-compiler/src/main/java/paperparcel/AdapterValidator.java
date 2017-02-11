@@ -46,14 +46,6 @@ final class AdapterValidator {
 
   ValidationReport<TypeElement> validate(TypeElement element) {
     ValidationReport.Builder<TypeElement> builder = ValidationReport.about(element);
-
-    // TODO(brad): remove this after @RegisterAdapter is deleted
-    boolean isAdapter = Utils.isAdapterType(element, elements, types);
-    if (!isAdapter) {
-      builder.addError(String.format(
-          ErrorMessages.ADAPTER_MUST_IMPLEMENT_TYPE_ADAPTER_INTERFACE,
-          element.getQualifiedName().toString()));
-    }
     if (element.getKind() != ElementKind.CLASS) {
       builder.addError(ErrorMessages.ADAPTER_MUST_BE_CLASS);
     }
@@ -71,34 +63,30 @@ final class AdapterValidator {
         builder.addError(ErrorMessages.NESTED_ADAPTER_MUST_BE_STATIC);
       }
     }
-
-    if (isAdapter) {
-      TypeMirror adaptedType = Utils.getAdaptedType(elements, types, asDeclared(element.asType()));
-      if (Utils.isRawType(adaptedType)) {
-        builder.addError(ErrorMessages.ADAPTER_TYPE_ARGUMENT_HAS_RAW_TYPE);
-      } else if (Utils.containsWildcards(adaptedType)) {
-        builder.addError(ErrorMessages.ADAPTER_TYPE_ARGUMENT_HAS_WILDCARDS);
-      } else {
-        List<TypeParameterElement> missingParameters = findMissingParameters(element, adaptedType);
-        for (TypeParameterElement missingParameter : missingParameters) {
-          builder.addError(
-              String.format(
-                  ErrorMessages.ADAPTER_TYPE_ARGUMENT_MISSING_PARAMETER,
-                  missingParameter.getSimpleName().toString()),
-              missingParameter);
-        }
-      }
-
-      ExecutableElement mainConstructor = Utils.findLargestPublicConstructor(element);
-      if (mainConstructor != null) {
-        builder.addSubreport(validateConstructor(mainConstructor));
-      } else if (adaptedType != null) {
-        if (!Utils.isSingletonAdapter(elements, types, element, adaptedType)) {
-          builder.addError(ErrorMessages.ADAPTER_MUST_HAVE_PUBLIC_CONSTRUCTOR);
-        }
+    TypeMirror adaptedType = Utils.getAdaptedType(elements, types, asDeclared(element.asType()));
+    if (Utils.isRawType(adaptedType)) {
+      builder.addError(ErrorMessages.ADAPTER_TYPE_ARGUMENT_HAS_RAW_TYPE);
+    } else if (Utils.containsWildcards(adaptedType)) {
+      builder.addError(ErrorMessages.ADAPTER_TYPE_ARGUMENT_HAS_WILDCARDS);
+    } else {
+      List<TypeParameterElement> missingParameters = findMissingParameters(element, adaptedType);
+      for (TypeParameterElement missingParameter : missingParameters) {
+        builder.addError(
+            String.format(
+                ErrorMessages.ADAPTER_TYPE_ARGUMENT_MISSING_PARAMETER,
+                missingParameter.getSimpleName().toString()),
+            missingParameter);
       }
     }
 
+    ExecutableElement mainConstructor = Utils.findLargestPublicConstructor(element);
+    if (mainConstructor != null) {
+      builder.addSubreport(validateConstructor(mainConstructor));
+    } else if (adaptedType != null) {
+      if (!Utils.isSingletonAdapter(elements, types, element, adaptedType)) {
+        builder.addError(ErrorMessages.ADAPTER_MUST_HAVE_PUBLIC_CONSTRUCTOR);
+      }
+    }
     return builder.build();
   }
 

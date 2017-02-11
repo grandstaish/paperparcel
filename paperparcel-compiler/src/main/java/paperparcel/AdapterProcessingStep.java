@@ -67,18 +67,16 @@ final class AdapterProcessingStep implements BasicAnnotationProcessor.Processing
   }
 
   @Override public Set<? extends Class<? extends Annotation>> annotations() {
-    return ImmutableSet.of(RegisterAdapter.class, ProcessorConfig.class);
+    return ImmutableSet.of(ProcessorConfig.class);
   }
 
   @Override public Set<Element> process(
       SetMultimap<Class<? extends Annotation>, Element> elementsByAnnotation) {
-
     Set<Element> processorConfigElements = elementsByAnnotation.get(ProcessorConfig.class);
     if (processorConfigElements.size() > 1) {
       messager.printMessage(Diagnostic.Kind.ERROR, ErrorMessages.MULTIPLE_PROCESSOR_CONFIGS);
     } else if (processorConfigElements.size() == 1) {
       Element configElement = processorConfigElements.iterator().next();
-      //noinspection OptionalGetWithoutIsPresent
       AnnotationMirror config = getAnnotationMirror(configElement, ProcessorConfig.class).get();
       ImmutableList<AnnotationMirror> adapterMirrors = getAnnotationValue(config, "adapters")
           .accept(ANNOTATION_ARRAY_VISITOR, null);
@@ -97,20 +95,6 @@ final class AdapterProcessingStep implements BasicAnnotationProcessor.Processing
         }
       }
     }
-
-    // TODO(brad): remove this when @RegisterAdapter is removed
-    for (Element element : elementsByAnnotation.get(RegisterAdapter.class)) {
-      TypeElement adapterElement = asType(element);
-      if (!adapterRegistry.contains(adapterElement)) {
-        ValidationReport<TypeElement> report = adapterValidator.validate(adapterElement);
-        report.printMessagesTo(messager);
-        if (report.isClean()) {
-          RegisterAdapter registerAdapter = element.getAnnotation(RegisterAdapter.class);
-          adapterRegistry.addClassEntry(adapterElement, registerAdapter.nullSafe());
-        }
-      }
-    }
-
     return ImmutableSet.of();
   }
 }

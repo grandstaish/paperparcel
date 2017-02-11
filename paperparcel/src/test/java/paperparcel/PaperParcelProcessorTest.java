@@ -335,26 +335,6 @@ public class PaperParcelProcessorTest {
         .onLine(5);
   }
 
-  @Test public void failIfRegisterAdapterClassIsNotATypeAdapter() {
-    JavaFileObject source =
-        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
-            "package test;",
-            "import paperparcel.RegisterAdapter;",
-            "import paperparcel.TypeAdapter;",
-            "@RegisterAdapter",
-            "public interface Test {",
-            "}"
-        ));
-
-    assertAbout(javaSource()).that(source)
-        .processedWith(new PaperParcelProcessor())
-        .failsToCompile()
-        .withErrorContaining(String.format(
-            ErrorMessages.ADAPTER_MUST_IMPLEMENT_TYPE_ADAPTER_INTERFACE, "test.Test"))
-        .in(source)
-        .onLine(5);
-  }
-
   @Test public void failIfAdapterIsAnInterfaceTest() {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
@@ -1558,7 +1538,9 @@ public class PaperParcelProcessorTest {
             "import paperparcel.PaperParcel;",
             "import paperparcel.ProcessorConfig;",
             "import java.lang.reflect.Modifier;",
-            "@ProcessorConfig(excludeModifiers = { Modifier.STATIC | Modifier.FINAL, Modifier.TRANSIENT })",
+            "@ProcessorConfig(options = @PaperParcel.Options(",
+            "  excludeModifiers = { Modifier.STATIC | Modifier.FINAL, Modifier.TRANSIENT }",
+            "))",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  static final long field1 = 0;",
@@ -1626,7 +1608,7 @@ public class PaperParcelProcessorTest {
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
             "import paperparcel.ProcessorConfig;",
-            "@ProcessorConfig(excludeAnnotations = Exclude.class)",
+            "@ProcessorConfig(options = @PaperParcel.Options(excludeAnnotations = Exclude.class))",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  public int value;",
@@ -1689,10 +1671,10 @@ public class PaperParcelProcessorTest {
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
             "import paperparcel.ProcessorConfig;",
-            "@ProcessorConfig(",
+            "@ProcessorConfig(options = @PaperParcel.Options(",
             "  excludeNonExposedFields = true,",
             "  exposeAnnotations = Expose.class",
-            ")",
+            "))",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  @Expose public int value;",
@@ -1755,10 +1737,10 @@ public class PaperParcelProcessorTest {
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
             "import paperparcel.ProcessorConfig;",
-            "@ProcessorConfig(",
+            "@ProcessorConfig(options = @PaperParcel.Options(",
             "  excludeNonExposedFields = true,",
             "  exposeAnnotations = Expose.class",
-            ")",
+            "))",
             "@PaperParcel",
             "public final class Test extends BaseTest implements Parcelable {",
             "  @Expose public int value;",
@@ -1828,7 +1810,7 @@ public class PaperParcelProcessorTest {
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
             "import paperparcel.ProcessorConfig;",
-            "@ProcessorConfig(excludeAnnotations = Exclude.class)",
+            "@ProcessorConfig(options = @PaperParcel.Options(excludeAnnotations = Exclude.class))",
             "@PaperParcel",
             "public final class Test extends BaseTest implements Parcelable {",
             "  public int value;",
@@ -1884,12 +1866,12 @@ public class PaperParcelProcessorTest {
         .generatesSources(expected);
   }
 
-  @Test public void globalConfigTest() {
+  @Test public void localOptionsOverrideGlobalConfigTest() {
     JavaFileObject sharedOptions =
         JavaFileObjects.forSourceString("test.SharedOptions", Joiner.on('\n').join(
             "package test;",
             "import paperparcel.ProcessorConfig;",
-            "@ProcessorConfig(excludeModifiers = {})",
+            "@ProcessorConfig",
             "public @interface SharedOptions {}"
         ));
 
@@ -1900,6 +1882,7 @@ public class PaperParcelProcessorTest {
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
             "@PaperParcel",
+            "@PaperParcel.Options(excludeModifiers = {})",
             "public final class Test implements Parcelable {",
             "  public transient int value;",
             "  public int describeContents() {",
@@ -1960,10 +1943,10 @@ public class PaperParcelProcessorTest {
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
             "import paperparcel.ProcessorConfig;",
-            "@ProcessorConfig(",
+            "@ProcessorConfig(options = @PaperParcel.Options(",
             "  excludeNonExposedFields = false,",
             "  exposeAnnotations = Expose.class",
-            ")",
+            "))",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  @Expose public int value;",
@@ -2023,7 +2006,7 @@ public class PaperParcelProcessorTest {
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
             "import paperparcel.ProcessorConfig;",
-            "@ProcessorConfig(excludeNonExposedFields = true)",
+            "@ProcessorConfig(options = @PaperParcel.Options(excludeNonExposedFields = true))",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  public int value;",
@@ -2332,7 +2315,7 @@ public class PaperParcelProcessorTest {
   }
 
   @Test public void basicReflectAnnotationsTest() {
-    JavaFileObject excludeAnnotation =
+    JavaFileObject reflectAnnotation =
         JavaFileObjects.forSourceString("test.Reflect", Joiner.on('\n').join(
             "package test;",
             "public @interface Reflect {}"
@@ -2345,7 +2328,7 @@ public class PaperParcelProcessorTest {
             "import android.os.Parcelable;",
             "import paperparcel.PaperParcel;",
             "import paperparcel.ProcessorConfig;",
-            "@ProcessorConfig(reflectAnnotations = Reflect.class)",
+            "@ProcessorConfig(options = @PaperParcel.Options(reflectAnnotations = Reflect.class))",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  @Reflect private int reflectIt;",
@@ -2387,7 +2370,7 @@ public class PaperParcelProcessorTest {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+    assertAbout(javaSources()).that(Arrays.asList(source, reflectAnnotation))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
@@ -2395,7 +2378,7 @@ public class PaperParcelProcessorTest {
   }
 
   @Test public void parameterizedTypeReflectAnnotationsTest() {
-    JavaFileObject excludeAnnotation =
+    JavaFileObject reflectAnnotation =
         JavaFileObjects.forSourceString("test.Reflect", Joiner.on('\n').join(
             "package test;",
             "public @interface Reflect {}"
@@ -2409,7 +2392,7 @@ public class PaperParcelProcessorTest {
             "import paperparcel.PaperParcel;",
             "import paperparcel.ProcessorConfig;",
             "import java.util.List;",
-            "@ProcessorConfig(reflectAnnotations = Reflect.class)",
+            "@ProcessorConfig(options = @PaperParcel.Options(reflectAnnotations = Reflect.class))",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  @Reflect private List<Integer> reflectIt;",
@@ -2459,7 +2442,7 @@ public class PaperParcelProcessorTest {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+    assertAbout(javaSources()).that(Arrays.asList(source, reflectAnnotation))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
@@ -2467,7 +2450,7 @@ public class PaperParcelProcessorTest {
   }
 
   @Test public void preferValidAccessorMethodOverReflectionTest() {
-    JavaFileObject excludeAnnotation =
+    JavaFileObject reflectAnnotation =
         JavaFileObjects.forSourceString("test.Reflect", Joiner.on('\n').join(
             "package test;",
             "public @interface Reflect {}"
@@ -2481,7 +2464,7 @@ public class PaperParcelProcessorTest {
             "import paperparcel.PaperParcel;",
             "import paperparcel.ProcessorConfig;",
             "import java.util.List;",
-            "@ProcessorConfig(reflectAnnotations = Reflect.class)",
+            "@ProcessorConfig(options = @PaperParcel.Options(reflectAnnotations = Reflect.class))",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  @Reflect private List<Integer> reflectIt;",
@@ -2532,7 +2515,7 @@ public class PaperParcelProcessorTest {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+    assertAbout(javaSources()).that(Arrays.asList(source, reflectAnnotation))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
@@ -2540,7 +2523,7 @@ public class PaperParcelProcessorTest {
   }
 
   @Test public void preferValidConstructorArgOverReflectionTest() {
-    JavaFileObject excludeAnnotation =
+    JavaFileObject reflectAnnotation =
         JavaFileObjects.forSourceString("test.Reflect", Joiner.on('\n').join(
             "package test;",
             "public @interface Reflect {}"
@@ -2554,7 +2537,7 @@ public class PaperParcelProcessorTest {
             "import paperparcel.PaperParcel;",
             "import paperparcel.ProcessorConfig;",
             "import java.util.List;",
-            "@ProcessorConfig(reflectAnnotations = Reflect.class)",
+            "@ProcessorConfig(options = @PaperParcel.Options(reflectAnnotations = Reflect.class))",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  @Reflect private List<Integer> reflectIt;",
@@ -2606,7 +2589,7 @@ public class PaperParcelProcessorTest {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+    assertAbout(javaSources()).that(Arrays.asList(source, reflectAnnotation))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
@@ -2614,7 +2597,7 @@ public class PaperParcelProcessorTest {
   }
 
   @Test public void preferValidSetterMethodOverReflectionTest() {
-    JavaFileObject excludeAnnotation =
+    JavaFileObject reflectAnnotation =
         JavaFileObjects.forSourceString("test.Reflect", Joiner.on('\n').join(
             "package test;",
             "public @interface Reflect {}"
@@ -2628,7 +2611,7 @@ public class PaperParcelProcessorTest {
             "import paperparcel.PaperParcel;",
             "import paperparcel.ProcessorConfig;",
             "import java.util.List;",
-            "@ProcessorConfig(reflectAnnotations = Reflect.class)",
+            "@ProcessorConfig(options = @PaperParcel.Options(reflectAnnotations = Reflect.class))",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  @Reflect private List<Integer> reflectIt;",
@@ -2681,7 +2664,7 @@ public class PaperParcelProcessorTest {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+    assertAbout(javaSources()).that(Arrays.asList(source, reflectAnnotation))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
@@ -2689,7 +2672,7 @@ public class PaperParcelProcessorTest {
   }
 
   @Test public void preferDirectAccessOverReflectionTest() {
-    JavaFileObject excludeAnnotation =
+    JavaFileObject reflectAnnotation =
         JavaFileObjects.forSourceString("test.Reflect", Joiner.on('\n').join(
             "package test;",
             "public @interface Reflect {}"
@@ -2703,7 +2686,7 @@ public class PaperParcelProcessorTest {
             "import paperparcel.PaperParcel;",
             "import paperparcel.ProcessorConfig;",
             "import java.util.List;",
-            "@ProcessorConfig(reflectAnnotations = Reflect.class)",
+            "@ProcessorConfig(options = @PaperParcel.Options(reflectAnnotations = Reflect.class))",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  @Reflect List<Integer> value;",
@@ -2751,7 +2734,7 @@ public class PaperParcelProcessorTest {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+    assertAbout(javaSources()).that(Arrays.asList(source, reflectAnnotation))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
@@ -2759,7 +2742,7 @@ public class PaperParcelProcessorTest {
   }
 
   @Test public void constructorReflectionTest() {
-    JavaFileObject excludeAnnotation =
+    JavaFileObject reflectAnnotation =
         JavaFileObjects.forSourceString("test.Reflect", Joiner.on('\n').join(
             "package test;",
             "public @interface Reflect {}"
@@ -2773,7 +2756,7 @@ public class PaperParcelProcessorTest {
             "import paperparcel.PaperParcel;",
             "import paperparcel.ProcessorConfig;",
             "import java.util.List;",
-            "@ProcessorConfig(reflectAnnotations = Reflect.class)",
+            "@ProcessorConfig(options = @PaperParcel.Options(reflectAnnotations = Reflect.class))",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  private List<Integer> value;",
@@ -2825,7 +2808,7 @@ public class PaperParcelProcessorTest {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+    assertAbout(javaSources()).that(Arrays.asList(source, reflectAnnotation))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()
@@ -2833,7 +2816,7 @@ public class PaperParcelProcessorTest {
   }
 
   @Test public void preferVisibleConstructorOverReflectionTest() {
-    JavaFileObject excludeAnnotation =
+    JavaFileObject reflectAnnotation =
         JavaFileObjects.forSourceString("test.Reflect", Joiner.on('\n').join(
             "package test;",
             "public @interface Reflect {}"
@@ -2847,7 +2830,7 @@ public class PaperParcelProcessorTest {
             "import paperparcel.PaperParcel;",
             "import paperparcel.ProcessorConfig;",
             "import java.util.List;",
-            "@ProcessorConfig(reflectAnnotations = Reflect.class)",
+            "@ProcessorConfig(options = @PaperParcel.Options(reflectAnnotations = Reflect.class))",
             "@PaperParcel",
             "public final class Test implements Parcelable {",
             "  private int value1;",
@@ -2903,7 +2886,7 @@ public class PaperParcelProcessorTest {
             "}"
         ));
 
-    assertAbout(javaSources()).that(Arrays.asList(source, excludeAnnotation))
+    assertAbout(javaSources()).that(Arrays.asList(source, reflectAnnotation))
         .processedWith(new PaperParcelProcessor())
         .compilesWithoutError()
         .and()

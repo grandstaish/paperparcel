@@ -10,7 +10,7 @@ import paperparcel.TypeAdapter;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.fail;
 
-@ProcessorConfig(reflectAnnotations = UtilsTest.Reflect.class)
+@ProcessorConfig(options = @PaperParcel.Options(reflectAnnotations = UtilsTest.Reflect.class))
 public class UtilsTest {
 
   @Test public void canReadPrivateField() {

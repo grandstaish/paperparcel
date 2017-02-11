@@ -156,7 +156,7 @@
 
 <p>As you can see, <code><span class="pl-en">SparseArrayAdapter</span></code> has a dependency on another <code><span class="pl-en">TypeAdapter</span></code> to handle the parcelling of its items, but the item type is not hard-coded (it is generic). This means we don't need to define a new adapter class each time we use a <code><span class="pl-en">SparseArray</span></code> with a different item type, instead this single adapter will handle all item types. </p>
 
-<p>A <code><span class="pl-en">TypeAdapter</span></code> can list any number of <code><span class="pl-en">TypeAdapter</span></code> or <code>Class</code> dependencies as constructor parameters and PaperParcel will resolve them at compile time. You can take advantage of this power to easily add support for container types that don't come out of the box, e.g. <code><span class="pl-en">RealmList</span></code> for <a href="https://github.com/realm/realm-java">Realm</a>, various non-java <code><span class="pl-en">Collection</span></code> and <code><span class="pl-en">Tuple</span></code> types in <a href="https://github.com/JetBrains/kotlin/">Kotlin</a>, or even <code><span class="pl-en">ImmutableMap</span></code> for <a href="https://github.com/google/guava">Guava</a>. </p>
+<p>A <code><span class="pl-en">TypeAdapter</span></code> can list any number of <code><span class="pl-en">TypeAdapter</span></code> or <code><span class="pl-en">Class</span></code> dependencies as constructor parameters and PaperParcel will resolve them at compile time. You can take advantage of this power to easily add support for container types that don't come out of the box, e.g. <code><span class="pl-en">RealmList</span></code> for <a href="https://github.com/realm/realm-java">Realm</a>, various non-java <code><span class="pl-en">Collection</span></code> and <code><span class="pl-en">Tuple</span></code> types in <a href="https://github.com/JetBrains/kotlin/">Kotlin</a>, or even <code><span class="pl-en">ImmutableMap</span></code> for <a href="https://github.com/google/guava">Guava</a>. </p>
 
 <h2>
 <a id="processor-config" class="anchor" href="#processor-config" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Processor Configuration</h2>
@@ -188,6 +188,11 @@
 <p>Note that this configuration will only apply to the module that it is defined in. If you have a multi-module project where multiple modules are using PaperParcel, you'll need to define a <code><span class="pl-k">ProcessorConfig</span></code> for each of those modules.</p>
 
 <p>Only one <code><span class="pl-k">ProcessorConfig</span></code> can be applied per module.</p>
+
+<h2>
+<a id="excluding-fields" class="anchor" href="#excluding-fields" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Excluding Fields</h2>
+
+<p>By default, PaperParcel will exclude any <code><span class="pl-k">transient</span></code> or <code><span class="pl-k">static</span></code> field in your models. More advanced exclude APIs are available via <code><span class="pl-k">PaperParcel.Options</span></code>.</p>
 
 <h2>
 <a id="model-conventions" class="anchor" href="#model-conventions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Model Conventions</h2>
