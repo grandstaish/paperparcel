@@ -1,6 +1,19 @@
 Change Log
 ==========
 
+Version 2.0.0 *(2017-02-11)*
+----------------------------
+
+* Remove RegisterAdapter. ProcessorConfig should be used instead.
+* Undeprecate PaperParcel.Options.
+* Consolidate ProcessorConfig API and PaperParcel.Options as they share many of the same APIs.
+* Favours local options over global options.
+* More descriptive error messages.
+* Allow PaperParcel class inheritance.
+* Allow java.lang.Object adapters.
+* Fix: Jack compilation.
+* Fix: property method matching when variables start with 'is'
+
 Version 2.0.0-beta2 *(2016-12-29)*
 ----------------------------
 
@@ -10,9 +23,9 @@ Version 2.0.0-beta2 *(2016-12-29)*
 * Deprecated `PaperParcel.Options` API in favour of `ProcessorConfig`
 * Re-added `Serializable` support
 * Performance improvements in the compiler and in the generated code
-* FIX: allow use of "new" as a variable name in kotlin (as it isn't a kotlin keyword)
+* Fix: allow use of "new" as a variable name in kotlin (as it isn't a kotlin keyword)
 * Validate kapt version and give a helpful error message if the wrong version is being used
-* FIX: allow use of contravariant generic types
+* Fix: allow use of contravariant generic types
 * Greatly improve type matching system. This allows for adapters to handle complex generic types,
   including intersection types.
 
