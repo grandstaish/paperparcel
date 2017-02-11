@@ -16,6 +16,7 @@
 
 package paperparcel;
 
+import java.io.Serializable;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
@@ -159,5 +160,15 @@ public @interface PaperParcel {
      * fields and constructors so that the generated reflection calls will continue to work.</p>
      */
     Class<? extends Annotation>[] reflectAnnotations() default {};
+
+    /**
+     * <p>Configures PaperParcel to never use Java serialization to read and write types. Setting
+     * this to {@code false} forces you to write custom {@link TypeAdapter}s to handle types that
+     * could normally be handled using {@link Serializable}. This is useful if you are looking for
+     * optimal performance gains.</p>
+     *
+     * <p>By default Java serialization is allowed.</p>
+     */
+    boolean allowSerializable() default true;
   }
 }

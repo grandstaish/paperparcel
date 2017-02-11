@@ -183,8 +183,12 @@ final class AdapterRegistry {
     return false;
   }
 
-  List<Entry> getEntries() {
-    return entries;
+  List<Entry> getEntries(boolean allowSerializable) {
+    if (allowSerializable) {
+      return entries;
+    } else {
+      return entries.subList(0, entries.size() - 1);
+    }
   }
 
   void registerAdapterFor(TypeName fieldType, AdapterDescriptor adapter) {

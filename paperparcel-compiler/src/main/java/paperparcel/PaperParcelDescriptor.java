@@ -205,7 +205,7 @@ abstract class PaperParcelDescriptor {
             types, fieldDescriptorFactory, fields, methods, options.reflectAnnotations());
         readableFields = readInfo.readableFields();
         getterMethodMap = readInfo.getterMethodMap();
-        adapters = getAdapterMap(readInfo);
+        adapters = getAdapterMap(readInfo, options.allowSerializable());
 
       } else {
         constructorFields = ImmutableList.of();
@@ -229,25 +229,28 @@ abstract class PaperParcelDescriptor {
           singleton);
     }
 
-    private ImmutableMap<FieldDescriptor, AdapterDescriptor> getAdapterMap(ReadInfo readInfo) {
-      ImmutableMap.Builder<FieldDescriptor, AdapterDescriptor> fieldAdapterMap = ImmutableMap.builder();
+    private ImmutableMap<FieldDescriptor, AdapterDescriptor> getAdapterMap(ReadInfo readInfo,
+        boolean allowSerializable) {
+      ImmutableMap.Builder<FieldDescriptor, AdapterDescriptor> fieldAdapterMap =
+          ImmutableMap.builder();
       if (readInfo != null) {
         for (FieldDescriptor field : readInfo.readableFields()) {
-          addAdapterForField(fieldAdapterMap, field);
+          addAdapterForField(fieldAdapterMap, field, allowSerializable);
         }
         for (FieldDescriptor field : readInfo.getterMethodMap().keySet()) {
-          addAdapterForField(fieldAdapterMap, field);
+          addAdapterForField(fieldAdapterMap, field, allowSerializable);
         }
       }
       return fieldAdapterMap.build();
     }
 
     private void addAdapterForField(
-        ImmutableMap.Builder<FieldDescriptor, AdapterDescriptor> fieldAdapterMap, FieldDescriptor field) {
+        ImmutableMap.Builder<FieldDescriptor, AdapterDescriptor> fieldAdapterMap,
+        FieldDescriptor field, boolean allowSerializable) {
       TypeMirror fieldType = field.type().get();
       //noinspection ConstantConditions
       if (!fieldType.getKind().isPrimitive()) {
-        AdapterDescriptor adapter = adapterFactory.create(fieldType);
+        AdapterDescriptor adapter = adapterFactory.create(fieldType, allowSerializable);
         if (adapter != null) {
           fieldAdapterMap.put(field, adapter);
         } else {
