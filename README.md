@@ -6,6 +6,8 @@ PaperParcel is an annotation processor that automatically generates the `CREATOR
 
 For more information please see [the website](http://grandstaish.github.io/paperparcel/).
 
+[See this blog entry](http://blog.bradcampbell.nz/a-comparison-of-parcelable-boilerplate-libraries/) for a comparison with alternative solutions. 
+
 ## Download
 
 **Java:**
