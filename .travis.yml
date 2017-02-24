@@ -18,6 +18,7 @@ before_script:
   - android-wait-for-emulator
   - adb shell input keyevent 82 &
 
+dist: trusty
 sudo: false
 
 before_cache:
