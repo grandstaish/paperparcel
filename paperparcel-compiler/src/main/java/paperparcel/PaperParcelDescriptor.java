@@ -27,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import javax.lang.model.SourceVersion;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
@@ -84,6 +85,7 @@ abstract class PaperParcelDescriptor {
   abstract boolean isSingleton();
 
   private static ImmutableSet<String> possibleGetterNames(String name) {
+    name = stripKaptEscaping(name);
     ImmutableSet.Builder<String> possibleGetterNames = new ImmutableSet.Builder<>();
     possibleGetterNames.add(name);
     possibleGetterNames.add(IS_PREFIX + Strings.capitalizeAsciiOnly(name));
@@ -94,6 +96,7 @@ abstract class PaperParcelDescriptor {
   }
 
   private static ImmutableSet<String> possibleSetterNames(String name) {
+    name = stripKaptEscaping(name);
     ImmutableSet.Builder<String> possibleSetterNames = new ImmutableSet.Builder<>();
     if (startsWithPrefix(IS_PREFIX, name)) {
       possibleSetterNames.add(SET_PREFIX + name.substring(IS_PREFIX.length()));
@@ -112,6 +115,18 @@ abstract class PaperParcelDescriptor {
     if (name.length() == prefix.length()) return false;
     char c = name.charAt(prefix.length());
     return !('a' <= c && c <= 'z');
+  }
+
+  private static String stripKaptEscaping(String name) {
+    // As of kotlin 1.1.0, kapt escapes stub property names that are java keywords with underscores
+    // in order to produce valid java syntax. This function strips these underscores so we can find
+    // the matching getter and setter methods.
+    if (!name.startsWith("_")) return name;
+    if (!name.endsWith("_")) return name;
+    if (name.length() == 1) return name;
+    String stripped = name.substring(1, name.length() - 1);
+    if (SourceVersion.isKeyword(stripped)) return stripped;
+    return name;
   }
 
   @AutoValue
