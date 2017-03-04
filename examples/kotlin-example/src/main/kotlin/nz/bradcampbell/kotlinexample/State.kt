@@ -22,11 +22,22 @@ import java.util.Date
 
 @PaperParcel data class State(
     val count: Int,
+    val test: ModelExample,
     val modificationDate: Date
 ) : PaperParcelable {
   @Transient val somethingToExclude = 10000L
 
   companion object {
     @JvmField val CREATOR = PaperParcelState.CREATOR
+  }
+}
+
+@PaperParcel
+data class ModelExample(
+    var id: Int = 0,
+    var path: String? = null) : PaperParcelable {
+
+  companion object {
+    @JvmField val CREATOR = PaperParcelModelExample.CREATOR
   }
 }

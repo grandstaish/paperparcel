@@ -315,6 +315,11 @@ final class Utils {
 
     List<? extends Element> members = elements.getAllMembers(subject);
     for (VariableElement field : ElementFilter.fieldsIn(members)) {
+
+      if (field.asType().toString().equals("error.NonExistentClass")) {
+        System.out.println("Found error type!");
+      }
+
       if (field.getSimpleName().contentEquals("CREATOR")
           && types.isAssignable(field.asType(), creatorType)
           && field.getModifiers().contains(Modifier.STATIC)
