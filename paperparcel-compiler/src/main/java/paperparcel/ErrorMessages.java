@@ -93,20 +93,7 @@ final class ErrorMessages {
       "PaperParcel does not support recursive generic field types.";
   static final String FIELD_TYPE_IS_INTERSECTION_TYPE =
       "PaperParcel does not support intersection field types.";
-
-  /* kapt errors */
-  static final String KAPT1_INCOMPATIBLE =
-      "PaperParcel is not compatible with legacy kapt. Please upgrade to kotlin 1.0.5 (or greater) "
-          + "and apply the 'kotlin-kapt' gradle plugin.";
-  static final String KAPT2_UNSTABLE_WARNING =
-      "kapt2 has been replaced with a newer version in kotlin 1.0.6 that is a lot more stable. It "
-          + "is highly recommended that you upgrade.";
-  static final String KAPT2_KT_13804 =
-      "PaperParcel is not compatible kotlin 1.0.4. Please upgrade to kotlin 1.0.5 (or greater)";
-  static final String KAPT2_INVALID_FIELD_NAME =
-      "Due to a bug in kapt, '%s' is not an allowable variable name. This bug is resolved in "
-          + "kotlin version 1.0.6. Please upgrade your kotlin version, or change this variable name.";
-
+  
   /* AutoValue Extension errors */
   static final String MANUAL_IMPLEMENTATION_OF_CREATOR =
       "Manual implementation of a static Parcelable.Creator<T> CREATOR found in %s.";
