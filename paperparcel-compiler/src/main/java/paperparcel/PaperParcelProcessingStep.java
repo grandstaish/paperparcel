@@ -32,6 +32,7 @@ import javax.lang.model.type.UnknownTypeException;
 import javax.tools.Diagnostic;
 
 import static com.google.auto.common.MoreElements.asType;
+import static javax.lang.model.element.Modifier.PRIVATE;
 
 /**
  * A {@link BasicAnnotationProcessor.ProcessingStep} that is responsible for dealing with all
@@ -109,10 +110,12 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
             e.allNonWritableFieldsMap().get(validConstructor);
         for (VariableElement nonWritableField : nonWritableFields) {
           String fieldName = nonWritableField.getSimpleName().toString();
+          String modifier = nonWritableField.getModifiers().contains(PRIVATE) ? "private" : "final";
           messager.printMessage(Diagnostic.Kind.ERROR,
               String.format(ErrorMessages.FIELD_NOT_WRITABLE,
                   asType(nonWritableField.getEnclosingElement()).getQualifiedName(),
                   fieldName,
+                  modifier,
                   validConstructor.toString(),
                   buildExcludeRulesChecklist()),
                   nonWritableField);
