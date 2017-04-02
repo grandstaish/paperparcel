@@ -1,6 +1,14 @@
 Change Log
 ==========
 
+Version 2.0.1 *(2017-04-02)*
+----------------------------
+
+* Fix: broken build using kotlin 1.1.2.
+* Fix: error message for non-writable types would sometimes tell you a field was private when it
+  wasn't.
+* Fix: Java keywords could not be used as property names as of Kotlin 1.1.0.
+
 Version 2.0.0 *(2017-02-11)*
 ----------------------------
 
