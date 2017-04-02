@@ -79,11 +79,11 @@ final class ErrorMessages {
           + "be excluded by PaperParcel then you can do this by:\n%3$s\nNote: exclude rules can "
           + "be customized using the @PaperParcel.Options API.";
   static final String FIELD_NOT_WRITABLE =
-      "Field %1$s.%2$s is private and PaperParcel cannot find a constructor parameter or setter "
-          + "method for it (using constructor %3$s). PaperParcel will search for setter methods "
+      "Field %1$s.%2$s is %3$s and PaperParcel cannot find a constructor parameter or setter "
+          + "method for it (using constructor %4$s). PaperParcel will search for setter methods "
           + "and constructor parameters using the conventions defined at "
           + "http://grandstaish.github.io/paperparcel/#model-conventions\n\nIf this field should "
-          + "be excluded by PaperParcel then you can do this by:\n%4$s\nNote: exclude rules can "
+          + "be excluded by PaperParcel then you can do this by:\n%5$s\nNote: exclude rules can "
           + "be customized using the @PaperParcel.Options API.";
   static final String FIELD_MISSING_TYPE_ADAPTER =
       "Unknown type %1$s. You can define a custom type adapter to handle unknown types.";
