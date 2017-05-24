@@ -210,14 +210,14 @@ abstract class PaperParcelDescriptor {
 
       boolean singleton = Utils.isSingleton(types, element);
       if (!singleton) {
-        WriteInfo writeInfo = WriteInfo.create(
-            types, fieldDescriptorFactory, fields, methods, constructors, options.reflectAnnotations());
+        WriteInfo writeInfo = WriteInfo.create(element, types, fieldDescriptorFactory, fields,
+            methods, constructors, options.reflectAnnotations());
         constructorFields = writeInfo.constructorFields();
         isConstructorVisible = writeInfo.isConstructorVisible();
         writableFields = writeInfo.writableFields();
         setterMethodMap = writeInfo.setterMethodMap();
-        ReadInfo readInfo = ReadInfo.create(
-            types, fieldDescriptorFactory, fields, methods, options.reflectAnnotations());
+        ReadInfo readInfo = ReadInfo.create(element, types, fieldDescriptorFactory, fields,
+            methods, options.reflectAnnotations());
         readableFields = readInfo.readableFields();
         getterMethodMap = readInfo.getterMethodMap();
         adapters = getAdapterMap(readInfo, options.allowSerializable());
@@ -309,6 +309,7 @@ abstract class PaperParcelDescriptor {
     }
 
     static WriteInfo create(
+        TypeElement owner,
         Types types,
         FieldDescriptor.Factory fieldDescriptorFactory,
         ImmutableList<VariableElement> fields,
@@ -345,7 +346,8 @@ abstract class PaperParcelDescriptor {
           if (fieldOrNull != null && types.isAssignable(parameterType,
               Utils.replaceTypeVariablesWithUpperBounds(types, fieldOrNull.asType()))) {
             nonConstructorFieldsMap.remove(parameterName);
-            constructorFieldDescriptorsBuilder.add(fieldDescriptorFactory.create(fieldOrNull));
+            constructorFieldDescriptorsBuilder.add(fieldDescriptorFactory.create(owner,
+                fieldOrNull));
           } else {
             unassignableParametersBuilder.add(parameter);
           }
@@ -365,13 +367,14 @@ abstract class PaperParcelDescriptor {
             ImmutableMap.builder();
         for (VariableElement field : nonConstructorFields) {
           if (isWritableDirectly(field)) {
-            writableFieldsBuilder.add(fieldDescriptorFactory.create(field));
+            writableFieldsBuilder.add(fieldDescriptorFactory.create(owner, field));
           } else {
             Optional<ExecutableElement> setterMethod = getSetterMethod(types, field, methods);
             if (setterMethod.isPresent()) {
-              setterMethodMapBuilder.put(fieldDescriptorFactory.create(field), setterMethod.get());
+              setterMethodMapBuilder.put(fieldDescriptorFactory.create(owner, field),
+                  setterMethod.get());
             } else if (Utils.usesAnyAnnotationsFrom(field, reflectAnnotations)) {
-              writableFieldsBuilder.add(fieldDescriptorFactory.create(field));
+              writableFieldsBuilder.add(fieldDescriptorFactory.create(owner, field));
             } else {
               nonWritableFieldsBuilder.add(field);
             }
@@ -451,6 +454,7 @@ abstract class PaperParcelDescriptor {
     }
 
     static ReadInfo create(
+        TypeElement owner,
         Types types,
         FieldDescriptor.Factory fieldDescriptorFactory,
         ImmutableList<VariableElement> fields,
@@ -464,13 +468,13 @@ abstract class PaperParcelDescriptor {
 
       for (VariableElement field : fields) {
         if (isReadableDirectly(field)) {
-          readableFieldsBuilder.add(fieldDescriptorFactory.create(field));
+          readableFieldsBuilder.add(fieldDescriptorFactory.create(owner, field));
         } else {
           Optional<ExecutableElement> accessorMethod = getAccessorMethod(types, field, methods);
           if (accessorMethod.isPresent()) {
-            getterMethodMapBuilder.put(fieldDescriptorFactory.create(field), accessorMethod.get());
+            getterMethodMapBuilder.put(fieldDescriptorFactory.create(owner, field), accessorMethod.get());
           } else if (Utils.usesAnyAnnotationsFrom(field, reflectAnnotations)) {
-            readableFieldsBuilder.add(fieldDescriptorFactory.create(field));
+            readableFieldsBuilder.add(fieldDescriptorFactory.create(owner, field));
           } else {
             nonReadableFieldsBuilder.add(field);
           }
