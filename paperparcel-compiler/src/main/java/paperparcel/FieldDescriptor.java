@@ -20,7 +20,9 @@ import com.google.auto.common.MoreTypes;
 import com.google.auto.common.Visibility;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Equivalence;
+import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
 
@@ -54,9 +56,9 @@ abstract class FieldDescriptor {
       this.types = types;
     }
 
-    FieldDescriptor create(VariableElement element) {
+    FieldDescriptor create(TypeElement owner, VariableElement element) {
       String name = element.getSimpleName().toString();
-      TypeMirror type = element.asType();
+      TypeMirror type = types.asMemberOf((DeclaredType) owner.asType(), element);
       TypeMirror fieldType = Utils.replaceTypeVariablesWithUpperBounds(types, type);
       Equivalence.Wrapper<TypeMirror> wrappedType = MoreTypes.equivalence().wrap(fieldType);
       boolean isVisible = Visibility.ofElement(element) != Visibility.PRIVATE;
