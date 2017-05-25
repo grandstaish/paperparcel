@@ -4249,4 +4249,256 @@ public class PaperParcelProcessorTest {
         .in(source)
         .onLine(11);
   }
+
+  @Test public void jsr305NonnullAlwaysTest() {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "import javax.annotation.Nonnull;",
+            "@PaperParcel",
+            "public final class Test implements Parcelable {",
+            "  @Nonnull Integer field;",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import paperparcel.internal.StaticAdapters;",
+            "final class PaperParcelTest {",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      Integer field = StaticAdapters.INTEGER_ADAPTER.readFromParcel(in);",
+            "      Test data = new Test();",
+            "      data.field = field;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    StaticAdapters.INTEGER_ADAPTER.writeToParcel(data.field, dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void jsr305NonnullNotAlwaysTest() {
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "import javax.annotation.Nonnull;",
+            "import javax.annotation.meta.When;",
+            "@PaperParcel",
+            "public final class Test implements Parcelable {",
+            "  @Nonnull(when=When.MAYBE) Integer field;",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import paperparcel.internal.StaticAdapters;",
+            "import paperparcel.internal.Utils;",
+            "final class PaperParcelTest {",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      Integer field = Utils.readNullable(in, StaticAdapters.INTEGER_ADAPTER);",
+            "      Test data = new Test();",
+            "      data.field = field;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    Utils.writeNullable(data.field, dest, flags, StaticAdapters.INTEGER_ADAPTER);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSource()).that(source)
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void jsr305NonnullByDefaultTest() {
+    JavaFileObject packageInfo =
+        JavaFileObjects.forSourceString("test.package-info", Joiner.on('\n').join(
+            "@ParametersAreNonnullByDefault",
+            "package test;",
+            "import javax.annotation.ParametersAreNonnullByDefault;"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "import javax.annotation.Nullable;",
+            "@PaperParcel",
+            "public final class Test implements Parcelable {",
+            "  Integer field1;",
+            "  @Nullable Integer field2;",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import paperparcel.internal.StaticAdapters;",
+            "import paperparcel.internal.Utils;",
+            "final class PaperParcelTest {",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      Integer field1 = StaticAdapters.INTEGER_ADAPTER.readFromParcel(in);",
+            "      Integer field2 = Utils.readNullable(in, StaticAdapters.INTEGER_ADAPTER);",
+            "      Test data = new Test();",
+            "      data.field1 = field1;",
+            "      data.field2 = field2;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    StaticAdapters.INTEGER_ADAPTER.writeToParcel(data.field1, dest, flags);",
+            "    Utils.writeNullable(data.field2, dest, flags, StaticAdapters.INTEGER_ADAPTER);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(packageInfo, source))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
+
+  @Test public void jsr305NearestDefaultNullabilityAnnotationIsPreferredTest() {
+    JavaFileObject packageInfo =
+        JavaFileObjects.forSourceString("test.package-info", Joiner.on('\n').join(
+            "@ParametersAreNonnullByDefault",
+            "package test;",
+            "import javax.annotation.ParametersAreNonnullByDefault;"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "import javax.annotation.Nonnull;",
+            "import javax.annotation.ParametersAreNullableByDefault;",
+            "@PaperParcel",
+            "@ParametersAreNullableByDefault",
+            "public final class Test implements Parcelable {",
+            "  @Nonnull Integer field1;",
+            "  Integer field2;",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject expected =
+        JavaFileObjects.forSourceString("test/PaperParcelTest", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import paperparcel.internal.StaticAdapters;",
+            "import paperparcel.internal.Utils;",
+            "final class PaperParcelTest {",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Test> CREATOR = new Parcelable.Creator<Test>() {",
+            "    @Override",
+            "    public Test createFromParcel(Parcel in) {",
+            "      Integer field1 = StaticAdapters.INTEGER_ADAPTER.readFromParcel(in);",
+            "      Integer field2 = Utils.readNullable(in, StaticAdapters.INTEGER_ADAPTER);",
+            "      Test data = new Test();",
+            "      data.field1 = field1;",
+            "      data.field2 = field2;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Test[] newArray(int size) {",
+            "      return new Test[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelTest() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Test data, @NonNull Parcel dest, int flags) {",
+            "    StaticAdapters.INTEGER_ADAPTER.writeToParcel(data.field1, dest, flags);",
+            "    Utils.writeNullable(data.field2, dest, flags, StaticAdapters.INTEGER_ADAPTER);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(packageInfo, source))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expected);
+  }
 }

@@ -69,7 +69,8 @@ ext.deps = [
     javaFormat         : 'com.google.googlejavaformat:google-java-format:1.1',
     junit              : 'junit:junit:4.12',
     truth              : 'com.google.truth:truth:0.30',
-    compiletesting     : 'com.google.testing.compile:compile-testing:0.10'
+    compiletesting     : 'com.google.testing.compile:compile-testing:0.10',
+    jsr305             : 'com.google.code.findbugs:jsr305:+'
 ]
 
 task clean(type: Delete) {

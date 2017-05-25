@@ -686,6 +686,17 @@ final class Utils {
     return null;
   }
 
+  /** Finds an annotation with the given name on the given element, or null if not found. */
+  @Nullable static AnnotationMirror getAnnotationWithName(Element element, String name) {
+    for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
+      String annotationName = mirror.getAnnotationType().toString();
+      if (name.equals(annotationName)) {
+        return mirror;
+      }
+    }
+    return null;
+  }
+
   private static Optional<AnnotationMirror> findOptionsMirror(TypeElement element) {
     Optional<AnnotationMirror> result =
         MoreElements.getAnnotationMirror(element, PaperParcel.Options.class);

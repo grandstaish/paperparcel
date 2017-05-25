@@ -16,15 +16,25 @@
 
 package paperparcel;
 
+import com.google.auto.common.AnnotationMirrors;
 import com.google.auto.common.MoreTypes;
 import com.google.auto.common.Visibility;
 import com.google.auto.value.AutoValue;
 import com.google.common.base.Equivalence;
+import javax.lang.model.element.AnnotationMirror;
+import javax.lang.model.element.AnnotationValue;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.DeclaredType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Types;
+
+import static paperparcel.JvmAnnotationNames.JAVAX_NONNULL_ANNOTATION;
+import static paperparcel.JvmAnnotationNames.NONNULL_BY_DEFAULT_ANNOTATIONS;
+import static paperparcel.JvmAnnotationNames.NOT_NULL_ANNOTATIONS;
+import static paperparcel.JvmAnnotationNames.NULLABLE_ANNOTATIONS;
+import static paperparcel.JvmAnnotationNames.NULLABLE_BY_DEFAULT_ANNOTATIONS;
 
 /** Represents a single field in a {@link PaperParcel} class */
 @AutoValue
@@ -46,13 +56,9 @@ abstract class FieldDescriptor {
   abstract boolean isNullable();
 
   static final class Factory {
-    private static final String NON_NULL_ANNOTATION_NAME = "NonNull";
-    private static final String NOT_NULL_ANNOTATION_NAME = "NotNull";
-
     private final Types types;
 
-    Factory(
-        Types types) {
+    Factory(Types types) {
       this.types = types;
     }
 
@@ -62,10 +68,48 @@ abstract class FieldDescriptor {
       TypeMirror fieldType = Utils.replaceTypeVariablesWithUpperBounds(types, type);
       Equivalence.Wrapper<TypeMirror> wrappedType = MoreTypes.equivalence().wrap(fieldType);
       boolean isVisible = Visibility.ofElement(element) != Visibility.PRIVATE;
-      boolean isNullable =
-          Utils.getAnnotationWithSimpleName(element, NON_NULL_ANNOTATION_NAME) == null
-          && Utils.getAnnotationWithSimpleName(element, NOT_NULL_ANNOTATION_NAME) == null;
+      boolean isNullable = isNullable(element);
       return new AutoValue_FieldDescriptor(element, name, wrappedType, isVisible, isNullable);
+    }
+
+    private boolean isNullable(Element element) {
+      if (isNonNullByDefault(element)) {
+        for (String name : NULLABLE_ANNOTATIONS) {
+          if (Utils.getAnnotationWithName(element, name) != null) {
+            return true;
+          }
+        }
+        return false;
+      } else {
+        for (String name : NOT_NULL_ANNOTATIONS) {
+          if (Utils.getAnnotationWithName(element, name) != null) {
+            return false;
+          }
+          AnnotationMirror javaxNonnull = Utils.getAnnotationWithName(element,
+              JAVAX_NONNULL_ANNOTATION);
+          if (javaxNonnull != null) {
+            AnnotationValue when = AnnotationMirrors.getAnnotationValue(javaxNonnull, "when");
+            return !when.getValue().toString().equals("ALWAYS");
+          }
+        }
+        return true;
+      }
+    }
+
+    private boolean isNonNullByDefault(Element element) {
+      while ((element = element.getEnclosingElement()) != null) {
+        for (String name : NONNULL_BY_DEFAULT_ANNOTATIONS) {
+          if (Utils.getAnnotationWithName(element, name) != null) {
+            return true;
+          }
+        }
+        for (String name : NULLABLE_BY_DEFAULT_ANNOTATIONS) {
+          if (Utils.getAnnotationWithName(element, name) != null) {
+            return false;
+          }
+        }
+      }
+      return false;
     }
   }
 }

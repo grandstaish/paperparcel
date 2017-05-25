@@ -39,6 +39,7 @@ dependencies {
   testCompile files(getRuntimeJar())
   testCompile files(org.gradle.internal.jvm.Jvm.current().getToolsJar())
   testCompile project(':paperparcel-compiler')
+  testCompile deps.jsr305
 }
 
 def getRuntimeJar() {
