@@ -18,7 +18,8 @@ before_script:
   - android-wait-for-emulator
   - adb shell input keyevent 82 &
 
-sudo: false
+dist: precise
+sudo: required
 
 before_cache:
   - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
