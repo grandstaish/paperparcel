@@ -21,9 +21,12 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.SetMultimap;
 import java.lang.annotation.Annotation;
+import java.util.HashSet;
 import java.util.Set;
 import javax.annotation.processing.Messager;
+import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
@@ -39,11 +42,16 @@ import static javax.lang.model.element.Modifier.PRIVATE;
  * {@link PaperParcel} annotated objects as part of the {@link PaperParcelProcessor}.
  */
 final class PaperParcelProcessingStep implements BasicAnnotationProcessor.ProcessingStep {
+  private static final String LOMBOK_DATA_ANNOTATION = "@lombok.Data";
+
   private final Messager messager;
   private final OptionsHolder optionsHolder;
   private final PaperParcelValidator paperParcelValidator;
   private final PaperParcelDescriptor.Factory paperParcelDescriptorFactory;
   private final PaperParcelGenerator paperParcelGenerator;
+
+  private boolean isLombokEnabled = false;
+  private boolean waitForLombok = false;
 
   PaperParcelProcessingStep(
       Messager messager,
@@ -56,38 +64,61 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
     this.paperParcelValidator = paperParcelValidator;
     this.paperParcelDescriptorFactory = paperParcelDescriptorFactory;
     this.paperParcelGenerator = paperParcelGenerator;
+
   }
 
   @Override public Set<? extends Class<? extends Annotation>> annotations() {
     return ImmutableSet.of(PaperParcel.class);
   }
 
-  @Override public Set<Element> process(
-      SetMultimap<Class<? extends Annotation>, Element> elementsByAnnotation) {
+  @Override
+  public Set<Element> process(SetMultimap<Class<? extends Annotation>, Element> elementsByAnnotation) {
+
+    Set<Element> defferedElements = new HashSet<>();
+
     for (Element element : elementsByAnnotation.get(PaperParcel.class)) {
+
       TypeElement paperParcelElement = asType(element);
-      OptionsDescriptor options =
-          Utils.getOptions(paperParcelElement)
-              .or(optionsHolder.getOptions());
-      ValidationReport<TypeElement> validationReport =
-          paperParcelValidator.validate(paperParcelElement, options);
+      OptionsDescriptor options = Utils.getOptions(paperParcelElement).or(optionsHolder.getOptions());
+      ValidationReport<TypeElement> validationReport = paperParcelValidator.validate(paperParcelElement, options);
       validationReport.printMessagesTo(messager);
+
+      isLombokEnabled = options.isLombokEnabled();
+      waitForLombok = isLombokEnabled && isLombokDataAnnotationPresent(element);
+
       if (validationReport.isClean()) {
         try {
           generatePaperParcel(paperParcelDescriptorFactory.create(paperParcelElement, options));
         } catch (PaperParcelDescriptor.NonWritableFieldsException e) {
-          printMessages(e);
+          if (waitForLombok) {
+            defferedElements.add(element);
+          } else {
+            printMessages(e);
+          }
         } catch (PaperParcelDescriptor.NonReadableFieldsException e) {
-          printMessages(e);
+          if (waitForLombok) {
+            defferedElements.add(element);
+          } else {
+            printMessages(e);
+          }
         } catch (UnknownTypeException e) {
-          messager.printMessage(Diagnostic.Kind.ERROR,
-              String.format(ErrorMessages.FIELD_MISSING_TYPE_ADAPTER,
-                  e.getUnknownType().toString()),
-              (Element) e.getArgument());
+          messager.printMessage(Diagnostic.Kind.ERROR, String.format(ErrorMessages.FIELD_MISSING_TYPE_ADAPTER,
+                                                                     e.getUnknownType().toString()), (Element) e.getArgument());
         }
       }
     }
-    return ImmutableSet.of();
+    return defferedElements;
+  }
+
+  private boolean isLombokDataAnnotationPresent(Element element) {
+    if (element.getKind().equals(ElementKind.CLASS)) {
+      for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
+        if (mirror.toString().equals(LOMBOK_DATA_ANNOTATION)) {
+          return true;
+        }
+      }
+    }
+    return false;
   }
 
   private void generatePaperParcel(PaperParcelDescriptor descriptor) {
