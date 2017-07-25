@@ -44,8 +44,9 @@ import static javax.lang.model.element.Modifier.PRIVATE;
 final class PaperParcelProcessingStep implements BasicAnnotationProcessor.ProcessingStep {
 
   private static final String LOMBOK_GETTER_ANNOTATION = "@lombok.Getter";
+  private static final String LOMBOK_SETTER_ANNOTATION = "@lombok.Setter";
+  private static final String LOMBOK_DATA_ANNOTATION   = "@lombok.Data";
   private static final String LOMBOK_ACCESS_LEVEL_NONE = "AccessLevel.NONE";
-  private static final String LOMBOK_DATA_ANNOTATION = "@lombok.Data";
 
   private final Messager messager;
   private final OptionsHolder optionsHolder;
@@ -93,13 +94,13 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
         try {
           generatePaperParcel(paperParcelDescriptorFactory.create(paperParcelElement, options));
         } catch (PaperParcelDescriptor.NonWritableFieldsException e) {
-          if (waitForLombok) {
+          if (waitForLombok && hasNoFieldsWithLombokSetterAccessLevelNone(e)) {
             defferedElements.add(element);
           } else {
             printMessages(e);
           }
         } catch (PaperParcelDescriptor.NonReadableFieldsException e) {
-          if (waitForLombok && !hasFieldsWithLombockGetterAccessLevelNone(e)) {
+          if (waitForLombok && hasNoFieldsWithLombokGetterAccessLevelNone(e)) {
             defferedElements.add(element);
           } else {
             printMessages(e);
@@ -124,15 +125,34 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
     return false;
   }
 
-  private boolean hasFieldsWithLombockGetterAccessLevelNone(PaperParcelDescriptor.NonReadableFieldsException e) {
+  private boolean hasNoFieldsWithLombokGetterAccessLevelNone(PaperParcelDescriptor.NonReadableFieldsException e) {
     for (VariableElement nonReadableField : e.nonReadableFields()) {
       for (AnnotationMirror mirror : nonReadableField.getAnnotationMirrors())
         if (mirror.toString().contains(LOMBOK_GETTER_ANNOTATION) &&
             mirror.toString().contains(LOMBOK_ACCESS_LEVEL_NONE)) {
-        return true;
+        return false;
       }
     }
-    return false;
+    return true;
+  }
+
+  private boolean hasNoFieldsWithLombokSetterAccessLevelNone(PaperParcelDescriptor.NonWritableFieldsException e) {
+
+    // make a set of all VariableElements present in method parameter
+    Set<VariableElement> elements = new HashSet<>();
+    for (ImmutableList<VariableElement> variableElements : e.allNonWritableFieldsMap().values()) {
+      for (VariableElement variableElement : variableElements) {
+        elements.add(variableElement);
+      }
+    }
+    for (VariableElement nonWritableField : elements) {
+      for (AnnotationMirror mirror : nonWritableField.getAnnotationMirrors())
+        if (mirror.toString().contains(LOMBOK_SETTER_ANNOTATION) &&
+            mirror.toString().contains(LOMBOK_ACCESS_LEVEL_NONE)) {
+          return false;
+        }
+    }
+    return true;
   }
 
   private void generatePaperParcel(PaperParcelDescriptor descriptor) {
@@ -151,22 +171,36 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
     if (validConstructors.size() > 0) {
       // Log errors for each non-writable field in each valid constructor
       for (ExecutableElement validConstructor : validConstructors) {
-        ImmutableList<VariableElement> nonWritableFields =
-            e.allNonWritableFieldsMap().get(validConstructor);
+
+        ImmutableList<VariableElement> nonWritableFields = e.allNonWritableFieldsMap().get(validConstructor);
+        String fieldName = "", modifier = "";
+
         for (VariableElement nonWritableField : nonWritableFields) {
-          String fieldName = nonWritableField.getSimpleName().toString();
-          String modifier = nonWritableField.getModifiers().contains(PRIVATE) ? "private" : "final";
+
+          String errorMessage = ErrorMessages.FIELD_NOT_WRITABLE;
+
+          fieldName = nonWritableField.getSimpleName().toString();
+          modifier = nonWritableField.getModifiers().contains(PRIVATE) ? "private" : "final";
+
+          if (waitForLombok){
+            for (AnnotationMirror mirror : nonWritableField.getAnnotationMirrors())
+              if (mirror.toString().contains(LOMBOK_SETTER_ANNOTATION) &&
+                  mirror.toString().contains(LOMBOK_ACCESS_LEVEL_NONE)) {
+                errorMessage = ErrorMessages.FIELD_NOT_WRITABLE_LOMBOK_SETTER_ACCESS_LEVEL_NONE;
+                break;
+              }
+          }
+
           messager.printMessage(Diagnostic.Kind.ERROR,
-              String.format(ErrorMessages.FIELD_NOT_WRITABLE,
-                  asType(nonWritableField.getEnclosingElement()).getQualifiedName(),
-                  fieldName,
-                  modifier,
-                  validConstructor.toString(),
-                  buildExcludeRulesChecklist()),
-                  nonWritableField);
+                                String.format(errorMessage,
+                                              asType(nonWritableField.getEnclosingElement()).getQualifiedName(),
+                                              fieldName,
+                                              modifier,
+                                              validConstructor.toString(),
+                                              buildExcludeRulesChecklist()),
+                                nonWritableField);
         }
       }
-
     } else {
       // Log errors for unassignable parameters in each invalid constructor
       for (ExecutableElement invalidConstructor : invalidConstructors) {
