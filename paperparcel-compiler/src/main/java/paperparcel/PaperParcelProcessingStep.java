@@ -46,6 +46,7 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
   private static final String LOMBOK_GETTER_ANNOTATION = "@lombok.Getter";
   private static final String LOMBOK_SETTER_ANNOTATION = "@lombok.Setter";
   private static final String LOMBOK_DATA_ANNOTATION   = "@lombok.Data";
+  private static final String LOMBOK_VALUE_ANNOTATION  = "@lombok.Value";
   private static final String LOMBOK_ACCESS_LEVEL_NONE = "AccessLevel.NONE";
 
   private final Messager messager;
@@ -88,7 +89,7 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
       validationReport.printMessagesTo(messager);
 
       isLombokEnabled = options.isLombokEnabled();
-      waitForLombok = isLombokEnabled && isLombokDataAnnotationPresent(element);
+      waitForLombok = isLombokEnabled && isLombokDataValueAnnotationPresent(element);
 
       if (validationReport.isClean()) {
         try {
@@ -114,10 +115,11 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
     return defferedElements;
   }
 
-  private boolean isLombokDataAnnotationPresent(Element element) {
+  private boolean isLombokDataValueAnnotationPresent(Element element) {
     if (element.getKind().equals(ElementKind.CLASS)) {
       for (AnnotationMirror mirror : element.getAnnotationMirrors()) {
-        if (mirror.toString().equals(LOMBOK_DATA_ANNOTATION)) {
+        if (mirror.toString().equals(LOMBOK_DATA_ANNOTATION) ||
+            mirror.toString().equals(LOMBOK_VALUE_ANNOTATION)) {
           return true;
         }
       }
