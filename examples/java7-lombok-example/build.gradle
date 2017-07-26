@@ -26,6 +26,7 @@ dependencies {
   compile deps.supportAnnotations
   compile deps.appCompat
   compile deps.design
+  compile deps.lombok
 
   compile project(':paperparcel')
   annotationProcessor project(':paperparcel-compiler')
