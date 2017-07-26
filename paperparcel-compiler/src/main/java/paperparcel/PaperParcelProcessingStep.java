@@ -42,6 +42,9 @@ import static javax.lang.model.element.Modifier.PRIVATE;
  * {@link PaperParcel} annotated objects as part of the {@link PaperParcelProcessor}.
  */
 final class PaperParcelProcessingStep implements BasicAnnotationProcessor.ProcessingStep {
+
+  private static final String LOMBOK_GETTER_ANNOTATION = "@lombok.Getter";
+  private static final String LOMBOK_ACCESS_LEVEL_NONE = "AccessLevel.NONE";
   private static final String LOMBOK_DATA_ANNOTATION = "@lombok.Data";
 
   private final Messager messager;
@@ -96,7 +99,7 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
             printMessages(e);
           }
         } catch (PaperParcelDescriptor.NonReadableFieldsException e) {
-          if (waitForLombok) {
+          if (waitForLombok && !hasFieldsWithLombockGetterAccessLevelNone(e)) {
             defferedElements.add(element);
           } else {
             printMessages(e);
@@ -116,6 +119,17 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
         if (mirror.toString().equals(LOMBOK_DATA_ANNOTATION)) {
           return true;
         }
+      }
+    }
+    return false;
+  }
+
+  private boolean hasFieldsWithLombockGetterAccessLevelNone(PaperParcelDescriptor.NonReadableFieldsException e) {
+    for (VariableElement nonReadableField : e.nonReadableFields()) {
+      for (AnnotationMirror mirror : nonReadableField.getAnnotationMirrors())
+        if (mirror.toString().contains(LOMBOK_GETTER_ANNOTATION) &&
+            mirror.toString().contains(LOMBOK_ACCESS_LEVEL_NONE)) {
+        return true;
       }
     }
     return false;
@@ -173,8 +187,18 @@ final class PaperParcelProcessingStep implements BasicAnnotationProcessor.Proces
   private void printMessages(PaperParcelDescriptor.NonReadableFieldsException e) {
     for (VariableElement nonReadableField : e.nonReadableFields()) {
       String fieldName = nonReadableField.getSimpleName().toString();
+      String errorMessage = ErrorMessages.FIELD_NOT_READABLE;
+		if (waitForLombok){
+        for (AnnotationMirror mirror : nonReadableField.getAnnotationMirrors())
+          if (mirror.toString().contains(LOMBOK_GETTER_ANNOTATION) &&
+              mirror.toString().contains(LOMBOK_ACCESS_LEVEL_NONE)) {
+            errorMessage = ErrorMessages.FIELD_NOT_READABLE_LOMBOK_GETTER_ACCESS_LEVEL_NONE;
+            break;
+          }
+      }
+
       messager.printMessage(Diagnostic.Kind.ERROR,
-          String.format(ErrorMessages.FIELD_NOT_READABLE,
+          String.format(errorMessage,
               asType(nonReadableField.getEnclosingElement()).getQualifiedName(),
               fieldName,
               buildExcludeRulesChecklist()),
