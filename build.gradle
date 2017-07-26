@@ -61,6 +61,7 @@ ext.deps = [
     android            : 'com.google.android:android:4.1.1.4',
     supportAnnotations : "com.android.support:support-annotations:$androidSupportVersion",
     appCompat          : "com.android.support:appcompat-v7:$androidSupportVersion",
+    design             : "com.android.support:design:$androidSupportVersion",
     supportTestRunner  : 'com.android.support.test:runner:0.5',
     javapoet           : 'com.squareup:javapoet:1.8.0',
     autovalue          : 'com.google.auto.value:auto-value:1.3',
