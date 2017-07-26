@@ -20,28 +20,24 @@ import android.os.Parcel;
 import android.os.Parcelable;
 import java.util.Date;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import lombok.Value;
 import paperparcel.PaperParcel;
 
+@Data
 @PaperParcel
+@RequiredArgsConstructor
 public final class State implements Parcelable {
+  
   public static Parcelable.Creator<State> CREATOR = PaperParcelState.CREATOR;
 
   private final int count;
 
-  // Non-private variable can be assigned and read directly; it doesn't need a corresponding
-  // constructor argument/setter method and an accessor method.
-  Date modificationDate;
+  private Date modificationDate;
 
-  // Excluded from the parcelling/unparcelling process
   private transient long somethingToExclude = 1000L;
-
-  public State(int count) {
-    this.count = count;
-  }
-
-  public int getCount() {
-    return count;
-  }
 
   @Override public int describeContents() {
     return 0;

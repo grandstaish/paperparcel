@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-@ProcessorConfig(adapters = @Adapter(DateAdapter.class))
+@ProcessorConfig(adapters = @Adapter(DateAdapter.class), options = @PaperParcel.Options(isLombokEnabled = true))
 package nz.bradcampbell.java7example;
 
 import paperparcel.Adapter;
+import paperparcel.PaperParcel;
 import paperparcel.ProcessorConfig;

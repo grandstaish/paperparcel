@@ -62,10 +62,10 @@ public class MainActivity extends AppCompatActivity {
   }
 
   private void updateText() {
-    state.modificationDate = new Date();
+    state.setModificationDate(new Date());
     TextView counter = (TextView) findViewById(R.id.counter);
     counter.setText(
-        state.getCount() + " (updated at " + dateFormat.format(state.modificationDate) + ")");
+        state.getCount() + " (updated at " + dateFormat.format(state.getModificationDate()) + ")");
   }
 
   @Override protected void onSaveInstanceState(Bundle outState) {
