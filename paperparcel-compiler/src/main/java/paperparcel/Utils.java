@@ -40,6 +40,7 @@ import javax.lang.model.element.AnnotationValueVisitor;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
+import javax.lang.model.element.Name;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.TypeParameterElement;
 import javax.lang.model.element.VariableElement;
@@ -364,7 +365,7 @@ final class Utils {
         MoreElements.getAnnotationMirror(element, PaperParcel.class);
     if (paperParcelMirror.isPresent()) {
       ImmutableList.Builder<VariableElement> fields = ImmutableList.builder();
-      getFieldsToParcelImpl(element, options, fields);
+      getFieldsToParcelImpl(element, options, fields, new HashSet<Name>());
       return fields.build();
     } else {
       throw new IllegalArgumentException("element must be annotated with @PaperParcel");
@@ -374,19 +375,22 @@ final class Utils {
   private static void getFieldsToParcelImpl(
       TypeElement element,
       OptionsDescriptor options,
-      ImmutableList.Builder<VariableElement> fields) {
+      ImmutableList.Builder<VariableElement> fields,
+      Set<Name> seenFieldNames) {
     for (VariableElement variable : fieldsIn(element.getEnclosedElements())) {
       if (!excludeViaModifiers(variable, options.excludeModifiers())
           && !usesAnyAnnotationsFrom(variable, options.excludeAnnotationNames())
+          && !seenFieldNames.contains(variable.getSimpleName())
           && (!options.excludeNonExposedFields()
           || usesAnyAnnotationsFrom(variable, options.exposeAnnotationNames()))) {
         fields.add(variable);
+        seenFieldNames.add(variable.getSimpleName());
       }
     }
     TypeMirror superType = element.getSuperclass();
     if (superType.getKind() != TypeKind.NONE) {
       TypeElement superElement = asType(asDeclared(superType).asElement());
-      getFieldsToParcelImpl(superElement, options, fields);
+      getFieldsToParcelImpl(superElement, options, fields, seenFieldNames);
     }
   }
 
