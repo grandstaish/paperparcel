@@ -14,8 +14,8 @@ For more information please see [the website](http://grandstaish.github.io/paper
 
 ```groovy
 dependencies {
-  compile 'nz.bradcampbell:paperparcel:2.0.1'
-  annotationProcessor 'nz.bradcampbell:paperparcel-compiler:2.0.1'
+  compile 'nz.bradcampbell:paperparcel:2.0.2'
+  annotationProcessor 'nz.bradcampbell:paperparcel-compiler:2.0.2'
 }
 ```
 
@@ -27,9 +27,9 @@ PaperParcel requires `kotlin 1.0.5` (or greater) and the `'kotlin-kapt'` Gradle 
 apply plugin: 'kotlin-kapt'
 
 dependencies {
-  compile 'nz.bradcampbell:paperparcel:2.0.1'
-  compile 'nz.bradcampbell:paperparcel-kotlin:2.0.1' // Optional
-  kapt 'nz.bradcampbell:paperparcel-compiler:2.0.1'
+  compile 'nz.bradcampbell:paperparcel:2.0.2'
+  compile 'nz.bradcampbell:paperparcel-kotlin:2.0.2' // Optional
+  kapt 'nz.bradcampbell:paperparcel-compiler:2.0.2'
 }
 ```
 

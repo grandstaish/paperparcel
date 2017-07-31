@@ -1,6 +1,12 @@
 Change Log
 ==========
 
+Version 2.0.2 *(2017-07-31)*
+----------------------------
+
+* Fix: resolve generic field types for fields contained in subclasses (#176)
+* Fix: crash when a superclass and a subclass have a field with the same name (#189)
+
 Version 2.0.1 *(2017-04-02)*
 ----------------------------
 
