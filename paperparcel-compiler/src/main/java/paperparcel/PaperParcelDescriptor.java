@@ -99,7 +99,7 @@ abstract class PaperParcelDescriptor {
     methodName = stripKotlinInternalVisibilityQualifier(methodName);
     return methodName.equals(fieldName)
         || (startsWithPrefix(IS_PREFIX, fieldName) && methodName.equals(SET_PREFIX + fieldName.substring(IS_PREFIX.length())))
-        || (startsWithPrefix(IS_PREFIX, fieldName) && methodName.equals(SET_PREFIX + fieldName.substring(IS_PREFIX.length())))
+        || (startsWithPrefix(HAS_PREFIX, fieldName) && methodName.equals(SET_PREFIX + fieldName.substring(HAS_PREFIX.length())))
         || methodName.equals(SET_PREFIX + Strings.capitalizeAsciiOnly(fieldName))
         || methodName.equals(SET_PREFIX + Strings.capitalizeFirstWordAsciiOnly(fieldName));
   }
