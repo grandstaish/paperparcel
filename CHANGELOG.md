@@ -2,6 +2,7 @@ Change Log
 ==========
 
 Version 2.0.4 *(2017-08-28)*
+----------------------------
 
 * Fix: setter method name matching for properties that start with 'has'
 
