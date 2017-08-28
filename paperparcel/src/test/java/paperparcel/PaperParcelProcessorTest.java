@@ -4249,4 +4249,88 @@ public class PaperParcelProcessorTest {
         .in(source)
         .onLine(11);
   }
+
+  @Test public void genericNestedParcelableTest() {
+    JavaFileObject root =
+        JavaFileObjects.forSourceString("test.Root", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "@PaperParcel",
+            "public final class Root implements Parcelable {",
+            "  Child<Boolean> child;",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject child =
+        JavaFileObjects.forSourceString("test.Child", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import java.io.Serializable;",
+            "public final class Child<T extends Serializable> implements Parcelable {",
+            "  T something;",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "  public static final Parcelable.Creator<Child> CREATOR = new Parcelable.Creator<Child>() {",
+            "    @Override",
+            "    public Child createFromParcel(Parcel in) {",
+            "      return null;",
+            "    }",
+            "    @Override",
+            "    public Child[] newArray(int size) {",
+            "      return new Child[size];",
+            "    }",
+            "  };",
+            "}"
+        ));
+
+    JavaFileObject expectedSource =
+        JavaFileObjects.forSourceString("test/PaperParcelRoot", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import android.support.annotation.NonNull;",
+            "import paperparcel.TypeAdapter;",
+            "import paperparcel.internal.ParcelableAdapter;",
+            "final class PaperParcelRoot {",
+            "  static final TypeAdapter<Child<Boolean>> BOOLEAN_CHILD_PARCELABLE_ADAPTER = ",
+            "      new ParcelableAdapter<Child<Boolean>>((Parcelable.Creator) Child.CREATOR);",
+            "  @NonNull",
+            "  static final Parcelable.Creator<Root> CREATOR = new Parcelable.Creator<Root>() {",
+            "    @Override",
+            "    public Root createFromParcel(Parcel in) {",
+            "      Child<Boolean> child = PaperParcelRoot.BOOLEAN_CHILD_PARCELABLE_ADAPTER.readFromParcel(in);",
+            "      Root data = new Root();",
+            "      data.child = child;",
+            "      return data;",
+            "    }",
+            "    @Override",
+            "    public Root[] newArray(int size) {",
+            "      return new Root[size];",
+            "    }",
+            "  };",
+            "  private PaperParcelRoot() {",
+            "  }",
+            "  static void writeToParcel(@NonNull Root data, @NonNull Parcel dest, int flags) {",
+            "    PaperParcelRoot.BOOLEAN_CHILD_PARCELABLE_ADAPTER.writeToParcel(data.child, dest, flags);",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(root, child))
+        .processedWith(new PaperParcelProcessor())
+        .compilesWithoutError()
+        .and()
+        .generatesSources(expectedSource);
+  }
 }

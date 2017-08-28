@@ -425,6 +425,9 @@ final class PaperParcelWriter {
         ConstructorInfo.CreatorParam creatorParam = (ConstructorInfo.CreatorParam) param;
         if (creatorParam.creatorOwner == null) {
           blocks.add(CodeBlock.of("null"));
+        } else if (creatorParam.requiresCast) {
+          ClassName creator = ClassName.get("android.os", "Parcelable", "Creator");
+          blocks.add(CodeBlock.of("($T) $T.$N", creator, creatorParam.creatorOwner, "CREATOR"));
         } else {
           blocks.add(CodeBlock.of("$T.$N", creatorParam.creatorOwner, "CREATOR"));
         }

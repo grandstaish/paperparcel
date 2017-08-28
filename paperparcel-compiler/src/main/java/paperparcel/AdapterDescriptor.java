@@ -91,9 +91,11 @@ abstract class AdapterDescriptor {
 
     static class CreatorParam extends Param {
       @Nullable final ClassName creatorOwner;
+      final boolean requiresCast;
 
-      CreatorParam(@Nullable ClassName creatorOwner) {
+      CreatorParam(@Nullable ClassName creatorOwner, boolean requiresCast) {
         this.creatorOwner = creatorOwner;
+        this.requiresCast = requiresCast;
       }
     }
 
@@ -229,6 +231,7 @@ abstract class AdapterDescriptor {
               Utils.getCreatorArg(elements, types, MoreTypes.asDeclared(resolvedDependencyType));
           VariableElement creator = Utils.findCreator(elements, types, creatorArg);
           ClassName creatorOwner = null;
+          boolean requiresCast = false;
           if (creator != null) {
             TypeElement creatorOwnerElement = (TypeElement) creator.getEnclosingElement();
             // Must only pass the CREATOR directly if the Parcelable element is final. Otherwise
@@ -240,8 +243,13 @@ abstract class AdapterDescriptor {
             if (creatorOwnerElement.getModifiers().contains(Modifier.FINAL)) {
               creatorOwner = ClassName.get(creatorOwnerElement);
             }
+            // Require a cast if the creator owner is generic.
+            // See https://github.com/grandstaish/paperparcel/issues/193
+            if (creatorOwnerElement.getTypeParameters().size() > 0) {
+              requiresCast = true;
+            }
           }
-          parameterBuilder.add(new ConstructorInfo.CreatorParam(creatorOwner));
+          parameterBuilder.add(new ConstructorInfo.CreatorParam(creatorOwner, requiresCast));
 
         } else {
           TypeMirror classArg =
