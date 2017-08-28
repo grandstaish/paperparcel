@@ -19,6 +19,7 @@ package paperparcel;
 import android.support.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -276,7 +277,23 @@ abstract class TypeKey {
       for (TypeMirror superType : superTypes) {
         if (superType.getKind() != TypeKind.NONE) {
           TypeMirror boundMirror = boundMirror(types, bound, superType);
-          if (boundMirror != null) return boundMirror;
+          if (boundMirror != null) {
+            // Ensure that type arguments are also bound.
+            // See https://github.com/grandstaish/paperparcel/issues/195
+            List<? extends TypeMirror> typeArguments;
+            if (type instanceof DeclaredType) {
+              typeArguments = ((DeclaredType) type).getTypeArguments();
+            } else {
+              typeArguments = Collections.emptyList();
+            }
+            boolean typeArgumentsAreAlsoBound = true;
+            for (TypeMirror arg : typeArguments) {
+              typeArgumentsAreAlsoBound &= boundMirror(types, bound, arg) != null;
+            }
+            if (typeArgumentsAreAlsoBound) {
+              return boundMirror;
+            }
+          }
         }
       }
       return null;

@@ -4333,4 +4333,47 @@ public class PaperParcelProcessorTest {
         .and()
         .generatesSources(expectedSource);
   }
+
+  @Test public void failWhenTypeArgumentsOfBoundedTypeDoNotMatchTest() {
+    JavaFileObject nonSerializableType =
+        JavaFileObjects.forSourceString("test.TestParcelable", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "public class TestParcelable implements Parcelable {",
+            "  @Override",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  @Override",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    JavaFileObject source =
+        JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
+            "package test;",
+            "import android.os.Parcel;",
+            "import android.os.Parcelable;",
+            "import paperparcel.PaperParcel;",
+            "import java.util.ArrayList;",
+            "@PaperParcel",
+            "public final class Test implements Parcelable {",
+            "  ArrayList<TestParcelable> value;",
+            "  public int describeContents() {",
+            "    return 0;",
+            "  }",
+            "  public void writeToParcel(Parcel dest, int flags) {",
+            "  }",
+            "}"
+        ));
+
+    assertAbout(javaSources()).that(Arrays.asList(source, nonSerializableType))
+        .processedWith(new PaperParcelProcessor())
+        .failsToCompile()
+        .withErrorContaining(String.format(ErrorMessages.FIELD_MISSING_TYPE_ADAPTER, "java.util.ArrayList<test.TestParcelable>"))
+        .in(source)
+        .onLine(8);
+  }
 }
