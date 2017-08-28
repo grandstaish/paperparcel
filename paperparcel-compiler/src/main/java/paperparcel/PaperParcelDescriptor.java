@@ -84,30 +84,24 @@ abstract class PaperParcelDescriptor {
    */
   abstract boolean isSingleton();
 
-  private static ImmutableSet<String> possibleGetterNames(String name) {
-    name = stripKaptEscaping(name);
-    ImmutableSet.Builder<String> possibleGetterNames = new ImmutableSet.Builder<>();
-    possibleGetterNames.add(name);
-    possibleGetterNames.add(IS_PREFIX + Strings.capitalizeAsciiOnly(name));
-    possibleGetterNames.add(HAS_PREFIX + Strings.capitalizeAsciiOnly(name));
-    possibleGetterNames.add(GET_PREFIX + Strings.capitalizeAsciiOnly(name));
-    possibleGetterNames.add(GET_PREFIX + Strings.capitalizeFirstWordAsciiOnly(name));
-    return possibleGetterNames.build();
+  private static boolean isGetterMethod(String fieldName, String methodName) {
+    fieldName = stripKaptEscaping(fieldName);
+    methodName = stripKotlinInternalVisibilityQualifier(methodName);
+    return methodName.equals(fieldName)
+        || methodName.equals(IS_PREFIX + Strings.capitalizeAsciiOnly(fieldName))
+        || methodName.equals(HAS_PREFIX + Strings.capitalizeAsciiOnly(fieldName))
+        || methodName.equals(GET_PREFIX + Strings.capitalizeAsciiOnly(fieldName))
+        || methodName.equals(GET_PREFIX + Strings.capitalizeFirstWordAsciiOnly(fieldName));
   }
 
-  private static ImmutableSet<String> possibleSetterNames(String name) {
-    name = stripKaptEscaping(name);
-    ImmutableSet.Builder<String> possibleSetterNames = new ImmutableSet.Builder<>();
-    if (startsWithPrefix(IS_PREFIX, name)) {
-      possibleSetterNames.add(SET_PREFIX + name.substring(IS_PREFIX.length()));
-    }
-    if (startsWithPrefix(HAS_PREFIX, name)) {
-      possibleSetterNames.add(SET_PREFIX + name.substring(HAS_PREFIX.length()));
-    }
-    possibleSetterNames.add(name);
-    possibleSetterNames.add(SET_PREFIX + Strings.capitalizeAsciiOnly(name));
-    possibleSetterNames.add(SET_PREFIX + Strings.capitalizeFirstWordAsciiOnly(name));
-    return possibleSetterNames.build();
+  private static boolean isSetterMethod(String fieldName, String methodName) {
+    fieldName = stripKaptEscaping(fieldName);
+    methodName = stripKotlinInternalVisibilityQualifier(methodName);
+    return methodName.equals(fieldName)
+        || (startsWithPrefix(IS_PREFIX, fieldName) && methodName.equals(SET_PREFIX + fieldName.substring(IS_PREFIX.length())))
+        || (startsWithPrefix(IS_PREFIX, fieldName) && methodName.equals(SET_PREFIX + fieldName.substring(IS_PREFIX.length())))
+        || methodName.equals(SET_PREFIX + Strings.capitalizeAsciiOnly(fieldName))
+        || methodName.equals(SET_PREFIX + Strings.capitalizeFirstWordAsciiOnly(fieldName));
   }
 
   private static boolean startsWithPrefix(String prefix, String name) {
@@ -127,6 +121,11 @@ abstract class PaperParcelDescriptor {
     String stripped = name.substring(1, name.length() - 1);
     if (SourceVersion.isKeyword(stripped)) return stripped;
     return name;
+  }
+
+  private static String stripKotlinInternalVisibilityQualifier(String name) {
+    if (!name.contains("$")) return name;
+    return name.substring(0, name.indexOf("$"));
   }
 
   @AutoValue
@@ -403,12 +402,11 @@ abstract class PaperParcelDescriptor {
     private static Optional<ExecutableElement> getSetterMethod(
         Types types, VariableElement field, ImmutableSet<ExecutableElement> allMethods) {
       String fieldName = field.getSimpleName().toString();
-      ImmutableSet<String> possibleSetterNames = possibleSetterNames(fieldName);
       TypeMirror fieldType = Utils.replaceTypeVariablesWithUpperBounds(types, field.asType());
       for (ExecutableElement method : allMethods) {
         List<? extends VariableElement> parameters = method.getParameters();
         if (parameters.size() == 1
-            && possibleSetterNames.contains(method.getSimpleName().toString())
+            && isSetterMethod(fieldName, method.getSimpleName().toString())
             && method.getTypeParameters().size() == 0
             && types.isAssignable(Utils.replaceTypeVariablesWithUpperBounds(
             types, parameters.get(0).asType()), fieldType)) {
@@ -492,11 +490,10 @@ abstract class PaperParcelDescriptor {
     private static Optional<ExecutableElement> getAccessorMethod(
         Types types, VariableElement field, ImmutableSet<ExecutableElement> methods) {
       String fieldName = field.getSimpleName().toString();
-      ImmutableSet<String> possibleGetterNames = possibleGetterNames(fieldName);
       TypeMirror fieldType = field.asType();
       for (ExecutableElement method : methods) {
         if (method.getParameters().size() == 0
-            && possibleGetterNames.contains(method.getSimpleName().toString())
+            && isGetterMethod(fieldName, method.getSimpleName().toString())
             && method.getTypeParameters().size() == 0
             && types.isAssignable(method.getReturnType(), fieldType)) {
           return Optional.of(method);
