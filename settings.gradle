@@ -1,17 +1,18 @@
-include ':paperparcel', ':java7-lombok-example'
+include ':paperparcel'
 include ':paperparcel-kotlin'
 include ':paperparcel-api'
 include ':paperparcel-compiler'
 
-include ':kotlin-example'
-include ':java7-example'
-include ':autovalue-example'
-include ':realm-example'
-include ':benchmark-demo'
-
-project(':kotlin-example').projectDir = new File("examples/kotlin-example")
-project(':java7-example').projectDir = new File("examples/java7-example")
-project(':autovalue-example').projectDir = new File("examples/autovalue-example")
-project(':realm-example').projectDir = new File("examples/realm-example")
-project(':benchmark-demo').projectDir = new File("examples/benchmark-demo")
-project(':java7-lombok-example').projectDir = new File('examples/java7-lombok-example')
+//include ':kotlin-example'
+//include ':java7-example'
+//include ':autovalue-example'
+//include ':realm-example'
+//include ':benchmark-demo'
+//include ':java7-lombok-example'
+//
+//project(':kotlin-example').projectDir = new File("examples/kotlin-example")
+//project(':java7-example').projectDir = new File("examples/java7-example")
+//project(':autovalue-example').projectDir = new File("examples/autovalue-example")
+//project(':realm-example').projectDir = new File("examples/realm-example")
+//project(':benchmark-demo').projectDir = new File("examples/benchmark-demo")
+//project(':java7-lombok-example').projectDir = new File('examples/java7-lombok-example')
