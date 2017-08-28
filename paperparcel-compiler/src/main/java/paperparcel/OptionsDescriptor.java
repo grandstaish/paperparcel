@@ -37,7 +37,8 @@ abstract class OptionsDescriptor {
       ImmutableList.<String>of(),
       false,
       ImmutableList.<String>of(),
-      true);
+      true,
+      false);
 
   @Nullable abstract AnnotationMirror mirror();
 
@@ -53,6 +54,8 @@ abstract class OptionsDescriptor {
 
   abstract boolean allowSerializable();
 
+  abstract boolean isLombokEnabled();
+
   static OptionsDescriptor create(
       AnnotationMirror mirror,
       ImmutableList<Set<Modifier>> excludeModifiers,
@@ -60,7 +63,8 @@ abstract class OptionsDescriptor {
       ImmutableList<String> exposeAnnotationNames,
       boolean excludeNonExposedFields,
       ImmutableList<String> reflectAnnotations,
-      boolean allowSerializable) {
+      boolean allowSerializable,
+      boolean isLombokEnabled) {
     return new AutoValue_OptionsDescriptor(
         mirror,
         excludeModifiers,
@@ -68,6 +72,7 @@ abstract class OptionsDescriptor {
         exposeAnnotationNames,
         excludeNonExposedFields,
         reflectAnnotations,
-        allowSerializable);
+        allowSerializable,
+        isLombokEnabled);
   }
 }

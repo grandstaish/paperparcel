@@ -170,5 +170,7 @@ public @interface PaperParcel {
      * <p>By default Java serialization is allowed.</p>
      */
     boolean allowSerializable() default true;
+
+    boolean isLombokEnabled() default false;
   }
 }

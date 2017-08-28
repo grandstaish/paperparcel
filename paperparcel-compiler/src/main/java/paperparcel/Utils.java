@@ -419,8 +419,9 @@ final class Utils {
     boolean excludeNonExposedFields = getExcludeNonExposedFields(optionsMirror);
     ImmutableList<String> reflectAnnotations = getReflectAnnotations(optionsMirror);
     boolean allowSerializable = getAllowSerializable(optionsMirror);
+    boolean isLombokEnabled = isLombokEnabled(optionsMirror);
     return OptionsDescriptor.create(optionsMirror, excludeModifiers, excludeAnnotationNames,
-        exposeAnnotationNames, excludeNonExposedFields, reflectAnnotations, allowSerializable);
+        exposeAnnotationNames, excludeNonExposedFields, reflectAnnotations, allowSerializable, isLombokEnabled);
   }
 
   static boolean usesAnyAnnotationsFrom(Element element, List<String> annotationNames) {
@@ -778,6 +779,12 @@ final class Utils {
     AnnotationValue allowSerializable =
         AnnotationMirrors.getAnnotationValue(mirror, "allowSerializable");
     return allowSerializable.accept(TO_BOOLEAN, null);
+  }
+
+  private static boolean isLombokEnabled(AnnotationMirror mirror) {
+    AnnotationValue isLombokEnabled =
+            AnnotationMirrors.getAnnotationValue(mirror, "isLombokEnabled");
+    return isLombokEnabled.accept(TO_BOOLEAN, null);
   }
 
   private Utils() {}

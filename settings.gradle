@@ -1,4 +1,4 @@
-include ':paperparcel'
+include ':paperparcel', ':java7-lombok-example'
 include ':paperparcel-kotlin'
 include ':paperparcel-api'
 include ':paperparcel-compiler'
@@ -14,3 +14,4 @@ project(':java7-example').projectDir = new File("examples/java7-example")
 project(':autovalue-example').projectDir = new File("examples/autovalue-example")
 project(':realm-example').projectDir = new File("examples/realm-example")
 project(':benchmark-demo').projectDir = new File("examples/benchmark-demo")
+project(':java7-lombok-example').projectDir = new File('examples/java7-lombok-example')
