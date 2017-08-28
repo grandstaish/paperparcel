@@ -1,11 +1,18 @@
 Change Log
 ==========
 
+Version 2.0.3 *(2017-08-28)*
+----------------------------
+
+* Add optional Lombok support (thanks to @ayanyev and @InviaTravel)
+* Fix: compile issue when passing Parcelable creators of a generic type
+* Fix: internal properties in kotlin
+
 Version 2.0.2 *(2017-07-31)*
 ----------------------------
 
-* Fix: resolve generic field types for fields contained in subclasses (#176)
-* Fix: crash when a superclass and a subclass have a field with the same name (#189)
+* Fix: resolve generic field types for fields contained in subclasses
+* Fix: crash when a superclass and a subclass have a field with the same name
 
 Version 2.0.1 *(2017-04-02)*
 ----------------------------

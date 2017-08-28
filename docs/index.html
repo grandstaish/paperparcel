@@ -14,7 +14,7 @@
       <h1 class="project-name">PaperParcel</h1>
       <h2 class="project-tagline">Android Parcelable boilerplate annotation processor </h2>
       <a href="https://github.com/grandstaish/paperparcel" class="btn">View on GitHub</a>
-      <a href="#download" class="btn">Download v2.0.2</a>
+      <a href="#download" class="btn">Download v2.0.3</a>
       <a href="2.x/paperparcel" class="btn">View Javadoc</a>
     </section>
 
@@ -169,6 +169,8 @@
   <li>Extend the type system by adding custom <code><span class="pl-en">TypeAdapter</span></code>s.</li>
   <li>Modify the field exclusion rules.</li>
   <li>Allow the use of reflection to access specified private constructors or fields.</li>
+  <li>Disable <code><span class="pl-en">Serializable</span></code> support.</li>
+  <li>Enable Lombok support.</li>
 </ul>
 
 <p><code><span class="pl-k">@ProcessorConfig</span></code> can be applied to any annotation, interface, class, or package element in your source code. While this annotation can be applied almost anywhere, the convention is to put it in one of the following places:</p>
@@ -241,8 +243,8 @@
 <p><strong>Java:</strong></p>
 
 <div class="highlight highlight-source-groovy"><pre>dependencies {
-  compile <span class="pl-s"><span class="pl-pds">'</span>nz.bradcampbell:paperparcel:2.0.2<span class="pl-pds">'</span></span>
-  annotationProcessor <span class="pl-s"><span class="pl-pds">'</span>nz.bradcampbell:paperparcel-compiler:2.0.2<span class="pl-pds">'</span></span>
+  compile <span class="pl-s"><span class="pl-pds">'</span>nz.bradcampbell:paperparcel:2.0.3<span class="pl-pds">'</span></span>
+  annotationProcessor <span class="pl-s"><span class="pl-pds">'</span>nz.bradcampbell:paperparcel-compiler:2.0.3<span class="pl-pds">'</span></span>
 }</pre></div>
 
 <p><strong>Kotlin:</strong></p>
@@ -252,9 +254,9 @@
 <div class="highlight highlight-source-groovy"><pre>apply <span class="pl-c1">plugin</span>: <span class="pl-s"><span class="pl-pds">'</span>kotlin-kapt<span class="pl-pds">'</span></span>
 
 dependencies {
-  compile <span class="pl-s"><span class="pl-pds">'</span>nz.bradcampbell:paperparcel:2.0.2<span class="pl-pds">'</span></span>
-  compile <span class="pl-s"><span class="pl-pds">'</span>nz.bradcampbell:paperparcel-kotlin:2.0.2<span class="pl-pds">'</span></span> <span class="pl-c">// Optional</span>
-  kapt <span class="pl-s"><span class="pl-pds">'</span>nz.bradcampbell:paperparcel-compiler:2.0.2<span class="pl-pds">'</span></span>
+  compile <span class="pl-s"><span class="pl-pds">'</span>nz.bradcampbell:paperparcel:2.0.3<span class="pl-pds">'</span></span>
+  compile <span class="pl-s"><span class="pl-pds">'</span>nz.bradcampbell:paperparcel-kotlin:2.0.3<span class="pl-pds">'</span></span> <span class="pl-c">// Optional</span>
+  kapt <span class="pl-s"><span class="pl-pds">'</span>nz.bradcampbell:paperparcel-compiler:2.0.3<span class="pl-pds">'</span></span>
 }</pre></div>
 
 <p>Development snapshots are available on <a href="https://oss.jfrog.org/oss-snapshot-local">JFrog OSS Artifactory</a>.</p>
