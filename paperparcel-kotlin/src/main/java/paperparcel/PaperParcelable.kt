@@ -14,7 +14,7 @@ interface PaperParcelable : Parcelable {
   override fun describeContents() = 0
 
   override fun writeToParcel(dest: Parcel, flags: Int) {
-    val writeMethod: Method = synchronized(writeMethods) {
+    val writeMethod = synchronized(writeMethods) {
       writeMethods.getOrPut(javaClass) {
         val annotatedClass = javaClass.annotatedClass
         val generatedClass = Class.forName(annotatedClass.implementationName)
