@@ -20,9 +20,7 @@ interface PaperParcelable : Parcelable {
         val generatedClass = Class.forName(annotatedClass.implementationName)
         generatedClass
                 .getDeclaredMethod("writeToParcel", annotatedClass, Parcel::class.java, Int::class.javaPrimitiveType)
-                .apply {
-                  isAccessible = true
-                }
+                .apply { isAccessible = true }
       }
     }
     writeMethod.invoke(null, this, dest, flags)
@@ -34,7 +32,7 @@ interface PaperParcelable : Parcelable {
         return this
       }
       require(this != Any::class.java) {
-        "Cannot find @${PaperParcel::class.java.simpleName} on ${this@PaperParcelable.javaClass.name}."
+        "Cannot find @PaperParcel on ${this@PaperParcelable.javaClass.name}."
       }
       return superclass.annotatedClass
     }
