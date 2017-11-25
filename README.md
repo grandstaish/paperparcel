@@ -20,9 +20,6 @@ dependencies {
 ```
 
 **Kotlin:**
-
-PaperParcel requires `kotlin 1.0.5` (or greater) and the `'kotlin-kapt'` Gradle plugin. Please note that the `'kotlin-kapt'` Gradle plugin is still experimental and may have issues.
-
 ```groovy
 apply plugin: 'kotlin-kapt'
 
