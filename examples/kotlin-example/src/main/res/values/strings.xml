@@ -2,4 +2,6 @@
   <string name="app_name">PaperParcel Example</string>
   <string name="add_button">+</string>
   <string name="subtract_button">-</string>
+  <string name="counter_text">%1$d (updated at %2$s)</string>
+  <string name="last_action_text">Last Action: %1$s</string>
 </resources>

@@ -19,9 +19,10 @@ package nz.bradcampbell.kotlinexample
 import android.os.Bundle
 import android.support.v7.app.AppCompatActivity
 import android.support.v7.widget.Toolbar
+import android.widget.Button
 import android.widget.TextView
 import java.text.SimpleDateFormat
-import java.util.Date
+import java.util.*
 
 class MainActivity : AppCompatActivity() {
   var state = State(0, Date())
@@ -32,21 +33,21 @@ class MainActivity : AppCompatActivity() {
     setContentView(R.layout.activity_main)
 
     savedInstanceState?.let {
-      state = it.getParcelable<State>("state")
+      state = it.getParcelable("state")
     }
 
-    val toolbar = findViewById(R.id.toolbar) as Toolbar
+    val toolbar:Toolbar = findViewById(R.id.toolbar)
     setSupportActionBar(toolbar)
 
-    val plusButton = findViewById(R.id.add_button)
+    val plusButton: Button = findViewById(R.id.add_button)
     plusButton.setOnClickListener {
-      state = state.copy(state.count + 1, Date())
+      state = state.copy(count = state.count + 1, modificationDate = Date(), lastAction = Increment)
       updateText()
     }
 
-    val subtractButton = findViewById(R.id.subtract_button)
+    val subtractButton:Button = findViewById(R.id.subtract_button)
     subtractButton.setOnClickListener {
-      state = state.copy(state.count - 1, Date())
+      state = state.copy(count = state.count - 1, modificationDate = Date(), lastAction = Decrement)
       updateText()
     }
 
@@ -54,9 +55,16 @@ class MainActivity : AppCompatActivity() {
   }
 
   fun updateText() {
-    val counter = findViewById(R.id.counter) as TextView
-    counter.text = state.count.toString() + " (updated at " + dateFormat.format(
-        state.modificationDate) + ")"
+      findViewById<TextView>(R.id.counter)
+              .text = resources.getString(
+              R.string.counter_text,
+              state.count,
+              dateFormat.format(state.modificationDate))
+
+      findViewById<TextView>(R.id.status)
+              .text = resources.getString(
+              R.string.last_action_text,
+              state.lastAction.name)
   }
 
   override fun onSaveInstanceState(outState: Bundle) {
