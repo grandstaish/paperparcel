@@ -1,4 +1,4 @@
--keepclassmembernames class **.PaperParcel* {
+-keepclassmembers class **.PaperParcel* {
   static void writeToParcel(...);
 }
 
