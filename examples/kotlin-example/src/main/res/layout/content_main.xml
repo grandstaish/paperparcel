@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -13,16 +13,27 @@
     >
 
   <TextView
+      android:layout_centerHorizontal="true"
       android:id="@+id/counter"
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       tools:text="0"
       />
 
+  <TextView
+      android:layout_centerHorizontal="true"
+      android:id="@+id/status"
+      android:layout_width="wrap_content"
+      android:layout_height="wrap_content"
+      tools:text="0"
+      android:layout_below="@+id/counter"
+      />
+
   <View
+      android:id="@+id/center"
       android:layout_width="0dp"
       android:layout_height="0dp"
-      android:layout_weight="1"
+      android:layout_centerInParent="true"
       />
 
   <Button
@@ -30,6 +41,9 @@
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:text="@string/subtract_button"
+      android:layout_below="@+id/status"
+      android:layout_toLeftOf="@+id/center"
+      android:layout_toStartOf="@+id/center"
       />
 
   <Button
@@ -37,6 +51,9 @@
       android:layout_width="wrap_content"
       android:layout_height="wrap_content"
       android:text="@string/add_button"
+      android:layout_below="@+id/status"
+      android:layout_toRightOf="@+id/center"
+      android:layout_toEndOf="@+id/center"
       />
 
-</LinearLayout>
+</RelativeLayout>

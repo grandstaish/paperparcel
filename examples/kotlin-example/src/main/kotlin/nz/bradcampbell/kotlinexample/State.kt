@@ -22,7 +22,8 @@ import java.util.Date
 
 @PaperParcel data class State(
     val count: Int,
-    val modificationDate: Date
+    val modificationDate: Date,
+    val lastAction: LastAction = Initial
 ) : PaperParcelable {
   @Transient val somethingToExclude = 10000L
 
