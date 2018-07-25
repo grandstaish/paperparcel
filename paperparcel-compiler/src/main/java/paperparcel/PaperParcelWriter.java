@@ -16,7 +16,6 @@
 
 package paperparcel;
 
-import android.support.annotation.NonNull;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
 import com.google.common.collect.FluentIterable;
@@ -34,14 +33,18 @@ import com.squareup.javapoet.ParameterSpec;
 import com.squareup.javapoet.ParameterizedTypeName;
 import com.squareup.javapoet.TypeName;
 import com.squareup.javapoet.TypeSpec;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Name;
 import javax.lang.model.type.TypeMirror;
+
+import androidx.annotation.NonNull;
 import paperparcel.AdapterDescriptor.ConstructorInfo;
 
 import static javax.lang.model.element.Modifier.FINAL;

@@ -16,7 +16,6 @@
 
 package paperparcel;
 
-import android.support.annotation.Nullable;
 import com.google.auto.common.AnnotationMirrors;
 import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
@@ -28,12 +27,14 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Ordering;
 import com.google.common.primitives.Ints;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.AnnotationValueVisitor;
@@ -56,6 +57,8 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleAnnotationValueVisitor6;
 import javax.lang.model.util.SimpleTypeVisitor6;
 import javax.lang.model.util.Types;
+
+import androidx.annotation.Nullable;
 
 import static com.google.auto.common.MoreElements.asType;
 import static com.google.auto.common.MoreTypes.asDeclared;
@@ -266,7 +269,8 @@ final class Utils {
     return resolved;
   }
 
-  @Nullable private static TypeMirror paramAsMemberOfImpl(
+  @Nullable
+  private static TypeMirror paramAsMemberOfImpl(
       Types types, DeclaredType type, TypeParameterElement param) {
     TypeElement paramEnclosingElement = (TypeElement) param.getEnclosingElement();
     TypeElement typeAsElement = (TypeElement) type.asElement();

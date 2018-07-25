@@ -17,9 +17,11 @@
 package paperparcel.internal;
 
 import android.os.Parcel;
-import android.support.annotation.NonNull;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
+
+import androidx.annotation.NonNull;
 import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code

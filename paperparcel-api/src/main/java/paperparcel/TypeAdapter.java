@@ -17,7 +17,8 @@
 package paperparcel;
 
 import android.os.Parcel;
-import android.support.annotation.NonNull;
+
+import androidx.annotation.NonNull;
 
 /**
  * <p>A custom method for reading and writing a type using {@link Parcel}.</p>

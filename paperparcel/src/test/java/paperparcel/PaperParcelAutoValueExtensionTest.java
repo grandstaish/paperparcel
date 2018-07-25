@@ -3,9 +3,12 @@ package paperparcel;
 import com.google.auto.value.processor.AutoValueProcessor;
 import com.google.common.base.Joiner;
 import com.google.testing.compile.JavaFileObjects;
-import java.util.Arrays;
-import javax.tools.JavaFileObject;
+
 import org.junit.Test;
+
+import java.util.Arrays;
+
+import javax.tools.JavaFileObject;
 
 import static com.google.common.truth.Truth.assertAbout;
 import static com.google.testing.compile.JavaSourceSubjectFactory.javaSource;
@@ -54,7 +57,7 @@ public class PaperParcelAutoValueExtensionTest {
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
-            "import android.support.annotation.NonNull;",
+            "import androidx.annotation.NonNull;",
             "final class PaperParcelAutoValue_Test {",
             "  @NonNull",
             "  static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {",
@@ -88,7 +91,7 @@ public class PaperParcelAutoValueExtensionTest {
     JavaFileObject source =
         JavaFileObjects.forSourceString("test.Test", Joiner.on('\n').join(
             "package test;",
-            "import android.support.annotation.Nullable;",
+            "import androidx.annotation.Nullable;",
             "import com.google.auto.value.AutoValue;",
             "import android.os.Parcelable;",
             "@AutoValue",
@@ -102,7 +105,7 @@ public class PaperParcelAutoValueExtensionTest {
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
-            "import android.support.annotation.Nullable;",
+            "import androidx.annotation.Nullable;",
             "import java.lang.Integer;",
             "import java.lang.Override;",
             "import paperparcel.PaperParcel;",
@@ -214,7 +217,7 @@ public class PaperParcelAutoValueExtensionTest {
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
-            "import android.support.annotation.NonNull;",
+            "import androidx.annotation.NonNull;",
             "final class PaperParcelAutoValue_Test {",
             "  @NonNull",
             "  static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {",
@@ -484,7 +487,7 @@ public class PaperParcelAutoValueExtensionTest {
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
-            "import android.support.annotation.NonNull;",
+            "import androidx.annotation.NonNull;",
             "final class PaperParcelAutoValue_Test {",
             "  @NonNull",
             "  static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {",
@@ -571,7 +574,7 @@ public class PaperParcelAutoValueExtensionTest {
             "package test;",
             "import android.os.Parcel;",
             "import android.os.Parcelable;",
-            "import android.support.annotation.NonNull;",
+            "import androidx.annotation.NonNull;",
             "final class PaperParcelAutoValue_Test {",
             "  @NonNull",
             "  static final Parcelable.Creator<AutoValue_Test> CREATOR = new Parcelable.Creator<AutoValue_Test>() {",
