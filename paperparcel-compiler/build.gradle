@@ -11,6 +11,8 @@ dependencies {
   compile deps.autocommon
   compile deps.javapoet
   compile deps.javaFormat
+  compile deps.gradleIncapHelperApi
+  annotationProcessor deps.gradleIncapHelperProcessor
 }
 
 apply from: rootProject.file('gradle/bintray.gradle')

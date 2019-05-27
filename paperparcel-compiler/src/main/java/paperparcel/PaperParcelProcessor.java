@@ -20,6 +20,10 @@ import com.google.auto.common.BasicAnnotationProcessor;
 import com.google.auto.service.AutoService;
 import com.google.common.collect.ImmutableList;
 import com.google.googlejavaformat.java.filer.FormattingFiler;
+
+import net.ltgt.gradle.incap.IncrementalAnnotationProcessor;
+import net.ltgt.gradle.incap.IncrementalAnnotationProcessorType;
+
 import javax.annotation.processing.Filer;
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.Processor;
@@ -32,6 +36,7 @@ import javax.lang.model.util.Types;
  * implementation.
  */
 @AutoService(Processor.class)
+@IncrementalAnnotationProcessor(IncrementalAnnotationProcessorType.ISOLATING)
 public class PaperParcelProcessor extends BasicAnnotationProcessor {
   @Override public SourceVersion getSupportedSourceVersion() {
     return SourceVersion.latestSupported();
