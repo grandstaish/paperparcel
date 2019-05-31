@@ -6,8 +6,11 @@ targetCompatibility = rootProject.ext.targetCompatibilityVersion
 
 dependencies {
   compile project(':paperparcel-api')
-  compile deps.autovalue
-  compile deps.autoservice
+  compile deps.autovalueApi
+  compile deps.autovalueProcessor
+  annotationProcessor deps.autovalueProcessor
+  compile deps.autoserviceApi
+  annotationProcessor deps.autoserviceProcessor
   compile deps.autocommon
   compile deps.javapoet
   compile deps.javaFormat
