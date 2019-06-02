@@ -34,17 +34,16 @@ android {
 }
 
 dependencies {
-  compile deps.appCompat
-  compile deps.design
+  implementation deps.appCompat
 
-  compile project(':paperparcel')
-  compile project(':paperparcel-kotlin')
+  implementation project(':paperparcel')
+  implementation project(':paperparcel-kotlin')
   kapt project(':paperparcel-compiler')
 
-  compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+  implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
-  testCompile deps.junit
-  testCompile deps.compiletesting
+  testImplementation deps.junit
+  testImplementation deps.compiletesting
 }
 
 tasks.withType(Test) {
