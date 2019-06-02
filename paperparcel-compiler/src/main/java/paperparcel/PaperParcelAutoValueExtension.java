@@ -60,7 +60,7 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
 
   @Override
   public IncrementalExtensionType incrementalType(final ProcessingEnvironment processingEnvironment) {
-    return IncrementalExtensionType.AGGREGATING;
+    return IncrementalExtensionType.ISOLATING;
   }
 
   @Override public boolean applicable(Context context) {
