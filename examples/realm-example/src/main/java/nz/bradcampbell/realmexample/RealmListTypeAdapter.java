@@ -17,7 +17,8 @@
 package nz.bradcampbell.realmexample;
 
 import android.os.Parcel;
-import android.support.annotation.NonNull;
+
+import androidx.annotation.NonNull;
 import io.realm.RealmList;
 import io.realm.RealmModel;
 import paperparcel.TypeAdapter;

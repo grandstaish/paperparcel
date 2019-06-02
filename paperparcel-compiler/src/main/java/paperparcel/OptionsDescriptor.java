@@ -16,13 +16,16 @@
 
 package paperparcel;
 
-import android.support.annotation.Nullable;
 import com.google.auto.value.AutoValue;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+
 import java.util.Set;
+
 import javax.lang.model.element.AnnotationMirror;
 import javax.lang.model.element.Modifier;
+
+import androidx.annotation.Nullable;
 
 import static javax.lang.model.element.Modifier.STATIC;
 import static javax.lang.model.element.Modifier.TRANSIENT;

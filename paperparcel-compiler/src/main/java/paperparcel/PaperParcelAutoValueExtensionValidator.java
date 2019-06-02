@@ -16,11 +16,12 @@
 
 package paperparcel;
 
-import android.support.annotation.Nullable;
 import com.google.auto.common.MoreElements;
 import com.google.auto.common.MoreTypes;
 import com.google.common.collect.ImmutableSet;
+
 import java.util.List;
+
 import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
@@ -28,6 +29,8 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
+
+import androidx.annotation.Nullable;
 
 final class PaperParcelAutoValueExtensionValidator {
   private final Elements elements;

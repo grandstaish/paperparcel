@@ -17,8 +17,10 @@
 package nz.bradcampbell.autovalueexample;
 
 import android.os.Parcel;
-import android.support.annotation.NonNull;
+
 import java.util.Date;
+
+import androidx.annotation.NonNull;
 import paperparcel.TypeAdapter;
 
 public final class DateAdapter implements TypeAdapter<Date> {

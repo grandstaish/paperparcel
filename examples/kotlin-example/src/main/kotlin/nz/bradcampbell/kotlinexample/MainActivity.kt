@@ -16,51 +16,54 @@
 
 package nz.bradcampbell.kotlinexample
 
+import android.annotation.SuppressLint
 import android.os.Bundle
-import android.support.v7.app.AppCompatActivity
-import android.support.v7.widget.Toolbar
+import android.view.View
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
-  var state = State(0, Date())
-  val dateFormat = SimpleDateFormat("HH:mm")
+  private var state = State(0, Date())
+  private val dateFormat = SimpleDateFormat("HH:mm", Locale.ENGLISH)
 
   override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.activity_main)
 
     savedInstanceState?.let {
-      state = it.getParcelable<State>("state")
+      state = it.getParcelable("state")
     }
 
-    val toolbar = findViewById(R.id.toolbar) as Toolbar
+    val toolbar = findViewById<Toolbar>(R.id.toolbar)
     setSupportActionBar(toolbar)
 
-    val plusButton = findViewById(R.id.add_button)
+    val plusButton = findViewById<View>(R.id.add_button)
     plusButton.setOnClickListener {
-      state = state.copy(state.count + 1, Date())
+      state = state.copy(count = state.count + 1, modificationDate =  Date())
       updateText()
     }
 
-    val subtractButton = findViewById(R.id.subtract_button)
+    val subtractButton = findViewById<View>(R.id.subtract_button)
     subtractButton.setOnClickListener {
-      state = state.copy(state.count - 1, Date())
+      state = state.copy(count = state.count - 1, modificationDate = Date())
       updateText()
     }
 
     updateText()
   }
 
-  fun updateText() {
-    val counter = findViewById(R.id.counter) as TextView
-    counter.text = state.count.toString() + " (updated at " + dateFormat.format(
-        state.modificationDate) + ")"
-  }
-
   override fun onSaveInstanceState(outState: Bundle) {
     super.onSaveInstanceState(outState)
     outState.putParcelable("state", state)
+  }
+
+  @SuppressLint("SetTextI18n")
+  private fun updateText() {
+    val counter = findViewById<TextView>(R.id.counter)
+    counter.text = "${state.count} (updated at ${dateFormat.format(state.modificationDate)})"
   }
 }

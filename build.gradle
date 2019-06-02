@@ -25,7 +25,7 @@ allprojects {
       classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
       classpath 'com.github.dcendents:android-maven-gradle-plugin:1.4.1'
       classpath 'org.jfrog.buildinfo:build-info-extractor-gradle:4.0.0'
-      classpath 'org.jetbrains.dokka:dokka-android-gradle-plugin:0.9.8'
+      classpath 'org.jetbrains.dokka:dokka-android-gradle-plugin:0.9.16'
     }
   }
 }
@@ -35,9 +35,9 @@ subprojects {
 }
 
 ext {
-  minSdkVersion = 9
-  targetSdkVersion = 27
-  compileSdkVersion = 27
+  minSdkVersion = 14
+  targetSdkVersion = 28
+  compileSdkVersion = 28
   buildToolsVersion = '28.0.3'
   sourceCompatibilityVersion = JavaVersion.VERSION_1_7
   targetCompatibilityVersion = JavaVersion.VERSION_1_7
@@ -56,29 +56,28 @@ project.plugins.whenPluginAdded { plugin ->
   }
 }
 
-def androidSupportVersion = '27.0.1'
+def androidxVersion = '1.0.0-beta01'
 def gradleIncapHelperVersion = '0.2'
 def autoserviceVersion = '1.0-rc5'
 
 ext.deps = [
-        android                   : 'com.google.android:android:4.1.1.4',
-        supportAnnotations        : "com.android.support:support-annotations:$androidSupportVersion",
-        appCompat                 : "com.android.support:appcompat-v7:$androidSupportVersion",
-        design                    : "com.android.support:design:$androidSupportVersion",
-        supportTestRunner         : 'com.android.support.test:runner:0.5',
-        javapoet                  : 'com.squareup:javapoet:1.8.0',
-        autovalueProcessor        : 'com.google.auto.value:auto-value:1.6.5',
-        autovalueApi              : 'com.google.auto.value:auto-value-annotations:1.6.3',
-        autocommon                : 'com.google.auto:auto-common:0.8',
-        autoserviceProcessor      : "com.google.auto.service:auto-service:$autoserviceVersion",
-        autoserviceApi            : "com.google.auto.service:auto-service-annotations:$autoserviceVersion",
-        javaFormat                : 'com.google.googlejavaformat:google-java-format:1.1',
-        junit                     : 'junit:junit:4.12',
-        truth                     : 'com.google.truth:truth:0.30',
-        compiletesting            : 'com.google.testing.compile:compile-testing:0.10',
-        lombok                    : "org.projectlombok:lombok:1.16.16",
-        gradleIncapHelperApi      : "net.ltgt.gradle.incap:incap:$gradleIncapHelperVersion",
-        gradleIncapHelperProcessor: "net.ltgt.gradle.incap:incap-processor:$gradleIncapHelperVersion"
+    android: 'com.google.android:android:4.1.1.4',
+    supportAnnotations: "androidx.annotation:annotation:$androidxVersion",
+    appCompat: "androidx.appcompat:appcompat:$androidxVersion",
+    supportTestRunner: 'com.android.support.test:runner:0.5',
+    javapoet: 'com.squareup:javapoet:1.8.0',
+    autovalueProcessor: 'com.google.auto.value:auto-value:1.6.5',
+    autovalueApi: 'com.google.auto.value:auto-value-annotations:1.6.3',
+    autocommon: 'com.google.auto:auto-common:0.8',
+    autoserviceProcessor: "com.google.auto.service:auto-service:$autoserviceVersion",
+    autoserviceApi: "com.google.auto.service:auto-service-annotations:$autoserviceVersion",
+    javaFormat: 'com.google.googlejavaformat:google-java-format:1.1',
+    junit: 'junit:junit:4.12',
+    truth: 'com.google.truth:truth:0.30',
+    compiletesting: 'com.google.testing.compile:compile-testing:0.10',
+    lombok: "org.projectlombok:lombok:1.16.16",
+    gradleIncapHelperApi: "net.ltgt.gradle.incap:incap:$gradleIncapHelperVersion",
+    gradleIncapHelperProcessor: "net.ltgt.gradle.incap:incap-processor:$gradleIncapHelperVersion"
 ]
 
 task clean(type: Delete) {

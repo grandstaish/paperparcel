@@ -17,15 +17,17 @@
 package nz.bradcampbell.autovalueexample;
 
 import android.os.Bundle;
-import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.View;
 import android.widget.TextView;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+
+import androidx.annotation.Nullable;
 
 public class MainActivity extends AppCompatActivity {
   private static final String STATE_KEY = "state";

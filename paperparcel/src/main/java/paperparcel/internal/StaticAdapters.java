@@ -6,12 +6,13 @@ import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Parcel;
 import android.os.PersistableBundle;
-import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 import android.text.TextUtils;
 import android.util.Size;
 import android.util.SizeF;
 import android.util.SparseBooleanArray;
+
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import paperparcel.TypeAdapter;
 
 @SuppressWarnings({ "WeakerAccess", "unused" }) // Used by generated code
