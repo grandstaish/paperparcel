@@ -1,6 +1,11 @@
 Change Log
 ==========
 
+Version 2.0.7 *(2019-06-02)*
+----------------------------
+
+* Support incremental annotation processing (thanks @bejibx!)
+
 
 Version 2.0.6 *(2018-05-01)*
 ----------------------------
