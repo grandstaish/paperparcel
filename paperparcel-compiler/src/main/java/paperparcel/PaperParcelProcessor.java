@@ -36,7 +36,7 @@ import javax.lang.model.util.Types;
  * implementation.
  */
 @AutoService(Processor.class)
-@IncrementalAnnotationProcessor(IncrementalAnnotationProcessorType.ISOLATING)
+@IncrementalAnnotationProcessor(IncrementalAnnotationProcessorType.AGGREGATING)
 public class PaperParcelProcessor extends BasicAnnotationProcessor {
   @Override public SourceVersion getSupportedSourceVersion() {
     return SourceVersion.latestSupported();
