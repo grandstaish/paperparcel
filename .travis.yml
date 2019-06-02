@@ -2,18 +2,28 @@ language: android
 
 jdk:
   - oraclejdk8
+  
+android:
+  components:
+    - tools
+    - platform-tools
+    - build-tools-28.0.3
+    - android-28
+    - extra-google-google_play_services
+    - extra-google-m2repository
+    - extra-android-m2repository
 
 before_install:
-  # Install SDK license so Android Gradle plugin can install deps.
-  - mkdir "$ANDROID_HOME/licenses" || true
-  - echo "d56f5187479451eabf01fb78af6dfcb131a6481e" > "$ANDROID_HOME/licenses/android-sdk-license"
-  # Install the rest of tools (e.g., avdmanager)
-  - sdkmanager tools
+  # Install a sdkmanager version that supports the --licenses switch and
+  # accept any Android SDK licenses. The output redirection prevents us from
+  # hitting the travis log size limit of 4MB which would fail the build.
+  - yes | sdkmanager tools > /dev/null
+  - yes | sdkmanager --licenses > /dev/null
   # Install the system image
-  - sdkmanager "system-images;android-21;default;armeabi-v7a"
-  # Create and start emulator for the script. Meant to race the install task.
-  - echo no | avdmanager create avd --force -n test -k "system-images;android-21;default;armeabi-v7a"
-  - $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window &
+  - sdkmanager "system-images;android-24;default;armeabi-v7a"
+  # Create and launch the emulator
+  - echo no | avdmanager create avd --force -n test -k "system-images;android-24;default;armeabi-v7a"
+  - $ANDROID_HOME/emulator/emulator -avd test -no-audio -no-window -no-snapshot -use-system-libs &
 
 install: ./gradlew clean assemble assembleAndroidTest --stacktrace
 

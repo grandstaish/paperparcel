@@ -58,6 +58,11 @@ public class PaperParcelAutoValueExtension extends AutoValueExtension {
   private static final TypeName PARCEL = ClassName.get("android.os", "Parcel");
   private static final String NULLABLE_ANNOTATION_NAME = "Nullable";
 
+  @Override
+  public IncrementalExtensionType incrementalType(final ProcessingEnvironment processingEnvironment) {
+    return IncrementalExtensionType.ISOLATING;
+  }
+
   @Override public boolean applicable(Context context) {
     ProcessingEnvironment env = context.processingEnvironment();
     Elements elements = env.getElementUtils();
