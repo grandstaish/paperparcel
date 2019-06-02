@@ -30,9 +30,9 @@ dokka {
 }
 
 dependencies {
-  provided "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+  compileOnly "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
 
-  provided project(":paperparcel")
+  compileOnly project(":paperparcel")
 }
 
 apply from: rootProject.file('gradle/bintray.gradle')

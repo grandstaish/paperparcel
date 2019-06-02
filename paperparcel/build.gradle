@@ -1,3 +1,5 @@
+import org.gradle.internal.jvm.Jvm
+
 apply plugin: 'com.android.library'
 
 android {
@@ -25,20 +27,21 @@ tasks.withType(Test) {
 }
 
 dependencies {
-  compile project(':paperparcel-api')
-  compile deps.supportAnnotations
+  api project(':paperparcel-api')
+  api deps.supportAnnotations
 
-  androidTestCompile deps.junit
-  androidTestCompile deps.truth
-  androidTestCompile deps.supportTestRunner
+  androidTestImplementation deps.junit
+  androidTestImplementation deps.truth
+  androidTestImplementation deps.supportTestRunner
   androidTestAnnotationProcessor project(':paperparcel-compiler')
 
-  testCompile deps.junit
-  testCompile deps.truth
-  testCompile deps.compiletesting
-  testCompile files(getRuntimeJar())
-  testCompile files(org.gradle.internal.jvm.Jvm.current().getToolsJar())
-  testCompile project(':paperparcel-compiler')
+  testImplementation deps.junit
+  testImplementation deps.truth
+  testImplementation deps.compiletesting
+  testImplementation files(getRuntimeJar())
+  testImplementation files(Jvm.current().getToolsJar())
+  testImplementation project(':paperparcel-compiler')
+  testAnnotationProcessor project(':paperparcel-compiler')
 }
 
 def getRuntimeJar() {
