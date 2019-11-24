@@ -1,3 +1,7 @@
+# This project is deprecated
+ 
+[Parcelize](https://kotlinlang.org/docs/tutorials/android-plugin.html#parcelable-implementations-generator) is the official way of generating `Parcelable` implementations on Android. 
+
 # PaperParcel
 
 [![Build Status](https://travis-ci.org/grandstaish/paperparcel.svg?branch=master)](https://travis-ci.org/grandstaish/paperparcel)
@@ -5,8 +9,6 @@
 PaperParcel is an annotation processor that automatically generates the `CREATOR` and `writeToParcel(...)` implementations for you when writing [Parcelable](http://developer.android.com/intl/es/reference/android/os/Parcelable.html) objects. PaperParcel fully supports both Java and Kotlin (including [Kotlin Data Classes](https://kotlinlang.org/docs/reference/data-classes.html)). Additionally, PaperParcel supports Google's [AutoValue](https://github.com/google/auto/tree/master/value) via an [AutoValue Extension](http://jakewharton.com/presentation/2016-03-08-ny-android-meetup/).
 
 For more information please see [the website](http://grandstaish.github.io/paperparcel/).
-
-**Note:** JetBrains have released Parcelize as an "experimental" feature of Kotlin. As of Kotlin `1.1.60` I personally have found it stable enough to use in production. If you don't require some of the more advanced features of PaperParcel (e.g. type adapters), I recommend looking into Parcelize _before_ this library. 
 
 ## Download
 
