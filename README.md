@@ -1,6 +1,6 @@
 # This project is deprecated
  
-[Parcelize](https://kotlinlang.org/docs/tutorials/android-plugin.html#parcelable-implementations-generator) is the official way of generating `Parcelable` implementations on Android. 
+It will still be maintained, but no new features will be added. Please use [Parcelize](https://kotlinlang.org/docs/tutorials/android-plugin.html#parcelable-implementations-generator), as it is the official way of generating `Parcelable` implementations on Android. 
 
 # PaperParcel
 
